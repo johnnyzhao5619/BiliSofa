@@ -1,0 +1,27 @@
+name: Candidate probe checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  portable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 verified 2026-10-14
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4 verified 2026-10-14
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm test
+      - run: npm run test:native:http
+      - run: npm run test:native:media
+      - run: npm run test:native:stop
+      - run: npm run build
+      - run: npm run package
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:ui
+      - run: python3 tools/verify-package.py
+# No signing profiles, account writes, installation or release actions in CI.

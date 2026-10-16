@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "featureId": "F20",
+  "workId": "W06",
+  "status": "UNVERIFIED",
+  "evidenceLayer": "device",
+  "dateLocal": "2026-10-14",
+  "timezone": "America/Toronto",
+  "steps": ["Select an unchanged official Bilibili sender", "Discover, connect, send authorized content, play, control and reconnect on the target TV"],
+  "expected": "Actual authorized media and bidirectional control on UN58U8200FFXZC",
+  "actual": "Not executed",
+  "device": { "model": "UN58U8200FFXZC", "firmware": null, "engine": null, "region": null },
+  "sender": { "platform": null, "osVersion": null, "appVersion": null, "unmodifiedOfficialApp": null },
+  "account": { "anonymousAlias": null, "entitlement": null, "region": null },
+  "packageSha256": null,
+  "sourceSnapshotHash": null,
+  "sourceRevision": "NO_HEAD",
+  "toolVersions": {},
+  "redactedEvidenceRefs": [],
+  "limitations": ["Template only; not a result", "Raw captures, addresses, credentials and signing material stay outside repository"]
+}

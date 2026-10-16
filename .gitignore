@@ -1,0 +1,40 @@
+# macOS and editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+# Generated dependencies/builds
+node_modules/
+dist/
+build/
+coverage/
+bin/
+obj/
+*.tsbuildinfo
+# Local credentials and configuration
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.pem
+*.key
+*.crt
+*.cer
+security-profiles.xml
+certificates/
+.local/
+# Device artifacts and captures
+*.wgt
+*.tpk
+*.log
+*.pcap
+*.pcapng
+cookies*.json
+session*.json
+tokens*.json
+artifacts/private/
+
+# Python tool/test bytecode
+__pycache__/
+*.py[cod]

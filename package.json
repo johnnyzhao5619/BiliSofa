@@ -1,0 +1,37 @@
+{
+  "name": "bilisofa",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "tsc --noEmit && node tools/check-boundaries.mjs",
+    "test": "node --import ./tools/register-ts.mjs --test tests/unit/*.test.ts tests/contracts/*.test.ts",
+    "test:ui": "playwright test",
+    "build": "node tools/build.mjs",
+    "package": "python3 tools/package.py",
+    "package:native": "python3 tools/package-native.py",
+    "test:ui:native": "BILISOFA_PROBE_ROOT=dist/probe-native BILISOFA_NATIVE_UI=1 playwright test",
+    "dev": "node tools/serve.mjs",
+    "probe:native:check": "python3 tools/native-probe.py check",
+    "probe:native:build": "python3 tools/native-probe.py build",
+    "test:native:http": "python3 tests/native/http-probe.test.py",
+    "test:native:media": "python3 tests/native/media-probe.test.py",
+    "test:native:stop": "python3 tests/native/service-stop.test.py",
+    "package:isolation": "python3 tools/package-isolation.py",
+    "test:ui:isolation": "BILISOFA_PROBE_ROOT=dist/probe-isolation BILISOFA_ISOLATION_UI=1 playwright test",
+    "test:native:guest": "python3 tests/native/guest-probe.test.py",
+    "test:native:bridge": "python3 tests/native/bridge-probe.test.py",
+    "test:native:cast": "python3 tests/native/cast-probe.test.py",
+    "test:native:cast-source": "python3 tests/native/cast-source-probe.test.py"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.10.1",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3"
+  }
+}

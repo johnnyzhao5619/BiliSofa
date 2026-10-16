@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, initial-scale=1">
+  <meta name="build-id" content="__BUILD_ID__">
+  <meta name="probe-auto" content="__PROBE_AUTO__">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval' file://wgt-widget/; worker-src 'self'; child-src 'self'; connect-src 'self' http://127.0.0.1:40323 http://127.0.0.1:40324; media-src 'self' http://127.0.0.1:40323 http://127.0.0.1:40324; style-src 'self'; img-src 'self'; object-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>BiliSofa · W01 探针</title>
+  <link rel="stylesheet" href="probe.css">
+  <script src="$WEBAPIS/webapis/webapis.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+<main>
+  <header><span class="eyebrow">BILISOFA / W01</span><h1>零售电视能力探针</h1><p>内部测试包 0.0.1 · 不执行账号写入 · F01–F20 尚未验收</p></header>
+  <section class="actions" aria-label="探针操作">
+    <button id="inspect" data-focus-id="inspect">读取设备能力</button>
+    <button id="wasm" data-focus-id="wasm">运行 Worker / WASM</button>
+    <button id="native" data-focus-id="native">运行原生网络探针</button>
+    <button id="http" data-focus-id="http">手机读取记录</button>
+    <button id="stop" data-focus-id="stop">停止 Worker</button>
+    <button id="persist" data-focus-id="persist">保存重启标记</button>
+    <button id="ime" data-focus-id="ime">系统输入探针</button>
+    <button id="media" data-focus-id="media">测试 MPD / AVPlay 声画</button>
+    <button id="secure" data-focus-id="secure">测试 KeyManager 存储</button>
+    <button id="search" data-focus-id="search">首字母搜索输入</button>
+    <button id="secure-persist" data-focus-id="secure-persist">测试存储退出重开</button>
+    <button id="export" data-focus-id="export">查看脱敏记录</button>
+  </section>
+  <section class="content">
+    <div><h2>运行结果</h2><p id="status" role="status" aria-live="polite"></p><p id="lan-status" role="status"></p><div id="results" aria-live="off"></div></div>
+    <aside><h2>人工核查</h2><ol><li>方向键移动，确认键执行</li><li>Voice Guide 与焦点对照</li></ol><div class="browse-tools"><button id="popular" data-focus-id="popular">读取游客热门</button><button id="cast" data-focus-id="cast">投屏发现探针</button><button id="cast-controls" data-focus-id="cast-controls">自动投屏回跳检查</button><button id="cast-receiver" data-focus-id="cast-receiver">官方手机控制探针</button></div><label for="chinese">中文 IME（输入不保存、不发送）</label><input id="chinese" data-focus-id="chinese" data-return-focus-id="ime" maxlength="80" autocomplete="off"><textarea id="export-output" data-focus-id="export-output" data-return-focus-id="export" aria-label="脱敏探针结果" hidden readonly></textarea></aside>
+  </section>
+  <footer>WASM 计算通过不证明 Socket / TLS / 投屏。真机、签名、媒体及官方发送端须分别验证。</footer>
+</main>
+<section id="media-dialog" role="dialog" aria-modal="true" aria-labelledby="media-title" hidden>
+  <object id="avplay-object" type="application/avplayer" tabindex="-1" aria-hidden="true"></object>
+  <div class="media-top"><h2 id="media-title">W01 · 本地合成声画</h2><p id="media-status" role="status"></p><p id="media-feedback" role="alert"></p></div>
+  <div class="media-controls"><button id="media-toggle" data-focus-id="media-toggle">暂停 / 继续</button><button id="media-seek" data-focus-id="media-seek">跳到 5 秒</button><button id="media-phone" data-focus-id="media-phone" hidden>交还手机控制</button><button id="media-stop" data-focus-id="media-stop">停止并返回</button></div>
+</section>
+<section id="cast-dialog" role="dialog" aria-modal="true" aria-labelledby="cast-title" hidden>
+  <h2 id="cast-title">官方App · 投屏发现探针</h2>
+  <p>接收端名称：BiliSofa W01 Discovery</p>
+  <p id="cast-state" role="status"></p>
+  <ol id="cast-history" aria-label="最近四项投屏请求结果"></ol>
+  <p id="cast-note">源检查通过后，可在电视确认播放候选（最长3分钟）；手机控制尚未接通。</p>
+  <button id="cast-play" data-focus-id="cast-play" data-right="cast-close" disabled>播放已检查候选</button>
+  <button id="cast-close" data-focus-id="cast-close" data-left="cast-play">停止并返回</button>
+</section>
+<section id="search-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title" hidden>
+  <h2 id="search-title">首字母搜索输入 · 本地候选探针</h2>
+  <p id="search-preview" aria-label="已选关键词"></p><p id="search-buffer" aria-label="首字母"></p>
+  <div id="search-candidates" aria-label="中文词语候选"></div>
+  <div class="search-tools"><button id="search-prev" data-focus-id="search-prev">上一页</button><button id="search-next" data-focus-id="search-next">下一页</button><button id="search-literal" data-focus-id="search-literal">使用字母/数字</button><button id="search-delete" data-focus-id="search-delete">退格</button><button id="search-clear" data-focus-id="search-clear">清空</button></div>
+  <div id="search-keys" aria-label="字母与数字"></div>
+  <p id="search-state" role="status"></p>
+  <div class="search-tools"><button id="search-done" data-focus-id="search-done">确认关键词</button><button id="search-retry" data-focus-id="search-retry">重试候选</button><button id="search-cancel" data-focus-id="search-cancel">取消</button></div>
+</section>
+<section id="popular-dialog" role="dialog" aria-modal="true" aria-labelledby="popular-title" hidden>
+  <h2 id="popular-title">游客热门 · 真实内容读取</h2><p id="popular-state" role="status"></p>
+  <div class="popular-controls"><button id="popular-prev" data-focus-id="popular-prev">上一页</button><button id="popular-next" data-focus-id="popular-next">下一页</button><button id="popular-reload" data-focus-id="popular-reload">重新读取</button><button id="popular-close" data-focus-id="popular-close">返回</button></div>
+  <div id="popular-cards" aria-label="游客热门视频"></div><p id="popular-detail"></p>
+</section>
+<section id="exit-dialog" role="dialog" aria-modal="true" aria-labelledby="exit-title" hidden>
+  <h2 id="exit-title">退出探针？</h2><p>Worker 会停止，非敏感标记保留。</p>
+  <button id="cancel-exit" data-focus-id="cancel-exit">继续测试</button>
+  <button id="confirm-exit" data-focus-id="confirm-exit">退出</button>
+</section>
+</body></html>

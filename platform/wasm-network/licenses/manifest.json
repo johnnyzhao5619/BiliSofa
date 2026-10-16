@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "files": {
+    "Emscripten-AUTHORS.txt": "5d0a1bec6dd82a5d6aeadeacb71a095fe80d9ee5927ed042bf3ff6f0a4ac22b4",
+    "Emscripten-LICENSE.txt": "620a78084fc7ca97c0b5dea9abf891f3ffcadfdbf305276f099c9c4e12fc1d86",
+    "MPL-2.0.txt": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+    "NOTICE.txt": "1d505202983e94e9e42784fdc740f92241ab72881028a77414d73d09d1f84d3e",
+    "OpenSSL-LICENSE.txt": "c32913b33252e71190af2066f08115c69bc9fddadf3bf29296e20c835389841c",
+    "compiler-rt-LICENSE.txt": "415ec2b15961f8b34859a50af386663f552bb62b9fffd69e8eb676c792ea022e",
+    "curl-COPYING.txt": "db3c4a3b3695a0f317a0c5176acd2f656d18abc45b3ee78e50935a78eb1e132e",
+    "libcxxabi-LICENSE.txt": "4ce86cf966c41a381f04ae1c82e22ea13043cd693fd726e26872620d49e94580",
+    "musl-COPYRIGHT.txt": "70ca142d257e2690a1f8eda8a296e64a6d1b16d8aee6784f8ddcf67f3163635d",
+    "zlib-LICENSE.txt": "b09e2a43e9960d3d28d37d24f10dfbc462a4cb376da54ba571ac9a8874911ed5"
+  },
+  "sdkArchiveSha256": "aef131c53c5c01c521862c25ee4331708ba9bda0951a3fea105675c58b34e810",
+  "versions": {
+    "SamsungEmscripten": "1.39.4.7",
+    "curl": "7.68.0",
+    "openssl": "1.1.1d",
+    "zlib": "1.2.8",
+    "CA": "2026-09-25"
+  }
+}

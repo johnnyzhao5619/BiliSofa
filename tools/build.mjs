@@ -1,0 +1,40 @@
+import { build } from 'esbuild';
+import { mkdir, readFile, writeFile, cp, stat } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+const out = 'dist/probe';
+const autoSetting = process.env.BILISOFA_PROBE_AUTORUN ?? '0';
+if (!['0', '1', '2', '4', '5', '6'].includes(autoSetting)) throw new Error('Invalid internal probe automation setting');
+const automation = autoSetting === '6' ? 'cast-startup-report-once' : autoSetting === '5' ? 'guest-video-source-report-once' : autoSetting === '4' ? 'guest-popular-report-once' : autoSetting === '2' ? 'synthetic-persistence-report-once' : autoSetting === '1' ? 'guest-synthetic-report-once' : 'manual';
+await mkdir(out, { recursive: true });
+execFileSync('python3', ['tools/initials-data.py']);
+const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z']).toString().split('\0').filter(Boolean).sort();
+const manifest = {};
+for (const file of files) {
+  const info = await stat(file);
+  if (!info.isFile()) continue;
+  manifest[file] = createHash('sha256').update(await readFile(file)).digest('hex');
+}
+const sourceHash = createHash('sha256').update(JSON.stringify(manifest)).digest('hex');
+await cp('apps/tv/public', out, { recursive: true });
+await cp('apps/tv/config.xml', `${out}/config.xml`);
+await cp('LICENSE', `${out}/LICENSE`);
+await cp('THIRD_PARTY_NOTICES.md', `${out}/THIRD_PARTY_NOTICES.md`);
+const html = (await readFile(`${out}/index.html`, 'utf8')).replace('__BUILD_ID__', sourceHash).replace('__PROBE_AUTO__', autoSetting);
+await writeFile(`${out}/index.html`, html);
+await build({ entryPoints: ['apps/tv/src/app/main.ts'], outfile: `${out}/app.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await mkdir('build/isolation', { recursive: true });
+await build({ entryPoints: ['apps/tv/src/app/isolation.ts'], outfile: 'build/isolation/app.js', bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await writeFile('build/isolation/manifest.json', JSON.stringify({ sourceHash, sha256: createHash('sha256').update(await readFile('build/isolation/app.js')).digest('hex') }) + '\n');
+await build({ entryPoints: ['platform/wasm-network/src/probe-worker.ts'], outfile: `${out}/probe-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await build({ entryPoints: ['packages/search/src/initials-worker.ts'], outfile: `${out}/initials-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await build({ entryPoints: ['platform/wasm-network/src/guest-worker.ts'], outfile: `${out}/guest-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await build({ entryPoints: ['platform/wasm-network/src/guest-video-worker.ts'], outfile: `${out}/guest-video-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await build({ entryPoints: ['platform/wasm-network/src/cast-worker.ts'], outfile: `${out}/cast-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+// Original, hand-encoded WASM: (module (func (export "add") (param i32 i32) (result i32) local.get 0 local.get 1 i32.add))
+const wasm = new Uint8Array([0,97,115,109,1,0,0,0,1,7,1,96,2,127,127,1,127,3,2,1,0,7,7,1,3,97,100,100,0,0,10,9,1,7,0,32,0,32,1,106,11]);
+if (!WebAssembly.validate(wasm)) throw new Error('Invalid original WASM');
+await writeFile(`${out}/probe.wasm`, wasm);
+await writeFile('dist/source-manifest.json', JSON.stringify({ schema: 1, sourceHash, files: manifest }, null, 2) + '\n');
+await writeFile(`${out}/build.json`, JSON.stringify({ version: '0.0.1', sourceHash, node: process.version, target: 'es2020-provisional', runtime: 'candidate-probe-only', native: false, automation, searchWords: { upstream: 'AOSP-PinyinIME', commit: '49aebad1c1cfbbcaa9288ffed5161e79e57c3679', license: 'Apache-2.0', rows: 64816, sha256: 'c723c86e502613bdaf3c613b5638ece0fe38772d92165b48f2d3ca140ba3256b' } }, null, 2) + '\n');
+console.log(`Probe built: ${out}; source snapshot ${sourceHash}`);

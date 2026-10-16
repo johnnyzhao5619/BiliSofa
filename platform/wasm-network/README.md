@@ -1,0 +1,13 @@
+# On-TV WASM networking candidate
+
+Contains original W01 Worker glue and C/cURL/socket candidate probe source. `src/probe-worker.ts` executes real minimal WASM and explicitly reports missing native artifacts. `src/probe.c` tests bounded TCP/UDP loopback, multicast self-receive, verified guest HTTPS and isolated synthetic cookie engines. Native SDK compiler/CA configuration is explicit; `npm run probe:native:check` is host syntax evidence only.
+
+No official Bilibili casting receiver or real authenticated session exists yet. Synthetic MPD, KeyManager and guest read evidence is recorded separately below and in the device register. Validate retail-device permissions and packaging before implementation commitment. Runtime modules belong inside the TV app; no PC/NAS gateway is introduced. See [guide](../../docs/W01_PROBE_GUIDE.md).
+
+The fixed Samsung SDK 1.39.4.7 now compiles through authorized Rosetta 2. `build/native` contains actual JS/WASM/public CA data; `npm run package:native` verifies provenance/license hashes and stages the separate unsigned internal candidate in `dist/probe-native`. Upstream license/notice files are preserved in `licenses/`; original MIT does not relicense them. Native desktop tests verify initialization, UI responsiveness, timeout and stop/restart, not TV sockets/TLS. The final authenticated networking dependency/security decision remains open.
+
+`src/probe-http.h` adds an original short-lived, fixed `/report` LAN diagnostic endpoint (120 seconds, bounded clients/headers/report, no proxy). It returns only schema-checked nonsecret results; TV addresses are transient display-only state. Host socket tests pass; 0.0.3 is installed, phone transfer and device cleanup remain unverified. User-observed 0.0.2 native PASS covers five synthetic/guest cases only.
+
+0.0.5 exact source-matched TV report proves guest/synthetic native cases and foreground LAN transfer/close. 0.0.6 embeds original synthetic DASH assets in MEMFS and adds a loopback-only fixed-file MPD probe server; actual AVPlay frames/audio/control remain device gates. No general-purpose file/URL server is introduced.
+
+0.0.15's exact-device report confirms guest view/playurl and two bounded CDN ranges. 0.0.16 adds `probe-bridge.h`: tokenized loopback MPD and two fixed tracks, cURL multi with bounded pause/resume buffering, scoped destinations/TLS, no credential forwarding and closure-before-ACK. `npm run test:native:bridge` compiles a separate HTTP fixture branch only for host tests; normal Samsung builds never define that guard. Actual TV AVPlay results remain separate device evidence. Current product scope is ADR-003 (comments/replies/danmaku view-only).
