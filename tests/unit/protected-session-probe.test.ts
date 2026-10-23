@@ -16,7 +16,9 @@ function fixture() {
 }
 const signal = () => new AbortController().signal;
 const next = () => new Promise<void>(resolve => setImmediate(resolve));
-async function waitWrite(f: ReturnType<typeof fixture>) { for (let i = 0; i < 50 && !f.writes(); i++) await next(); assert.equal(f.writes(), 1); }
+// Bounded by time, not by event-loop turns: crypto.subtle.digest settles on a thread pool, so a
+// slower CI runner can need more than a fixed number of turns before the write is issued.
+async function waitWrite(f: ReturnType<typeof fixture>) { const until = performance.now() + 2000; while (!f.writes() && performance.now() < until) await next(); assert.equal(f.writes(), 1); }
 test('G2 private random synthetic value stays out of journal, survives new document, is verified and deleted', async () => {
   const f = fixture(), first = new ProtectedSessionProbe(f.api, f.storage), pending = first.run(signal()); await waitWrite(f);
   const secret = [...f.data.values()][0]!; assert.match(secret, /^synthetic-secret-[0-9a-f]{64}$/);

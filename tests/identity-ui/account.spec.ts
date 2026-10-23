@@ -41,7 +41,9 @@ test('W02 native close unknown never saves credentials or silently resumes', asy
 });
 test('W02 removal requires explicit confirmation and checks the owned protected slot disappears', async ({page}) => {
   await setup(page);await login(page);await page.getByRole('button',{name:'移除 <img src=x>合成身份',exact:true}).click();await expect(page.getByRole('button',{name:'保留账号'})).toBeFocused();await page.keyboard.press('Escape');expect((await state(page)).stored).toBe(1);
-  await page.getByRole('button',{name:'移除 <img src=x>合成身份',exact:true}).click();await page.getByRole('button',{name:'确认移除'}).click();await expect(page.locator('#pages [role=status]')).toHaveText('尚未保存账号');expect((await state(page)).stored).toBe(0);expect((await state(page)).removes).toBe(1);
+  await page.getByRole('button',{name:'移除 <img src=x>合成身份',exact:true}).click();await page.getByRole('button',{name:'确认移除'}).click();await expect(page.locator('#pages [role=status]')).toHaveText('尚未保存账号');expect((await state(page)).stored).toBe(0);
+  // ADR-082: explicit removal deletes the account slot and both same-identity renewal banks.
+  expect((await state(page)).removes).toBe(3);
 });
 test('W02 restore rejects expired protected record without opening another native request', async ({page}) => {
   await setup(page);await login(page);await page.evaluate(()=>(globalThis as unknown as {identityFixture:{expire():void}}).identityFixture.expire());await page.getByRole('button',{name:'使用 <img src=x>合成身份',exact:true}).click();

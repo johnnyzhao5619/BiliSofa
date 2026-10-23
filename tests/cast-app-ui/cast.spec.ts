@@ -29,13 +29,15 @@ async function setup(page:Page,variant='normal',decoder='normal'){
 }
 const state=(page:Page)=>page.evaluate(()=>(globalThis as unknown as{castAppFixture:{snapshot():{state:string;opened:number;played:number;closed:number;urls:string[];calls:string[]}}}).castAppFixture.snapshot());
 const send=async(queue:object[],replies:Reply[],action:string,extra='',peer?:number)=>{const before=replies.length;queue.push({action,extra,...(peer===undefined?{}:{peer})});await expect.poll(()=>replies.length).toBeGreaterThan(before);return replies.at(-1)!;};
-async function playing(page:Page){await expect.poll(async()=>(await state(page)).state).toBe('PLAYING');await expect(page.locator('#overlays [role=status]')).toContainText('正在播放');}
+// The empty .tv-cast-state status belongs to the product cast layout; the W02 shell status is the other one.
+// Remote jump uses the shared 10 s default step (ADR-088 D3).
+async function playing(page:Page){await expect.poll(async()=>(await state(page)).state).toBe('PLAYING');await expect(page.locator('#overlays [role=status]:not(.tv-cast-state)')).toContainText('正在播放');}
 async function hidden(page:Page,value:boolean){await page.evaluate(value=>{Object.defineProperty(document,'hidden',{configurable:true,value});document.dispatchEvent(new Event('visibilitychange'));},value);}
 test('W02 real receiver Worker completes the initial handshake and returns actual nonzero timeline; phone controls and Back restore shell focus',async({page},info)=>{
  const h=await setup(page);await playing(page);expect(h.replies[0]!.status).toBe(200);expect(h.replies[0]!.body).toContain('SetAVTransportURIResponse');
  const position=await send(h.queue,h.replies,'GetPositionInfo');expect(position.body).toContain('<TrackDuration>00:01:20</TrackDuration>');expect(position.body).not.toContain('<RelTime>00:00:00</RelTime>');
  expect((await send(h.queue,h.replies,'Pause')).status).toBe(200);await expect.poll(async()=>(await state(page)).state).toBe('PAUSED');
- await page.getByRole('button',{name:'遥控跳到 5 秒'}).click();await expect(page.locator('#overlays [role=status]')).toContainText('已暂停');await expect(page.getByRole('button',{name:'交还手机控制'})).toBeEnabled();
+ await page.getByRole('button',{name:'遥控跳到 10 秒'}).click();await expect(page.locator('#overlays [role=status]:not(.tv-cast-state)')).toContainText('已暂停');await expect(page.getByRole('button',{name:'交还手机控制'})).toBeEnabled();
  const denied=await send(h.queue,h.replies,'Play');expect(denied.status).toBe(500);
  await page.getByRole('button',{name:'遥控暂停 / 继续'}).click();await playing(page);await page.getByRole('button',{name:'交还手机控制'}).click();
  expect((await send(h.queue,h.replies,'Seek','<Unit>REL_TIME</Unit><Target>00:01:00</Target>')).status).toBe(200);await playing(page);await expect(page.getByRole('timer')).toContainText('60.');
@@ -49,7 +51,7 @@ test('W02 source replacement validates again, uses a fresh local token and rejec
  await page.keyboard.press('Escape');await expect(page.getByRole('button',{name:'允许本次官方投屏会话'})).toBeFocused();expect(h.errors).toEqual([]);
 });
 test('W02 Home during source validation closes the receiver and late source success cannot play',async({page})=>{
- const h=await setup(page,'hold-transition');await playing(page);h.queue.push({part:2});await expect(page.locator('#overlays [role=status]')).toContainText('正在切换媒体');await hidden(page,true);await expect(page.locator('#overlays')).toBeEmpty();
+ const h=await setup(page,'hold-transition');await playing(page);h.queue.push({part:2});await expect(page.locator('#overlays [role=status]:not(.tv-cast-state)')).toContainText('正在切换媒体');await hidden(page,true);await expect(page.locator('#overlays')).toBeEmpty();
  await page.waitForTimeout(1300);expect((await state(page)).played).toBe(1);expect((await state(page)).state).toBe('NONE');await hidden(page,false);await expect(page.getByRole('button',{name:'允许本次官方投屏会话'})).toBeFocused();expect(h.errors).toEqual([]);
 });
 test('W02 failed old decoder closure blocks source replacement and future receiver reuse',async({page})=>{

@@ -16,7 +16,9 @@ for (const file of files) {
   manifest[file] = createHash('sha256').update(await readFile(file)).digest('hex');
 }
 const sourceHash = createHash('sha256').update(JSON.stringify(manifest)).digest('hex');
-await cp('apps/tv/public', out, { recursive: true });
+// product-ui.css belongs to the product builds (tools/build-foundation-app.mjs reads it directly);
+// the W01 probe package has an exact file allowlist and never loads it.
+await cp('apps/tv/public', out, { recursive: true, filter: source => !source.endsWith('product-ui.css') });
 await cp('apps/tv/config.xml', `${out}/config.xml`);
 await cp('LICENSE', `${out}/LICENSE`);
 await cp('THIRD_PARTY_NOTICES.md', `${out}/THIRD_PARTY_NOTICES.md`);

@@ -1,6 +1,8 @@
 import {test,expect}from'@playwright/test';
 import {setup,snapshot,tick}from'./fixture.ts';
 test('W04 whole workspace keeps video layer visible, previews intent without seeking and restores card focus on Back',async({page},info)=>{
+  // The synthetic parts are 8–9 s, shorter than the 10 s default step (ADR-088 D3); keep this flow on 5 s.
+  await page.addInitScript(()=>{if(!localStorage.getItem('bilisofa.local.v1.guest'))localStorage.setItem('bilisofa.local.v1.guest',JSON.stringify({schema:1,preferences:{resumePrompt:true,jumpSeconds:5},resume:[]}));});
   const errors=await setup(page);await expect(page.locator('body')).toHaveClass('playing-media');await expect(page.locator('#av-player')).toBeVisible();
   await page.getByRole('button',{name:'暂停 / 继续',exact:true}).click();await expect.poll(async()=>(await snapshot(page)).state).toBe('PAUSED');
   const before=(await snapshot(page)).time;await page.getByRole('button',{name:'预览前进 5 秒',exact:true}).click();await expect(page.getByRole('timer')).toContainText('预览');expect((await snapshot(page)).time).toBe(before);

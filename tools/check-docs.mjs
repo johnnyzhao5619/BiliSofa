@@ -1,7 +1,7 @@
 // Documentation drift gate (2026-10-23). Status pages hold the current state only; per-version
 // history belongs in docs/SIGNING_DEVICE_RECORD.md, the evidence READMEs and docs/archive.
 // Run by `npm run check` (and so by CI). `node tools/check-docs.mjs --self-test` proves each rule fires.
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, normalize } from 'node:path';
 
@@ -72,7 +72,10 @@ function selfTest() {
 
 if (process.argv.includes('--self-test')) selfTest();
 else {
-  const files = execFileSync('git', ['ls-files', '-co', '--exclude-standard', '*.md'], { encoding: 'utf8' }).split('\n').filter(f => f && existsSync(f));
+  // git respects .gitignore; a plain source copy (no .git) falls back to a walk that skips generated trees.
+  const walk = dir => readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? (['node_modules', 'dist', 'build', '.local', '.git'].includes(e.name) ? [] : walk(dir === '.' ? e.name : `${dir}/${e.name}`)) : e.name.endsWith('.md') ? [dir === '.' ? e.name : `${dir}/${e.name}`] : []);
+  let listed; try { listed = execFileSync('git', ['ls-files', '-co', '--exclude-standard', '*.md'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split('\n'); } catch { listed = walk('.'); }
+  const files = listed.filter(f => f && existsSync(f));
   const problems = files.flatMap(f => { const text = readFileSync(f, 'utf8'); return [...rules(f, text), ...links(f, text)]; });
   if (problems.length) { console.error(problems.join('\n')); process.exit(1); }
   console.log(`Documentation drift gate passed (${files.length} Markdown files)`);

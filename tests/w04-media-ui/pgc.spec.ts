@@ -24,6 +24,6 @@ test('F17 a DRM source response never enters the decoder or falls back to an unr
   const errors=await detail(page);
   const {readFileSync}=await import('node:fs');const body=readFileSync('tests/w04-media-ui/vod-api-fixture.js','utf8').replace('__PGC__','1').replace('is_drm:false','is_drm:true');
   await page.route('**/pgc-read/probe.js',route=>route.fulfill({contentType:'text/javascript',body}));
-  await page.locator('.pgc-episode-grid button').first().click();await expect(page.locator('.vod-panel [role=status]')).toHaveText('当前源无法播放（vod.unsupported），可返回选择其他内容或配置');
+  await page.locator('.pgc-episode-grid button').first().click();await expect(page.locator('.vod-panel [role=status]')).toHaveText('这台电视暂时无法播放此视频源，可返回选择其他画质或内容');
   expect((await snapshot(page)).opened).toBe(0);await page.getByRole('button',{name:'返回原卡',exact:true}).click();await expect(page.locator('.pgc-episode-grid button').first()).toBeFocused();expect(errors).toEqual([]);
 });
