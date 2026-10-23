@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "dateUtc": "2026-10-21T19:57:35.879197+00:00",
+  "stage": "U2 continuation and library module candidate; whole U2 and TV acceptance OPEN",
+  "developmentVersion": "0.31.0",
+  "installedVersion": "0.28.0",
+  "uiSourceHash": "ac1680998d5b673895352d42b88e5de2d86c4f13a29d5da38a1df54b3e3c957c",
+  "manifestSha256": "c868190ecee475247a9f6b374e9838c4809cb7da31254e130456d829cf21b0c4",
+  "frozenVerified": [
+    {
+      "root": "dist/recommend-app",
+      "sourceHash": "580a87361f75e09c4092f1827ab48c175da45a7df422c742c43373a12f98774d",
+      "filesVerified": 27,
+      "manifestSha256": "07b060c43fc83263ee48501f918e999116946fde88690d755544def4ac8e5149"
+    },
+    {
+      "root": "dist/u1-app",
+      "sourceHash": "9a825d3ed159405233441602edb6d188eb0efeedb07a1f57ff730326f4cddfcf",
+      "filesVerified": 27,
+      "manifestSha256": "7a2c2c09664e09dbcd99cb6e2443aa56295cb20041bb840c8258e34565b3264c"
+    },
+    {
+      "root": "dist/product-ui-app",
+      "sourceHash": "def0d19dc94d043ea51f8765c302a6d04631ded210c2ac779e588a5f6cb699ba",
+      "filesVerified": 27,
+      "manifestSha256": "ad881c566d606d66e3030713413cece08305819930fff389d76491e6b396cd65"
+    }
+  ],
+  "screenshots": {
+    "home-local-offline-synthetic.png": "2f167df3cbaf2287913fc51e96cd14a83068ca56058e8c404c36ab6b41c77ba2",
+    "library-local-synthetic.png": "d7b6d0dfdea39da26625d8364239d08fc34f16ce5cbe624b1393be0dcea43a67",
+    "library-folders-synthetic.png": "67b966e905d3f1e6fca8e59aa775cd4ad9ade827bfff64e9714f4e6885ccb383"
+  },
+  "boundaries": [
+    "631 unit/contracts and 46 synthetic UI passed; no retail TV claim",
+    "Public art, native C, identity, private data and media are synthetic test boundaries",
+    "No WGT, signing, deployment, account POST, commit or publication",
+    "Old cloud write grants and logs preserved; live and real dual account excluded",
+    "Whole U2, playback/account UI, real CORS/decoder/Voice Guide/readability/performance remain OPEN"
+  ],
+  "checks": {
+    "strictModules": 272,
+    "unitContractsPassed": 631,
+    "syntheticUiPassed": 46,
+    "libraryUi": 9,
+    "shellUi": 7,
+    "legacyPrivateUi": 30
+  }
+}

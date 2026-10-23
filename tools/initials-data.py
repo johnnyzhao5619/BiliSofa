@@ -1,6 +1,6 @@
 """Validate the pinned AOSP dictionary and derive local search-word suggestions only."""
 from pathlib import Path
-import hashlib,json,re
+import hashlib,json,re,argparse
 root=Path(__file__).resolve().parents[1];source=root/'packages/search/data'
 raw=(source/'rawdict_utf16_65105_freq.txt').read_bytes();notice=(source/'AOSP-NOTICE').read_bytes()
 if hashlib.sha256(raw).hexdigest()!='408700f28a56091fa07f3b849a0f134fbfc71e6b2ae9b3f52973a5b076f599ff' or hashlib.sha256(notice).hexdigest()!='b5830d96fb5a7e7e7ebcc295f352846b4b998e78fdc8f9aa68e134d2e4b39986':raise SystemExit('Pinned dictionary/notice hash mismatch')
@@ -15,6 +15,8 @@ for _freq,word,initials in sorted(rows,key=lambda r:(-r[0],r[1],r[2])):
  if (word,initials) not in seen:seen.add((word,initials));words.append([word,initials])
 payload=(json.dumps(words,ensure_ascii=False,separators=(',',':'))+'\n').encode()
 if len(payload)>2*1024*1024:raise SystemExit('Suggestion asset too large')
-out=root/'dist/probe';out.mkdir(parents=True,exist_ok=True)
+parser=argparse.ArgumentParser();parser.add_argument('--output',default='dist/probe');args=parser.parse_args();out=(root/args.output).resolve()
+if not out.is_relative_to(root/'dist') or out.is_symlink():raise SystemExit('Suggestion output must be project dist')
+out.mkdir(parents=True,exist_ok=True)
 (out/'search-words.json').write_bytes(payload);(out/'search-NOTICE').write_bytes(notice)
 print(json.dumps({'upstreamRows':len(rows),'suggestionRows':len(words),'bytes':len(payload),'sha256':hashlib.sha256(payload).hexdigest()}))

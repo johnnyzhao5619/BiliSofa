@@ -1,17 +1,10 @@
-import { DomainError, finite, record, text } from '../../contracts/src/index.ts';
-export interface Danmaku { id: string; timeMs: number; mode: 'scroll' | 'top' | 'bottom'; color: number; content: string; }
+import { DomainError, finite } from '../../contracts/src/index.ts';
+import { parseOverlayDanmaku, type OverlayDanmaku } from '../../contracts/src/overlay-read.ts';
+export type Danmaku = OverlayDanmaku;
 // Controlled normalized records. Protobuf/XML transport decoding is still an integration gate.
 export function parseDanmaku(value: unknown): Danmaku[] {
-  if (!Array.isArray(value) || value.length > 20000) throw new DomainError('invalid');
-  const ids = new Set<string>();
-  return value.map<Danmaku>(item => {
-    const v = record(item);
-    const id = text(v.id); if (ids.has(id)) throw new DomainError('invalid'); ids.add(id);
-    const mode = v.mode;
-    if (mode !== 'scroll' && mode !== 'top' && mode !== 'bottom') throw new DomainError('unsupported');
-    const color = finite(v.color, 0, 0xffffff); if (!Number.isInteger(color)) throw new DomainError('invalid');
-    return { id, timeMs: finite(v.timeMs, 0, 86400000), mode, color, content: text(v.content, 512) };
-  }).sort((a, b) => a.timeMs - b.timeMs);
+  if (Array.isArray(value) && value.some(v => v && typeof v === 'object' && 'mode' in v && !['scroll', 'top', 'bottom'].includes(String(v.mode)))) throw new DomainError('unsupported');
+  return parseOverlayDanmaku(value);
 }
 export class DanmakuTimeline {
   private records: Danmaku[] = [];

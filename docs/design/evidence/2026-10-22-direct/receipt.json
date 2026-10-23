@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.38.0",
+  "uiSourceHash": "467d4be211909a2ac524152615e131b6605401072244b40042336ce62576068d",
+  "uiManifestSha256": "dd45e00b5c6966783a4b8e30dad86a64add0ec925b9bc8b1ca8c2a35d931dce0",
+  "unsignedSha256": "adf1304f6b13649abb3078bcd5cf2c84e5751f9ba1995bfbfac7af67843d161a",
+  "signedSha256": "f94b79eb2bf46c1a5de11fb7b9e69cf2ec7b6d6128f0f35e773edfe9bf8a4da9",
+  "signedAt": "2026-10-22T18:29:34.911594+00:00",
+  "sourceArchiveSha256": "95052aada3158d08111e1f50e23f3e190e18b63398f475c0085023b912e46463",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.38.0",
+        "signedSha256": "f94b79eb2bf46c1a5de11fb7b9e69cf2ec7b6d6128f0f35e773edfe9bf8a4da9",
+        "uiSourceHash": "467d4be211909a2ac524152615e131b6605401072244b40042336ce62576068d",
+        "startedAt": "2026-10-22T18:30:28.334534+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.38.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.38.0",
+      "signedSha256": "f94b79eb2bf46c1a5de11fb7b9e69cf2ec7b6d6128f0f35e773edfe9bf8a4da9",
+      "uiSourceHash": "467d4be211909a2ac524152615e131b6605401072244b40042336ce62576068d",
+      "startedAt": "2026-10-22T18:30:28.334534+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "verification": {
+    "modules": 288,
+    "unitContractPassed": 650,
+    "newUiPassed": 12,
+    "retainedPlayerSettingsUiPassed": 13,
+    "retainedBrowseUiPassed": 8,
+    "packageNegativePassed": 6,
+    "uiSourceInputs": 246,
+    "uiOutputFiles": 27,
+    "frozenFilesVerified": 270,
+    "nativeModulesUnchanged": 17,
+    "nativeResourcesUnchanged": 68
+  },
+  "deviceUserAcceptance": "UNVERIFIED",
+  "agentRealAccountPosts": 0,
+  "inheritedUserAcceptance": {
+    "version": "0.37.0",
+    "watchLaterRateBackHome": "USER_PASS",
+    "like": "USER_FAIL_API_-403_AND_READ_FALSE",
+    "follow": "USER_FAIL_DISABLED"
+  },
+  "likeRejectionRootCause": "OPEN_SERVICE_REFUSAL_NOT_DIAGNOSED",
+  "followMissingMidCompatibility": "IMPLEMENTED_TV_EFFECT_UNVERIFIED",
+  "fractionalRatePlayback": "NOT_IMPLEMENTED_AVPLAY_BACKEND_LIMIT"
+}

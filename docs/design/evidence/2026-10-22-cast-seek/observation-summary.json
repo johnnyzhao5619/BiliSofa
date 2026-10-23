@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "kind": "DERIVED_NUMERIC_DEVICE_OBSERVATION",
+  "observedVersion": "0.41.0",
+  "observedUiSourceHash": "ea90c9c60a7fde86a2f75b49478ddc83b21fb9d2961d24ed2726e60d19ea506b",
+  "observedSignedSha256": "e6e0d25caa11f13e3b3ca542a54b8d9024543c4b69411f64da7f53e0aa212292",
+  "privateNumericTraceSha256": "df65fec7f8183e9d30987e643044cdaa29d5ad4557bf1f7f8543eebf960c88f2",
+  "rawTracePublished": false,
+  "debugScriptByteHashMatchedFrozenApp": true,
+  "userResult": "FIRST_CAST_REWIND_STILL_PRESENT",
+  "initialCommand": {
+    "targetMs": 4000,
+    "actualMs": 1545,
+    "durationMs": 86366,
+    "state": "playing",
+    "first": true,
+    "startedAgo": 2167,
+    "seeking": false,
+    "owner": "sender"
+  },
+  "followingObservedOperations": [
+    "restart_seek_at_4000",
+    "prepare_offset_at_4000"
+  ],
+  "firstValidPostReopenSdkTimeMs": 16,
+  "laterReceivedZeroSeekCount": 2,
+  "sdkOffsetIgnoredReason": "UNRESOLVED",
+  "reasonPhoneSelected4s": "UNRESOLVED",
+  "temporaryObserver": "REMOVED",
+  "newCandidateUserResult": "UNVERIFIED"
+}

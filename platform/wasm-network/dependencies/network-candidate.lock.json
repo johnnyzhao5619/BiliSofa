@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "status": "W01-build-candidate-not-approved-for-credentials",
+  "checkedAt": "2026-10-16",
+  "compiler": "Samsung Emscripten 1.39.4.7",
+  "openssl": {
+    "version": "3.5.9",
+    "archive": "openssl-3.5.9.tar.gz",
+    "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz",
+    "sha256": "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a",
+    "checksumSource": "https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz.sha256",
+    "license": "Apache-2.0"
+  },
+  "curl": {
+    "version": "8.23.0",
+    "archive": "curl-8.23.0.tar.xz",
+    "url": "https://curl.se/download/curl-8.23.0.tar.xz",
+    "sha256": "8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5",
+    "checksumSource": "https://api.github.com/repos/curl/curl/releases/tags/curl-8_23_0",
+    "license": "curl",
+    "patches": [
+      {
+        "file": "patches/curl-8.23.0-tizen-close-drain.patch",
+        "sha256": "45ba2a950f4bd8c66d8247d908c0228ec0113bc7ffd5adaaf0a42bacf4d77edf",
+        "target": "lib/cf-socket.c",
+        "inputSha256": "310bc07d404aec6be2569a6984691647a429d9f9267ec31a834ed80c6732dab4",
+        "outputSha256": "6f5d38331cd6ba0d4f7ef70fd6c19c7133d17d170e947fb3abbc426e10bbde5b"
+      }
+    ]
+  }
+}

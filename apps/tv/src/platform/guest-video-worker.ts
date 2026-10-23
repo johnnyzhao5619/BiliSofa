@@ -5,5 +5,5 @@ export class GuestVideoWorker extends ScopedGuestWorker<GuestVideoRequest, Guest
 }
 
 export class GuestBridgeWorker extends ScopedGuestWorker<GuestVideoRequest, GuestBridgeEvent> {
-  constructor() { super('guest-video-worker.js', 'guest-video-play', value => { const q = parseGuestVideoRequest(value); if (q.operation !== 'guest-video-play') throw new Error('invalid'); return q; }, parseGuestBridgeEvent, 1050000, 12000, (q, r) => !r.summary || r.summary.bvid === q.bvid, true); }
+  constructor() { super('guest-video-worker.js', 'guest-video-play', value => { const q = parseGuestVideoRequest(value); if (q.operation !== 'guest-video-play') throw new Error('invalid'); return q; }, parseGuestBridgeEvent, 1050000, 12000, (q, r) => !r.summary || r.summary.bvid === q.bvid, true, 9); }
 }

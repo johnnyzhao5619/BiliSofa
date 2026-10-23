@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "capturedAtUtc": "2026-10-21T18:23:32.987774+00:00",
+  "surface": "Codex in-app browser / desktop only",
+  "buildDirectory": "dist/recommend-app",
+  "buildSourceHash": "580a87361f75e09c4092f1827ab48c175da45a7df422c742c43373a12f98774d",
+  "buildConfigSha256": "87f1fbe53061ff92d95effb1913540499fc520792f61b9426c9f7c7d8e47950a",
+  "appCodeUnmodified": true,
+  "privateAccountAccessed": false,
+  "runtimeViewport": {
+    "width": 1745,
+    "height": 982,
+    "devicePixelRatioApprox": 1.1,
+    "documentWidth": 1920,
+    "documentHeight": 1080
+  },
+  "limits": [
+    "No retail-TV screenshot or AVPlay observation",
+    "No real content list, media playback, TV Voice Guide or lifecycle acceptance",
+    "Build static acceptance label is older than later user receipts"
+  ],
+  "files": [
+    {
+      "file": "01-current-home.png",
+      "pixelSize": [
+        1745,
+        982
+      ],
+      "sha256": "2af8ad582f039e48f4c8da8d4036f225e8c5cc4dd99021adb0f7226e189999f7",
+      "reviewedSavedFile": true
+    },
+    {
+      "file": "02-current-settings.png",
+      "pixelSize": [
+        1745,
+        982
+      ],
+      "sha256": "62d68e0c218c84165f8cb2ab8bd3566787665dec6be7b46d4acb327c6d4e41a4",
+      "reviewedSavedFile": true
+    },
+    {
+      "file": "03-current-bookmarks-empty.png",
+      "pixelSize": [
+        1745,
+        982
+      ],
+      "sha256": "506ce5b332512b5d8c8373e169f749b03790b93a49382be2dd7b8be302aa313d",
+      "reviewedSavedFile": true
+    },
+    {
+      "file": "04-current-search-input.png",
+      "pixelSize": [
+        1745,
+        982
+      ],
+      "sha256": "0df49bc614d2a89486f8537d071530bc3e8cfd8a2c19786a9f7b1658728c96ce",
+      "reviewedSavedFile": true
+    }
+  ]
+}

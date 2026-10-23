@@ -38,4 +38,4 @@
 - 本地资源build→配置/入口/资源/许可证检查→私密profile签名。保存author身份用于升级，distributor/DUID/权限级别单列；公开包无私钥/设备身份。
 - 发布包无HMR/dev server；安装后独立启动/重启/Home/升级/数据保持分别验收。开发侧载、Seller Office上架分开，MIT或签名不等于认证。
 - 记录 source→API/simulator→TV证据，附固件、包hash、构建/签名版本、步骤、预期/实际、匿名附件及PASS/FAIL/BLOCKED/UNVERIFIED。
-- 本次仅研究/文档/skill，未SDK安装/构建部署/业务测试/TV验证；后续按用户授权及 [ACCEPTANCE](ACCEPTANCE.md)执行。
+- 当前实施/工件/真机结果以[实施状态](IMPLEMENTATION_STATUS.md)、[签名部署](SIGNING_DEVICE_RECORD.md)和[ACCEPTANCE](ACCEPTANCE.md)分层记录；本页的平台规则本身不证明某版已验收。

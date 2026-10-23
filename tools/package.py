@@ -4,7 +4,7 @@ import hashlib,json,zipfile,xml.etree.ElementTree as ET
 
 root=Path(__file__).resolve().parents[1]
 source=root/'dist/probe'
-required={'config.xml','index.html','icon.png','app.js','probe-worker.js','probe.wasm','probe.css','LICENSE','THIRD_PARTY_NOTICES.md','build.json','initials-worker.js','search-words.json','search-NOTICE','guest-worker.js','guest-video-worker.js','cast-worker.js'}
+required={'config.xml','index.html','icon.png','app.js','probe-worker.js','probe.wasm','probe.css','LICENSE','THIRD_PARTY_NOTICES.md','build.json','initials-worker.js','search-words.json','search-NOTICE','guest-worker.js','guest-video-worker.js','cast-worker.js','session-worker.js'}
 files={str(p.relative_to(source)):p for p in source.rglob('*') if p.is_file()}
 if not required.issubset(files): raise SystemExit('Missing build inputs: run npm run build first')
 if set(files)-required: raise SystemExit('Unexpected package files; native packaging needs explicit license/build integration')

@@ -20,6 +20,7 @@
 #include "probe-guest.h"
 #include "probe-bridge.h"
 #include "probe-cast.h"
+#include "probe-session.h"
 
 static void outcome(const char *id, int result) { printf("PROBE:%s:%d\n", id, result); fflush(stdout); }
 static int readable(int fd) {
@@ -150,6 +151,10 @@ done:
 }
 int main(int argc, char **argv) {
 #ifdef __EMSCRIPTEN__
+  if(argc==3 && !strcmp(argv[1],"session-wire")) {
+    if(!session_begin(argv[2]))emscripten_set_main_loop(session_tick,20,0);
+    return 0;
+  }
   if(argc==5 && !strcmp(argv[1],"cast")) {
     int result=cast_begin(argv[2],argv[3],argv[4]);
     if(result){printf("CAST:failed:%d\n",result);fflush(stdout);}else emscripten_set_main_loop(cast_tick,20,0);
@@ -162,7 +167,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 #else
-  (void)bridge_begin; (void)bridge_tick; (void)cast_begin; (void)cast_tick;
+  (void)bridge_begin; (void)bridge_tick; (void)cast_begin; (void)cast_tick;(void)session_begin;(void)session_tick;
 #endif
   if (argc == 3 && !strcmp(argv[1], "guest-view")) { guest_video(argv[2], NULL, NULL); return 0; }
   if (argc == 4 && !strcmp(argv[1], "guest-playurl")) { guest_video(argv[2], argv[3], NULL); return 0; }

@@ -220,3 +220,19 @@ test('W01/F20 HTTPS-candidate policy reasons are complete even when the original
   const { parseCastProbeResult } = await import('../../packages/contracts/src/cast-probe.ts');
   for (const reason of SOURCE_POLICY_REASONS) assert.equal(parseCastProbeResult({ version: 1, operation: 'cast-discovery', scope: { accountId: 'guest', generation: 1, mediaSessionId: 'cast-discovery', requestId: 'r1' }, closed: false, code: 'cast.source_policy_' + reason }).code, 'cast.source_policy_' + reason);
 });
+
+
+test('W01/F20 exact Bilibili Akamai host keeps path, format, deadline and HTTPS gates without granting the shared CDN', async () => {
+  const { BILI_CAST_AKAM_HOST, planSoapMediaProbe, inspectSoapProbeCandidate } = await import('../../packages/cast/src/soap.ts');
+  const node = uri.replace('cdn.bilivideo.com', BILI_CAST_AKAM_HOST);
+  assert.equal(validateSoapMediaOffer(offer(node), now).url, node);
+  assert.equal(inspectSoapProbeCandidate(offer(node), now), 'supported');
+  const upgraded = planSoapMediaProbe(offer(node.replace('https:', 'http:')), now);
+  assert.equal(upgraded.url, node); assert.equal(upgraded.upgraded, true);
+  for (const host of ['akamaized.net','other.akamaized.net','x.'+BILI_CAST_AKAM_HOST,BILI_CAST_AKAM_HOST+'.evil.invalid',BILI_CAST_AKAM_HOST+'.',BILI_CAST_AKAM_HOST+':8443','user:secret@'+BILI_CAST_AKAM_HOST]) {
+    const request = offer(node.replace(BILI_CAST_AKAM_HOST,host));
+    assert.throws(()=>planSoapMediaProbe(request,now));
+    assert.equal(inspectSoapProbeCandidate(request,now),'destination');
+  }
+  for (const value of [node.replace('/upgcxcode/','/outside/'),node.replace('.mp4?','.m4s?'),node.replace('.mp4?','.m3u8?'),node.replace('1800000120','1800000001'),node+'&deadline=1800000120',node.replace('deadline=','ignored='),node+'#fragment',node.replace('https:','file:')]) assert.throws(()=>validateSoapMediaOffer(offer(value),now));
+});

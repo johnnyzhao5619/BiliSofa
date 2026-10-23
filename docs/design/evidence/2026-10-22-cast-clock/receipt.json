@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.43.0",
+  "uiSourceHash": "ec2d310790487fb7dae89b4be66eb5289fafe643b45c978131938ea0648a52a9",
+  "uiManifestSha256": "2d943bbb1bd9dd8096d4a173dce496679a68190d0d89e9587f5e4fbf5405e808",
+  "unsignedSha256": "185ba0f5c0205e28820857c1c0aad255b9b2fdc1c29b0e1d8445a56a49bab1ef",
+  "signedSha256": "2b5ea165e072683f8ce460417dc6c15c438f7f63566b84a2561b308de8fb49ea",
+  "signedAt": "2026-10-23T00:28:48.187259+00:00",
+  "sourceArchiveSha256": "7028663b9ab41e8c870cdcd188271a3b052cebf981ec773a5bf0df22bdb72305",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.43.0",
+        "signedSha256": "2b5ea165e072683f8ce460417dc6c15c438f7f63566b84a2561b308de8fb49ea",
+        "uiSourceHash": "ec2d310790487fb7dae89b4be66eb5289fafe643b45c978131938ea0648a52a9",
+        "startedAt": "2026-10-23T00:30:09.441957+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.43.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.43.0",
+      "signedSha256": "2b5ea165e072683f8ce460417dc6c15c438f7f63566b84a2561b308de8fb49ea",
+      "uiSourceHash": "ec2d310790487fb7dae89b4be66eb5289fafe643b45c978131938ea0648a52a9",
+      "startedAt": "2026-10-23T00:30:09.441957+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "verification": {
+    "modules": 291,
+    "unitContractPassed": 676,
+    "castSeekUiPassed": 6,
+    "castClockUiPassed": 4,
+    "retainedCastOwnershipUiPassed": 7,
+    "retainedRecoveryUiPassed": 7,
+    "retainedSettingsUiPassed": 6,
+    "packageNegativePassed": 6,
+    "uiSourceInputs": 249,
+    "uiOutputFiles": 27,
+    "frozenFilesVerified": 405,
+    "nativeModulesUnchanged": 17,
+    "nativeResourcesUnchanged": 68
+  },
+  "deviceUserAcceptance": "REQUESTED_ANDROID_GROUP_AND_IPHONE_FIRST_CAST_USER_PASS",
+  "agentRealAccountPosts": 0,
+  "observedPriorFailure": "../2026-10-22-cast-seek/observed-042-summary.json",
+  "inheritedUserAcceptance": {
+    "version": "0.41.0",
+    "androidDeliberateSeekAndStop": "USER_PASS",
+    "requestedIPhoneCheck": "USER_PASS_WITH_PROCESS_FIRST_STARTUP_EXCEPTION",
+    "firstCastAfterAppRestartAndroidAndIPhone": "USER_FAIL",
+    "accountRecovery040RequestedGroup": "USER_PASS"
+  },
+  "seekPolicy": {
+    "activeNonzero": "NATIVE_SEEK_WITHOUT_PAUSE_OR_REOPEN",
+    "sameCurrentWholeSecond": "IDEMPOTENT_COMPLETION_WITHOUT_SDK",
+    "freshPositionMaximumAgeMs": 1000,
+    "fractionalOrPausedSeekUnchanged": true,
+    "pausedAndExplicitZero": "RETAINED_RESTART_PATH",
+    "nearZeroMerge": "DISABLED_IN_THIS_CANDIDATE",
+    "actualTimeNotOverwritten": true,
+    "callbacksAndTargetTicksSeparate": true,
+    "failureRetry": "NONE",
+    "operationDeadlineUnchanged": true
+  },
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "requestedUserResults": {
+    "androidFirstStartup": "USER_PASS",
+    "androidNonzeroSeek": "USER_PASS_ACTUAL_TARGET_55S_RECORDED",
+    "androidPauseContinue": "USER_PASS",
+    "androidReturnZeroAndStop": "USER_PASS",
+    "exact30sAutomaticTarget": "NOT_RECORDED",
+    "iPhoneCurrentBuildFirstCast": "USER_PASS",
+    "iPadCurrentBuildAffectedMatrix": "NOT_TESTED",
+    "sourceDependentSeekPrecision": "OPEN",
+    "temporaryObserver": "REMOVED",
+    "iPhoneAudioVideoAndClocks": "USER_PASS",
+    "iPhonePhoneStop": "USER_PASS",
+    "iPhoneTemporaryObserver": "PROCESS_ENDED_AFTER_INSPECTOR_TIMEOUT_REMOTE_CLEANUP_UNCONFIRMED",
+    "f11FollowToggleAndRestore": "USER_PASS",
+    "f11FavoriteCancelAddRemoveAndRestore": "USER_PASS",
+    "f11PlaybackBackAndHome": "USER_PASS"
+  },
+  "derivedUserEvidence": "observed-043-summary.json",
+  "derivedIPhoneUserEvidence": "observed-043-ios-summary.json",
+  "iPhonePostTestCleanup": {
+    "collectorProcess": "ENDED",
+    "ownedAppTermination": "SDB_TIMEOUT_UNCONFIRMED",
+    "remoteTraceDeletion": "CONNECTION_UNAVAILABLE_UNCONFIRMED",
+    "normalRelaunch": "NOT_ATTEMPTED_AFTER_UNCONFIRMED_TERMINATION",
+    "packageOrUserDataChanged": false
+  },
+  "f11Evidence": "F11_ACCEPTANCE_READY.md",
+  "subsequentOwnedProcessCleanup": {
+    "termination": "PLATFORM_CONFIRMED",
+    "oldObserverProcessEnded": true,
+    "normalRelaunch": "TIMEOUT_UNCONFIRMED",
+    "debugRelaunch": "TIMEOUT_UNCONFIRMED",
+    "currentForeground": "UNVERIFIED",
+    "freshSdbCapabilityAfterSameTargetReconnect": "CONFIRMED",
+    "noReinstallOrDataDeletion": true
+  }
+}

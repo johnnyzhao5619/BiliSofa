@@ -39,6 +39,9 @@ worker.onmessage = async event => {
     },
     print(line) {
       if (line !== 'GUEST:closed' || completed) return;
+      // Wait until native cleanup/stdio has returned before reading WASM exports.
+      setTimeout(() => {
+      if (completed) return;
       if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'guest.cancelled' }); return; }
       const module = worker.Module!;
       let status = 0;
@@ -54,6 +57,7 @@ worker.onmessage = async event => {
         const parsed = parsePopularBody(new TextDecoder('utf-8', { fatal: true }).decode(heap.subarray(start, start + length)));
         finish({ kind: parsed.apiCode === 0 ? 'ok' : 'api_error', status, code: parsed.apiCode === 0 ? 'guest.popular_ok' : 'guest.api_error', ...parsed });
       } catch { finish({ kind: 'invalid_response', status: status >= 100 && status <= 599 ? status : 0, code: 'guest.invalid_response' }); }
+      }, 0);
     },
     printErr() {},
     // Runtime abort is deliberately not a closed:true response. Parent timeout

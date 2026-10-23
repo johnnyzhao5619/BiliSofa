@@ -22,7 +22,7 @@ class BridgeTest(unittest.TestCase):
     if cls.bad=='encoding':self.send_header('Content-Encoding','gzip')
     self.send_header('X-Fixture','anonymous');self.send_header('Set-Cookie','synthetic=never-forward');self.end_headers()
     try:
-     if cls.bad=='stall' or cls.bad=='stall-once' and len(cls.received)==1 or cls.bad=='preheader-then-stall' and len(cls.received)==2:time.sleep(1.5)
+     if cls.bad=='parallel-both-stall' or cls.bad=='parallel-stall' and a in [0,512] and b==a+511 or cls.bad=='stall' or cls.bad=='stall-once' and len(cls.received)==1 or cls.bad=='preheader-then-stall' and len(cls.received)==2:time.sleep(1.5)
      if cls.bad in ['partial-once','partial-large','partial-bad-total'] and len(cls.received)==1:
       prefix=65659 if cls.bad=='partial-large' else 123
       self.wfile.write(body[:prefix]);self.wfile.flush();time.sleep(1.5);return
@@ -53,25 +53,27 @@ static int bridge_test_close(int fd) { int rc=close(fd); if(inject_close_error){
 static double fixture_offset=0;
 static double fixture_now(void){return http_now()+fixture_offset;}
 #define http_now fixture_now
-static int fixture_accept(int listener){int fd=http_accept(listener);if(fd>=0){int bytes=16384;setsockopt(fd,SOL_SOCKET,SO_SNDBUF,&bytes,sizeof(bytes));}return fd;}
+static int fixture_sendbuf=16384;
+static int fixture_accept(int listener){int fd=http_accept(listener);if(fd>=0){int bytes=fixture_sendbuf;setsockopt(fd,SOL_SOCKET,SO_SNDBUF,&bytes,sizeof(bytes));}return fd;}
 #define http_accept fixture_accept
 #include "probe-bridge.h"
 int main(int argc,char **argv) {
  (void)bridge_progressive_begin;(void)http_probe;(void)guest_popular;(void)guest_video;
  if(argc<2)return 2;
+ if(argc>2 && !strcmp(argv[2],"progressive50"))fixture_sendbuf=1048576;
  if(!strcmp(argv[1],"lease")) {
   if(bridge_probe_lease(12000,3600,3600)!=180 || bridge_probe_lease(264000,3600,3600)!=324 || bridge_probe_lease(536000,3600,3600)!=596 || bridge_probe_lease(7200000,3600,3600)!=900)return 10;
   if(bridge_probe_lease(264000,75,3600)!=75 || bridge_probe_lease(264000,3600,55)!=55)return 11;
   return 0;
  }
  char url[256];snprintf(url,sizeof(url),"https://fixture.bilivideo.com/a.m4s?deadline=%llu",(unsigned long long)time(NULL)+3600);
- if(argc>2){if(bridge_progressive_begin("0123456789abcdef0123456789abcdef",url,300,3145736ULL))return 12;}
+ if(argc>2){if(bridge_progressive_begin("0123456789abcdef0123456789abcdef",url,300,argc>3?strtoull(argv[3],NULL,10):3145736ULL))return 12;}
  else if(bridge_begin("BV0000000001","0123456789abcdef0123456789abcdef",url,url,"12000,640,360,500000,66000,914,6546,836,6348,avc1.64001E"))return 3;
  snprintf(bridge_urls[0],sizeof(bridge_urls[0]),"http://127.0.0.1:%d/video",atoi(argv[1]));snprintf(bridge_urls[1],sizeof(bridge_urls[1]),"http://127.0.0.1:%d/audio",atoi(argv[1]));
  double start=http_now();
  while(http_now()-start<150 && bridge_fd>=0) {
-  bridge_tick();struct pollfd input={0,POLLIN,0};if(poll(&input,1,0)>0 && (input.revents&POLLIN)){char c;read(0,&c,1);if(c=='p'){int paused=0;for(int i=0;i<BRIDGE_CLIENTS;i++)paused+=bridge_clients[i].paused;puts(paused?"FIXTURE:paused":"FIXTURE:reading");fflush(stdout);continue;}if(c=='a'){fixture_offset+=21;puts("FIXTURE:advanced");fflush(stdout);continue;}if(c=='b'){bridge_stream_bytes=BRIDGE_STREAM_BUDGET-256;puts("FIXTURE:budget");fflush(stdout);continue;}if(c=='w'){bridge_windows=256;puts("FIXTURE:windows");fflush(stdout);continue;}if(c=='t'){bridge_deadline=http_now()-1;continue;}if(c=='e')inject_close_error=1;break;}
-  struct timespec delay={0,2000000};nanosleep(&delay,NULL);
+  bridge_tick();struct pollfd input={0,POLLIN,0};if(poll(&input,1,0)>0 && (input.revents&POLLIN)){char c;read(0,&c,1);if(c=='p'){int paused=0;for(int i=0;i<BRIDGE_CLIENTS;i++)paused+=bridge_clients[i].paused;puts(paused?"FIXTURE:paused":"FIXTURE:reading");fflush(stdout);continue;}if(c=='a'){fixture_offset+=21;puts("FIXTURE:advanced");fflush(stdout);continue;}if(c=='i' || c=='q'){for(int i=0;i<BRIDGE_CLIENTS;i++)if(bridge_clients[i].fd>=0 && bridge_clients[i].response_start==(c=='i'?0:512) && bridge_clients[i].response_end==(c=='i'?511:1023))bridge_clients[i].upstream_deadline=http_now()-1;bridge_retry_count=3;puts("FIXTURE:one_timeout");fflush(stdout);continue;}if(c=='b'){bridge_stream_bytes=BRIDGE_STREAM_BUDGET-256;puts("FIXTURE:budget");fflush(stdout);continue;}if(c=='w'){bridge_windows=256;puts("FIXTURE:windows");fflush(stdout);continue;}if(c=='t'){bridge_deadline=http_now()-1;continue;}if(c=='e')inject_close_error=1;break;}
+  struct timespec delay={0,argc>2 && !strcmp(argv[2],"progressive50")?50000000:2000000};nanosleep(&delay,NULL);
  }
  bridge_stop();puts("CLOSED_WHILE_PROCESS_ALIVE");fflush(stdout);struct timespec alive={1,0};nanosleep(&alive,NULL);return bridge_unconfirmed?4:0;
 }
@@ -84,9 +86,9 @@ int main(int argc,char **argv) {
   self.process=subprocess.Popen([str(self.exe),str(self.upstream.server_port)],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
   self.assertEqual(self.line().strip(),'BRIDGE:ready')
  def line(self):
-  for _ in range(10):
+  for _ in range(64):
    line=self.process.stdout.readline()
-   if line.startswith('BRIDGE:flow:') or line.startswith('BRIDGE:limit:') or line.startswith('BRIDGE:retry:') or line.startswith('BRIDGE:resume:'):
+   if line.startswith('BRIDGE:flow:') or line.startswith('BRIDGE:limit:') or line.startswith('BRIDGE:retry:') or line.startswith('BRIDGE:resume:') or line.startswith('BRIDGE:pump:') or line.startswith('BRIDGE:read_mib:'):
     self.observations.append(line.strip());continue
    return line
   self.fail('too many bounded snapshot frames')
@@ -100,6 +102,22 @@ int main(int argc,char **argv) {
   self.process.stdin.write('s');self.process.stdin.flush();self.process.communicate(timeout=5)
   self.process=subprocess.Popen([str(self.exe),str(self.upstream.server_port),'progressive'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
   self.assertEqual(self.line().strip(),'BRIDGE:ready')
+ def test_large_synthetic_init_is_forwarded_at_real_20hz_without_a_whole_header_buffer(self):
+  original=type(self).payload
+  try:
+   type(self).payload=bytes(range(256))*(44*1024*1024//256)
+   self.process.stdin.write('s');self.process.stdin.flush();self.process.communicate(timeout=5)
+   self.process=subprocess.Popen([str(self.exe),str(self.upstream.server_port),'progressive50',str(len(self.payload))],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+   self.assertEqual(self.line().strip(),'BRIDGE:ready');start=time.monotonic()
+   request=urllib.request.Request(f'http://127.0.0.1:{self.port}/{TOKEN}/cast.mp4',headers={'Range':'bytes=0-'})
+   with urllib.request.urlopen(request,timeout=15) as response:body=response.read()
+   self.assertEqual(body,self.payload);self.assertLess(time.monotonic()-start,15)
+   self.process.stdin.write('p');self.process.stdin.flush()
+   for _ in range(10):
+    if self.line().startswith('FIXTURE:'):break
+   self.assertIn('BRIDGE:pump:burst',self.observations)
+   self.assertGreaterEqual(len(self.received),22)
+  finally:type(self).payload=original
  def test_progressive_cast_route_serves_head_and_single_ranges_without_manifest_or_audio_routes(self):
   self.progressive();self.assertEqual(self.fetch('cast.mp4',method='HEAD')[2],b'')
   status,headers,body=self.fetch('cast.mp4',{'Range':'bytes=64-575'});self.assertEqual(status,206);self.assertEqual(body,self.payload[64:576]);self.assertEqual(headers['Content-Type'],'video/mp4')
@@ -202,6 +220,39 @@ int main(int argc,char **argv) {
   with socket.create_connection(('127.0.0.1',self.port),timeout=5) as client:
    client.sendall(f'GET /{TOKEN}/cast.mp4 HTTP/1.1\r\n\r\n'.encode());response=http.client.HTTPResponse(client);response.begin();self.assertEqual(response.status,200);prefix=response.read(65659);self.advance_timeout();self.assertEqual(prefix+response.read(),self.payload)
   self.assertEqual([h['Range'] for h in self.received],['bytes=0-2097151','bytes=65659-2097151',f'bytes=2097152-{len(self.payload)-1}']);self.assertEqual(self.line().strip(),'BRIDGE:served:1')
+ def test_timeout_of_one_range_does_not_invalidate_another_range_still_forwarding_media(self):
+  self.progressive();type(self).bad='parallel-stall'
+  with self.begin_range() as stale, socket.create_connection(('127.0.0.1',self.port),timeout=5) as current:
+   old=http.client.HTTPResponse(stale);old.begin();self.wait_requests(1)
+   current.sendall(f'GET /{TOKEN}/cast.mp4 HTTP/1.1\r\nRange: bytes=512-\r\n\r\n'.encode());live=http.client.HTTPResponse(current);live.begin();prefix=live.read(65536);self.assertEqual(prefix,self.payload[512:512+65536]);self.wait_requests(2)
+   self.process.stdin.write('i');self.process.stdin.flush()
+   for _ in range(8):
+    if self.line().strip()=='FIXTURE:one_timeout':break
+   else:self.fail('targeted timeout ACK missing')
+   self.assertEqual(self.line().strip(),'BRIDGE:request_timeout:1')
+   self.assertEqual(prefix+live.read(),self.payload[512:]);self.assertEqual(self.line().strip(),'BRIDGE:served:1')
+   with self.assertRaises(http.client.IncompleteRead):old.read()
+  self.assertEqual(len(self.received),3)
+ def test_two_stalled_range_headers_without_forwarded_body_cannot_suppress_timeout(self):
+  self.progressive();type(self).bad='parallel-both-stall'
+  with self.begin_range() as first,self.begin_range(1) as second:
+   a=http.client.HTTPResponse(first);a.begin();b=http.client.HTTPResponse(second);b.begin();self.wait_requests(2)
+   self.process.stdin.write('i');self.process.stdin.flush()
+   for _ in range(8):
+    if self.line().strip()=='FIXTURE:one_timeout':break
+   else:self.fail('targeted timeout ACK missing')
+   self.assertEqual(self.line().strip(),'BRIDGE:issue:206:28')
+ def test_timeout_isolation_is_one_per_source_even_with_another_healthy_range(self):
+  self.progressive();type(self).bad='parallel-stall'
+  with self.begin_range() as first,self.begin_range(1) as second,socket.create_connection(('127.0.0.1',self.port),timeout=5) as current:
+   a=http.client.HTTPResponse(first);a.begin();b=http.client.HTTPResponse(second);b.begin()
+   current.sendall(f'GET /{TOKEN}/cast.mp4 HTTP/1.1\r\nRange: bytes=1024-\r\n\r\n'.encode());live=http.client.HTTPResponse(current);live.begin();self.assertEqual(live.read(65536),self.payload[1024:1024+65536]);self.wait_requests(3)
+   for cmd,expected in [('i','BRIDGE:request_timeout:1'),('q','BRIDGE:issue:206:28')]:
+    self.process.stdin.write(cmd);self.process.stdin.flush()
+    for _ in range(8):
+     if self.line().strip()=='FIXTURE:one_timeout':break
+    else:self.fail('targeted timeout ACK missing')
+    self.assertEqual(self.line().strip(),expected)
  def test_progressive_unanswered_retry_and_valid_206_continuation_share_one_budget(self):
   self.progressive();type(self).bad='preheader-then-stall'
   with self.begin_range() as client:

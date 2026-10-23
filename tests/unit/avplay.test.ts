@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AvplayBackend, type AvplayApi } from '../../apps/tv/src/platform/avplay.ts';
-function harness(progressiveBuffering = false, prebufferSeeking = progressiveBuffering) {
+import { diagnosticEntries } from '../../apps/tv/src/app/diagnostics.ts';
+function harness(progressiveBuffering = false, prebufferSeeking = progressiveBuffering, initialization?: ConstructorParameters<typeof AvplayBackend>[5]) {
   let listener: Parameters<AvplayApi['setListener']>[0] = {};
   let state: ReturnType<AvplayApi['getState']> = 'NONE';
   const calls: string[] = [], callbacks: (() => void)[] = [], savers: number[] = [];
@@ -18,9 +19,40 @@ function harness(progressiveBuffering = false, prebufferSeeking = progressiveBuf
   };
   const backend = new AvplayBackend(api, { AppCommonScreenSaverState: { SCREEN_SAVER_ON: 1, SCREEN_SAVER_OFF: 0 }, setScreenSaver: (value, done) => { savers.push(value); done(); } }, raw => {
     if (raw !== 'https://synthetic.invalid/media') throw Error('policy'); return raw;
-  }, progressiveBuffering, prebufferSeeking);
+  }, progressiveBuffering, prebufferSeeking, initialization);
   return { backend, calls, callbacks, savers, api, listener: () => listener };
 }
+test('W01 G4 stream facts retain only decoder-reported bounded resolution bitrate and known codecs', async () => {
+  const h = harness(); h.api.getCurrentStreamInfo = () => [
+    { type: 'VIDEO', extra_info: JSON.stringify({ Width:'3840',Height:'2160',Bit_rate:' 24000000',fourCC:'HEVC',url:'https://private.invalid/token' }) },
+    { type: 'AUDIO', extra_info: JSON.stringify({ fourCC:'AACL' }) },
+  ];
+  const ready = h.backend.prepare({url:'https://synthetic.invalid/media',kind:'vod'},()=>{},()=>{},()=>{});h.callbacks.shift()!();await ready;h.backend.play();
+  assert.equal(h.backend.streamSummary(),'avplay.stream_v1_w3840_h2160_b24000000_vhevc_aaacl');
+  assert.equal(h.calls.filter(c=>c==='play').length,1);h.backend.close();
+});
+test('W01 G4 malformed metadata and unsupported API never change playback or expose raw strings', async () => {
+  const h = harness();const ready=h.backend.prepare({url:'https://synthetic.invalid/media',kind:'vod'},()=>{},()=>{},()=>{});h.callbacks.shift()!();await ready;h.backend.play();
+  h.api.getCurrentStreamInfo=()=>[{type:'VIDEO',extra_info:JSON.stringify({Width:'99999999999',Height:-1,Bit_rate:Infinity,fourCC:'private-token'})}];
+  assert.equal(h.backend.streamSummary(),'avplay.stream_v1_w0_h0_b0_vunknown_aunknown');
+  h.api.getCurrentStreamInfo=()=>[{type:'VIDEO',extra_info:'not JSON private-token'}];assert.equal(h.backend.streamSummary(),'avplay.stream_unavailable');
+  h.api.getCurrentStreamInfo=()=>{throw Error('private-token');};assert.equal(h.backend.streamSummary(),'avplay.stream_unavailable');assert.equal(h.api.getState(),'PLAYING');h.backend.close();
+});
+test('W01 G4 stream inspection never calls the SDK before preparation or after closure', async () => {
+  const h=harness();let calls=0;h.api.getCurrentStreamInfo=()=>{calls++;return [];};assert.equal(h.backend.streamSummary(),'avplay.stream_unavailable');
+  const ready=h.backend.prepare({url:'https://synthetic.invalid/media',kind:'vod'},()=>{},()=>{},()=>{});assert.equal(h.backend.streamSummary(),'avplay.stream_unavailable');
+  h.callbacks.shift()!();await ready;h.backend.streamSummary();assert.equal(calls,1);h.backend.close();h.backend.streamSummary();assert.equal(calls,1);
+});
+test('W01 G4 metadata survives normal phone polling without displacing failure diagnostics', () => {
+  const media={verdict:'UNVERIFIED',code:'avplay.stream_v1_w1920_h1080_b6000000_vh264_aaacl'};
+  const noise=Array.from({length:12},(_,i)=>({verdict:'UNVERIFIED',code:'cast.poll_'+i}));
+  assert.ok(diagnosticEntries([media,...noise]).includes(media));
+  const failure={verdict:'FAIL',code:'cast.cleanup_unknown_restart_required'};
+  assert.ok(diagnosticEntries([media,failure,...noise]).includes(failure));
+  assert.ok(diagnosticEntries([media,...noise]).length<=8);
+  const unavailable={verdict:'UNVERIFIED',code:'avplay.stream_unavailable'};
+  assert.ok(diagnosticEntries([unavailable,...noise]).includes(unavailable));
+});
 test('W02/W04 AVPlay candidate orders IDLE listener, async prepare, logical display, legal stop/close', async () => {
   const { backend, calls, callbacks, savers } = harness();
   const prepare = backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
@@ -136,10 +168,25 @@ test('W01 prebuffer seek has its own 30s bound and late readiness never resumes 
   t.mock.timers.tick(1); await rejected; const outcome = h.backend.failureSummary(); assert.equal(outcome, 'avplay.seek_restart_timeout_b0_t0');
   assert.equal(h.api.getState(), 'NONE'); h.callbacks.shift()!(); await Promise.resolve(); assert.equal(h.calls.filter(c => c === 'play').length, 1); assert.equal(h.backend.failureSummary(), outcome);
 });
-test('W01 paused progressive playback retains native seek without starting audio or recreating its player', async () => {
-  const h = harness(true); h.api.setStreamingProperty = () => { assert.fail('paused seek must not start playback'); };
-  const ready = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {}); h.callbacks.shift()!(); await ready; h.backend.play(); h.backend.pause();
-  const seek = h.backend.seek(5000); h.callbacks.shift()!(); await seek; assert.equal(h.api.getState(), 'PAUSED'); assert.equal(h.calls.filter(c => c === 'open').length, 1); assert.equal(h.calls.filter(c => c === 'play').length, 1); h.backend.close();
+test('W01 paused progressive seek holds prepared offset in READY until explicit resume and permits another paused seek', async () => {
+  const h = harness(true, false), offsets: string[] = [], times: number[] = [];
+  h.api.setStreamingProperty = (_key, value) => { assert.equal(h.api.getState(), 'IDLE'); offsets.push(value); };
+  const ready = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, ms => times.push(ms), () => {}, () => {});
+  h.callbacks.shift()!(); await ready; h.backend.play(); h.backend.pause();
+  for (const ms of [5000, 7000]) {
+    const seek = h.backend.seek(ms); assert.equal(h.backend.durationMs(), 0); h.callbacks.shift()!(); await seek;
+    assert.equal(h.api.getState(), 'READY'); assert.equal(h.calls.filter(c => c === 'play').length, 1);
+    assert.equal(h.backend.failureSummary(), 'avplay.seek_restart_held_b0_t0'); assert.equal(h.savers.at(-1), 1);
+  }
+  assert.deepEqual(offsets, ['5000', '7000']); assert.deepEqual(times, []); assert.ok(!h.calls.includes('seek'));
+  h.backend.play(); assert.equal(h.api.getState(), 'PLAYING'); assert.equal(h.calls.filter(c => c === 'play').length, 2); h.backend.close();
+});
+test('W01 Back during paused reprepare cancels late READY without hidden playback', async () => {
+  const h = harness(true, false); h.api.setStreamingProperty = () => {};
+  const ready = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  h.callbacks.shift()!(); await ready; h.backend.play(); h.backend.pause();
+  const seek = h.backend.seek(5000); h.backend.close(); await assert.rejects(seek, { code: 'cancelled' });
+  h.callbacks.shift()!(); await Promise.resolve(); assert.equal(h.calls.filter(c => c === 'play').length, 1);
 });
 
 test('W01 default cast policy uses native seek even when prebuffer API exists', async () => {
@@ -176,4 +223,177 @@ test('W01 AVPlay duration getter is blocked during asynchronous prepare and nati
   h.backend.play(); h.backend.pause(); const pending = h.backend.seek(5000); const prior = calls;
   for (let i = 0; i < 10; i++) assert.equal(h.backend.durationMs(), 0); assert.equal(calls, prior);
   h.callbacks.shift()!(); await pending; assert.equal(h.backend.durationMs(), 240000); assert.equal(calls, prior + 1); h.backend.close();
+});
+
+test('W01 successful prebuffer callback in IDLE permits held pause, another seek and explicit resume only', async () => {
+  const h = harness(true, false); let prebuffer = false, state: ReturnType<AvplayApi['getState']> = 'NONE';
+  h.api.getState = () => state; h.api.open = () => { state = 'IDLE'; h.calls.push('open'); }; h.api.setListener = () => {};
+  h.api.stop = () => { state = 'IDLE'; }; h.api.close = () => { state = 'NONE'; };
+  h.api.play = () => { state = 'PLAYING'; h.calls.push('play'); }; h.api.pause = () => { state = 'PAUSED'; };
+  h.api.setStreamingProperty = () => { prebuffer = true; };
+  h.api.prepareAsync = done => { h.callbacks.push(() => { state = prebuffer ? 'IDLE' : 'READY'; done(); }); };
+  h.api.getDuration = () => { assert.notEqual(state, 'IDLE'); return 240000; };
+  const ready = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  h.callbacks.shift()!(); await ready; h.backend.play(); h.backend.pause();
+  for (let i = 0; i < 2; i++) {
+    const seek = h.backend.seek(5000); h.callbacks.shift()!(); await seek;
+    assert.equal(state, 'IDLE'); assert.equal(h.backend.failureSummary(), 'avplay.seek_restart_held_b0_t0');
+    assert.equal(h.backend.durationMs(), 0); assert.equal(h.calls.filter(c => c === 'play').length, 1);
+  }
+  h.backend.play(); assert.equal(state, 'PLAYING'); assert.equal(h.calls.filter(c => c === 'play').length, 2); h.backend.close();
+  assert.throws(() => h.backend.play(), { code: 'invalid' });
+});
+test('W01 plain IDLE and prebuffer before callback cannot bypass play state checks', async () => {
+  const h = harness(true, false); h.api.setStreamingProperty = () => {};
+  const ready = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  assert.throws(() => h.backend.play(), { code: 'invalid' }); h.callbacks.shift()!(); await ready; h.backend.play(); h.backend.pause();
+  const seek = h.backend.seek(5000); assert.throws(() => h.backend.play(), { code: 'invalid' }); h.backend.close();
+  await assert.rejects(seek, { code: 'cancelled' }); h.callbacks.shift()!(); assert.equal(h.calls.filter(c => c === 'play').length, 1);
+});
+
+
+test('W01 known large index can prepare beyond 30s only with continuing transport progress', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let now = 0, last = 0; const h = harness(true, false, { mib: 42, clock: () => now, latestProgress: () => last });
+  const pending = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  for (let i = 1; i <= 4; i++) { now = last = i * 10000; t.mock.timers.tick(10000); }
+  assert.equal(h.api.getState(), 'IDLE'); assert.ok(!h.calls.includes('play'));
+  h.callbacks.shift()!(); await pending; now = 300000; t.mock.timers.tick(300000);
+  assert.equal(h.api.getState(), 'READY'); h.backend.close();
+});
+
+test('W01 large-index preparation closes after 20s without transport progress and discards late ready', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] }); let now = 0;
+  const h = harness(true, false, { mib: 42, clock: () => now, latestProgress: () => 0 });
+  const pending = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  const failed = assert.rejects(pending, { code: 'timeout' }); now = 20000; t.mock.timers.tick(20000); await failed;
+  assert.equal(h.backend.failureSummary(), 'avplay.prepare_init_stalled_b0_si');
+  h.callbacks.shift()!(); assert.equal(h.api.getState(), 'READY'); assert.ok(!h.calls.includes('play'));
+  // The fixture callback changes its fake SDK state; the adapter never resumes it.
+});
+
+test('W01 continuing progress cannot extend the absolute large-index cap', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] }); let now = 0;
+  const h = harness(true, false, { mib: 128, clock: () => now, latestProgress: () => now });
+  const pending = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  const failed = assert.rejects(pending, { code: 'timeout' }); now = 180000; t.mock.timers.tick(180000); await failed;
+  assert.equal(h.backend.failureSummary(), 'avplay.prepare_timeout_b0_si'); assert.equal(h.api.getState(), 'NONE');
+});
+
+test('W01 cancelling large-index preparation clears both owned timers', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] }); let now = 0;
+  const h = harness(true, false, { mib: 42, clock: () => now, latestProgress: () => now });
+  const pending = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  const failed = assert.rejects(pending, { code: 'cancelled' }); h.backend.close(); await failed;
+  const count = h.calls.filter(c => c === 'close').length; now = 300000; t.mock.timers.tick(300000);
+  assert.equal(h.calls.filter(c => c === 'close').length, count); assert.ok(!h.calls.includes('play'));
+});
+
+test('W01 small or invalid initialization sizes keep the existing 30s limit', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  for (const mib of [0, 8, 9.5, 129, Number.NaN]) {
+    const h = harness(true, false, { mib, clock: () => 0, latestProgress: () => 0 });
+    const pending = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+    const failed = assert.rejects(pending, { code: 'timeout' }); t.mock.timers.tick(30000); await failed;
+    assert.equal(h.backend.failureSummary(), 'avplay.prepare_timeout_b0_si');
+  }
+});
+
+test('W01 invalid or throwing transport activity cannot keep a large prepare alive', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  for (const latestProgress of [() => Number.NaN, () => 999999, () => { throw new Error('private-not-logged'); }]) {
+    let now = 0; const h = harness(true, false, { mib: 42, clock: () => now, latestProgress });
+    const pending = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+    const failed = assert.rejects(pending, { code: 'timeout' }); now = 20000; t.mock.timers.tick(20000); await failed;
+    assert.equal(h.backend.failureSummary(), 'avplay.prepare_init_stalled_b0_si');
+  }
+});
+
+test('W01 large-index paused reprepare can cross 30s with fresh progress and remains silent until resume', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] }); let now = 0, last = 0;
+  const h = harness(true, false, { mib: 42, clock: () => now, latestProgress: () => last });
+  h.api.setStreamingProperty = (_key, value) => assert.equal(value, '5000');
+  const ready = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  h.callbacks.shift()!(); await ready; h.backend.play(); h.backend.pause();
+  now = 10000; const seek = h.backend.seek(5000);
+  for (let i = 1; i <= 4; i++) { now = last = 10000 + i * 10000; t.mock.timers.tick(10000); }
+  assert.equal(h.api.getState(), 'IDLE'); assert.equal(h.calls.filter(c => c === 'play').length, 1);
+  h.callbacks.shift()!(); await seek; assert.equal(h.backend.failureSummary(), 'avplay.seek_restart_held_b0_t0');
+  now += 200000; t.mock.timers.tick(200000); assert.equal(h.api.getState(), 'READY');
+  h.backend.play(); assert.equal(h.calls.filter(c => c === 'play').length, 2); h.backend.close();
+});
+
+test('W01 old initial-read progress cannot keep a stalled large-index reprepare alive', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] }); let now = 0;
+  const h = harness(true, false, { mib: 42, clock: () => now, latestProgress: () => 1000 });
+  h.api.setStreamingProperty = () => {};
+  const ready = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  h.callbacks.shift()!(); await ready; h.backend.play(); h.backend.pause(); now = 60000;
+  const seek = h.backend.seek(5000), failed = assert.rejects(seek, { code: 'timeout' });
+  now = 80000; t.mock.timers.tick(20000); await failed;
+  const result = h.backend.failureSummary(); assert.equal(result, 'avplay.seek_restart_init_stalled_b0_si');
+  h.callbacks.shift()!(); assert.equal(h.backend.failureSummary(), result); assert.equal(h.calls.filter(c => c === 'play').length, 1);
+});
+
+test('W01 large-index reprepare retains its absolute size budget despite ongoing reads', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] }); let now = 0;
+  const h = harness(true, false, { mib: 42, clock: () => now, latestProgress: () => now });
+  h.api.setStreamingProperty = () => {};
+  const ready = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  h.callbacks.shift()!(); await ready; h.backend.play(); h.backend.pause(); now = 50000;
+  const seek = h.backend.seek(5000), failed = assert.rejects(seek, { code: 'timeout' });
+  now += 178000; t.mock.timers.tick(178000); await failed;
+  assert.equal(h.backend.failureSummary(), 'avplay.seek_restart_timeout_b0_t0'); assert.equal(h.api.getState(), 'NONE');
+});
+
+test('W01 Home cancels both large-index reprepare timers without late play or failure overwrite', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] }); let now = 0;
+  const h = harness(true, false, { mib: 42, clock: () => now, latestProgress: () => now });
+  h.api.setStreamingProperty = () => {};
+  const ready = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  h.callbacks.shift()!(); await ready; h.backend.play(); h.backend.pause();
+  const seek = h.backend.seek(5000), failed = assert.rejects(seek, { code: 'cancelled' }); h.backend.close(); await failed;
+  const result = h.backend.failureSummary(), closed = h.calls.filter(c => c === 'close').length;
+  now = 300000; t.mock.timers.tick(300000); h.callbacks.shift()!(); await Promise.resolve();
+  assert.equal(h.calls.filter(c => c === 'close').length, closed); assert.equal(h.calls.filter(c => c === 'play').length, 1); assert.equal(h.backend.failureSummary(), result);
+});
+
+test('W01 direct native seek keeps 30s even when its source has a known large index', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] }); let now = 0;
+  const h = harness(true, false, { mib: 42, clock: () => now, latestProgress: () => now });
+  h.api.setStreamingProperty = () => assert.fail('playing native seek must not reprepare');
+  const ready = h.backend.prepare({ url: 'https://synthetic.invalid/media', kind: 'vod' }, () => {}, () => {}, () => {});
+  h.callbacks.shift()!(); await ready; h.backend.play();
+  const seek = h.backend.seek(5000), failed = assert.rejects(seek, { code: 'timeout' });
+  now = 30000; t.mock.timers.tick(30000); await failed;
+  assert.equal(h.backend.failureSummary(), 'avplay.seek_timeout_b0_t0'); assert.equal(h.calls.filter(c => c === 'open').length, 1);
+});
+
+test('W01 source transition requires actual decoder NONE after close; a returned close call alone is insufficient', () => {
+  const h = harness(); assert.equal(h.backend.closureConfirmed(), true);
+  h.api.getState = () => 'IDLE'; h.api.close = () => {};
+  h.backend.close(); assert.equal(h.backend.closureConfirmed(), false);
+  h.api.getState = () => { throw new Error('private runtime details'); };
+  assert.equal(h.backend.closureConfirmed(), false);
+});
+
+test('G4 rate setter is gated before prepare, during pending operations, pause and after close', async () => {
+  const h = harness(); const rates: number[] = []; h.api.setSpeed = n => rates.push(n);
+  assert.equal(h.backend.setProbeRate(2), 'busy');
+  const ready = h.backend.prepare({url:'https://synthetic.invalid/media',kind:'vod'},()=>{},()=>{},()=>{});
+  assert.equal(h.backend.setProbeRate(2), 'busy'); h.callbacks.shift()!(); await ready; h.backend.play();
+  const seek = h.backend.seek(5000); assert.equal(h.backend.setProbeRate(2), 'busy'); h.callbacks.shift()!(); await seek;
+  assert.equal(h.backend.setProbeRate(2), 'accepted'); assert.equal(h.backend.setProbeRate(1), 'accepted');
+  h.backend.pause(); assert.equal(h.backend.setProbeRate(2), 'busy'); h.backend.close(); assert.equal(h.backend.setProbeRate(2), 'busy'); assert.deepEqual(rates,[2,1]);
+});
+test('G4 rate SDK absence and known unsupported remain distinct from unknown exceptions', async () => {
+  const h = harness(); const ready=h.backend.prepare({url:'https://synthetic.invalid/media',kind:'vod'},()=>{},()=>{},()=>{});h.callbacks.shift()!();await ready;h.backend.play();
+  assert.equal(h.backend.setProbeRate(2),'unsupported');
+  h.api.setSpeed=()=>{throw {name:'NotSupportedError',message:'private-source'};};assert.equal(h.backend.setProbeRate(2),'unsupported');
+  h.api.setSpeed=()=>{throw {name:'private-source'};};assert.equal(h.backend.setProbeRate(2),'failed');assert.equal(h.backend.failureSummary(),'avplay.rate_unclassified');h.backend.close();
+});
+test('G4 rate rejects live input and buffering without issuing a speed command', async () => {
+  const h=harness();let calls=0;h.api.setSpeed=()=>{calls++;};
+  const live=h.backend.prepare({url:'https://synthetic.invalid/media',kind:'live'},()=>{},()=>{},()=>{});h.callbacks.shift()!();await live;h.backend.play();assert.equal(h.backend.setProbeRate(2),'busy');h.backend.close();
+  const vod=h.backend.prepare({url:'https://synthetic.invalid/media',kind:'vod'},()=>{},()=>{},()=>{});h.callbacks.shift()!();await vod;h.backend.play();h.listener().onbufferingstart?.();assert.equal(h.backend.setProbeRate(2),'busy');h.listener().onbufferingcomplete?.();assert.equal(h.backend.setProbeRate(2),'accepted');assert.equal(calls,1);h.backend.close();
 });

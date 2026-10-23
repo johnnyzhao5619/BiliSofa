@@ -1,6 +1,6 @@
 # ADR-001: Standalone TV runtime
 
-Date: 2026-10-14. Status: product constraint accepted; runtime implementation pending real-device validation.
+Date: 2026-10-14. Status: product constraint accepted; W02 implementation route selected with deferred evidence under ADR-027; full product acceptance remains open.
 
 The user requires one installed Samsung TV app and no always-on PC/NAS/LAN service. All previously agreed F01–F20 features and one full v1.0.0 remain required.
 
@@ -18,3 +18,5 @@ Sources:
 - https://developer.samsung.com/smarttv/develop/api-references/webassembly-api-references/tizen-sockets-extension-api-references.html
 - https://developer.samsung.com/smarttv/develop/extension-libraries/webassembly/tizen-sockets-extension/building-curl-applications-using-cli-tools.html
 - https://developer.samsung.com/smarttv/develop/faq/tizen-net-tv.html
+
+2026-10-17 implementation decision: [ADR-027](027-w02-runtime-and-deferred-evidence.md) adopts the measured WGT/Web plus on-TV WASM/AVPlay route for W02. User-skipped cloud-progress and unavailable high-quality proofs remain UNVERIFIED, not passed or removed. Historical candidate statements above describe the original investigation.

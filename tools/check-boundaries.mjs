@@ -17,7 +17,10 @@ for (const path of files) {
   const imports = [...source.matchAll(/(?:from\s+|import\s*)['"]([^'"]+)['"]/g)].map(match => match[1]);
   const local = [];
   for (const specifier of imports) {
-    if (!specifier.startsWith('.')) throw new Error(`Unapproved runtime dependency: ${path}`);
+    if (!specifier.startsWith('.')) {
+      if (path === 'apps/tv/src/ui/qr-code.ts' && specifier === 'qrcode-generator') continue;
+      throw new Error(`Unapproved runtime dependency: ${path}`);
+    }
     const target = relative(process.cwd(), resolve(dirname(path), specifier));
     if (path.startsWith('packages/') && target.startsWith('apps/')) throw new Error(`UI reverse dependency: ${path}`);
     if (path.startsWith('packages/contracts/') && !target.startsWith('packages/contracts/')) throw new Error(`Contract dependency: ${path}`);

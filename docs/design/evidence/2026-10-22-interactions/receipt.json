@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.36.0",
+  "uiSourceHash": "37c4851ac5e86574019eff85398a4af61ec6c8c78c65c75083ad5fbb5056cb47",
+  "uiManifestSha256": "d2902659bde9f9069b42882bbe3ba804e66d5c057bafc2572f36e69057064ca9",
+  "unsignedSha256": "60c295451d0de5238cb2dac6a84656107a6e78bee2dde3d7c1b9834b6f86d538",
+  "signedSha256": "39049f064a1efc93351756fdd487ff4d4d2a7ddf2771ef216fb04ecea52f81fb",
+  "signedAt": "2026-10-22T12:30:26.182767+00:00",
+  "sourceArchiveSha256": "a0b680fd601daf3cc489c84913e3a809d852307a8b2ed428da0a3d94edc5d00d",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "reason": "user_confirmed_tv_on_then_reconnected",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.36.0",
+        "signedSha256": "39049f064a1efc93351756fdd487ff4d4d2a7ddf2771ef216fb04ecea52f81fb",
+        "uiSourceHash": "37c4851ac5e86574019eff85398a4af61ec6c8c78c65c75083ad5fbb5056cb47",
+        "startedAt": "2026-10-22T12:31:39.026874+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "timeoutOrUnavailable": true
+        }
+      },
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.36.0",
+        "signedSha256": "39049f064a1efc93351756fdd487ff4d4d2a7ddf2771ef216fb04ecea52f81fb",
+        "uiSourceHash": "37c4851ac5e86574019eff85398a4af61ec6c8c78c65c75083ad5fbb5056cb47",
+        "startedAt": "2026-10-22T12:32:20.156192+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 1,
+          "platformSuccess": false
+        }
+      },
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.36.0",
+        "signedSha256": "39049f064a1efc93351756fdd487ff4d4d2a7ddf2771ef216fb04ecea52f81fb",
+        "uiSourceHash": "37c4851ac5e86574019eff85398a4af61ec6c8c78c65c75083ad5fbb5056cb47",
+        "startedAt": "2026-10-22T12:34:47.571777+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "installAttempted": true,
+    "lastConfirmedDeviceVersion": "0.36.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.36.0",
+      "signedSha256": "39049f064a1efc93351756fdd487ff4d4d2a7ddf2771ef216fb04ecea52f81fb",
+      "uiSourceHash": "37c4851ac5e86574019eff85398a4af61ec6c8c78c65c75083ad5fbb5056cb47",
+      "startedAt": "2026-10-22T12:34:47.571777+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "verification": {
+    "modules": 285,
+    "unitContractPassed": 641,
+    "newUiPassed": 8,
+    "retainedPlayerSettingsUiPassed": 13,
+    "retainedBrowseUiPassed": 8,
+    "packageNegativePassed": 6,
+    "frozenFilesVerified": 216,
+    "nativeModulesUnchanged": 17,
+    "nativeResourcesUnchanged": 68
+  },
+  "deviceUserAcceptance": "UNVERIFIED",
+  "userAcceptance": {
+    "reportedOn": "2026-10-22",
+    "testedVersion": "0.36.0",
+    "browseGroupsAtoE": "USER_PASS",
+    "interactionReadPreviewCancelBackHome": "USER_PASS",
+    "likeSubmit": "USER_FAIL",
+    "followSubmit": "USER_FAIL",
+    "writeErrorCode": "not_recalled",
+    "writeSuccess": "UNVERIFIED"
+  },
+  "agentRealAccountPosts": 0
+}

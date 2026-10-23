@@ -20,20 +20,31 @@ with zipfile.ZipFile(package) as archive:
  if {item.attrib.get('name') for item in xml.findall('t:privilege',ns)} != {'http://tizen.org/privilege/internet','http://developer.samsung.com/privilege/productinfo'}: raise SystemExit('Unexpected probe privilege')
  html=archive.read('index.html').decode()
  build=json.loads(archive.read('build.json'))
- if build.get('automation') not in (['synthetic-cross-package-read-report-once'] if isolationMode else ['manual','guest-synthetic-report-once','synthetic-persistence-report-once','guest-popular-report-once','guest-video-source-report-once','cast-startup-report-once']) or f'<meta name="probe-auto" content="{3 if isolationMode else 6 if build["automation"]=="cast-startup-report-once" else 5 if build["automation"]=="guest-video-source-report-once" else 4 if build["automation"]=="guest-popular-report-once" else 2 if build["automation"]=="synthetic-persistence-report-once" else 1 if build["automation"]=="guest-synthetic-report-once" else 0}">' not in html: raise SystemExit('Automation mode identity mismatch')
+ if build.get('automation') not in (['synthetic-cross-package-read-report-once'] if isolationMode else ['manual','guest-synthetic-report-once','synthetic-persistence-report-once','guest-popular-report-once','guest-video-source-report-once','cast-startup-report-once','session-wire-report-once']) or f'<meta name="probe-auto" content="{3 if isolationMode else 7 if build["automation"]=="session-wire-report-once" else 6 if build["automation"]=="cast-startup-report-once" else 5 if build["automation"]=="guest-video-source-report-once" else 4 if build["automation"]=="guest-popular-report-once" else 2 if build["automation"]=="synthetic-persistence-report-once" else 1 if build["automation"]=="guest-synthetic-report-once" else 0}">' not in html: raise SystemExit('Automation mode identity mismatch')
  if isolationMode and (build.get('identity')!='BiliIsola1.Probe' or build.get('observerBundleSha256')!=hashlib.sha256(archive.read('app.js')).hexdigest()): raise SystemExit('Observer bundle identity/hash mismatch')
  if build.get('searchWords',{}).get('commit')!='49aebad1c1cfbbcaa9288ffed5161e79e57c3679' or build['searchWords'].get('rows')!=64816 or build['searchWords'].get('sha256')!=hashlib.sha256(archive.read('search-words.json')).hexdigest(): raise SystemExit('Search data provenance mismatch')
  if build['sourceHash'] not in html or build['native']!=nativeMode: raise SystemExit('Build identity mismatch')
  if nativeMode:
-  if xml.attrib['version']!='0.0.38' or build['version']!='0.0.38': raise SystemExit('Native internal package version mismatch')
+  if xml.attrib['version']!=build['version'] or build['version'] not in ['0.0.54','0.0.59','0.0.60']: raise SystemExit('Native internal package version mismatch')
   manifest=json.loads(archive.read('native/manifest.json'))
   licenseManifest=json.loads(archive.read('third-party-licenses/manifest.json'))
+  if build.get('nativeManifest')!=manifest or build.get('dependencyVersions')!=licenseManifest.get('versions'): raise SystemExit('Native build/manifest mismatch')
+  if build['version'] in ['0.0.59','0.0.60']:
+   from candidate_native import load_candidate
+   candidateFiles,expectedManifest,candidateLicenses,expectedLicenses=load_candidate()
+   if manifest!=expectedManifest or licenseManifest!=expectedLicenses: raise SystemExit('Modern native provenance mismatch')
+   if any(archive.read('native/'+n)!=v for n,v in candidateFiles.items()) or any(archive.read('third-party-licenses/'+n)!=v for n,v in candidateLicenses.items()): raise SystemExit('Modern bundled artifact mismatch')
+   expectedNative={'native/'+n for n in candidateFiles}|{'native/manifest.json'}
+   expectedLicenses={'third-party-licenses/'+n for n in candidateLicenses}|{'third-party-licenses/manifest.json'}
+   if {n for n in names if n.startswith('native/')}!=expectedNative or {n for n in names if n.startswith('third-party-licenses/')}!=expectedLicenses: raise SystemExit('Modern staged file set mismatch')
+  elif 'networkCandidate' in manifest: raise SystemExit('Modern network requires explicit version identity')
   for prefix,items in [('native/',manifest['files']),('third-party-licenses/',licenseManifest['files'])]:
    for name,digest in items.items():
     if hashlib.sha256(archive.read(prefix+name)).hexdigest()!=digest: raise SystemExit('Bundled native/license hash mismatch')
   if archive.read('native/probe.wasm')[:8]!=b'\0asm\1\0\0\0': raise SystemExit('Native artifact is not WASM')
   runtime=archive.read('native/probe.js').decode()
-  if any(name not in runtime for name in ['_cast_source_buffer','_cast_source_begin','_cast_media_begin']): raise SystemExit('Native source test export missing')
+  if any(name not in runtime for name in ['_cast_source_buffer','_cast_source_begin','_cast_media_begin','_session_probe_stop']): raise SystemExit('Native source test export missing')
+  if build['version'] in ['0.0.59','0.0.60'] and any(n not in runtime for n in ['_cast_transition_enable','_cast_transition_begin','_cast_transition_buffer']): raise SystemExit('Native transition export missing')
   payload=archive.read('native/probe.data');layout=manifest.get('dataLayout',[])
   mediaFiles=manifest.get('mediaFiles',{})
   expectedNames=['/cacert.pem']+['/probe-media/'+name for name in sorted(mediaFiles)]

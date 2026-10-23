@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "version": "0.35.0",
+  "name": "BiliSofa",
+  "uiSourceHash": "5c64d698b9c39983d95341e0e4972b8d5cd6b91d82b066916fbcdc4987c5aaf0",
+  "uiManifestSha256": "692ca7d7d75dbc1f98332eff8ab2b62c312baf4255d400a74e5336440138c9fb",
+  "unsignedSha256": "d53b319898e6e85d49b833e56cf0b6c4d829b20d20da052190b27d50b7ad0c95",
+  "signedSha256": "4f0a39295ce2fd52fae1f7fab6bcd8e42906424649e7110bf8f2a949cf1b767a",
+  "signedAt": "2026-10-22T00:50:52.343185+00:00",
+  "deployment": {
+    "schema": 1,
+    "applicationId": "BiliSofa01.TV",
+    "version": "0.35.0",
+    "signedSha256": "4f0a39295ce2fd52fae1f7fab6bcd8e42906424649e7110bf8f2a949cf1b767a",
+    "uiSourceHash": "5c64d698b9c39983d95341e0e4972b8d5cd6b91d82b066916fbcdc4987c5aaf0",
+    "startedAt": "2026-10-22T04:04:26.833553+00:00",
+    "deviceAcceptance": "UNVERIFIED",
+    "state": {
+      "exit": 0,
+      "platformSuccess": true
+    },
+    "capability": {
+      "exit": 0,
+      "platformSuccess": true
+    },
+    "install": {
+      "exit": 0,
+      "platformSuccess": true
+    },
+    "launch": {
+      "exit": 0,
+      "platformSuccess": true
+    }
+  },
+  "verification": {
+    "modules": 284,
+    "unitContractPassed": 632,
+    "newUiPassed": 8,
+    "retainedUiPassed": 13,
+    "packageNegativePassed": 6,
+    "frozenFilesVerified": 189,
+    "nativeModulesUnchanged": 17
+  },
+  "deviceUserAcceptance": "PENDING",
+  "sourceArchiveSha256": "134529417f3988c8bf21595f6cd8da961ca6f376a236fc724ce67542af9f5a57"
+}

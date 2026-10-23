@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.39.0",
+  "uiSourceHash": "16fab569d60d05a9354144824e0950666735dfe46871f04cd582e8f0e1d65cba",
+  "uiManifestSha256": "bdf0ef417938be5a194c55f86c5f54e95f3df2bbf147a454e273155e1f4b577e",
+  "unsignedSha256": "95c585fa8939de206166f8523938c9e8740eb51cb317bcff008223d9fdd183bb",
+  "signedSha256": "b24aa129f955e41f64a1f981704e1045ea980a05bcabdb980a37704da6916b2c",
+  "signedAt": "2026-10-22T19:04:45.379733+00:00",
+  "sourceArchiveSha256": "17dde9869089c1623330a69bf4514bc55bdd37f8d9d74c842209185bba5d2449",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.39.0",
+        "signedSha256": "b24aa129f955e41f64a1f981704e1045ea980a05bcabdb980a37704da6916b2c",
+        "uiSourceHash": "16fab569d60d05a9354144824e0950666735dfe46871f04cd582e8f0e1d65cba",
+        "startedAt": "2026-10-22T19:05:39.703428+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.39.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.39.0",
+      "signedSha256": "b24aa129f955e41f64a1f981704e1045ea980a05bcabdb980a37704da6916b2c",
+      "uiSourceHash": "16fab569d60d05a9354144824e0950666735dfe46871f04cd582e8f0e1d65cba",
+      "startedAt": "2026-10-22T19:05:39.703428+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "verification": {
+    "modules": 289,
+    "unitContractPassed": 652,
+    "newUiPassed": 18,
+    "retainedPlayerSettingsUiPassed": 13,
+    "retainedBrowseUiPassed": 8,
+    "packageNegativePassed": 6,
+    "uiSourceInputs": 247,
+    "uiOutputFiles": 27,
+    "frozenFilesVerified": 297,
+    "nativeModulesUnchanged": 17,
+    "nativeResourcesUnchanged": 68
+  },
+  "deviceUserAcceptance": "UNVERIFIED",
+  "agentRealAccountPosts": 0,
+  "inheritedUserAcceptance": {
+    "version": "0.38.0",
+    "rateSelection": "USER_PASS",
+    "like": "USER_FAIL_API_-403",
+    "follow": "USER_FAIL_INVALID",
+    "browse": "USER_FAIL_JUMP_AND_MISSING_ART",
+    "interactionLatency": "USER_REPORTED_OVER_5_SECONDS"
+  },
+  "likeRejectionRootCause": "OPEN_SERVICE_REFUSAL_NOT_DIAGNOSED",
+  "followAttributeContract": "IMPLEMENTED_TV_EFFECT_UNVERIFIED",
+  "anonymousFixedArtworkRequest": {
+    "http": 200,
+    "mime": "image/webp",
+    "cors": "*",
+    "bytes": 11882,
+    "cookies": false
+  },
+  "interactionRequestsOrdinarySuccess": {
+    "previous": 22,
+    "current": 10,
+    "deviceLatency": "UNVERIFIED"
+  },
+  "fractionalRatePlayback": "NOT_IMPLEMENTED_AVPLAY_BACKEND_LIMIT"
+}

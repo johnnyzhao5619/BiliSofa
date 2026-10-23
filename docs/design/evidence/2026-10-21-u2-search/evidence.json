@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-21",
+  "scope": "U2 unified search source candidate; desktop synthetic boundaries only",
+  "generatedAt": "2026-10-21T23:09:03.881Z",
+  "candidate": {
+    "root": "dist/product-discovery-app",
+    "version": "0.32.0",
+    "manifestSha256": "53dcd103ad68e3b44348d5426d87340f6582101a2eb218c54b0873c1647b4730",
+    "sourceHash": "26de910ac1460408cc7f911c72f91fd33f2d48a2f9d3fd2e09debd9c5ad2f55d",
+    "verifiedInputs": 232,
+    "verifiedFiles": 27,
+    "signed": false,
+    "deployed": false
+  },
+  "frozen": [
+    {
+      "root": "dist/recommend-app",
+      "manifestSha256": "07b060c43fc83263ee48501f918e999116946fde88690d755544def4ac8e5149",
+      "sourceHash": "580a87361f75e09c4092f1827ab48c175da45a7df422c742c43373a12f98774d",
+      "verifiedFiles": 27
+    },
+    {
+      "root": "dist/u1-app",
+      "manifestSha256": "7a2c2c09664e09dbcd99cb6e2443aa56295cb20041bb840c8258e34565b3264c",
+      "sourceHash": "9a825d3ed159405233441602edb6d188eb0efeedb07a1f57ff730326f4cddfcf",
+      "verifiedFiles": 27
+    },
+    {
+      "root": "dist/product-ui-app",
+      "manifestSha256": "ad881c566d606d66e3030713413cece08305819930fff389d76491e6b396cd65",
+      "sourceHash": "def0d19dc94d043ea51f8765c302a6d04631ded210c2ac779e588a5f6cb699ba",
+      "verifiedFiles": 27
+    },
+    {
+      "root": "dist/product-library-app",
+      "manifestSha256": "c868190ecee475247a9f6b374e9838c4809cb7da31254e130456d829cf21b0c4",
+      "sourceHash": "ac1680998d5b673895352d42b88e5de2d86c4f13a29d5da38a1df54b3e3c957c",
+      "verifiedFiles": 27
+    }
+  ],
+  "tests": {
+    "modules": 274,
+    "unitContracts": 631,
+    "searchUI": 8,
+    "libraryRegression": 9,
+    "shellRegression": 6
+  },
+  "gitBase": "610e8c21ec50b13449cd88625a5f726db7d83450",
+  "dirtyWorkspace": true,
+  "device": {
+    "installedVersion": "0.28.0",
+    "candidateInstalled": false,
+    "acceptance": "OPEN"
+  },
+  "screenshots": {
+    "search-video.png": "8d45cee4b3c683525afdba94eacede0abecb80fbf36091ecc32334dae46a12c1",
+    "search-pgc.png": "388af8166a09d360f7acad98438a7ed9cb237975816ae149cd7eac16556e147d",
+    "search-keyword.png": "a1e70b1afc17f879e74aadc5a7012967c2fd931eb0e7751c18fe77bc3eeb0421",
+    "search-history.png": "de21c7106ec40fdc80e78ab4fb5e7df5a00c9dff92384a92c131b5558f640262"
+  }
+}

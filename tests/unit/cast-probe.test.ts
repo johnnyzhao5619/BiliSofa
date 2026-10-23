@@ -50,12 +50,13 @@ test('W01/F20 probe retains native Worker until close; cancelled discovery waits
 
 test('W01/F20 fixed summary preserves every known fact including bit31/32; rejects unknown bits and arbitrary text', async () => {
   const { SOAP_PROBE_FACTS, SOURCE_POLICY_REASONS, CAST_PROGRESS_LIMIT, soapProbeSummary, decodeSoapProbeSummary } = await import('../../packages/contracts/src/upnp.ts');
-  assert.ok(SOAP_PROBE_FACTS.length <= 64); assert.equal(CAST_PROGRESS_LIMIT, SOAP_PROBE_FACTS.length + SOURCE_POLICY_REASONS.length + 20 + 5 + 6 + 24 + 29 + 3);
+  assert.ok(SOAP_PROBE_FACTS.length <= 64); assert.equal((await import('../../packages/contracts/src/cast-receiver.ts')).RECEIVER_FACTS.length, 32); assert.equal(CAST_PROGRESS_LIMIT, (SOAP_PROBE_FACTS.length + SOURCE_POLICY_REASONS.length + 20 + 5 + 6 + 24 + 32 + 3 + 5 + 5 + 2 + 3 + 2 + 32) * 4 + 15 + 33 + 4);
   const codes = SOAP_PROBE_FACTS.map(fact => `cast.soap_${fact}`);
   assert.deepEqual(decodeSoapProbeSummary(soapProbeSummary(codes)!), [...SOAP_PROBE_FACTS]);
   assert.equal(soapProbeSummary(['cast.ready', 'private-fixture-marker', 'cast.soap_unknown']), undefined);
+  assert.deepEqual(decodeSoapProbeSummary('cast.soap_summary_v1_0000000080000000'), ['receiver_metadata_omitted']);
   const duplicate = soapProbeSummary([codes[31]!, codes[32]!, codes[31]!]); assert.deepEqual(decodeSoapProbeSummary(duplicate!), [SOAP_PROBE_FACTS[31], SOAP_PROBE_FACTS[32]]);
-  for (const code of ['cast.soap_summary_v1_0000000080000000', 'cast.soap_summary_v1_0000000000000000', 'cast.soap_summary_v2_0000000100000000', 'cast.soap_summary_v1_private-fixture-marker']) assert.deepEqual(decodeSoapProbeSummary(code), []);
+  for (const code of ['cast.soap_summary_v1_00000000800000000', 'cast.soap_summary_v1_0000000000000000', 'cast.soap_summary_v2_0000000100000000', 'cast.soap_summary_v1_private-fixture-marker']) assert.deepEqual(decodeSoapProbeSummary(code), []);
   for (const code of codes) assert.equal(parseCastProbeResult({ version: 1, operation: 'cast-discovery', scope, closed: false, code }).code, code);
   const { diagnosticEntries } = await import('../../apps/tv/src/app/diagnostics.ts');
   const summary = { verdict: 'UNVERIFIED', code: soapProbeSummary(codes)! }, issue = { verdict: 'FAIL', code: 'ugc.bridge_issue_1' };
@@ -180,4 +181,73 @@ test('W01/F20 v2 receiver diagnostics pin startup frame/timeline summary, native
   const selected=diagnosticEntries(codes.map(code=>({code,verdict:'UNVERIFIED'})));
   assert.equal(selected.length,8); for (const code of [codes[0],codes[2],codes[5],codes[6],codes[7],codes[8]]) assert.ok(selected.some(e=>e.code===code));
   for(const fact of ['snapshot_received','snapshot_applied','snapshot_rejected','denied_snapshot_missing','denied_snapshot_old','denied_expired','denied_clock']) assert.equal(parseCastProbeResult({version:1,operation:'cast-discovery',scope,closed:false,code:'cast.receiver_'+fact}).closed,false);
+});
+
+test('W01 bounded MP4 layout facts are canonical and survive source-only reporting without TV play', async () => {
+ const {diagnosticEntries}=await import('../../apps/tv/src/app/diagnostics.ts');
+ for(const layout of ['moov_first','mdat_first','fragmented','prefix_exhausted','invalid']) assert.equal(parseCastProbeResult({version:1,operation:'cast-discovery',scope,closed:false,code:'cast.source_layout_'+layout}).closed,false);
+ assert.throws(()=>parseCastProbeResult({version:1,operation:'cast-discovery',scope,closed:false,code:'cast.source_layout_raw_bytes'}));
+ const rows=['cast.source_layout_mdat_first','cast.source_pass',...Array.from({length:12},(_,i)=>'cast.progress_'+i)].map(code=>({code,verdict:'UNVERIFIED'}));
+ const selected=diagnosticEntries(rows);assert.equal(selected.length,8);assert.ok(selected.some(e=>e.code==='cast.source_layout_mdat_first'));
+});
+
+test('W01 diagnostics excludes older cast-run failures, seek history and layouts from the latest report', async () => {
+  const { diagnosticEntries } = await import('../../apps/tv/src/app/diagnostics.ts');
+  const entries = [{run:1,code:'avplay.seek_restart_held_b0_t0',verdict:'UNVERIFIED'}, {run:1,code:'avplay.seek_history_v1_r',verdict:'UNVERIFIED'}, {run:1,code:'cast.avplay_error',verdict:'FAIL'}, {run:2,code:'cast.receiver_summary_v2_1a0c015d',verdict:'UNVERIFIED'}, {run:2,code:'avplay.seek_event_player_error_connection_failed',verdict:'FAIL'}, {run:2,code:'cast.native_closed_confirmed',verdict:'PASS'}];
+  const chosen = diagnosticEntries(entries); assert.ok(chosen.every(e=>e.run===2)); assert.ok(chosen.some(e=>e.code===entries[4]!.code));
+});
+
+test('W01 current receiver query summary and known duration remain in the eight-entry report', async () => {
+ const { diagnosticEntries } = await import('../../apps/tv/src/app/diagnostics.ts');
+ const rows=['cast.receiver_summary_v2_1a0c0005','cast.media_flow_s_c1_p0_w3_m6_l6','cast.native_closed_confirmed','cast.source_pass','cast.media_requests_v1_02','cast.soap_summary_v1_0000000000000018','avplay.receiver_duration_known','cast.source_layout_moov_first'].map(code=>({code,verdict:'UNVERIFIED'}));
+ const selected=diagnosticEntries(rows);assert.equal(selected.length,8);assert.ok(selected.some(e=>e.code==='avplay.receiver_duration_known'));assert.ok(selected.some(e=>e.code.startsWith('cast.soap_summary_')));
+});
+
+
+test('W01 native position socket evidence and SOAP summary survive a successful seek history', async () => {
+  const { diagnosticEntries } = await import('../../apps/tv/src/app/diagnostics.ts');
+  const codes = ['cast.position_wire_v1_01', 'cast.position_wire_v1_0f', 'cast.soap_summary_v1_8000400c72002010', 'cast.receiver_summary_v2_5a0c00f5', 'avplay.seek_history_v1_r', 'avplay.seek_restart_held_b0_t0', 'cast.native_closed_confirmed', 'cast.source_pass', 'cast.media_requests_v1_02', 'cast.media_flow_s_c0_p0_w7_m12_l5'];
+  const selected = diagnosticEntries(codes.map(code => ({code, verdict:'UNVERIFIED'})));
+  assert.equal(selected.length, 8);
+  for (const code of [codes[1], codes[2], codes[3], codes[4], codes[5], codes[6]]) assert.ok(selected.some(e => e.code === code));
+  assert.ok(!selected.some(e => e.code === codes[0]));
+  for (const suffix of ['01','0f','10','1f']) assert.equal(parseCastProbeResult({version:1,operation:'cast-discovery',scope,closed:false,code:'cast.position_wire_v1_'+suffix}).closed,false);
+  for (const suffix of ['00','20','ff','01_address']) assert.throws(() => parseCastProbeResult({version:1,operation:'cast-discovery',scope,closed:false,code:'cast.position_wire_v1_'+suffix}));
+});
+
+
+test('W01 explicit TV consent for only the next eligible source is scoped and cannot be forged with extra payloads', () => {
+  assert.deepEqual(parseCastProbeRequest({...request,receiverApproval:'next-source'}), {...request,receiverApproval:'next-source'});
+  for (const patch of [{receiverApproval:true},{receiverApproval:'all-sources'},{receiverApproval:undefined},{receiverApproval:'next-source',url:'https://outside.invalid/'}]) assert.throws(()=>parseCastProbeRequest({...request,...patch}));
+});
+
+
+test('W01 polling connection budget uses bounded RPC IDs through 1024 and preserves explicit listener stop reason', async () => {
+  const {receiverId}=await import('../../packages/contracts/src/cast-receiver.ts');
+  const {diagnosticEntries}=await import('../../apps/tv/src/app/diagnostics.ts');
+  for(const id of [128,129,1024])assert.equal(receiverId(id),id);
+  for(const id of [0,1025,1.5])assert.throws(()=>receiverId(id));
+  for(const reason of ['connections','lease'])assert.equal(parseCastProbeResult({version:1,operation:'cast-discovery',scope,closed:false,code:'cast.listener_limit_'+reason}).closed,false);
+  assert.throws(()=>parseCastProbeResult({version:1,operation:'cast-discovery',scope,closed:false,code:'cast.listener_limit_raw_address'}));
+  const rows=['cast.listener_limit_connections','avplay.seek_restart_held_b1_t0','cast.receiver_summary_v2_7a0c00cf','cast.media_stopped','avplay.seek_history_v1_r','cast.native_closed_confirmed','cast.position_wire_v1_0f','cast.soap_summary_v1_0000000c78002010','cast.media_flow_s_c0_p0_w5_m9_l4'].map(code=>({code,verdict:'UNVERIFIED'}));
+  const selected=diagnosticEntries(rows);assert.ok(selected.length<=8);assert.ok(selected.some(e=>e.code==='cast.listener_limit_connections'));assert.ok(selected.some(e=>e.code==='cast.native_closed_confirmed'));
+});
+
+
+test('W01 index size and burst facts are bounded progress only, never cleanup acknowledgements', () => {
+  for (const code of ['cast.source_init_mib_1', 'cast.source_init_mib_42', 'cast.source_init_mib_128', 'cast.source_init_over_128_mib', 'cast.media_pump_burst', 'cast.media_read_mib_4', 'cast.media_read_mib_128']) {
+    assert.equal(parseCastProbeResult({ version: 1, operation: 'cast-discovery', scope, closed: false, code }).code, code);
+    assert.throws(() => parseCastProbeResult({ version: 1, operation: 'cast-discovery', scope, closed: true, code }));
+  }
+  for (const code of ['cast.source_init_mib_0','cast.source_init_mib_00','cast.source_init_mib_129','cast.source_init_mib_private','cast.media_pump_forever', 'cast.media_read_mib_0', 'cast.media_read_mib_3', 'cast.media_read_mib_132'])
+    assert.throws(() => parseCastProbeResult({ version: 1, operation: 'cast-discovery', scope, closed: false, code }));
+});
+
+
+test('W01/G1 isolated HTTP timeout IPC remains fixed, nonterminal and media-generation bounded', () => {
+  const base={version:1,operation:'cast-discovery',scope:{accountId:'guest',generation:1,requestId:'cast',mediaSessionId:'media'},closed:false};
+  for(const generation of [1,2,3,4]) assert.equal(parseCastProbeResult({...base,code:'cast.media_timeout_isolated_g'+generation}).closed,false);
+  for(const code of ['cast.media_timeout_isolated_g0','cast.media_timeout_isolated_g5','cast.media_timeout_isolated_g01','cast.media_timeout_progress_g1','cast.media_timeout_isolated_https']) assert.throws(()=>parseCastProbeResult({...base,code}));
+  assert.throws(()=>parseCastProbeResult({...base,closed:true,code:'cast.media_timeout_isolated_g1'}));
+  assert.throws(()=>parseCastProbeResult({...base,code:'cast.media_timeout_isolated_g1',url:'https://private.invalid'}));
 });

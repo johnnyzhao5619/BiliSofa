@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.42.0",
+  "uiSourceHash": "2557d771ac47232d5adad0903ab7f3292ddd6bd50478ea77f7d763fd6d379d2a",
+  "uiManifestSha256": "753769a9455da0f0f930ac4ccb46bb22458bc52a349292baf4df78fdbac83426",
+  "unsignedSha256": "322ef24dd3be868bc01397de174617e434d278fc0a41c4c6da1351d5891f6d5e",
+  "signedSha256": "abec6339007d37b0204536919fd74d06324fb0ca2471107a6c6f810502e64c82",
+  "signedAt": "2026-10-23T00:13:50.205474+00:00",
+  "sourceArchiveSha256": "654cf530824b4341ac9956ca6bc253a9028ee4d4c7785005535e870e1b4c3fdd",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.42.0",
+        "signedSha256": "abec6339007d37b0204536919fd74d06324fb0ca2471107a6c6f810502e64c82",
+        "uiSourceHash": "2557d771ac47232d5adad0903ab7f3292ddd6bd50478ea77f7d763fd6d379d2a",
+        "startedAt": "2026-10-23T00:14:29.818608+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.42.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.42.0",
+      "signedSha256": "abec6339007d37b0204536919fd74d06324fb0ca2471107a6c6f810502e64c82",
+      "uiSourceHash": "2557d771ac47232d5adad0903ab7f3292ddd6bd50478ea77f7d763fd6d379d2a",
+      "startedAt": "2026-10-23T00:14:29.818608+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "verification": {
+    "modules": 291,
+    "unitContractPassed": 674,
+    "castSeekUiPassed": 6,
+    "retainedCastOwnershipUiPassed": 7,
+    "retainedRecoveryUiPassed": 7,
+    "retainedSettingsUiPassed": 6,
+    "packageNegativePassed": 6,
+    "uiSourceInputs": 249,
+    "uiOutputFiles": 27,
+    "frozenFilesVerified": 378,
+    "nativeModulesUnchanged": 17,
+    "nativeResourcesUnchanged": 68
+  },
+  "deviceUserAcceptance": "PARTIAL_OBSERVATION_FORWARD_DISCONTINUITY_OPEN",
+  "agentRealAccountPosts": 0,
+  "observedPriorFailure": "observation-summary.json",
+  "inheritedUserAcceptance": {
+    "version": "0.41.0",
+    "androidDeliberateSeekAndStop": "USER_PASS",
+    "requestedIPhoneCheck": "USER_PASS_WITH_PROCESS_FIRST_STARTUP_EXCEPTION",
+    "firstCastAfterAppRestartAndroidAndIPhone": "USER_FAIL",
+    "accountRecovery040RequestedGroup": "USER_PASS"
+  },
+  "seekPolicy": {
+    "activeNonzero": "NATIVE_SEEK_WITHOUT_PAUSE_OR_REOPEN",
+    "pausedAndExplicitZero": "RETAINED_RESTART_PATH",
+    "nearZeroMerge": "DISABLED_IN_THIS_CANDIDATE",
+    "actualTimeNotOverwritten": true,
+    "callbacksAndTargetTicksSeparate": true,
+    "failureRetry": "NONE",
+    "operationDeadlineUnchanged": true
+  },
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "requestedUserResults": {
+    "startupRewindToZero": "NOT_REPORTED_THIS_RUN",
+    "startupSmoothness": "USER_REPORTED_FORWARD_DISCONTINUITY",
+    "observedAbout64s": "USER_OBSERVED_THEN_MANUALLY_STOPPED",
+    "manualSeekPauseZeroStopGroup": "NOT_TESTED",
+    "derivedNumericEvidence": "observed-042-summary.json"
+  }
+}

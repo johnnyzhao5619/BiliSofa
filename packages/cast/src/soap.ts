@@ -4,6 +4,16 @@ import type { SoapRequest, UpnpService, TransportQuery, CastMediaOffer, SoapProb
 import type { CastCommand } from './session.ts';
 const SOAP = 'http://schemas.xmlsoap.org/soap/envelope/', ENCODING = 'http://schemas.xmlsoap.org/soap/encoding/';
 const serviceUri = (service: UpnpService) => `urn:schemas-upnp-org:service:${service}:1`;
+// Exact Bilibili node listed by its official video diagnostics page (ADR-018).
+// No other customer or subdomain of the shared CDN is eligible.
+export const BILI_CAST_AKAM_HOST = 'upos-hz-mirrorakam.akamaized.net';
+function castMediaHost(host: string): boolean {
+  return host === BILI_CAST_AKAM_HOST || /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+bilivideo\.com$/.test(host);
+}
+export function isBiliCastAkamOffer(request: SoapRequest): boolean {
+  if (request.kind !== 'offer') return false;
+  try { return new URL(request.uri).hostname === BILI_CAST_AKAM_HOST; } catch { return false; }
+}
 const QUERIES: readonly TransportQuery[] = ['GetTransportInfo', 'GetPositionInfo', 'GetMediaInfo', 'GetDeviceCapabilities', 'GetTransportSettings', 'GetCurrentTransportActions'];
 export type SoapInvalidStage = 'header' | 'xml' | 'envelope' | 'body' | 'action' | 'arguments' | 'media_fields';
 export class SoapProtocolError extends DomainError {
@@ -155,7 +165,7 @@ export function validateSoapMediaOffer(request: SoapRequest, now: number): CastM
   const raw = request.uri;
   if (typeof raw !== 'string' || !raw.length || raw.length > 2048 || !/^[\x21-\x7e]+$/.test(raw) || /[\\#]/.test(raw)) invalid();
   let url: URL; try { url = new URL(raw); } catch { invalid(); }
-  if (url.protocol !== 'https:' || url.username || url.password || url.port || !/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+bilivideo\.com$/.test(url.hostname) || !url.pathname.startsWith('/upgcxcode/') || !url.pathname.endsWith('.mp4')) throw new DomainError('permission');
+  if (url.protocol !== 'https:' || url.username || url.password || url.port || !castMediaHost(url.hostname) || !url.pathname.startsWith('/upgcxcode/') || !url.pathname.endsWith('.mp4')) throw new DomainError('permission');
   const deadline = url.searchParams.getAll('deadline');
   if (deadline.length !== 1 || !/^[0-9]{10}$/.test(deadline[0]!)) invalid();
   const expiresAt = Number(deadline[0]) * 1000;
@@ -203,7 +213,7 @@ function classifyOfferUri(raw: string, now: number): SoapProbeFact {
   let url: URL; try { url = new URL(raw); } catch { return 'offer_uri_malformed'; }
   if (url.protocol === 'http:') return 'offer_uri_http';
   if (url.protocol !== 'https:') return 'offer_uri_scheme';
-  if (url.username || url.password || url.port || !/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+bilivideo\.com$/.test(url.hostname)) return 'offer_uri_destination';
+  if (url.username || url.password || url.port || !castMediaHost(url.hostname)) return 'offer_uri_destination';
   if (!url.pathname.startsWith('/upgcxcode/')) return 'offer_uri_path';
   if (url.pathname.endsWith('.m4s')) return 'offer_uri_m4s';
   if (url.pathname.endsWith('.m3u8')) return 'offer_uri_m3u8';

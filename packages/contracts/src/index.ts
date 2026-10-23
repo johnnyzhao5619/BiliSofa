@@ -80,6 +80,8 @@ export interface PlayerBackend {
   // A failed seek is retryable only after a finished SDK operation and known
   // unchanged active state; timeout/unknown state requires owner cleanup.
   seek(timeMs: number): Promise<void>;
+  /** Acknowledges a real backend command, never a measured effective rate. */
+  setRate?(rate: 1 | 2): 'accepted' | 'unsupported' | 'busy' | 'failed';
   close(): void;
   screensaver(active: boolean): void;
 }
@@ -145,14 +147,20 @@ export function parseInitialResult(value: unknown): InitialResult {
 }
 
 // W01/W03 guest popular read candidate. No caller URL, cookie, header or account data.
-export interface PopularCard { bvid: string; title: string; owner: string; durationSec: number; views: number; }
+export interface CoverReference { host: 'i0.hdslb.com' | 'i1.hdslb.com' | 'i2.hdslb.com'; path: string; }
+export function parseCoverReference(value: unknown): CoverReference {
+  const v = record(value);
+  if (Object.keys(v).length !== 2 || !['i0.hdslb.com','i1.hdslb.com','i2.hdslb.com'].includes(String(v.host)) || typeof v.path !== 'string' || v.path.length > 1024 || !/^\/bfs\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|webp)$/.test(v.path)) throw new DomainError('invalid');
+  return {host:v.host as CoverReference['host'],path:v.path};
+}
+export interface PopularCard { bvid: string; title: string; owner: string; durationSec: number; views: number; cover?: CoverReference; }
 export interface PopularRequest { version: 1; scope: Scope; operation: 'guest-popular'; page: number; }
 export interface PopularResult {
   version: 1; scope: Scope; operation: 'guest-popular'; closed: true;
   kind: 'ok' | 'http_error' | 'api_error' | 'invalid_response' | 'transport_error' | 'cancelled';
   status: number; apiCode?: number; code: string; items: PopularCard[]; noMore: boolean;
 }
-function popularScope(value: unknown): Scope {
+export function popularScope(value: unknown): Scope {
   const raw = record(value), scope = parseScope(value);
   if (Object.keys(raw).length !== 4 || Object.keys(raw).some(k => !['accountId', 'generation', 'mediaSessionId', 'requestId'].includes(k)) || scope.accountId !== 'guest' || ![scope.mediaSessionId, scope.requestId].every(id => /^[A-Za-z0-9_-]{1,64}$/.test(id))) throw new DomainError('invalid');
   return scope;
@@ -162,15 +170,16 @@ export function parsePopularRequest(value: unknown): PopularRequest {
   if (v.version !== 1 || v.operation !== 'guest-popular' || !Number.isInteger(page) || Object.keys(v).some(k => !['version', 'scope', 'operation', 'page'].includes(k))) throw new DomainError('invalid');
   return { version: 1, scope: popularScope(v.scope), operation: 'guest-popular', page };
 }
+export function parsePopularCard(item: unknown): PopularCard {
+  const card = record(item), bvid = text(card.bvid, 12), title = text(card.title, 120), owner = text(card.owner, 48), durationSec = finite(card.durationSec, 0, 86400), views = finite(card.views, 0, Number.MAX_SAFE_INTEGER);
+  if (Object.keys(card).length !== (card.cover===undefined?5:6) || Object.keys(card).some(k => !['bvid', 'title', 'owner', 'durationSec', 'views','cover'].includes(k)) || !/^BV[A-Za-z0-9]{10}$/.test(bvid) || !Number.isInteger(durationSec) || !Number.isInteger(views)) throw new DomainError('invalid');
+  return { bvid, title, owner, durationSec, views,...(card.cover===undefined?{}:{cover:parseCoverReference(card.cover)}) };
+}
 export function parsePopularResult(value: unknown): PopularResult {
   const v = boundedMessage(value), status = finite(v.status, 0, 599);
   if (v.version !== 1 || v.operation !== 'guest-popular' || v.closed !== true || !Number.isInteger(status) || (status !== 0 && status < 100) || !['ok', 'http_error', 'api_error', 'invalid_response', 'transport_error', 'cancelled'].includes(String(v.kind)) || Object.keys(v).some(k => !['version', 'scope', 'operation', 'closed', 'kind', 'status', 'apiCode', 'code', 'items', 'noMore'].includes(k))) throw new DomainError('invalid');
   if (!Array.isArray(v.items) || v.items.length > 4 || typeof v.noMore !== 'boolean' || (v.kind !== 'ok' && v.items.length)) throw new DomainError('invalid');
-  const items = v.items.map(item => {
-    const card = record(item), bvid = text(card.bvid, 12), title = text(card.title, 120), owner = text(card.owner, 48), durationSec = finite(card.durationSec, 0, 86400), views = finite(card.views, 0, Number.MAX_SAFE_INTEGER);
-    if (Object.keys(card).length !== 5 || Object.keys(card).some(k => !['bvid', 'title', 'owner', 'durationSec', 'views'].includes(k)) || !/^BV[A-Za-z0-9]{10}$/.test(bvid) || !Number.isInteger(durationSec) || !Number.isInteger(views)) throw new DomainError('invalid');
-    return { bvid, title, owner, durationSec, views };
-  });
+  const items = v.items.map(parsePopularCard);
   if (new Set(items.map(item => item.bvid)).size !== items.length) throw new DomainError('invalid');
   const code = text(v.code, 96);
   if (!/^guest\.[a-z0-9_]+$/.test(code)) throw new DomainError('invalid');

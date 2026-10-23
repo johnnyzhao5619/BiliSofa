@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "version": "0.43.0",
+  "evidence": "TEMPORARY_NUMERIC_DEBUG_OBSERVATION",
+  "userResult": {
+    "iPhoneFirstStartup": "USER_PASS",
+    "audioVideoAndClocks": "USER_PASS",
+    "phoneStop": "USER_PASS"
+  },
+  "entries": 124,
+  "seekCommands": [
+    {
+      "code": "command_seek",
+      "at": 107487,
+      "targetMs": 2000,
+      "actualMs": 1549,
+      "durationMs": 767558,
+      "state": "playing",
+      "first": true,
+      "startedAgo": 2121,
+      "seeking": false,
+      "owner": "sender"
+    },
+    {
+      "code": "command_seek",
+      "at": 159630,
+      "targetMs": 231000,
+      "actualMs": 40665,
+      "durationMs": 767558,
+      "state": "playing",
+      "first": false,
+      "startedAgo": 54264,
+      "seeking": false,
+      "owner": "sender"
+    }
+  ],
+  "sdkSeekTargetsMs": [
+    2000,
+    231000
+  ],
+  "restartSeekCount": 0,
+  "sameSecondAlignedCount": 0,
+  "firstValidPlaybackTimesMs": [
+    39,
+    548,
+    1048,
+    1549
+  ],
+  "firstValidTimesAfterStartupSeekMs": [
+    2050,
+    2331,
+    2331,
+    2331
+  ],
+  "phoneStopObserved": false,
+  "observerOutcome": "INSPECTOR_CALL_TIMEOUT",
+  "limits": [
+    "User requested group passes are independent from partial numeric trace",
+    "2s request at actual1549ms is a different reported second; native SDK seek executed",
+    "Later231s request is recorded; intention and landing are not established",
+    "No automatic Stop or complete observer cleanup proof in this trace",
+    "Not final endurance, all-source precision or independent-operation acceptance"
+  ]
+}

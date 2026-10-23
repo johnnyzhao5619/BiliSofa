@@ -10,15 +10,16 @@
 #define BILISOFA_CAST_SSDP_PORT 1900
 #endif
 #define CAST_RESOURCES 6
+#define CAST_CONNECTION_LIMIT 1024
 static int cast_tcp=-1,cast_udp=-1,cast_joined=0,cast_unconfirmed=0,cast_connections=0,cast_replies=0,cast_started=0;
 static struct ip_mreq cast_group;
 static char cast_ip[16],cast_uuid[37],cast_token[33],cast_location[160];
 static const char *cast_types[CAST_RESOURCES]={NULL,"upnp:rootdevice","urn:schemas-upnp-org:device:MediaRenderer:1","urn:schemas-upnp-org:service:AVTransport:1","urn:schemas-upnp-org:service:RenderingControl:1","urn:schemas-upnp-org:service:ConnectionManager:1"};
-static unsigned int cast_seen[7];
+static unsigned int cast_seen[7],cast_position_wire;
 static int cast_rpc_enabled=0;
 static char cast_rpc_response[6145];
 static double cast_deadline,cast_announce;
-struct cast_client { int fd,ready,connection_id,rpc_id,rpc_service; uint32_t peer_key; size_t used,size,sent,body_start,body_size; double deadline; char action[256],request[8193],response[8192]; };
+struct cast_client { int fd,ready,connection_id,rpc_id,rpc_service; unsigned int position_flags; uint32_t peer_key; size_t used,size,sent,body_start,body_size; double deadline; char action[256],request[8193],response[16384]; };
 static struct cast_client cast_clients[2]={{.fd=-1},{.fd=-1}};
 struct cast_reply { int active,kind; double at; struct sockaddr_in peer; };
 static struct cast_reply cast_queue[16];
@@ -44,7 +45,14 @@ static int cast_multicast_begin(struct in_addr address) {
   return 0;
 }
 static void cast_note(int kind) { if (cast_seen[kind]<999) cast_seen[kind]++; if(cast_seen[kind]==1){printf("CAST:seen:%d\n",kind);fflush(stdout);} }
-static void cast_drop(struct cast_client *c) { if(c->fd>=0 && close(c->fd)<0)cast_unconfirmed=1;memset(c,0,sizeof(*c));c->fd=-1; }
+/* Fixed aggregate only: complete socket writes do not prove sender parsing.
+   Bits: complete, nonzero position, nonzero duration, generated metadata,
+   discarded before a complete write (including explicit foreground cleanup). */
+static void cast_position_note(unsigned int bits) {
+  unsigned int next=cast_position_wire|bits;
+  if(next!=cast_position_wire){cast_position_wire=next;printf("CAST:position:%02x\n",next);fflush(stdout);}
+}
+static void cast_drop(struct cast_client *c) { if(c->position_flags)cast_position_note(c->ready && c->sent==c->size?c->position_flags:16); if(c->fd>=0 && close(c->fd)<0)cast_unconfirmed=1;memset(c,0,sizeof(*c));c->fd=-1; }
 static int cast_packet(char *out,size_t capacity,int kind,int notify,int bye) {
   char uuid[48],usn[160];snprintf(uuid,sizeof(uuid),"uuid:%s",cast_uuid);
   const char *type=kind==0?uuid:cast_types[kind];
@@ -74,6 +82,7 @@ BILISOFA_GUEST_EXPORT void cast_stop(void) {
   cast_tcp=cast_udp=-1;cast_joined=0;memset(cast_queue,0,sizeof(cast_queue));
   cast_rpc_enabled=0;memset(cast_rpc_response,0,sizeof(cast_rpc_response));
   memset(cast_ip,0,sizeof(cast_ip));memset(cast_uuid,0,sizeof(cast_uuid));memset(cast_token,0,sizeof(cast_token));memset(cast_location,0,sizeof(cast_location));
+  memset(cast_media_token,0,sizeof(cast_media_token));memset(cast_transition_token,0,sizeof(cast_transition_token));cast_session_until=0;
 #ifdef __EMSCRIPTEN__
   emscripten_cancel_main_loop();
 #endif
@@ -99,6 +108,137 @@ static int cast_search(char *packet,size_t length,int *mx) {
   for(int i=0;i<CAST_RESOURCES;i++)if(!strcmp(st,"ssdp:all") || !strcmp(st,i==0?uuid:cast_types[i]))mask|=1<<i;
   return mask?mask:-1;
 }
+/* Fixed supported actions only. Event subscriptions remain unsupported;
+   no evented state or full UPnP conformance is claimed. */
+static const char cast_avtransport_scpd[]=
+"<?xml version=\"1.0\"?><scpd xmlns=\"urn:schemas-upnp-org:service-1-0\"><specVersion><major>1</major><minor>0</minor></specVersion><actionList>"
+"<action><name>SetAVTransportURI</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"<argument><name>CurrentURI</name><direction>in</direction><relatedStateVariable>AVTransportURI</relatedStateVariable></argument>"
+"<argument><name>CurrentURIMetaData</name><direction>in</direction><relatedStateVariable>AVTransportURIMetaData</relatedStateVariable></argument>"
+"</argumentList></action>"
+"<action><name>GetTransportInfo</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"<argument><name>CurrentTransportState</name><direction>out</direction><relatedStateVariable>TransportState</relatedStateVariable></argument>"
+"<argument><name>CurrentTransportStatus</name><direction>out</direction><relatedStateVariable>TransportStatus</relatedStateVariable></argument>"
+"<argument><name>CurrentSpeed</name><direction>out</direction><relatedStateVariable>TransportPlaySpeed</relatedStateVariable></argument>"
+"</argumentList></action>"
+"<action><name>GetPositionInfo</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"<argument><name>Track</name><direction>out</direction><relatedStateVariable>CurrentTrack</relatedStateVariable></argument>"
+"<argument><name>TrackDuration</name><direction>out</direction><relatedStateVariable>CurrentTrackDuration</relatedStateVariable></argument>"
+"<argument><name>TrackMetaData</name><direction>out</direction><relatedStateVariable>CurrentTrackMetaData</relatedStateVariable></argument>"
+"<argument><name>TrackURI</name><direction>out</direction><relatedStateVariable>CurrentTrackURI</relatedStateVariable></argument>"
+"<argument><name>RelTime</name><direction>out</direction><relatedStateVariable>RelativeTimePosition</relatedStateVariable></argument>"
+"<argument><name>AbsTime</name><direction>out</direction><relatedStateVariable>AbsoluteTimePosition</relatedStateVariable></argument>"
+"<argument><name>RelCount</name><direction>out</direction><relatedStateVariable>RelativeCounterPosition</relatedStateVariable></argument>"
+"<argument><name>AbsCount</name><direction>out</direction><relatedStateVariable>AbsoluteCounterPosition</relatedStateVariable></argument>"
+"</argumentList></action>"
+"<action><name>GetMediaInfo</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"<argument><name>NrTracks</name><direction>out</direction><relatedStateVariable>NumberOfTracks</relatedStateVariable></argument>"
+"<argument><name>MediaDuration</name><direction>out</direction><relatedStateVariable>CurrentMediaDuration</relatedStateVariable></argument>"
+"<argument><name>CurrentURI</name><direction>out</direction><relatedStateVariable>AVTransportURI</relatedStateVariable></argument>"
+"<argument><name>CurrentURIMetaData</name><direction>out</direction><relatedStateVariable>AVTransportURIMetaData</relatedStateVariable></argument>"
+"<argument><name>NextURI</name><direction>out</direction><relatedStateVariable>NextAVTransportURI</relatedStateVariable></argument>"
+"<argument><name>NextURIMetaData</name><direction>out</direction><relatedStateVariable>NextAVTransportURIMetaData</relatedStateVariable></argument>"
+"<argument><name>PlayMedium</name><direction>out</direction><relatedStateVariable>PlaybackStorageMedium</relatedStateVariable></argument>"
+"<argument><name>RecordMedium</name><direction>out</direction><relatedStateVariable>RecordStorageMedium</relatedStateVariable></argument>"
+"<argument><name>WriteStatus</name><direction>out</direction><relatedStateVariable>RecordMediumWriteStatus</relatedStateVariable></argument>"
+"</argumentList></action>"
+"<action><name>GetDeviceCapabilities</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"<argument><name>PlayMedia</name><direction>out</direction><relatedStateVariable>PossiblePlaybackStorageMedia</relatedStateVariable></argument>"
+"<argument><name>RecMedia</name><direction>out</direction><relatedStateVariable>PossibleRecordStorageMedia</relatedStateVariable></argument>"
+"<argument><name>RecQualityModes</name><direction>out</direction><relatedStateVariable>PossibleRecordQualityModes</relatedStateVariable></argument>"
+"</argumentList></action>"
+"<action><name>GetTransportSettings</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"<argument><name>PlayMode</name><direction>out</direction><relatedStateVariable>CurrentPlayMode</relatedStateVariable></argument>"
+"<argument><name>RecQualityMode</name><direction>out</direction><relatedStateVariable>CurrentRecordQualityMode</relatedStateVariable></argument>"
+"</argumentList></action>"
+"<action><name>GetCurrentTransportActions</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"<argument><name>Actions</name><direction>out</direction><relatedStateVariable>CurrentTransportActions</relatedStateVariable></argument>"
+"</argumentList></action>"
+"<action><name>Play</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"<argument><name>Speed</name><direction>in</direction><relatedStateVariable>TransportPlaySpeed</relatedStateVariable></argument>"
+"</argumentList></action>"
+"<action><name>Pause</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"</argumentList></action>"
+"<action><name>Stop</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"</argumentList></action>"
+"<action><name>Seek</name><argumentList>"
+"<argument><name>InstanceID</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_InstanceID</relatedStateVariable></argument>"
+"<argument><name>Unit</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_SeekMode</relatedStateVariable></argument>"
+"<argument><name>Target</name><direction>in</direction><relatedStateVariable>A_ARG_TYPE_SeekTarget</relatedStateVariable></argument>"
+"</argumentList></action>"
+"</actionList><serviceStateTable>"
+"<stateVariable sendEvents=\"no\"><name>A_ARG_TYPE_InstanceID</name><dataType>ui4</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>AVTransportURI</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>AVTransportURIMetaData</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>TransportState</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>TransportStatus</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>TransportPlaySpeed</name><dataType>string</dataType>"
+"<allowedValueList><allowedValue>1</allowedValue></allowedValueList>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>CurrentTrack</name><dataType>ui4</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>CurrentTrackDuration</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>CurrentTrackMetaData</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>CurrentTrackURI</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>RelativeTimePosition</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>AbsoluteTimePosition</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>RelativeCounterPosition</name><dataType>i4</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>AbsoluteCounterPosition</name><dataType>i4</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>NumberOfTracks</name><dataType>ui4</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>CurrentMediaDuration</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>NextAVTransportURI</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>NextAVTransportURIMetaData</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>PlaybackStorageMedium</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>RecordStorageMedium</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>RecordMediumWriteStatus</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>PossiblePlaybackStorageMedia</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>PossibleRecordStorageMedia</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>PossibleRecordQualityModes</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>CurrentPlayMode</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>CurrentRecordQualityMode</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>CurrentTransportActions</name><dataType>string</dataType>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>A_ARG_TYPE_SeekMode</name><dataType>string</dataType>"
+"<allowedValueList><allowedValue>REL_TIME</allowedValue></allowedValueList>"
+"</stateVariable>"
+"<stateVariable sendEvents=\"no\"><name>A_ARG_TYPE_SeekTarget</name><dataType>string</dataType>"
+"</stateVariable>"
+"</serviceStateTable></scpd>"
+;
 static void cast_make_response(struct cast_client *c,int status,const char *body,int head) {
   int n=snprintf(c->response,sizeof(c->response),"HTTP/1.1 %d %s\r\nContent-Type: text/xml; charset=utf-8\r\nContent-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n%s",status,status==200?"OK":status==500?"Internal Server Error":"Error",strlen(body),head?"":body);
   if(n<=0 || (size_t)n>=sizeof(c->response)){cast_drop(c);return;}c->ready=1;c->size=(size_t)n;
@@ -118,7 +258,14 @@ BILISOFA_GUEST_EXPORT int cast_rpc_reply(int id,int status,unsigned int length) 
   struct cast_client *c=cast_rpc_find(id);
   if(!c){memset(cast_rpc_response,0,sizeof(cast_rpc_response));return 0;}
   if((status!=200 && status!=500) || !length || length>6144 || memchr(cast_rpc_response,0,length)){memset(cast_rpc_response,0,sizeof(cast_rpc_response));return -1;}
-  cast_rpc_response[length]=0;c->rpc_id=0;
+  cast_rpc_response[length]=0;
+  if(status==200 && c->rpc_service==3 && !strcmp(c->action,"\"urn:schemas-upnp-org:service:AVTransport:1#GetPositionInfo\"")) {
+    c->position_flags=1;
+    if(strstr(cast_rpc_response,"<RelTime>") && !strstr(cast_rpc_response,"<RelTime>00:00:00</RelTime>"))c->position_flags|=2;
+    if(strstr(cast_rpc_response,"<TrackDuration>") && !strstr(cast_rpc_response,"<TrackDuration>00:00:00</TrackDuration>"))c->position_flags|=4;
+    if(strstr(cast_rpc_response,"<TrackMetaData>&lt;DIDL-Lite"))c->position_flags|=8;
+  }
+  c->rpc_id=0;
   if(status==500)cast_note(4);
   cast_make_response(c,status,cast_rpc_response,0);
   memset(cast_rpc_response,0,sizeof(cast_rpc_response));memset(c->request,0,sizeof(c->request));memset(c->action,0,sizeof(c->action));c->used=c->body_start=c->body_size=0;
@@ -149,7 +296,7 @@ static void cast_http(struct cast_client *c) {
     if(n<=0 || (size_t)n+40>=sizeof(xml)){cast_drop(c);return;}strcpy(xml+n,"</serviceList></device></root>");cast_make_response(c,200,xml,head);if(get)cast_note(2);return;
   }
   for(int i=3;i<6;i++){const char *name=i==3?"AVTransport":i==4?"RenderingControl":"ConnectionManager";snprintf(expected,sizeof(expected),"/%s/%s.xml",cast_token,name);
-    if((get || head) && !strcmp(path,expected)){const char *scpd=i==5?"<?xml version=\"1.0\"?><scpd xmlns=\"urn:schemas-upnp-org:service-1-0\"><specVersion><major>1</major><minor>0</minor></specVersion><actionList><action><name>GetProtocolInfo</name><argumentList><argument><name>Source</name><direction>out</direction><relatedStateVariable>SourceProtocolInfo</relatedStateVariable></argument><argument><name>Sink</name><direction>out</direction><relatedStateVariable>SinkProtocolInfo</relatedStateVariable></argument></argumentList></action></actionList><serviceStateTable><stateVariable sendEvents=\"no\"><name>SourceProtocolInfo</name><dataType>string</dataType></stateVariable><stateVariable sendEvents=\"no\"><name>SinkProtocolInfo</name><dataType>string</dataType></stateVariable></serviceStateTable></scpd>":"<?xml version=\"1.0\"?><scpd xmlns=\"urn:schemas-upnp-org:service-1-0\"><specVersion><major>1</major><minor>0</minor></specVersion><actionList/><serviceStateTable/></scpd>";cast_make_response(c,200,scpd,head);if(get)cast_note(3);return;}
+    if((get || head) && !strcmp(path,expected)){const char *scpd=i==3 && cast_rpc_enabled?cast_avtransport_scpd:i==5?"<?xml version=\"1.0\"?><scpd xmlns=\"urn:schemas-upnp-org:service-1-0\"><specVersion><major>1</major><minor>0</minor></specVersion><actionList><action><name>GetProtocolInfo</name><argumentList><argument><name>Source</name><direction>out</direction><relatedStateVariable>SourceProtocolInfo</relatedStateVariable></argument><argument><name>Sink</name><direction>out</direction><relatedStateVariable>SinkProtocolInfo</relatedStateVariable></argument></argumentList></action></actionList><serviceStateTable><stateVariable sendEvents=\"no\"><name>SourceProtocolInfo</name><dataType>string</dataType></stateVariable><stateVariable sendEvents=\"no\"><name>SinkProtocolInfo</name><dataType>string</dataType></stateVariable></serviceStateTable></scpd>":"<?xml version=\"1.0\"?><scpd xmlns=\"urn:schemas-upnp-org:service-1-0\"><specVersion><major>1</major><minor>0</minor></specVersion><actionList/><serviceStateTable/></scpd>";cast_make_response(c,200,scpd,head);if(get)cast_note(3);return;}
     snprintf(expected,sizeof(expected),"/%s/control/%s",cast_token,name);if(!strcmp(method,"POST") && !strcmp(path,expected)){
       if(cast_rpc_enabled){c->rpc_id=c->connection_id;c->rpc_service=i;c->body_start=head_bytes;c->body_size=body;strcpy(c->action,action);printf("CAST:rpc:%d\n",c->rpc_id);fflush(stdout);return;}
       if(i==5 && !strcmp(action,"\"urn:schemas-upnp-org:service:ConnectionManager:1#GetProtocolInfo\"")){cast_note(6);cast_make_response(c,200,"<?xml version=\"1.0\"?><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><u:GetProtocolInfoResponse xmlns:u=\"urn:schemas-upnp-org:service:ConnectionManager:1\"><Source></Source><Sink>http-get:*:video/mp4:*</Sink></u:GetProtocolInfoResponse></s:Body></s:Envelope>",0);return;}cast_note(4);cast_make_response(c,500,"<?xml version=\"1.0\"?><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><s:Fault><faultcode>s:Client</faultcode><faultstring>UPnPError</faultstring><detail><UPnPError xmlns=\"urn:schemas-upnp-org:control-1-0\"><errorCode>401</errorCode><errorDescription>Invalid Action</errorDescription></UPnPError></detail></s:Fault></s:Body></s:Envelope>",0);return;}
@@ -163,7 +310,8 @@ static int cast_begin(const char *ip,const char *uuid,const char *token) {
   if(!ip || strlen(ip)>15 || inet_pton(AF_INET,ip,&address)!=1 || !cast_private(address) || !inet_ntop(AF_INET,&address,canonical,sizeof(canonical)) || strcmp(ip,canonical) || !uuid || strlen(uuid)!=36 || !token || strlen(token)!=32 || strspn(token,"0123456789abcdef")!=32)return 16;
   for(int i=0;i<36;i++)if(i==8 || i==13 || i==18 || i==23){if(uuid[i]!='-')return 16;}else if(!strchr("0123456789abcdef",uuid[i]))return 16;
   cast_source_attempted=cast_media_attempted=0;cast_source_forget();
-  strcpy(cast_ip,ip);strcpy(cast_uuid,uuid);strcpy(cast_token,token);memset(cast_seen,0,sizeof(cast_seen));memset(cast_queue,0,sizeof(cast_queue));cast_connections=cast_replies=0;
+  cast_media_generation=1;cast_session_until=0;cast_carry_bytes=0;cast_carry_windows=cast_carry_retries=0;cast_carry_connections=0;strcpy(cast_media_token,token);memset(cast_transition_token,0,sizeof(cast_transition_token));
+  strcpy(cast_ip,ip);strcpy(cast_uuid,uuid);strcpy(cast_token,token);memset(cast_seen,0,sizeof(cast_seen));cast_position_wire=0;memset(cast_queue,0,sizeof(cast_queue));cast_connections=cast_replies=0;
   for(int i=0;i<2;i++){memset(&cast_clients[i],0,sizeof(cast_clients[i]));cast_clients[i].fd=-1;}
   snprintf(cast_location,sizeof(cast_location),"http://%s:%d/%s/description.xml",ip,BILISOFA_CAST_PORT,token);
   cast_tcp=http_server_socket();
@@ -189,7 +337,11 @@ static int cast_begin(const char *ip,const char *uuid,const char *token) {
 }
 static void cast_tick(void) {
   if(cast_tcp<0)return;
-  double now=http_now();if(now<0 || now>=cast_deadline || cast_connections>=128 || cast_unconfirmed){cast_stop();return;}
+  double now=http_now();if(now<0 || now>=cast_deadline || cast_connections>=CAST_CONNECTION_LIMIT || cast_unconfirmed){
+    if(cast_connections>=CAST_CONNECTION_LIMIT)puts("CAST:limit:connections");
+    else if(now>=cast_deadline)puts("CAST:limit:lease");
+    fflush(stdout);cast_stop();return;
+  }
   cast_source_tick();
   if(bridge_external_loop && bridge_fd>=0)bridge_tick();
   if(bridge_unconfirmed)cast_unconfirmed=1;
@@ -199,7 +351,7 @@ static void cast_tick(void) {
     for(int i=0;i<CAST_RESOURCES;i++)if(mask&(1<<i))for(int q=0;q<16;q++)if(!cast_queue[q].active){cast_queue[q].active=1;cast_queue[q].kind=i;cast_queue[q].peer=peer;cast_queue[q].at=now+(double)(rand()%1000000)/1000000*mx;break;}
   }
   for(int q=0;q<16;q++)if(cast_queue[q].active && now>=cast_queue[q].at){struct cast_reply *r=&cast_queue[q];if(cast_replies<64){char packet[1024];int n=cast_packet(packet,sizeof(packet),r->kind,0,0);if(n>0 && (size_t)n<sizeof(packet) && sendto(cast_udp,packet,(size_t)n,0,(struct sockaddr *)&r->peer,sizeof(r->peer))==n){cast_replies++;cast_note(1);}}memset(r,0,sizeof(*r));}
-  for(int i=0;i<2;i++){struct cast_client *c=&cast_clients[i];if(c->fd<0){int fd=http_accept(cast_tcp);if(fd<0)continue;struct sockaddr_in peer;socklen_t size=sizeof(peer);if(getpeername(fd,(struct sockaddr *)&peer,&size)<0 || size!=sizeof(peer) || !cast_private(peer.sin_addr)){if(close(fd)<0)cast_unconfirmed=1;continue;}c->fd=fd;c->peer_key=ntohl(peer.sin_addr.s_addr);c->deadline=now+5;c->connection_id=++cast_connections;
+  for(int i=0;i<2;i++){struct cast_client *c=&cast_clients[i];if(c->fd<0){if(cast_connections>=CAST_CONNECTION_LIMIT)continue;int fd=http_accept(cast_tcp);if(fd<0)continue;struct sockaddr_in peer;socklen_t size=sizeof(peer);if(getpeername(fd,(struct sockaddr *)&peer,&size)<0 || size!=sizeof(peer) || !cast_private(peer.sin_addr)){if(close(fd)<0)cast_unconfirmed=1;continue;}c->fd=fd;c->peer_key=ntohl(peer.sin_addr.s_addr);c->deadline=now+5;c->connection_id=++cast_connections;
 #ifdef SO_NOSIGPIPE
     int no_signal=1;setsockopt(fd,SOL_SOCKET,SO_NOSIGPIPE,&no_signal,sizeof(no_signal));
 #endif

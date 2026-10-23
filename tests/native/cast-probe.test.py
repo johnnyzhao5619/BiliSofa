@@ -49,11 +49,13 @@ int main(int argc,char **argv){
  if(!strcmp(argv[1],"conflict")){printf("FIXED_FAILURE:%d\\n",rc);return rc==12?0:5;}
  if(rc)return 3;
  if(!strcmp(argv[1],"rpc"))cast_rpc_enable();
- double start=http_now();while(http_now()-start<8 && cast_tcp>=0){cast_tick();struct pollfd in={0,POLLIN,0};if(poll(&in,1,0)>0 && (in.revents&POLLIN)){char c;read(0,&c,1);if(c=='p'){for(int i=0;i<2;i++)if(cast_clients[i].rpc_id){int id=cast_clients[i].rpc_id;int good=cast_rpc_peer(id)==0x7f000001 && cast_rpc_service(id)==3 && cast_rpc_body_size(id)==10 && !memcmp((void *)cast_rpc_body(id),"<fixture/>",10) && !strcmp((char *)cast_rpc_action(id),"\\\"urn:schemas-upnp-org:service:AVTransport:1#GetTransportInfo\\\"");int rejected=cast_rpc_reply(id,400,0)==-1 && cast_rpc_reply(id,200,6145)==-1;strcpy((char *)cast_rpc_buffer(),"<fixed/>");int sent=cast_rpc_reply(id,200,8);int stale=cast_rpc_reply(id,200,8)==0 && !cast_rpc_body(id) && !cast_rpc_action(id) && !cast_rpc_peer(id);printf("RPC_RESULT:%d:%d:%d:%d\\n",good,rejected,sent,stale);fflush(stdout);break;}continue;}if(c=='r'){cast_replies=64;continue;}if(c=='e')inject=1;break;}struct timespec d={0,2000000};nanosleep(&d,NULL);}
+ double start=http_now();while(http_now()-start<8 && cast_tcp>=0){cast_tick();struct pollfd in={0,POLLIN,0};if(poll(&in,1,0)>0 && (in.revents&POLLIN)){char c;read(0,&c,1);if(c=='q' || c=='d'){for(int i=0;i<2;i++)if(cast_clients[i].rpc_id){int id=cast_clients[i].rpc_id;strcpy((char *)cast_rpc_buffer(),"<TrackDuration>00:04:00</TrackDuration><RelTime>00:00:20</RelTime><TrackMetaData>&lt;DIDL-Lite&gt;</TrackMetaData>");int queued=cast_rpc_reply(id,200,(unsigned int)strlen((char *)cast_rpc_buffer()));printf("POSITION_QUEUED:%d:%u\\n",queued,cast_position_wire);fflush(stdout);if(c=='d')cast_drop(&cast_clients[i]);break;}continue;}if(c=='p'){for(int i=0;i<2;i++)if(cast_clients[i].rpc_id){int id=cast_clients[i].rpc_id;int good=cast_rpc_peer(id)==0x7f000001 && cast_rpc_service(id)==3 && cast_rpc_body_size(id)==10 && !memcmp((void *)cast_rpc_body(id),"<fixture/>",10) && !strcmp((char *)cast_rpc_action(id),"\\\"urn:schemas-upnp-org:service:AVTransport:1#GetTransportInfo\\\"");int rejected=cast_rpc_reply(id,400,0)==-1 && cast_rpc_reply(id,200,6145)==-1;strcpy((char *)cast_rpc_buffer(),"<fixed/>");int sent=cast_rpc_reply(id,200,8);int stale=cast_rpc_reply(id,200,8)==0 && !cast_rpc_body(id) && !cast_rpc_action(id) && !cast_rpc_peer(id);printf("RPC_RESULT:%d:%d:%d:%d\\n",good,rejected,sent,stale);fflush(stdout);break;}continue;}if(c=='r'){cast_replies=64;continue;}if(c=='b'){cast_connections=CAST_CONNECTION_LIMIT;continue;}if(c=='e')inject=1;break;}struct timespec d={0,2000000};nanosleep(&d,NULL);}
  if(cast_started)cast_stop();if(!strcmp(argv[1],"rpc")){printf("RPC_AFTER_STOP:%d\\n",cast_rpc_body(1)==0 && cast_rpc_action(1)==0 && cast_rpc_peer(1)==0);}puts("CLOSED_WHILE_PROCESS_ALIVE");fflush(stdout);struct timespec alive={1,0};nanosleep(&alive,NULL);return cast_unconfirmed?4:0;
 }
 ''')
   subprocess.run(['clang','-std=c11','-D_DARWIN_C_SOURCE','-D_DEFAULT_SOURCE','-DBILISOFA_CAST_HOST_FIXTURE',f'-DBILISOFA_CAST_PORT={cls.tcp}',f'-DBILISOFA_CAST_SSDP_PORT={cls.udp}','-Wall','-Wextra','-Werror','-I',str(ROOT/'platform/wasm-network/src'),str(source),'-lcurl','-o',str(cls.exe)],check=True,capture_output=True)
+  legacy=folder/'legacy';legacy.mkdir();old=legacy/'cast.c';old.write_text(source.read_text());(legacy/'probe-cast.h').write_text((ROOT/'platform/wasm-network/src/probe-cast.h').read_text().replace('#define CAST_CONNECTION_LIMIT 1024','#define CAST_CONNECTION_LIMIT 128'));cls.legacy=legacy/'cast'
+  subprocess.run(['clang','-std=c11','-D_DARWIN_C_SOURCE','-D_DEFAULT_SOURCE','-DBILISOFA_CAST_HOST_FIXTURE',f'-DBILISOFA_CAST_PORT={cls.tcp}',f'-DBILISOFA_CAST_SSDP_PORT={cls.udp}','-Wall','-Wextra','-Werror','-I',str(ROOT/'platform/wasm-network/src'),str(old),'-lcurl','-o',str(cls.legacy)],check=True,capture_output=True)
  @classmethod
  def tearDownClass(cls):cls.tmp.cleanup()
  def setUp(self):
@@ -141,6 +143,19 @@ int main(int argc,char **argv){
   self.process=subprocess.Popen([str(self.exe),'rpc'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True);self.assertEqual(self.process.stdout.readline().strip(),'CAST:ready')
  def rpc_request(self):
   return (f'POST /{TOKEN}/control/AVTransport HTTP/1.1\r\nSOAPAction: "urn:schemas-upnp-org:service:AVTransport:1#GetTransportInfo"\r\nContent-Length: 10\r\n\r\n<fixture/>').encode()
+ def test_active_transport_description_declares_supported_actions_and_resolved_argument_types(self):
+  self.rpc_process();status,headers,data=self.fetch('AVTransport.xml');self.assertEqual(status,200);self.assertEqual(len(data),int(headers['Content-Length']));self.assertLess(len(data),15000)
+  ns={'s':'urn:schemas-upnp-org:service-1-0'};xml=ET.fromstring(data)
+  actions=xml.findall('s:actionList/s:action',ns);names=[a.find('s:name',ns).text for a in actions]
+  self.assertEqual(set(names),{'SetAVTransportURI','GetTransportInfo','GetPositionInfo','GetMediaInfo','GetDeviceCapabilities','GetTransportSettings','GetCurrentTransportActions','Play','Pause','Stop','Seek'})
+  variables={v.find('s:name',ns).text:v for v in xml.findall('s:serviceStateTable/s:stateVariable',ns)}
+  for action in actions:
+   args=action.findall('s:argumentList/s:argument',ns);self.assertEqual(args[0].find('s:name',ns).text,'InstanceID')
+   for arg in args:self.assertIn(arg.find('s:relatedStateVariable',ns).text,variables)
+  position=next(a for a in actions if a.find('s:name',ns).text=='GetPositionInfo')
+  self.assertEqual([a.find('s:name',ns).text for a in position.findall('s:argumentList/s:argument',ns)],['InstanceID','Track','TrackDuration','TrackMetaData','TrackURI','RelTime','AbsTime','RelCount','AbsCount'])
+  self.assertTrue(all(v.get('sendEvents')=='no' for v in variables.values()))
+  self.assertEqual(self.fetch('AVTransport.xml',method='HEAD')[2],b'')
  def test_rpc_getters_are_private_owned_and_reply_rejects_bad_status_and_stale_ids(self):
   self.rpc_process()
   with ThreadPoolExecutor() as pool:
@@ -159,4 +174,52 @@ int main(int argc,char **argv){
    result=pool.submit(self.raw,self.rpc_request());self.assertEqual(self.process.stdout.readline().strip(),'CAST:rpc:1');self.process.stdin.write('s');self.process.stdin.flush();out,_=self.process.communicate(timeout=3);self.assertIn('RPC_AFTER_STOP:1',out);self.assertIn('CAST:closed:',out);self.assertEqual(result.result(timeout=2),b'')
  def test_external_address_rejected_before_any_listener_is_created(self):
   r=subprocess.run([str(self.exe),'invalid'],capture_output=True,timeout=3);self.assertEqual(r.returncode,0);self.assertEqual(r.stdout,b'')
+
+ def test_position_completion_records_only_full_socket_write_and_fixed_nonzero_flags(self):
+  self.rpc_process()
+  with ThreadPoolExecutor() as pool:
+   result=pool.submit(self.raw,self.rpc_request().replace(b'GetTransportInfo',b'GetPositionInfo'))
+   self.assertEqual(self.process.stdout.readline().strip(),'CAST:rpc:1')
+   self.process.stdin.write('q');self.process.stdin.flush()
+   self.assertEqual(self.process.stdout.readline().strip(),'POSITION_QUEUED:1:0')
+   self.assertEqual(self.process.stdout.readline().strip(),'CAST:position:0f')
+   response=result.result(timeout=2);headers,body=response.split(b'\r\n\r\n',1)
+   self.assertIn(b'<RelTime>00:00:20</RelTime>',body)
+   self.assertIn(f'Content-Length: {len(body)}'.encode(),headers)
+ def test_position_discard_before_send_does_not_report_success_or_content_flags(self):
+  self.rpc_process()
+  with ThreadPoolExecutor() as pool:
+   result=pool.submit(self.raw,self.rpc_request().replace(b'GetTransportInfo',b'GetPositionInfo'))
+   self.assertEqual(self.process.stdout.readline().strip(),'CAST:rpc:1')
+   self.process.stdin.write('d');self.process.stdin.flush()
+   self.assertEqual(self.process.stdout.readline().strip(),'POSITION_QUEUED:1:0')
+   self.assertEqual(self.process.stdout.readline().strip(),'CAST:position:10')
+   self.assertEqual(result.result(timeout=2),b'')
+
+ def test_real_polling_and_rpc_ids_continue_beyond_old_128_connection_limit(self):
+  self.rpc_process()
+  self.assertEqual(self.fetch()[0],200);self.assertEqual(self.process.stdout.readline().strip(),'CAST:seen:2')
+  for _ in range(140):self.assertEqual(self.fetch()[0],200)
+  with ThreadPoolExecutor() as pool:
+   response=pool.submit(self.raw,self.rpc_request());line=self.process.stdout.readline().strip()
+   self.assertTrue(line.startswith('CAST:rpc:'));self.assertGreater(int(line.split(':')[-1]),128)
+   self.process.stdin.write('p');self.process.stdin.flush();self.assertEqual(self.process.stdout.readline().strip(),'RPC_RESULT:1:1:1:1')
+   self.assertIn(b'200 OK',response.result(timeout=2))
+ def test_connection_ceiling_still_closes_and_emits_a_fixed_cause(self):
+  self.process.stdin.write('b');self.process.stdin.flush()
+  self.assertEqual(self.process.stdout.readline().strip(),'CAST:limit:connections')
+  self.assertTrue(self.process.stdout.readline().startswith('CAST:closed:'))
+  self.assertEqual(self.process.stdout.readline().strip(),'CLOSED_WHILE_PROCESS_ALIVE')
+  with self.assertRaises(OSError):socket.create_connection(('127.0.0.1',self.tcp),timeout=.2)
+ def test_old_128_budget_reproduces_polling_shutdown_without_decoder_or_sender_stop(self):
+  self.process.stdin.write('s');self.process.stdin.flush();self.process.communicate(timeout=3)
+  self.process=subprocess.Popen([str(self.legacy),'run'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+  self.assertEqual(self.process.stdout.readline().strip(),'CAST:ready')
+  self.assertEqual(self.fetch()[0],200);self.assertEqual(self.process.stdout.readline().strip(),'CAST:seen:2')
+  for _ in range(126):self.assertEqual(self.fetch()[0],200)
+  try:self.fetch()
+  except (OSError,urllib.error.URLError):pass
+  self.assertEqual(self.process.stdout.readline().strip(),'CAST:limit:connections')
+  self.assertTrue(self.process.stdout.readline().startswith('CAST:closed:'))
+  self.assertEqual(self.process.stdout.readline().strip(),'CLOSED_WHILE_PROCESS_ALIVE')
 if __name__=='__main__':unittest.main()

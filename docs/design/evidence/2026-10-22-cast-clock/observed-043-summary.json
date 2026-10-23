@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "kind": "DERIVED_NUMERIC_DEVICE_OBSERVATION",
+  "version": "0.43.0",
+  "uiSourceHash": "ec2d310790487fb7dae89b4be66eb5289fafe643b45c978131938ea0648a52a9",
+  "signedSha256": "2b5ea165e072683f8ce460417dc6c15c438f7f63566b84a2561b308de8fb49ea",
+  "privateNumericTraceSha256": "095b7d6befeaf43832dd8e14759cb38903f9ccbec4ef0cd34d2e59442e04618a",
+  "rawTracePublished": false,
+  "requestedGroupUserResult": "USER_PASS",
+  "manualNonzeroTargetActuallyRecordedMs": 55000,
+  "exact30sTargetRecorded": false,
+  "seekObservations": [
+    {
+      "targetMs": 61000,
+      "beforeMs": 1065,
+      "sameSecondCompletedWithoutSdk": false,
+      "sdkSeekCount": 1,
+      "firstPlaybackTimesMs": [
+        64992,
+        65426,
+        65926
+      ],
+      "observedWithin1500ms": false
+    },
+    {
+      "targetMs": 1000,
+      "beforeMs": 1508,
+      "sameSecondCompletedWithoutSdk": true,
+      "sdkSeekCount": 0,
+      "firstPlaybackTimesMs": [
+        2008,
+        2509,
+        3011
+      ],
+      "observedWithin1500ms": null
+    },
+    {
+      "targetMs": 55000,
+      "beforeMs": 20538,
+      "sameSecondCompletedWithoutSdk": false,
+      "sdkSeekCount": 1,
+      "firstPlaybackTimesMs": [
+        54984,
+        55469,
+        55970
+      ],
+      "observedWithin1500ms": true
+    },
+    {
+      "targetMs": 0,
+      "beforeMs": 64480,
+      "sameSecondCompletedWithoutSdk": false,
+      "sdkSeekCount": 0,
+      "firstPlaybackTimesMs": [
+        2,
+        503,
+        1003
+      ],
+      "observedWithin1500ms": true
+    },
+    {
+      "targetMs": 190000,
+      "beforeMs": 4116,
+      "sameSecondCompletedWithoutSdk": false,
+      "sdkSeekCount": 1,
+      "firstPlaybackTimesMs": [
+        192222,
+        192722,
+        193222
+      ],
+      "observedWithin1500ms": false
+    }
+  ],
+  "pauseThenPlayRecorded": true,
+  "stopRecordedWhileAlreadyIdle": true,
+  "nearEndSdkTimeMs": 193631,
+  "temporaryObserver": "REMOVED",
+  "precisionBoundary": "61s and 190s requests did not yield a post-completion playback tick within 1500ms in this record; keep source-dependent seek precision OPEN; no repeated test requested"
+}

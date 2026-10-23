@@ -1,162 +1,239 @@
-# 开发环境
+# 开发与部署
 
-2026-10-14 启动核查：macOS 27.0.1 (26A434)、Darwin arm64、Node v24.21.0、npm 11.19.0、Python 3.12.10、Apple clang 21.0.0 (clang-2100.3.34.2)。Tizen CLI/SDB/Samsung Emscripten/.NET 初始未发现；签名 profile 未确认。
+> 用户当前要求先不部署，见[第三方验收任务](THIRD_PARTY_ACCEPTANCE_PROMPT.md)。下文构建/签名/安装命令仅作开发参考，不是当前授权。0.28–0.43目录/工件冻结，不直接重建覆盖；R07候选未接生产/打包/部署，不能借用0.43.0的设备结果。
 
-当前是 W01 候选探针开发，最终运行时尚未固定。工程命令随实际构建结果在本文件更新。build/package 不隐式连接、签名、安装或发布。
+更新：2026-10-21。当前为WGT/Web＋电视内Worker/WASM/AVPlay路线；开发机仅用于构建、签名和安装。build/package不隐式连接设备或发布。
 
-## 已安装的项目工具
+## 产品界面独立开发构建
 
-TypeScript 5.9.3、esbuild 0.28.2、Playwright 1.64.1；npm lockfile 真实安装生成，`npm ci --ignore-scripts` 可恢复。Chromium 156.0.8078.4 / build 1248 在用户 Playwright cache，不进入 TV 包。项目 runtime 无 npm 依赖和框架。
+`npm run build:app:u1`生成`dist/u1-app`（0.29.0开发构建），不覆盖已冻结的`dist/recommend-app`/0.28.0，不生成WGT、不签名/安装。该冻结候选仅含名称/范围与呈现合同，见[ADR-071](adr/071-content-display-foundation.md)。不能用旧`package:app:local-data`命令把此目录说成新包。
 
-实际运行入口：
+`npm run build:app:product-ui`生成独立`dist/product-ui-app`（0.30.0开发候选），新增大屏壳层、首页/视频搜索卡片、详情播放返回及受限公开封面，见[ADR-072](adr/072-product-shell-and-public-artwork.md)。无原生依赖变更、WGT、签名或部署；不能用旧打包命令为此目录套用历史设备通过。`BILISOFA_TEST_ROOT=dist/product-ui-app npm run test:ui:product`只作合成UI证据。`node tools/build-foundation-app.mjs --u1 --verification`输出`dist/u1-regression-app`供共享逻辑回归，不覆盖0.29.0冻结工件。
+
+前一候选使用`npm run build:app:product-library`输出独立`dist/product-library-app`（0.31.0），见[ADR-073](adr/073-continuation-and-product-library.md)。`npm run test:ui:product-library`仅运行合成检查。旧0.28/0.29/0.30目录是冻结工件，不以重建旧命令覆盖；共享逻辑回归用`--u1 --verification`的独立输出，UI配置可由`BILISOFA_PROBE_ROOT`选择。当前无新WGT/签名/安装。
+
+0.32.0源码使用`npm run build:app:product-discovery`输出独立`dist/product-discovery-app`（0.32.0统一搜索），见[ADR-074](adr/074-unified-product-search.md)。`npm run test:ui:product-discovery`检查新模块；`BILISOFA_PROBE_ROOT=dist/product-discovery-app npm run test:ui:product-library`复用片库回归。0.28–0.31工件冻结，后续修改需选择新的独立输出；未集成全部产品页面前不为此构建单独部署。
+
+前一冻结候选使用`npm run build:app:product-collections`输出独立`dist/product-collections-app`（0.33.0），见[ADR-075](adr/075-following-and-pgc-product-browse.md)。`npm run test:ui:product-collections`检查关注/已追番剧；统一搜索与片库配置均可用`BILISOFA_PROBE_ROOT=dist/product-collections-app`选择本轮目录。0.28–0.32工件冻结，不重建覆盖；未生成新WGT，不单独部署此内部候选。
+
+本轮必要检查：`npm run check`、`npm test`；相关UI使用`BILISOFA_PROBE_ROOT=dist/u1-regression-app`运行`playwright.local-data.config.ts`、`playwright.queue-parts.config.ts`；媒体UI另加`BILISOFA_TEST_ROOT=dist/u1-regression-app`，运行`playwright.w04-media.config.ts`中的`playback.spec.ts pgc.spec.ts`。仅为合成检查，完整模块就绪后集中给设备清单。
+
+## 当前稳定浏览/目标控制候选0.39.0
 
 ```sh
-cd /Users/weijiazhao/Dev/BiliSofa
+npm run check
+npm test
+npm run build:app:product-stream
+npm run test:ui:product-stream
+python3 tests/native/product-stream-packaging.test.py
+python3 tools/sign-foundation-app.py --product-stream
+python3 tools/deploy-foundation-app.py --product-stream
+```
+
+独立dist/product-stream-app/0.39.0及product-stream私有指针；新UI套件包含适配遥控退出的保留播放器/设置/浏览回归，旧冻结套件不改。UI与会修改stage的包负例串行。封存后不重建旧目录；自动检查无真实账号POST。浏览/资源合同见ADR-081。
+
+## 冻结单击互动/缓存0.38.0（历史命令仅供参考）
+
+```sh
+npm run check
+npm test
+npm run build:app:product-instant
+npm run test:ui:product-instant
+BILISOFA_PROBE_ROOT=dist/product-instant-app npm run test:ui:product-player
+BILISOFA_PROBE_ROOT=dist/product-instant-app npm run test:ui:product-browse
+python3 tests/native/product-instant-packaging.test.py
+python3 tools/sign-foundation-app.py --product-instant
+python3 tools/deploy-foundation-app.py --product-instant
+```
+
+独立dist/product-instant-app/0.38.0及product-instant私有指针。UI与修改stage的包负例串行；自动检查无真实账号POST。封存后下轮新目录，不覆盖0.28–0.38。界面单击授权合同见ADR-080，小数后端待实施。
+
+## 冻结控制栏0.37.0（历史命令仅供参考）
+
+```sh
+npm run check
+npm test
+npm run build:app:product-actions
+npm run test:ui:product-actions
+BILISOFA_PROBE_ROOT=dist/product-actions-app npm run test:ui:product-interactions
+BILISOFA_PROBE_ROOT=dist/product-actions-app npm run test:ui:product-player
+BILISOFA_PROBE_ROOT=dist/product-actions-app npm run test:ui:product-browse
+python3 tests/native/product-actions-packaging.test.py
+python3 tools/sign-foundation-app.py --product-actions
+python3 tools/deploy-foundation-app.py --product-actions
+```
+
+输出独立`dist/product-actions-app`/0.37.0及product-actions私有指针。UI与会修改stage的包负例串行；不执行真实账号POST。配对工件冻结后，下轮使用新版本/目录，不覆盖0.28–0.37。小数倍速后端未实现，见ADR-079。
+
+## 冻结U4互动0.36.0（历史命令仅供参考）
+
+```sh
+npm run check
+npm test
+npm run build:app:product-interactions
+npm run test:ui:product-interactions
+BILISOFA_PROBE_ROOT=dist/product-interactions-app npm run test:ui:product-player
+BILISOFA_PROBE_ROOT=dist/product-interactions-app npm run test:ui:product-browse
+python3 tests/native/product-interactions-packaging.test.py
+python3 tools/sign-foundation-app.py --product-interactions
+python3 tools/deploy-foundation-app.py --product-interactions
+```
+
+4173 UI套件与会修改stage的包负例串行运行。0.36.0使用独立`dist/product-interactions-app`、unsigned WGT及`*-product-interactions-manifest.json`指针；真实写入不作为自动检查。原生固定GET/POST/CA未重建，F14默认暂停。已配对工件冻结后，下一轮另选版本/目录，不能用旧构建命令覆盖0.28–0.36的工件。实际部署结论以[签名记录](SIGNING_DEVICE_RECORD.md)为准。
+
+## 冻结体验组合0.35.0（历史命令仅供参考）
+
+```sh
+npm run check
+npm test
+npm run build:app:product-browse
+npm run test:ui:product-browse
+BILISOFA_PROBE_ROOT=dist/product-browse-app npm run test:ui:product-player
+python3 tests/native/product-browse-packaging.test.py
+python3 tools/sign-foundation-app.py --product-browse
+python3 tools/deploy-foundation-app.py --product-browse
+```
+
+所有4173 UI服务及修改stage的包负例串行；输出独立`dist/product-browse-app`与`dist/BiliSofa-0.35.0-unsigned.wgt`，使用独立product-browse签名/部署指针。0.28–0.34冻结工件不重建覆盖。原生依赖/权限不变，关注视频目标只改变生产Worker/DTO解析。新签名工件与源码快照在仓库外保护目录，升级不卸载/清数据。[ADR-077](adr/077-continuous-browse-and-cast-refinement.md)及[验收](CURRENT_DEVICE_TEST.md)记录边界。
+
+## 历史U3组合候选0.34.0
+
+本轮用户授权U3完成后部署。使用独立目录，保留0.28–0.33冻结工件：
+
+```sh
+npm run check
+npm test
+npm run build:app:product-player
+npm run test:ui:product-player
+python3 tests/native/product-player-packaging.test.py
+python3 tools/sign-foundation-app.py --product-player
+python3 tools/deploy-foundation-app.py --product-player
+```
+
+负例会短暂修改并恢复新stage，必须与UI/签名串行。签名工具重验来源后生成`dist/BiliSofa-U3-0.34.0-unsigned.wgt`，自有BiliSofa profile的签名工件和设备记录在仓库外保护目录，独立`*-product-player-manifest.json`指针；不暴露证书/地址。应用ID/Author保持，不卸载、不清数据。当前包配对见[签名记录](SIGNING_DEVICE_RECORD.md)，state/capability/install/launch成功仍不代表用户声画验收。回退先按旧签名包及其源码hash核对身份，平台可能拒绝低版本升级；不要为回退擅自卸载或清数据，需保留失败并另行确定数据安全方案。无自动回退操作。
+
+## 已配置工具
+
+| 工具 | 项目记录 |
+| --- | --- |
+| Node / npm | v24.21.0 / 11.19.0（环境初次记录，本轮未重查） |
+| TypeScript / esbuild / Playwright | 5.9.3 / 0.28.2 / 1.64.1，依赖以lockfile为准 |
+| runtime npm依赖 | qrcode-generator 2.0.4；其他第三方代码/数据见THIRD_PARTY_NOTICES |
+| Samsung Emscripten | 1.39.4.7 fastcomp，隔离`.local/sdk/emscripten-release-bundle/emsdk`；x86_64工具通过已授权Rosetta运行 |
+| Tizen CLI / SDB | CLI 2.5.25，SDB更新后4.2.36；隔离`.local/tizen-studio` |
+| 网络依赖 | 固定curl 8.23.0 / OpenSSL 3.5.9；来源/补丁/许可证及hash由candidate manifest/lock校验 |
+| CA | 项目`.local/cacert.pem`；公开根证书随包，TLS peer/host验证保持开启 |
+
+## 当前应用构建
+
+在`/Users/weijiazhao/Dev/BiliSofa`运行：
+
+```sh
 npm ci --ignore-scripts
 npm run check
 npm test
-npm run probe:native:check
-npm run build
-npm run package
-python3 tools/verify-package.py
-npx playwright install chromium
-npm run test:ui
-python3 tools/delivery.py
-npm run dev
+npm run build:app
+npm run package:app
+python3 tests/native/foundation-packaging.test.py
 ```
 
-`check`：strict TS、导入循环/反向依赖/platform globals 检查；`test`：Node test runner＋本地 esbuild loader；`test:ui`：启动仅绑定 loopback 的桌面服务并自动退出，Chromium 1920×1080，匿名合成输入。Browser 技能未在本会话列出，使用 Playwright。截图默认 `/tmp/bilisofa-evidence`；可显式设置 `BILISOFA_EVIDENCE_DIR` 到仓库外路径。不能把桌面 Chromium 156 结果当作电视 M120/当前固件证明。
+`build:app`生成`dist/foundation-app/`，`package:app`校验UI/native来源和资源后生成当前内部WGT。默认配置/打包/签名工具仍绑定0.20.0，不能把含新F06开发源码的重建物冒充已冻结0.20.0；新交付需明确更新版本、门禁和源码/包记录。
 
-产物：`dist/probe/` 为 WGT root；`dist/BiliSofa-W01-basic-unsigned.wgt`、`.sha256`、`source-manifest.json`、源码快照 ZIP、`DELIVERY.json`。全部 ignored。包身份 BiliProbe1.Probe，版本 0.0.1，基础包不含 native Socket/cURL。
-
-CI `.github/workflows/ci.yml` 会真实执行相同 portable gate、build/package/UI 测试；actions 固定 SHA 来自当前远程 tag 核查。尚未发布或在 GitHub 运行，不能提供成功 CI 链接。
-
-## Samsung SDK 隔离准备与阻塞
-
-官方 macOS 1.39.4.7 下载并解压至项目 ignored `.local/sdk/emscripten-release-bundle/emsdk`，完整原始 ZIP 保留。没有覆盖用户已有 signing/Emscripten 身份。hash 见 THIRD_PARTY_NOTICES。
-
-系统 curl 默认 TLS 验证可下载官方 SDK 和 curl/Mozilla CA；Python urllib 默认 CA 在当前环境对 Samsung 入口报 `CERTIFICATE_VERIFY_FAILED: self-signed certificate in certificate chain`。未采用 `-k` / unverified context。
-
-初次 activation 在 arm64 下没有匹配工具，x86_64 clang/Node 报 bad CPU type。用户随后明确授权安装 Rosetta 2；`softwareupdate --install-rosetta --agree-to-license` exit 0，receipt com.apple.pkg.RosettaUpdateAuto 1.0.0.0.1790234402。未使用 upstream emcc，未改 SDK 源代码，未覆盖全局 Emscripten/signing 配置。
-
-原生构建已成功，实际隔离命令：
+W04冻结版本0.21.4使用独立目录；当前源码继续开发W06，不能重写或冒充旧冻结包：
 
 ```sh
-cd /Users/weijiazhao/Dev/BiliSofa
-# 首次 SDK 激活（已执行；仅写 SDK 内配置）
-cd .local/sdk/emscripten-release-bundle/emsdk
-arch -x86_64 /usr/bin/python3 emsdk.py activate --embedded latest-fastcomp
-cd /Users/weijiazhao/Dev/BiliSofa
-export EM_CONFIG="$PWD/.local/sdk/emscripten-release-bundle/emsdk/.emscripten"
-export EM_CACHE="$PWD/.local/emscripten-cache"
-export EM_PORTS="$PWD/.local/emscripten-ports"
-export BILISOFA_SAMSUNG_EMCC="$PWD/.local/sdk/emscripten-release-bundle/emsdk/fastcomp/emscripten/emcc.py"
-export BILISOFA_SDK_PYTHON=/usr/bin/python3
-export BILISOFA_CA_BUNDLE="$PWD/.local/cacert.pem"
-npm run probe:native:build
-npm run build
-npm run package
-npm run package:native
-python3 tools/verify-package.py --native
-npm run test:ui:native
-python3 tools/delivery.py
+npm run build:app:w04
+npm run test:ui:w04-media
+npm run package:app:w04
+npm run test:package:w04
 ```
 
-实际 compiler：Samsung emcc 1.39.4.7、激活的 fastcomp clang 6.0.1、SDK Node 12.9.1、系统 Python 3.9.6（build wrapper 是 Python 3.12）。32 MiB 固定 heap，Worker-only；输出 `build/native/probe.js` / `.wasm` / `.data` / `manifest.json`，WASM 1670521 bytes，WebAssembly.validate true。重复编译三个文件 SHA-256 一致。
+新原生模块先按下一节链接；打包核对所有当前源码/运行产物hash、CA、固定路由、CSP/权限、写操作隔离及许可证。不以修改manifest代替重建。W04输出`dist/BiliSofa-W04-media-unsigned.wgt`；整体状态/阻塞见[W04门槛](W04_MEDIA_DELIVERY.md)。Playwright为Chromium合成流程，SDK链接不证明真机；所有使用4173端口的UI套件，以及会修改stage/manifest的打包负例应串行运行。原生共享同一loopback端口的套件也须串行。
 
-生成 output 使用相对名称，不含用户绝对路径。packager 随机 UUID 按未修改 CA 内容 hash 规范化并登记修改；未开启 preload cache。SDK/cache/ports 均隔离于 `.local`；一次直接版本查询生成的用户 cache marker 已仅移除本次生成项，其余用户文件保留。native wrapper 对版本查询也默认隔离 cache/ports。
-
-第三方原始 LICENSE/COPYRIGHT、MPL、OpenSSL acknowledgements 在 `platform/wasm-network/licenses`；严格 hash 校验后由 `package:native` 整合，basic package 继续拒绝 extra native files。native 当前内部版本 0.0.25，与 basic 0.0.1 同 app/package ID，升级要求保留 author；0.0.8→0.0.9单次CLI更新marker1保持已取证，其他数据/回退仍未验证。
-
-CA： https://curl.se/ca/cacert.pem，2026-09-25 快照，2026-10-14 下载 188900 bytes / 121 certificates；SHA-256 `a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505` 与官方校验文件一致。仅公开根证书数据随 native probe.data 打包，MPL-2.0 与稳定源 URL 保留；无私钥/session。
-
-native 桌面测试证明本地 Worker JS/WASM/CA 加载、实际 WASM 初始化、严格 CSP、主 UI 可操作和停止后新 Worker。桌面无零售 Tizen sockets，网络执行 20 秒 timeout 记 FAIL；未叫网络 PASS。生成 runtime 的旧依赖不作为最终产品安全选型；native 支持与安全门槛仍需 W01 真机及最终网络栈处理。
-
-## 签名/安装 CLI 已准备
-
-官方 [Tizen Studio 6.1 CLI installer archive](https://download.tizen.org/sdk/Installer/tizen-studio_6.1/) 的 macOS 包已下载：280301758 bytes，SHA-256 `1630194c222776093785b274554461f896243dfa6b59581928047816fab75a80`，内嵌 payload MD5 校验通过。完整 SDK 解压在 `.local/tizen-studio`，未执行会改用户 `.package-manager/jdk` 的 installer wrapper。标准 sdk.info 将 SDK/data/JDK 指向项目 `.local`；未修改 vendor tool 源码，SDK 与工具许可证保留在其原始位置，不随公开 WGT/源码 ZIP 分发。
-
-实测可运行：Tizen CLI 2.5.25、SDB 4.2.25、SDK OpenJDK Corretto 1.8.0_322。`tizen version`、`package -h`、`install -h` exit 0；参数模板已对照实际 help。随后已获授权执行 sdb devices/connect/capability，只读确认 tv/9.0；原始输出保存在仓库外。后续已完成自己的 Author/Public Distributor、实际签名/安装/启动，见 SIGNING_DEVICE_RECORD。
+W05旧账号互动候选0.24.1单独生成`dist/w05-app`与`dist/BiliSofa-W05-interactions-unsigned.wgt`，不覆盖W04冻结目录/签名指针：
 
 ```sh
-/Users/weijiazhao/Dev/BiliSofa/.local/tizen-studio/tools/ide/bin/tizen version
-/Users/weijiazhao/Dev/BiliSofa/.local/tizen-studio/tools/sdb version
+npm run native:overlay-read
+npm run native:comments-read
+npm run native:video-interactions
+npm run build:app:w05
+npm run test:ui:w05-product
+npm run test:native:overlay-read
+npm run test:native:comments-read
+npm run test:native:video-interactions
+npm run package:app:w05
+python3 tests/native/w05-packaging.test.py
+npm run sign:app:w05
+npm run deploy:app:w05
 ```
 
-现在 Developer Mode、连接及用户自己的 BiliSofa profile 已确认且已用于成功安装。原有第三方证书不导入/使用/覆盖。创建步骤见 SAMSUNG_CERTIFICATE_GUIDE；签名、安装步骤单独见 W01_PROBE_GUIDE；build 不隐式部署。侧载已授权，账号真实写入与 GitHub 公开发布未授权。
+共享`vod-api.c`改变时须重链依赖的vod-api/pgc-read/pgc-follow/live-read/live-product及overlay-read/comments-read/video-interactions；仅编译保留直播模块不代表重启直播验收。`BILISOFA_W05_LEGACY=1 npx playwright test --config playwright.w05-product.config.ts`在当前W05构建上运行原媒体合成流程。W05签名/部署元数据使用独立`*-w05-manifest.json`，版本/身份/hash仍逐层核对。
 
-官方 Package Manager 的 `install --accept-license --no-java-check cert-add-on` 与 `install --accept-license --no-java-check Certificate-Manager` 均 exit 0。Samsung Certificate Extension 2.0.75、Certificate Manager 3.0.0 已在本项目 SDK 安装，包管理器从 0.5.61 更新到 0.5.67；vendor 依赖更新均在隔离 SDK，CLI 实测仍 2.5.25。主程序通过原始 launcher 启动，Cua inventory 显示 org.tizen.cert.ide 正在运行，但 UI 绑定返回 Invalid app，窗口/创建未验证；未改 vendor 源码或弱化安全校验。
+W06当前候选0.25.0使用独立产品接收模块；旧W05签名指针/冻结包保持。互动入口按用户要求暂缓，原实现与未知日志保留。
 
-备用 VS Code 基础扩展 tizen.vscode-tizen-csharp 10.4.3 已安装在 `/Users/weijiazhao/.local/share/BiliSofa/vscode-extensions`，独立 user-data-dir 同级 `vscode-user`；随后为可操作界面将同一官方扩展安装到正常 VS Code，其他扩展保留。官方文档所链接 samsungtvsdk.tv-vscode-tizen 安装返回 Extension not found，未用不明来源扩展替代。
+```sh
+npm run native:cast-product
+npm run build:app:w06
+npm run test:ui:w06-cast
+npm run test:native:cast-product
+npm run package:app:w06
+npm run test:package:w06
+npm run sign:app:w06
+npm run deploy:app:w06
+```
 
-用户完成新 profile 后，实际基础包签名 exit 0，但电视 install 118/-12 证书链失败。包内公开 X509 检查确认新 Samsung Author 有效，Distributor 仍为 SDK 2022 年过期的默认证书。该历史阻塞已通过官方 SDK 单独更新 Public Distributor 解除，Author 保留；两个探针均安装/启动成功。更新后可显式执行 `python3 tools/sign-probe.py basic` / `native`：拒绝 SDK 默认 Distributor，检查所有嵌入证书日期/Samsung 叶签发者，验证签名前后资源相同，日志/签名包/manifest 留仓库外；不隐式 install/run。证书日期/签发者预检不等于证书链信任通过。
+`cast-product-source.py`先校验原三头文件hash，精确生成产品配方，不覆盖原探针。输出`dist/w06-app`、`dist/BiliSofa-W06-cast-unsigned.wgt`与独立`*-w06-manifest.json`。`playwright.w06-regression.config.ts`默认验证14项保留评论/叠加；设`BILISOFA_W06_LEGACY=1`验证33项保留媒体合成流程。UI与包负例串行；HOST仅本机TLS，无真实账号写入。整组真机见[W06交付](W06_CAST_DELIVERY.md)。
 
-cert manager 的 vendor 依赖更新后，SDB 实测版本 4.2.36；原 4.2.25 为安装更新前版本。install/run 使用显式私密 serial，避免按非唯一设备名称部署；传输失败时先重新核查连接，未知安装结果不得自动重复。
+W03当前0.27.0分P队列整合沿用原推荐整包配方，保留F02模块；使用`dist/recommend-app`和`dist/BiliSofa-W03-recommend-unsigned.wgt`；独立recommend-native及签名/部署指针保留旧W06工件：
 
-新增 `npm run test:native:http`：主机 C/socket 行为测试，临时随机 loopback 端口和合成报告；不连接 TV/Bili、不读账号。native 编译输入 sourceSha256 现在覆盖 probe.c + probe-http.h（按固定顺序拼接），防止仅更新 header 后误用旧 WASM。0.0.3 内部探针带限时 LAN 报告入口，默认仍由用户点击开启；无后台或外部服务依赖。
+```sh
+npm run native:recommend
+npm run build:app:recommend
+npm run test:ui:recommend
+npm run test:native:recommend
+npm run package:app:recommend
+npm run test:package:recommend
+npm run sign:app:recommend
+npm run deploy:app:recommend
+```
 
-0.0.3 手机失败后，0.0.4 修复 Samsung socket 非阻塞调用兼容：SDK 禁止 socket F_SETFL；使用 SOCK_NONBLOCK/accept4。主机回归增加同一 forbidden-call 合同，真实 TV 仍单独复测。当前媒体合成样本只在 ignored build/media-probe（原创彩条/运动/低音量 440Hz，12 秒，720p24 H.264 Main/AAC48k 2ch），未接入/安装媒体探针。
+`playwright.recommend-cast.config.ts`验证保留投屏；`playwright.recommend-regression.config.ts`默认保留评论/叠加，`BILISOFA_RECOMMEND_LEGACY=1`验证保留媒体。套件/整包负例串行。新C复用未改动的library.c引擎；源变化须重链recommend模块，不修改旧模块manifest逃避来源门禁。
 
-原创媒体准备命令：`python3 tools/media-probe.py generate` / `check`。实际固定主机 FFmpeg 9.0.1，输出和 manifest 在 ignored build/media-probe；格式/hash/路径/尺寸检查不等于 AVPlay/TV 声画通过。工具及 x264 编码器未打包到 TV。
+## 原生构建
 
-内部自动取证：`BILISOFA_PROBE_AUTORUN=1 npm run build` 后单独 package/package:native/sign/install/run；仅启动一次 wasm→native guest/synthetic→固定 http report。默认 build 不自动运行；build.json/HTML meta 显式记录模式，package 校验一致性。`python3 tools/collect-probe.py collect` 从仓库外单一授权 target 读取固定端点，45 秒 bounded retry，禁用代理/重定向，3072/4096 字节及共享 TS 合同校验、源码 hash 匹配；脱敏输出在 ignored dist/DEVICE_REPORT.json，私密取证副本仓库外。开发电脑客户端不代替手机/官方投屏验证。
+仅在对应源码/配方改变时重建，原产物不得仅改manifest来绕过来源门禁：
 
-0.0.6 native build 会先检查 build/media-probe/manifest.json，再仅将固定 MPD/segments embed 到 Worker MEMFS（probe.mp4 不 embed）；该 SDK 的 probe.data 实际写入 CA + embedded media；dataLayout 精确记录连续 offsets/hash，校验所有 bytes，无额外内容。每文件 256KiB 包上限；C sourceSha256 覆盖 probe.c + probe-http.h + probe-media.h。先 `python3 tools/media-probe.py generate`，再原有 Samsung 编译/package 命令。`npm run test:native:media` 为真 HOST socket 固定文件/二进制/大小/deadline 测试，不播放媒体。新声画按钮只使用 AVPlay adapter 的固定 loopback URL，没有任意 URL 输入。
+```sh
+npm run probe:deps:check
+npm run probe:deps:link
+npm run native:identity
+npm run native:catalog
+npm run native:search
+npm run native:hot-search
+npm run native:library
+npm run native:vod-api
+npm run native:vod-bridge
+npm run native:pgc-read
+npm run native:pgc-follow
+npm run native:live-read
+npm run native:live-product
+```
 
-0.0.7 原生 source hash 再包含 probe-service.h；Samsung build 导出 callMain 与原生 probe_stop。HTTP/MPD 服务以固定20Hz Worker main loop/poll0运行，可接收白名单 stop；close后的ACK验证前不终止Worker。native Socket transient 合成分项和其他整机生命周期仍分别验证。`npm run test:native:stop` 在主机进程仍存活时检查端口已关闭且同进程能再次bind，非进程退出假阳性。
+`probe:deps:link`依赖已准备的CA/原创媒体与固定工具；各`native:*`链接相应独立Worker/C模块。源变化后运行对应`test:native:*`与打包负例。获取/构建依赖的`probe:deps:fetch/build`是显式开发操作，不在电视或普通build中自动执行。不得以无TLS验证、全局配置覆盖或旧WASM伪装新源解决失败。
 
-0.0.9内部自动模式按WASM→guest/synthetic native→KeyManager合成save/get/remove→固定脱敏report执行一次；用户新操作/Home会取消余序。默认build保持manual。新KeyManager行为见W01-P13；探针PASS不能等同持久保护会话验收。
+## 私密签名与设备
 
-0.0.10 build自动执行`python3 tools/initials-data.py`，校验packages/search/data两份上游文件hash，确定性生成search-words.json/search-NOTICE并本地打包initials-worker.js。此Worker不使用Socket Extension，不增加权限；native C/媒体编译产物与0.0.7一致，严格核对后复用。数据来源和变换在packages/search/data/README.md。词库JSON限2MiB、最多65105行，消息4KiB、最多64候选，首字母24字/关键词32字、5秒超时。只验证关键词输入，未接入B站内容检索。
+```sh
+npm run sign:app:w04
+npm run deploy:app:w04
+```
 
+上述W04命令仅使用`--w04`的独立私密manifest，不改写旧0.20.0签名/部署指针。回退仅使用已冻结原包，不重建旧版本冒充回退；保留新增分P数据且不降级未知存储schema。签名使用自有BiliSofa profile；部署从仓库外manifest取同一授权目标与确切签名包，检查hash/身份后state→capability→install→run。Application ID必须是完整`BiliSofa01.TV`。未知结果不自动重复安装，不卸载/清数据或改Author。
 
-合成持久性专用内部取证：`BILISOFA_PROBE_AUTORUN=2 npm run build`，再分别运行package/package:native、delivery、显式sign/install；该模式首次持久写入+GET报告成功后自行退出，CLI重开同一包后再次collect。默认`npm run build`仍manual；`=1`保持旧guest/synthetic序列。模式被写入HTML/build.json且签名前核对。`测试存储退出重开`按钮提供同一合成流程；同document重复只提示需重开，不能提升验收。
+私密文件默认在`~/.local/share/BiliSofa/`；SDK、缓存、构建和诊断生成物在ignored目录。证书/会话/地址不进入源码、CI、公开日志或包。当前包身份/hash见[签名部署](SIGNING_DEVICE_RECORD.md)，证书建立见[指南](SAMSUNG_CERTIFICATE_GUIDE.md)。
 
+旧W01探针使用`build/package/package:native`等独立命令；仅复现历史证据时查[探针指南](W01_PROBE_GUIDE.md)和[环境归档](archive/2026-10-19-process-records/DEVELOPMENT.md)，不把它们当作当前产品包入口。CI仅有workflow配置，未运行hosted CI或发布。
 
-跨包合成观察开发流程：默认build还在build/isolation生成与sourceHash配对的helper bundle，不装入basic包。`npm run package:isolation`显式验证native输入并生成独立isolation WGT；`npm run test:ui:isolation`运行4项桌面fixture。`python3 tools/sign-probe.py isolation`单独签名；`python3 tools/collect-probe.py collect --variant isolation`只从授权TV固定端点读取并匹配独立签名manifest。主包before/观察包/主包after三报告仓库外命名见`tools/check-isolation-evidence.py`；检查通过仍限定同Author不同包的合成读取。只安装本项目明确签名身份，不枚举其他App数据。
+F05队列整合的明确命令为`npm run build:app:queue-parts`、`test:ui:queue-parts`、`package:app:queue-parts`、`sign:app:queue-parts`、`deploy:app:queue-parts`。它们复用`--recommend`全模块装配与私密签名指针，包版本必须为0.27.0，不代表重建旧0.26.1。`playwright.queue-parts-retained.config.ts`在同一新包上验证私人列表/媒体组合；当前仅TS/UI/普通KV变化，原生模块按冻结字节核对后复用，无需SDK重链。
 
-
-Samsung TV CLI特别约束：run/uninstall的`-p`使用完整application ID（例如本次临时helper为BiliIsola1.Probe），本地通用help写pkgid不能照搬为包前缀。实际0.0.13helper清理首轮包ID返回不存在，修正application ID后uninstall completed。仅清理本次自行创建且已核对签名部署记录的helper；不得借此卸载其他项目/用户App。
-
-
-游客热门候选：`BILISOFA_PROBE_AUTORUN=4 npm run build`显式构建一次guest-popular→report模式；默认manual不自动请求。新增guest-worker.js随basic/native本地打包；basic缺native manifest会返回guest.native_unavailable，不能当作实网能力。C源码新增probe-guest.h，native-probe/package-native的source hash覆盖五个源文件，必须重新Samsung编译，不能复用0.0.13二进制。`npm run test:native:guest`实际执行2项不联网的C参数/内存边界检查。
-
-
-## 0.0.20 发现探针开发
-
-默认仍manual，新增cast-worker.js本地打包，无新增依赖/权限/CSP/WARP例外。C输入hash固定顺序覆盖probe.c、probe-http.h、probe-media.h、probe-service.h、probe-guest.h、probe-bridge.h、probe-cast.h共7份，必须用既有固定Samsung SDK重编译；不能复用0.0.19 WASM。导出cast_stop，32MiB固定堆不变。`npm run test:native:cast`运行10项真实HOST loopback UDP/TCP匿名行为测试，测试宏禁用LAN组播并只允许loopback；生产编译无该宏。官方发送端发现须另外测试。`npm run check`、`npm test`、`npm run test:ui`、`npm run test:ui:native`与原build/package/sign/delivery命令维持分离。具体网络预算/命令拒绝见F20_PROTOCOL_EVIDENCE。
-
-
-近期0.0.19/0.0.20首次部署均遇SDB无绑定导致包传输失败，原授权地址仍可达；重新connect并核查get-state=device/capability成功后同包安装/启动通过。今后安装前先核查显式目标状态；原始连接/设备输出只保留私密日志，失效时恢复同一已授权绑定，不改profile/重置电视或自动重复未知安装结果。CLI成功与实际页面、发现、播放验收分别记录。
-
-
-0.0.21修正Socket选项兼容：IP_MULTICAST_IF不在官方/旧SDK adapter支持表，探针改为显式接收入组+TTL1、出站系统IPv4路由。新增固定131/132阶段码。显式`BILISOFA_PROBE_AUTORUN=6 npm run build`生成启动→关闭ACK→报告模式，不投送/播放/执行账号写；default仍manual。打包/校验/签名分别运行，native版本0.0.21；isolation仍强制独立只读mode3。C7文件hash与32MiB预算不变，必须重编译，不能使用0.0.20二进制。
-
-
-0.0.22：SOAP原生RPC getter只在Worker内部读取原始请求，stdout/IPC/诊断仅固定事实。`npm test`81项；`npm run test:native:cast`14项；主包UI35项后新增SOAP定向4项；`npm run test:ui:native`2项。本轮总136项不同检查，不把分次运行写成单次全组。默认manual，`BILISOFA_PROBE_AUTORUN=6 npm run build`保留监听启动→原生关闭ACK→报告的内部检查。包/签名/部署分别执行；真机未执行项保持UNVERIFIED。
-
-
-0.0.23内部探针：33项append-only SOAP事实、41项去重进度上限；关闭生成cast.soap_summary_v1_的16位hex固定摘要。用contracts/upnp.ts的decodeSoapProbeSummary解码，不从code推断顺序/次数/发送端。HTTP报告最多8项并保留最新有效摘要/故障，本地导出仍64项。实跑84单元/合同、41不同主UI（40通过+fixture修正后定向1）、HOST cast14、native桌面2，总141；strict/SDK/C另记。默认manual，显式auto6仅监听启动/关闭取证，媒体依旧拒绝。
-
-
-0.0.24：inspectSoapOffer仅Worker内部固定分类，原parse/接收政策不变。append-only60事实、68去重进度、双uint32 v1summary；解码不得把URI第一拒绝分支当完整策略已过。实跑88单元/合同、44主包UI、14 HOST cast、2 native桌面，共148；C/strict/SDK另记。default manual/显式auto6继续分离，签名/部署仍独立执行。
-
-
-0.0.25新增`npm run test:native:cast-source`九项HOST mock检查；八个C文件含probe-cast-source.h参与hash，SDK源码变更须重编译，包验收须包含两项source导出。scope仍在cast Worker，source只从probe兼容parser和HTTPS候选政策进入native。每窗口一次512bytes，不自动重试；候选policy与最终source结果在8项report保留。93单元/合同、47不同主UI（46整组+19定向含1新case）、HOST cast14/source9、native桌面2，总165；strict/C/SDK另记。默认manual，显式auto6只证明监听启动/关闭，不触发真实源。
-
-
-0.0.26 W01/F20内部候选：增加电视确认后独立MP4声画样本，仍未接受官方手机媒体/控制会话；详见docs/adr/006-cast-approved-candidate-playback-probe.md（docs内路径为adr/...）。只复用原有桥/cURL/AVPlay与自有MIT代码，未增加依赖/权限/外部服务、未复制协议实现或官方客户端身份。新增_cast_media_begin导出必须实际SDK重编译并通过package gate；已验证源仅native临时保留60秒，确认后最长3分钟。
-
-
-0.0.28 W01/F20内部候选：progressive HTTP与有界续段见docs/adr/007-progressive-mp4-http-probe.md（docs内为adr/...）。八个C文件修改后已实际Samsung SDK重编译；仍为probe-only旧网络依赖，不批准真实账号产品栈。无新依赖/权限/外部服务/复制客户端身份或实现；新增HTTP/API事实仅按官方RFC/Samsung枚举，保留原第三方许可。TV新包声画仍需用户反馈，不能把prepare失败或HOST通过更改为实际播放PASS。
-
-0.0.29 渐进MP4桥使用4秒connect、15秒未背压的上游无数据deadline；暂停读取不计该deadline，仍受3分钟签名租期与固定资源预算限制。legacy DASH期限未变。`npm run test:native:bridge`新增真实16秒背压后逐字节恢复/回跳范围、上游停滞、放弃旧请求、背压时租期关闭；HOST测试使用仅编译fixture的时钟推进/小socket发送缓冲，不进入TV包。SDK必须在C源变化后重新编译，不可只改TypeScript后沿用旧WASM。
-
-内部0.0.30 seek诊断/有界等待/缓冲及恢复策略见ADR-008。此次仅TS/UI/工具包版本变化，C syntax gate通过，SDK原生字节复用0.0.29已重编译且源hash匹配的版本，没有重编译声明。node:test虚拟时钟测20秒成功/30秒超时；Playwright虚拟主页面时钟不控制Worker，推进晚callback测试时间前需等真实Worker关闭ACK，避免夹具把5秒清理期限提前耗尽。
-
-内部0.0.31渐进MP4播放中回跳采用PREBUFFER_MODE重开同owned源，详见ADR-008追加。单一播放器/原网络lease，不是新URL或自动fallback；API检查、epoch失效、取消/30秒超时、暂停不出声与最近4次有界历史有独立tests。C/native源未改，签名前必须验证复用字节/源hash，不能声明新SDK编译。
-
-
-### 0.0.36 手机控制候选
-
-新增`packages/contracts/src/cast-receiver.ts`、`packages/cast/src/receiver.ts`与`apps/tv/src/app/cast-receiver-player.ts`，入口“官方手机控制探针”，合同/恢复见ADR-009。`npm test`覆盖会话与控制，`npm run test:ui -- tests/ui/cast-receiver.spec.ts`使用本地匿名native/AVPlay假后端，不是官方发送端或TV声画证明。Browser插件不可调用，本轮沿用项目Playwright；源码/浏览器/HOST与实际TV记录继续分开。新native getter由固定Samsung SDK实际编译，不能只复用0.0.35 WASM。默认build为manual；部署auto6仅做发现启动/清理自动取证，不自动投送或播放。
+F12当前0.28.0使用`build:app:local-data`、`test:ui:local-data`、`package:app:local-data`、`sign:app:local-data`、`deploy:app:local-data`；复用`--recommend`完整配方/输出名。版本与诊断标记绑定0.28.0，不能用当前构建重写旧0.27.0验收工件。仅TS/普通KV管理变化，现有17个原生模块及CA逐字节复用；无SDK/HOST重跑。旧模块检查与当前实跑计数见TEST_REPORT，完整模块/验收见F12_LOCAL_DATA。

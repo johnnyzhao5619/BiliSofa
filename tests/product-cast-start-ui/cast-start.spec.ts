@@ -1,0 +1,20 @@
+import {test,expect} from '@playwright/test';
+import {setup,state,playing,send,hidden} from '../w06-cast-ui/fixture.ts';
+const seek=(seconds:number)=>'<Unit>REL_TIME</Unit><Target>00:'+String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')+'</Target>';
+test('F20 first near-start zero alignment keeps one decoder and actual time; later nonzero seek and zero rewind remain real',async({page})=>{
+ const f=await setup(page,'normal','normal',0);await playing(page);await expect.poll(async()=>(await state(page)).time).toBeGreaterThanOrEqual(1200);const before=await state(page);expect((await send(f.queue,f.replies,'Seek',seek(0))).status).toBe(200);await expect.poll(async()=>(await state(page)).time).toBeGreaterThan(before.time);expect((await state(page)).opened).toBe(1);expect((await state(page)).played).toBe(1);expect((await state(page)).calls.filter(c=>c==='prebuffer')).toHaveLength(0);
+ expect((await send(f.queue,f.replies,'Seek',seek(30))).status).toBe(200);await expect.poll(async()=>(await state(page)).time).toBeGreaterThanOrEqual(30000);expect((await state(page)).opened).toBe(2);expect((await send(f.queue,f.replies,'Seek',seek(0))).status).toBe(200);await expect.poll(async()=>(await state(page)).opened).toBe(3);await playing(page);expect((await state(page)).time).toBeLessThan(3000);await page.getByRole('button',{name:'结束会话',exact:true}).click();expect((await state(page)).state).toBe('NONE');expect(f.errors).toEqual([]);
+});
+test('F20 first nonzero resume is never merged and preserves requested media position',async({page})=>{
+ const f=await setup(page,'normal','normal',0);await playing(page);expect((await send(f.queue,f.replies,'Seek',seek(30))).status).toBe(200);await expect.poll(async()=>(await state(page)).time).toBeGreaterThanOrEqual(30000);expect((await state(page)).opened).toBe(2);await hidden(page,true);expect((await state(page)).state).toBe('NONE');expect(f.errors).toEqual([]);
+});
+test('F20 paused early seek and remote-control handback do not suppress deliberate rewind',async({page})=>{
+ const f=await setup(page,'normal','normal',0);await playing(page);expect((await send(f.queue,f.replies,'Pause')).status).toBe(200);expect((await send(f.queue,f.replies,'Seek',seek(0))).status).toBe(200);await expect.poll(async()=>(await state(page)).opened).toBe(2);await expect.poll(async()=>(await state(page)).state).toBe('IDLE');expect((await send(f.queue,f.replies,'Play')).status).toBe(200);await playing(page);await page.getByRole('button',{name:'结束会话',exact:true}).click();expect(f.errors).toEqual([]);
+});
+test('F20 source replacement resets alignment once per generation; late old source never affects new time',async({page})=>{
+ const f=await setup(page,'normal','normal',0);await playing(page);expect((await send(f.queue,f.replies,'Seek',seek(0))).status).toBe(200);f.queue.push({part:2});await expect.poll(async()=>(await state(page)).opened).toBe(2);await playing(page);await expect.poll(async()=>(await state(page)).time).toBeGreaterThanOrEqual(1000);expect((await send(f.queue,f.replies,'Seek',seek(0))).status).toBe(200);expect((await state(page)).opened).toBe(2);await hidden(page,true);expect((await state(page)).state).toBe('NONE');await hidden(page,false);await expect(page.locator('#overlays')).toBeEmpty();expect(f.errors).toEqual([]);
+});
+
+test('F20 Stop/Play replay re-arms alignment once without extending sender authorization',async({page})=>{
+ const f=await setup(page,'normal','normal',0);await playing(page);expect((await send(f.queue,f.replies,'Stop')).status).toBe(200);await expect.poll(async()=>(await state(page)).state).toBe('NONE');expect((await send(f.queue,f.replies,'Play')).status).toBe(200);await playing(page);await expect.poll(async()=>(await state(page)).time).toBeGreaterThanOrEqual(1000);expect((await send(f.queue,f.replies,'Seek',seek(0))).status).toBe(200);expect((await state(page)).opened).toBe(2);await page.getByRole('button',{name:'结束会话',exact:true}).click();expect((await state(page)).state).toBe('NONE');expect(f.errors).toEqual([]);
+});

@@ -1,0 +1,25 @@
+--- a/lib/cf-socket.c
++++ b/lib/cf-socket.c
+@@ -1095,6 +1095,7 @@
+                                    struct Curl_easy *data,
+                                    bool *done)
+ {
++#ifndef BILISOFA_TIZEN_NO_CLOSE_DRAIN
+   if(cf->connected) {
+     struct cf_socket_ctx *ctx = cf->ctx;
+ 
+@@ -1109,6 +1110,14 @@
+       (void)sread(ctx->sock, buf, sizeof(buf));
+     }
+   }
++#else
++  /* Samsung Socket Extension cannot change socket flags via fcntl. Default
++   * sockets are already created with SOCK_NONBLOCK. Omit only this optional
++   * close-time drain; the normal filter destructor still closes the socket.
++   */
++  (void)cf;
++  (void)data;
++#endif
+   *done = TRUE;
+   return CURLE_OK;
+ }

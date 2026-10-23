@@ -1,13 +1,16 @@
-import { parseReceiverSnapshot, receiverId, type ReceiverSnapshot } from '../../../../packages/contracts/src/cast-receiver.ts';
+import { mediaGeneration, parseReceiverSnapshot, receiverId, type ReceiverSnapshot } from '../../../../packages/contracts/src/cast-receiver.ts';
 import { parseCastProbeRequest, parseCastProbeResult, type CastProbeRequest, type CastProbeResult } from '../../../../packages/contracts/src/cast-probe.ts';
 import { CAST_PROGRESS_LIMIT } from '../../../../packages/contracts/src/upnp.ts';
 import { ScopedGuestWorker } from './scoped-guest-worker.ts';
 export class CastProbeWorker extends ScopedGuestWorker<CastProbeRequest, CastProbeResult> {
   approveCandidate(receiver = false): boolean { return this.sendControl(receiver ? 'play-receiver' : 'play-candidate'); }
-  snapshot(value: ReceiverSnapshot): boolean { return this.sendControl('receiver-snapshot', parseReceiverSnapshot(value)); }
-  acknowledge(id: number, accepted: boolean): boolean { return this.sendControl('receiver-ack', { id: receiverId(id), accepted }); }
+  decoderClosed(generation: number, closed: boolean): boolean { return this.sendControl('transition-decoder-closed', { generation: mediaGeneration(generation,this.product?2147483646:4), closed }); }
+  snapshot(value: ReceiverSnapshot): boolean { return this.sendControl('receiver-snapshot', parseReceiverSnapshot(value,this.product)); }
+  acknowledge(id: number, accepted: boolean): boolean { return this.sendControl('receiver-ack', { id: receiverId(id,this.product?2147483647:1024), accepted }); }
   seekResult(ok: boolean): boolean { return this.sendControl(ok ? 'receiver-seek-complete' : 'receiver-command-failed'); }
-  constructor() { super('cast-worker.js', 'cast-discovery', parseCastProbeRequest, parseCastProbeResult, 310000, 5000, () => true, true, CAST_PROGRESS_LIMIT, true); }
+  // Legacy probe keeps its finite run lease. Product initialization and requests
+  // have separate deadlines; foreground lifetime is not a probe timeout.
+  constructor(private readonly product=false) { super(product?'cast-product-worker.js':'cast-worker.js', 'cast-discovery', parseCastProbeRequest, value=>parseCastProbeResult(value,product), product?0:610000, 5000, () => true, true, product?Number.MAX_SAFE_INTEGER:CAST_PROGRESS_LIMIT, true); }
 }
 export function castProbeIdentity(storage?: Storage): { uuid: string; token: string } {
   const random = () => { const v = new Uint8Array(16); crypto.getRandomValues(v); return v; };

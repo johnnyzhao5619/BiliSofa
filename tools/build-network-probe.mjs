@@ -1,0 +1,18 @@
+import { build } from 'esbuild';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+const qrDependency = JSON.parse(await readFile('platform/third-party/qrcode-generator.lock.json', 'utf8'));
+const qrPackage = JSON.parse(await readFile('node_modules/qrcode-generator/package.json', 'utf8'));
+if (qrPackage.version !== qrDependency.version || createHash('sha256').update(await readFile('node_modules/qrcode-generator/' + qrDependency.runtime)).digest('hex') !== qrDependency.runtimeSha256) throw new Error('QR dependency source mismatch');
+const out = 'build/network-ui'; await mkdir(out, { recursive: true });
+const source = JSON.parse(await readFile('dist/source-manifest.json', 'utf8'));
+await build({ entryPoints: ['apps/tv/src/app/network-validation.ts'], outfile: `${out}/app.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await build({ entryPoints: ['platform/wasm-network/src/network-validation-worker.ts'], outfile: `${out}/network-validation-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await build({ entryPoints: ['apps/tv/src/app/account-validation.ts'], outfile: `${out}/account-app.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await build({ entryPoints: ['platform/wasm-network/src/account-worker.ts'], outfile: `${out}/account-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await build({ entryPoints: ['platform/wasm-network/src/account-readback-worker.ts'], outfile: `${out}/account-readback-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await build({ entryPoints: ['platform/wasm-network/src/progress-worker.ts'], outfile: `${out}/progress-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+const files = {};
+for (const file of ['app.js', 'network-validation-worker.js', 'account-app.js', 'account-worker.js', 'account-readback-worker.js', 'progress-worker.js']) files[file] = createHash('sha256').update(await readFile(`${out}/${file}`)).digest('hex');
+await writeFile(`${out}/manifest.json`, JSON.stringify({ sourceHash: source.sourceHash, qrDependency, files }, null, 2) + '\n');
+console.log('Separate network validation UI built; not a package or deployment');

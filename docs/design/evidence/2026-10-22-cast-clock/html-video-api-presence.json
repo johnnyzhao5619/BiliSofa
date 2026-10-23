@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "kind": "API_PRESENCE_AND_SETTER_ONLY_NO_PLAYBACK",
+  "mediaSource": true,
+  "codecs": [
+    {
+      "type": "video/mp4; codecs=\"avc1.640028\"",
+      "supported": true
+    },
+    {
+      "type": "audio/mp4; codecs=\"mp4a.40.2\"",
+      "supported": true
+    },
+    {
+      "type": "video/mp4; codecs=\"hvc1.1.6.L153.B0\"",
+      "supported": true
+    }
+  ],
+  "rates": [
+    {
+      "requested": 0.25,
+      "setterReadback": 0.25
+    },
+    {
+      "requested": 0.5,
+      "setterReadback": 0.5
+    },
+    {
+      "requested": 0.75,
+      "setterReadback": 0.75
+    },
+    {
+      "requested": 1,
+      "setterReadback": 1
+    },
+    {
+      "requested": 1.25,
+      "setterReadback": 1.25
+    },
+    {
+      "requested": 1.5,
+      "setterReadback": 1.5
+    },
+    {
+      "requested": 1.75,
+      "setterReadback": 1.75
+    },
+    {
+      "requested": 2,
+      "setterReadback": 2
+    }
+  ],
+  "dashVideoCanPlay": "maybe",
+  "originIsOpaque": false,
+  "videoEverAttached": false,
+  "mediaOpened": false
+}

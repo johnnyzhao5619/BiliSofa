@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://bilisofa.invalid/foundation" version="0.20.0" viewmodes="maximized">
+  <tizen:application id="BiliSofa01.TV" package="BiliSofa01" required_version="9.0"/>
+  <name>BiliSofa W03</name>
+  <icon src="icon.png"/>
+  <access origin="http://127.0.0.1:40324" subdomains="false"/>
+  <content src="index.html"/>
+  <tizen:profile name="tv-samsung"/>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:metadata key="http://samsung.com/tv/metadata/use.voiceguide" value="true"/>
+  <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"/>
+</widget>

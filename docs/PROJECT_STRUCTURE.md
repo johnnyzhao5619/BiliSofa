@@ -1,42 +1,49 @@
 # 项目结构与依赖方向
 
-实施目标映射。已有 W01 可执行候选探针与可移植基础源码/临时工具链（ADR-002），最终 runtime 仍未固定。保留骨架，按实际工作创建文件；若 W01 选 .NET，另记 ADR 修改 UI/平台结构，领域合同/产品要求保持。
+当前路线：单WGT/Web＋电视内WASM/AVPlay（ADR-027）。下表描述实际职责，不表示对应产品功能已全部完成。
 
-```text
-apps/tv/                  应用装配与 UI
-  src/app/                启动、路由、生命周期、依赖注入
-  src/features/           account/home/search/library/watch/live/settings
-  src/ui/                 TV 控件、FocusRouter、InputRouter、token
-  src/platform/           Samsung/Tizen globals、能力查询与适配器
-  public/                 本地资源，无证书/会话/私密截图
-  config.xml              Web 候选源配置，W01 后创建
-packages/contracts/       DTO、Worker 消息、Player/Network/Store/Cast 接口
-packages/bili-client/     会话、端点映射、验证、WriteCoordinator
-packages/media/           时间轴、字幕/弹幕、媒体选择、播放器协调
-packages/cast/            接收协议、会话/控制权，不直接写账号/操作UI
-platform/wasm-network/    TV Worker/cURL/socket 源与构建说明
-platform/dotnet-probe/    备选实机探针，不假定能混入 WGT
-tools/                   构建、打包、签名/安装包装、脱敏诊断
-tests/unit/              纯状态/时间轴/解析，按后续授权增加
-tests/contracts/         匿名接口/Worker/协议 fixtures
-tests/device/            真机矩阵/匿名记录；原始私密资料在仓库外
-docs/                    PRD、架构、规范、验收、来源、ADR
-```
+| 路径 | 职责 |
+| --- | --- |
+| `apps/tv/src/app/` | 应用装配、页面、TvShell、生命周期、资源owner、账号/媒体工作区 |
+| `apps/tv/src/ui/` | 遥控控件、焦点/输入、二维码等本地UI |
+| `apps/tv/src/platform/` | Samsung/Tizen全局、AVPlay、Worker桥、KeyManager和普通KV适配器 |
+| `apps/tv/public/`、`foundation-config.xml` | 本地入口/资源及当前应用源配置；不含证书/会话 |
+| `packages/contracts/` | DTO、Worker消息、Player/Network/Store/Cast合同与运行时验证 |
+| `packages/bili-client/` | 源端响应解析、会话/身份/请求与保留写入协调 |
+| `packages/media/` | 播放器、真实时间轴、队列、媒体选择与串行状态 |
+| `packages/cast/`、`packages/search/` | 投屏协议/会话；本地首字母候选及原许可数据 |
+| `platform/wasm-network/` | 电视Worker/cURL/socket原生源、固定依赖/许可证 |
+| `tools/` | 开发侧构建、打包、签名/安装和脱敏取证 |
+| `tests/` | 单元/合同、相关UI、HOST native与包门禁；真机证据另存 |
+| `docs/` | PRD、架构/规则、当前状态、验收/交付索引及ADR；旧过程在archive |
 
-## 依赖规则
+## 依赖与所有权
 
-1. contracts 不依赖 UI、客户端或平台 globals。
-2. bili-client/media/cast 可依赖 contracts，通过接口使用 Network/Store/Player；无循环 import、不导入 apps/tv。
-3. apps/tv 是 composition root，装配领域/平台；页面经用例/状态访问，不能绕过会话/写入/播放器协调器。
-4. WASM 网络实现受限消息合同；投屏命令经 CastSession→领域验证→PlayerCoordinator，不直接执行任意 URL/账号写命令。
-5. tools 仅开发阶段运行，发布包无外部 Node/dev server/远程 JS；按需模块也来自本地包。
+1. contracts只依赖contracts；bili-client/media/cast通过合同协作，不导入apps或平台全局，不循环依赖。
+2. apps是composition root。页面不直接访问SDK、原始账号会话或源URL；Socket/cURL在Worker。
+3. 账号/媒体代次、取消、旧回调拒绝贯穿异步流程；换源等待解码器与transport实际双关闭，未知状态不复用。
+4. build/package/sign/install分离；发布包内运行代码本地随包，不需要Node/dev server/远程JS。
+5. 凭据仅保护存储/私有lane持有；普通偏好、首P/P2+续播、搜索历史和队列按固定身份分区，未知写日志不随账号删除抹除。
 
-## 产物与配置
+## 实现映射
 
-- 源 config.xml 随 app 维护，最终 WGT 根目录必须含配置/可定位入口；仓库根不等于包根。部署后 app/package ID 作为升级身份维护。
-- 依赖锁文件、build target、SDK/TV Extension/Samsung Emscripten 版本/命令随可复现工程配置维护；不提前生成未经运行的 lockfile/工具链或宣称可构建。
-- 生成物归 ignored dist/build 等。证书/密码/DUID/session 在仓库外私密位置，以本地参数注入；不进命令日志。
-- fixtures 合成/匿名，复用文件保留通知并登记 THIRD_PARTY_NOTICES.md。新增依赖/权限记录职责/证据。
-- 命令区分 dev/build/package/sign/install/device capture，默认 build 不暗中部署/发布。
+| 边界 | 主要合同/实现 | 决策 |
+| --- | --- | --- |
+| 账号/身份 | private-account、identity、accounts；account-runtime/workspace、KeyManager | ADR-028/029/050 |
+| 媒体/清理 | media/session/player；guest-playback、AVPlay、MediaFailure | ADR-030/034 |
+| 官方投屏 | receiver-link、CastSession、cast-entry/workspace；cast-product.c与固定hash头提取生成器、独立产品Worker | ADR-031/064；旧探针保留，新包另验 |
+| 普通本地数据 | local-profile、search-history、local-queue及对应store | ADR-032/037/048/051/066/067；队列v2按BV＋P、旧键兼容/回退；local-bookmarks/read-cache-clear管理记录与私有快照 |
+| 内容/写门禁 | ContentRuntime、RetainedWrites、账号请求租约与持久意图 | ADR-033 |
+| 排行/搜索 | ranking/categories、search/hot/user/pgc/live合同与独立Worker/C | ADR-035–043 |
+| 本人推荐 | recommendations合同/解析/window、account-runtime、recommend-worker/recommend-read.c与首页独立模块 | ADR-065；GET-only，账号/匿名明确区分 |
+| 私人内容 | 规范化DTO、独立library Worker/C、内存游标/引用与身份租约 | ADR-044–047/049 |
+| W05点播叠加 | overlay-dto/read/binding、overlay-data、OverlayRuntime/Worker/C、VodOverlays、OverlaySession/MediaOverlayView、OverlayMotionClock/VodControls、独立身份偏好 | ADR-059/060；0.22.0请求组USER PASS；0.22.1滚动/控制层补验USER PASS |
+| W05评论/回复 | comments-dto/read、comments解析、CommentsRuntime/Worker/C、vod-comments侧面板/全文与源代次 | ADR-061；生产接入，本地/TV门禁以当前状态为准 |
+| W05保留互动 | video-interactions DTO/私有合同/解析、InteractionRuntime/Worker/C、InteractionWrites/独立持久日志及播放页预览 | ADR-062/080；F11所请求正常路径USER PASS，最终故障与F17真实验收OPEN；不重放旧意图 |
+| F06候选 | 私密源/生产桥、控制/分P、本地续播与运行时回退 | ADR-051/055；0.21.1已请求组及0.21.3跨内容回退USER PASS |
+| F18候选 | live-product合同/解析、LivePlayback、单运行时API→匿名HLS中转、近期消息视图 | ADR-053/057；浏览组通过，实播失败并由用户延期；证据分层 |
+| F17候选 | pgc-season详情/播放；pgc-follow列表/写门禁与持久回查 | ADR-052；已装机C只读组通过；真实追番写入未验收 |
 
-结构为项目设计；包配置/签名见 [研究 S06、S17](research/tizen-best-practices-2026-10-14.md)。
+生成物只在ignored `build/`、`dist/`、`.local/`；私密签名、目标和会话在仓库外。依赖版本/来源/许可见[第三方声明](../THIRD_PARTY_NOTICES.md)，命令见[开发说明](DEVELOPMENT.md)。[原结构过程](archive/2026-10-19-process-records/PROJECT_STRUCTURE.md)保留追溯。
+
+R07新候选：`apps/tv/src/platform/element-video.ts`、`packages/contracts/src/playback-rate.ts`及`tests/media-element/`，见[ADR-086](adr/086-fractional-rate-element-candidate.md)。尚未在生产入口导入/选择，未打包或部署；当前保持0.43.0冻结。

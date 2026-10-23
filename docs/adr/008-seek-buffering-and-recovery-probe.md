@@ -83,3 +83,23 @@ progressive租期最多追加两条flow快照（首次错误e、最终停止s）
 不续读错误/未完成/不匹配的206头、HTTP错误、压缩响应、TLS验证失败、其他curl错误、已收完整窗口、HEAD或legacy DASH。次数/期限/窗口/字节耗尽仍终态失败。native resume_1..3只证明排队，从全局共享计数取号，不证明恢复；IPC上限147增至150，未知/非法序号拒绝，状态快照不写日志。八项报告在seek history路径也保留receiver_summary。没有增加权限/外部服务/SDK自动重试/账号写入。
 
 应覆盖未收正文的206恢复、部分正文连续精确字节、跨窗口边界、重取头/total校验失败、2次/3次/stop与原16秒背压/期限，并实际SDK编译。HOST匿名HTTP不是真实TLS/TV证明；新TV只做手机暂停→遥控seek保持暂停→恢复声画/交还控制，其他真实发送端/完整F20保持开放。
+
+
+## 0.0.39 暂停回跳后声画未恢复，0.0.40候选（2026-10-15）
+
+用户明确操作可进行，但“跳到5秒后无法恢复正常声画”，组合验收USER FAIL。UTC03:48:34报告匹配source fdcfa3698b489e6e7fc2240ad6128b7651ddbfd8c7cc4474bd9ac2c5c1b8f582 / signed 04b47df6904b38ee35b78c3859422b41c107ba227a80c97a41c333874d618efc。SDK seek_callback_invalidvalueserror_b0_t0_sh（PAUSED、操作窗口无目标tick），receiver_v2_1a0c001d包含批准/query/Play/Pause/快照及曾有实际时间推进；history_ssee是报告中的最近四个结果，不据此猜测每次物理操作顺序。media_retry_2仅排队重连事实，flow_s_c1_p0_w13_m17_l4、source_pass/native_closed_confirmed、GET后关闭true；无独立issue保留不等于网络正常。原件及用户观察私密分存device-native039-paused-seek-report.json / device-native039-paused-seek-user-observation.json，单样本此前声画PASS不覆盖本组合FAIL。
+
+0.0.40仅对cast progressive暂停态有setStreamingProperty时，在同一原租期/源/loopback URL下重建AVPlay，IDLE以PREBUFFER_MODE准备目标位置，成功后SDK保持READY、逻辑仍paused，等待用户明确play才开始播放。不偷偷play/pause，不合成目标tick、不重新批准/换源/续租，不在原seek未完成时叠加恢复。该READY可再次收到暂停态seek；Back/Home/失败/30秒超时关闭并隔离晚回调。缺少接口时保留原native seek；PLAYING默认仍native seek，不恢复0.0.31的默认playing重建实验。合成/游客DASH、网络C/WASM和权限不改。此前PREBUFFER准备失败历史保留，本候选支持及效果须新真机结果，不先记修复。
+
+2026-10-15复核Samsung官方AVPlay API：PREBUFFER_MODE在IDLE配置开始时间，prepareAsync成功后可由用户显式play；本实现使用单一播放器，同SDK READY与逻辑paused映射仅为候选策略，需本机验收。来源：https://developer.samsung.com/smarttv/develop/api-references/samsung-product-api-references/avplay-api.html 。
+
+
+## 0.0.40预缓冲成功仍IDLE被错误关闭，0.0.41候选（2026-10-15）
+
+用户确认正常声画约15秒及手机暂停通过，遥控跳5秒失败后返回主界面，组合USER FAIL。UTC03:54:50实际报告匹配source 22ab74dfdbc631527424921dc4be66ff3af4ea1752826e2e4706ae41b1ba94d0 / signed b33119dabfd6acc93492881354488cc3b0dcae96648fcf6ef24d30bc6d062e14：FAIL avplay.seek_restart_ready_state_i、history_f、receiver_v2_1a0c0015，flow_s_c1_p0_w6_m8_l6、source_pass/请求02/native_closed_confirmed，GET后关闭true。该标签只在prepareAsync成功回调中检查状态时产生，故本次不是30秒超时，也不能称PREBUFFER_MODE未被接受；是应用要求READY而实际IDLE，随后自行失败清理。真实目标位置和恢复声画未到达。报告/用户观察私密分存device-native040-prebuffer-idle-report.json / device-native040-user-observation.json，startup保留。
+
+复核Samsung官方AVPlay API，PREBUFFER_MODE成功回调表示预缓冲完成，区别于普通prepare完成；其示例使用预缓冲后play。普通play状态表并未明确列出预缓冲IDLE，所以以下是根据该语义与本机状态制定的窄范围候选映射，不声称已取得play-from-prebuffer-IDLE本机成功证明。0.0.41仅在本epoch明确设置PREBUFFER_MODE且成功回调实际IDLE时记录prebufferComplete；普通prepare仍须READY，尚无成功回调/旧epoch/close后的IDLE均不能play。暂停重定位可保持该预缓冲IDLE/READY，等显式继续才尝试play，随后仍要求SDK PLAYING。不偷偷play/pause、不伪造目标tick；held IDLE不调用getDuration，复用先前缓存时长。再次暂停seek可重准备，Back/Home/失败/超时清掉标记并隔离晚回调。
+
+来源：https://developer.samsung.com/smarttv/develop/api-references/samsung-product-api-references/avplay-api.html （2026-10-15复核）。不增30秒等待/网络预算，不重新批准/换源/续租，不启用默认playing重建；C/WASM和权限不变。新效果待本地和真机结果，0.0.40的READY假设失败完整保留，不能据此关闭W01/F06/F20。
+
+2026-10-16：0.0.41精确匹配报告seek_restart_held/history_r，用户确认本次暂停重定位/明确继续后5秒附近声画正常。单样本本机观察支持此完成状态映射，不能代替多样本/长期/其他固件或所有seek路线；自动报告不独立证明seek后目标tick，完整证据见TEST_REPORT。

@@ -1,0 +1,38 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {PUBLIC_CATEGORIES,parseCategoryId} from '../../packages/contracts/src/categories.ts';
+import {parseContentQuery} from '../../packages/contracts/src/content.ts';
+import {parseRankingRequest,parseRankingResult,type RankingRequest} from '../../packages/contracts/src/ranking.ts';
+import {PublicContentRuntime} from '../../apps/tv/src/platform/content-runtime.ts';
+const scope={accountId:'guest',generation:1,mediaSessionId:'category',requestId:'c1'};
+const response=(q:RankingRequest)=>({...q,closed:true,kind:'ok',status:200,apiCode:0,code:'ranking.ok',items:Array.from({length:8},(_,i)=>({bvid:'BV'+String(i).padStart(10,'0'),title:'合成分区',owner:'合成UP',durationSec:80,views:1}))});
+test('W03 category contracts accept only generated numeric facts, one anonymous operation and coherent echo',()=>{
+ assert.equal(PUBLIC_CATEGORIES.length,14);
+ for(const row of PUBLIC_CATEGORIES){assert.equal(parseCategoryId(row.id),row.id);const q={version:1,scope,operation:'public-category-ranking',categoryId:row.id};assert.deepEqual(parseRankingRequest(q),q);assert.equal(parseRankingResult(response(q as RankingRequest)).operation,q.operation);assert.deepEqual(parseContentQuery({route:'category',page:25,categoryId:row.id}),{route:'category',page:25,categoryId:row.id});}
+ for(const id of [0,1,999,1100,'1005',1005.1,null,'1005&type=all']){assert.throws(()=>parseCategoryId(id));assert.throws(()=>parseRankingRequest({version:1,scope,operation:'public-category-ranking',categoryId:id}));}
+ const q={version:1,scope,operation:'public-category-ranking',categoryId:1005};
+ for(const bad of [{...q,url:'https://outside.invalid/'},{...q,cookie:'synthetic'},{...q,categoryId:undefined},{...q,operation:'public-ranking'}])assert.throws(()=>parseRankingRequest(bad));
+ for(const bad of [{route:'category',categoryId:1005,page:2,refresh:true},{route:'category',categoryId:1005,page:26},{route:'category',categoryId:1005,page:1,url:'synthetic'}])assert.throws(()=>parseContentQuery(bad));
+ assert.throws(()=>parseRankingResult({...response(q as RankingRequest),operation:'public-ranking'}));
+});
+test('W03 category snapshots are keyed, paged copies; switching category/global cannot reuse old list, failed refresh removes snapshot',async()=>{
+ const original=globalThis.Worker,requests:RankingRequest[]=[];let fail=false;
+ class FakeWorker{onmessage:((e:{data:unknown})=>void)|undefined;onerror:(()=>void)|undefined;constructor(file:string){assert.equal(file,'catalog-worker.js');}postMessage(q:RankingRequest){requests.push(q);queueMicrotask(()=>this.onmessage?.({data:fail?{...response(q),kind:'api_error',apiCode:-352,code:'ranking.api_error',items:[]}:response(q)}));}terminate(){}}
+ globalThis.Worker=FakeWorker as unknown as typeof Worker;
+ try{
+  const runtime=new PublicContentRuntime(),signal=new AbortController().signal;
+  const a=await runtime.read({route:'category',categoryId:1005,page:1},signal);a.items[0]!.title='mutated';await runtime.read({route:'category',categoryId:1005,page:2},signal);
+  assert.equal((await runtime.read({route:'category',categoryId:1005,page:1},signal)).items[0]!.title,'合成分区');assert.equal(requests.length,1);
+  await assert.rejects(runtime.read({route:'category',categoryId:1008,page:2},signal),{code:'invalid'});
+  await runtime.read({route:'category',categoryId:1008,page:1},signal);assert.equal(requests.length,2);
+  await runtime.read({route:'ranking',page:1},signal);assert.equal(requests.length,3);
+  await runtime.read({route:'category',categoryId:1005,page:1},signal);assert.equal(requests.length,4);
+  fail=true;await assert.rejects(runtime.read({route:'category',categoryId:1005,page:1,refresh:true},signal),{apiCode:-352});await assert.rejects(runtime.read({route:'category',categoryId:1005,page:2},signal),{code:'invalid'});assert.deepEqual(await runtime.close(),{closed:true});
+ }finally{globalThis.Worker=original;}
+});
+test('W03 category reply for another valid category does not authorize response or native reuse',async()=>{
+ const original=globalThis.Worker;
+ class FakeWorker{onmessage:((e:{data:unknown})=>void)|undefined;onerror:(()=>void)|undefined;constructor(_file:string){}postMessage(q:RankingRequest){queueMicrotask(()=>this.onmessage?.({data:{...response(q),categoryId:1008}}));}terminate(){}}
+ globalThis.Worker=FakeWorker as unknown as typeof Worker;
+ try{const runtime=new PublicContentRuntime();await assert.rejects(runtime.read({route:'category',categoryId:1005,page:1},new AbortController().signal),{code:'invalid'});assert.deepEqual(await runtime.close(),{closed:false});}finally{globalThis.Worker=original;}
+});

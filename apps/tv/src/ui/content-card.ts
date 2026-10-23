@@ -1,0 +1,32 @@
+import type { PopularCard } from '../../../../packages/contracts/src/index.ts';
+import type { CoverArt } from '../platform/cover-art.ts';
+export function clockTime(seconds: number): string { return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`; }
+export function contentCard(card: PopularCard, id: string, art: CoverArt, signal: AbortSignal, choose: () => void): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.className = 'tv-card';
+    button.dataset.focusId = id;
+    const picture = document.createElement('span');
+    picture.className = 'tv-card-picture';
+    const fallback = document.createElement('span');
+    fallback.className = 'tv-cover-fallback';
+    fallback.textContent = 'BiliSofa';
+    fallback.setAttribute('aria-hidden', 'true');
+    const time = document.createElement('span');
+    time.className = 'tv-card-time';
+    time.textContent = clockTime(card.durationSec);
+    picture.append(fallback, time);
+    const title = document.createElement('span');
+    title.className = 'tv-card-title';
+    title.textContent = card.title;
+    const author = document.createElement('span');
+    author.className = 'tv-card-author';
+    author.textContent = card.owner;
+    button.setAttribute('aria-label', `${card.title}，${card.owner}，${Math.floor(card.durationSec / 60)}分${card.durationSec % 60}秒`);
+    button.append(picture, title, author);
+    button.onclick = () => { if (!signal.aborted)
+        choose(); };
+    if (card.cover)
+        art.attach(card.cover,button,signal,url => { if (signal.aborted)
+            return; const image = document.createElement('img'); image.alt = ''; image.src = url; image.width = 800; image.height = 450; picture.prepend(image); fallback.hidden = true; });
+    return button;
+}

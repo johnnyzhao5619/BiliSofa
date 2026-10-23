@@ -7,7 +7,7 @@ import urllib.request, urllib.error
 root=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('action',choices=['collect'])
-parser.add_argument('--variant',choices=['native','isolation'],default='native')
+parser.add_argument('--variant',choices=['native','isolation','network'],default='native')
 parser.add_argument('--wait-seconds',type=int,choices=range(1,181),default=45,metavar='1..180')
 args=parser.parse_args()
 private=Path(os.environ.get('BILISOFA_PRIVATE_DIR',str(Path.home()/'.local/share/BiliSofa'))).resolve()
@@ -50,5 +50,5 @@ try:
 except OSError: closed=True
 record={'schema':1,'collectedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'sourceHash':expected['sourceHash'],'signedPackageSha256':expected['sha256'],'version':expected['version'],'applicationId':expected.get('applicationId','BiliProbe1.Probe'),'automation':expected.get('automation'),'client':'authorized-developer-computer-not-phone','httpReport':'PASS','listenerClosedAfterGet':closed,'report':report,'phoneCompatibility':'separate-user-observation','productAcceptance':'UNVERIFIED'}
 path=private/f'device-report-{args.variant}-{expected["sourceHash"][:16]}.json';path.write_text(json.dumps(record,indent=2)+'\n');path.chmod(0o600)
-(root/'dist/DEVICE_REPORT.json').write_text(json.dumps(record,indent=2)+'\n')
+(root/('dist/NETWORK_DEVICE_REPORT.json' if args.variant=='network' else 'dist/ISOLATION_DEVICE_REPORT.json' if args.variant=='isolation' else 'dist/DEVICE_REPORT.json')).write_text(json.dumps(record,indent=2)+'\n')
 print(json.dumps(record,indent=2))

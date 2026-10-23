@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "evidence": "DESKTOP_SYNTHETIC_MUXED_MP4_NOT_TV_OR_DASH",
+  "processExit": 1,
+  "lastAttempt": [
+    {
+      "rate": 0.25,
+      "accepted": "accepted",
+      "ready": true,
+      "matched": true,
+      "ratio100": 25,
+      "code": "rate.x0_25_matched_r25",
+      "frames": 44,
+      "errors": 0,
+      "pauseStable": true,
+      "pausedSeek": true,
+      "closed": true,
+      "leaseReleased": true,
+      "reset": {
+        "networkState": 0,
+        "readyState": 0,
+        "paused": true,
+        "currentSourcePresent": true,
+        "sourceAttributePresent": false,
+        "elements": 0
+      }
+    },
+    {
+      "rate": 0.5,
+      "accepted": "accepted",
+      "ready": true,
+      "matched": true,
+      "ratio100": 50,
+      "code": "rate.x0_5_matched_r50",
+      "frames": 77,
+      "errors": 0,
+      "pauseStable": true,
+      "pausedSeek": true,
+      "closed": true,
+      "leaseReleased": true,
+      "reset": {
+        "networkState": 0,
+        "readyState": 0,
+        "paused": true,
+        "currentSourcePresent": true,
+        "sourceAttributePresent": false,
+        "elements": 0
+      }
+    },
+    {
+      "rate": 0.75,
+      "accepted": "accepted",
+      "ready": true,
+      "matched": true,
+      "ratio100": 75,
+      "code": "rate.x0_75_matched_r75",
+      "frames": 111,
+      "errors": 0,
+      "pauseStable": true,
+      "pausedSeek": true,
+      "closed": true,
+      "leaseReleased": true,
+      "reset": {
+        "networkState": 0,
+        "readyState": 0,
+        "paused": true,
+        "currentSourcePresent": true,
+        "sourceAttributePresent": false,
+        "elements": 0
+      }
+    },
+    {
+      "rate": 1,
+      "accepted": "accepted",
+      "ready": true,
+      "matched": true,
+      "ratio100": 100,
+      "code": "rate.x1_matched_r100",
+      "frames": 145,
+      "errors": 0,
+      "pauseStable": true,
+      "pausedSeek": true,
+      "closed": true,
+      "leaseReleased": true,
+      "reset": {
+        "networkState": 0,
+        "readyState": 0,
+        "paused": true,
+        "currentSourcePresent": true,
+        "sourceAttributePresent": false,
+        "elements": 0
+      }
+    },
+    {
+      "rate": 1.25,
+      "accepted": "accepted",
+      "ready": false,
+      "matched": false,
+      "ratio100": 125,
+      "code": "rate.x1_25_insufficient_r125",
+      "frames": 179,
+      "errors": 0,
+      "pauseStable": true,
+      "pausedSeek": true,
+      "closed": true,
+      "leaseReleased": true,
+      "reset": {
+        "networkState": 0,
+        "readyState": 0,
+        "paused": true,
+        "currentSourcePresent": true,
+        "sourceAttributePresent": false,
+        "elements": 0
+      }
+    }
+  ],
+  "preFixHistoricalCurrentSrc": [
+    {
+      "rate": 0.25,
+      "accepted": "accepted",
+      "ready": true,
+      "matched": true,
+      "ratio100": 25,
+      "code": "rate.x0_25_matched_r25",
+      "frames": 44,
+      "errors": 0,
+      "pauseStable": true,
+      "pausedSeek": true,
+      "closed": false,
+      "leaseReleased": false,
+      "reset": {
+        "networkState": 0,
+        "readyState": 0,
+        "paused": true,
+        "currentSourcePresent": true,
+        "sourceAttributePresent": false,
+        "elements": 1
+      }
+    }
+  ],
+  "stoppedAt": "1.25x insufficient wall window",
+  "unexecuted": [
+    1.5,
+    1.75,
+    2
+  ],
+  "nativeDashExperiment": "NOT_REACHED",
+  "audioListening": "NOT_PERFORMED",
+  "tvAcceptance": "NOT_PERFORMED"
+}

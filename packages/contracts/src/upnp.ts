@@ -17,7 +17,7 @@ export const SOAP_PROBE_FACTS = ['invalid', 'unsupported', 'transport_query', 'p
   'play_rejected', 'pause_rejected', 'stop_rejected', 'seek_rejected',
   'offer_args_missing_instance', 'offer_args_missing_uri', 'offer_args_missing_metadata', 'offer_args_extra', 'offer_args_duplicate', 'offer_args_attributes', 'offer_args_nested', 'offer_args_namespace', 'offer_args_ok',
   'offer_uri_missing', 'offer_uri_ambiguous', 'offer_uri_malformed', 'offer_uri_http', 'offer_uri_scheme', 'offer_uri_destination', 'offer_uri_path', 'offer_uri_m4s', 'offer_uri_m3u8', 'offer_uri_other_format', 'offer_uri_deadline_missing', 'offer_uri_deadline_invalid', 'offer_uri_deadline_unusable', 'offer_uri_supported',
-  'offer_metadata_empty', 'offer_metadata_text', 'offer_metadata_nested', 'offer_metadata_oversized'] as const;
+  'offer_metadata_empty', 'offer_metadata_text', 'offer_metadata_nested', 'offer_metadata_oversized', 'receiver_position_nonzero', 'receiver_duration_nonzero', 'receiver_metadata_generated', 'receiver_metadata_omitted'] as const;
 export type SoapProbeFact = typeof SOAP_PROBE_FACTS[number];
 
 // Append-only order: v1 summary bit positions are part of the diagnostic format.
@@ -33,7 +33,7 @@ export function mediaRequestSummary(codes: Iterable<string>): string | undefined
 export function isMediaRequestSummary(code: string): boolean { return /^cast\.media_requests_v1_(?:0[1-9a-f]|1[0-9a-f])$/.test(code); }
 // Extra facts: two flow snapshots, one limit reason, three bounded reconnects, three validated-range continuation facts,
 // at most 24 receiver command frames and 18 deduplicated receiver facts.
-export const CAST_PROGRESS_LIMIT = SOAP_PROBE_FACTS.length + SOURCE_POLICY_REASONS.length + 20 + CAST_MEDIA_REQUESTS.length + 6 + 24 + 29 + 3;
+const SINGLE_SOURCE_PROGRESS_LIMIT = SOAP_PROBE_FACTS.length + SOURCE_POLICY_REASONS.length + 20 + CAST_MEDIA_REQUESTS.length + 6 + 24 + 32 + 3 + 5 + 5 + 2 + 3 + 2 + 32;
 export function soapProbeSummary(codes: Iterable<string>): string | undefined {
   const words = [0, 0];
   for (const code of codes) {
@@ -50,3 +50,6 @@ export function decodeSoapProbeSummary(code: string): SoapProbeFact[] {
   for (let i = SOAP_PROBE_FACTS.length; i < 64; i++) if ((words[i >>> 5]! >>> (i & 31)) & 1) return [];
   return SOAP_PROBE_FACTS.filter((_, i) => (words[i >>> 5]! >>> (i & 31)) & 1);
 }
+
+// Four bounded media generations plus three transition handshakes; never an unbounded queue.
+export const CAST_PROGRESS_LIMIT = SINGLE_SOURCE_PROGRESS_LIMIT * 4 + 15 + 33 + 4;

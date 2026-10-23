@@ -4,8 +4,8 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 const out = 'dist/probe';
 const autoSetting = process.env.BILISOFA_PROBE_AUTORUN ?? '0';
-if (!['0', '1', '2', '4', '5', '6'].includes(autoSetting)) throw new Error('Invalid internal probe automation setting');
-const automation = autoSetting === '6' ? 'cast-startup-report-once' : autoSetting === '5' ? 'guest-video-source-report-once' : autoSetting === '4' ? 'guest-popular-report-once' : autoSetting === '2' ? 'synthetic-persistence-report-once' : autoSetting === '1' ? 'guest-synthetic-report-once' : 'manual';
+if (!['0', '1', '2', '4', '5', '6', '7'].includes(autoSetting)) throw new Error('Invalid internal probe automation setting');
+const automation = autoSetting === '7' ? 'session-wire-report-once' : autoSetting === '6' ? 'cast-startup-report-once' : autoSetting === '5' ? 'guest-video-source-report-once' : autoSetting === '4' ? 'guest-popular-report-once' : autoSetting === '2' ? 'synthetic-persistence-report-once' : autoSetting === '1' ? 'guest-synthetic-report-once' : 'manual';
 await mkdir(out, { recursive: true });
 execFileSync('python3', ['tools/initials-data.py']);
 const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z']).toString().split('\0').filter(Boolean).sort();
@@ -31,6 +31,7 @@ await build({ entryPoints: ['packages/search/src/initials-worker.ts'], outfile: 
 await build({ entryPoints: ['platform/wasm-network/src/guest-worker.ts'], outfile: `${out}/guest-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
 await build({ entryPoints: ['platform/wasm-network/src/guest-video-worker.ts'], outfile: `${out}/guest-video-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
 await build({ entryPoints: ['platform/wasm-network/src/cast-worker.ts'], outfile: `${out}/cast-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
+await build({ entryPoints: ['platform/wasm-network/src/session-worker.ts'], outfile: `${out}/session-worker.js`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false });
 // Original, hand-encoded WASM: (module (func (export "add") (param i32 i32) (result i32) local.get 0 local.get 1 i32.add))
 const wasm = new Uint8Array([0,97,115,109,1,0,0,0,1,7,1,96,2,127,127,1,127,3,2,1,0,7,7,1,3,97,100,100,0,0,10,9,1,7,0,32,0,32,1,106,11]);
 if (!WebAssembly.validate(wasm)) throw new Error('Invalid original WASM');

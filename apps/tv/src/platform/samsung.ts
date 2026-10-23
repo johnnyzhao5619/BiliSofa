@@ -1,11 +1,26 @@
 import type { ProbeKeyManagerApi } from './keymanager-probe.ts';
-import { AvplayBackend, type AvplayApi, type ScreenSaverApi } from './avplay.ts';
+import { AvplayBackend, type AvplayApi, type ScreenSaverApi, type PreparationInitialization } from './avplay.ts';
+import { liveCdnUrl, liveRelayUrl } from '../../../../packages/contracts/src/live-probe.ts';
+import type { VodCapabilities } from '../../../../packages/contracts/src/vod-catalog.ts';
 interface ProductInfo { getModel(): string; getFirmware(): string; }
 interface SamsungGlobals {
   tizen?: { keymanager?: ProbeKeyManagerApi; tvaudiocontrol?: { isMute(): boolean; getVolume(): number }; systeminfo?: { getCapability(name: string): string | boolean | number; getPropertyValue?(name: string, success: (value: { ipAddress?: unknown; status?: unknown }) => void, error: () => void): void }; application?: { getCurrentApplication(): { exit(): void; appInfo?: { id?: unknown } } } };
   webapis?: { productinfo?: ProductInfo; avplay?: unknown; appcommon?: unknown };
 }
 const platform = globalThis as unknown as SamsungGlobals;
+/** Candidate envelope understood by our parser/MPD path, NOT a hardware
+ * certification. AVPlay decides each actual source; domain owners fall back
+ * after a confirmed decoder/transport failure. Model/firmware are diagnostics. */
+export type VodRuntimeStatus = {kind:'available';capabilities:VodCapabilities}|{kind:'unavailable';reason:'player_api_missing'};
+export function vodRuntimeStatus():VodRuntimeStatus {
+  const api=platform.webapis?.avplay as Record<string,unknown>|undefined;
+  const saver=platform.webapis?.appcommon as ScreenSaverApi|undefined;
+  if(!api||['open','getState','setListener','setDisplayRect','prepareAsync','play','pause','seekTo','stop','close'].some(key=>typeof api[key]!=='function')||typeof saver?.setScreenSaver!=='function'||!saver.AppCommonScreenSaverState)return {kind:'unavailable',reason:'player_api_missing'};
+  return {kind:'available',capabilities:{video:['avc','hevc','av1'],audio:['aac','eac3','flac'],qualities:Array.from({length:127},(_,i)=>i+1),maxWidth:16384,maxHeight:8640,maxFps:240,rates:[1,2]}};
+}
+export function vodCandidateCapabilities():VodCapabilities|undefined {
+  const state=vodRuntimeStatus();return state.kind==='available'?state.capabilities:undefined;
+}
 export function inspectPlatform(): Record<string, string> {
   const read = (fn: () => unknown) => {
     try { const value = String(fn()); return /^[A-Za-z0-9_. -]{1,160}$/.test(value) ? value : 'redacted'; }
@@ -62,19 +77,30 @@ export function createGuestProbePlayer(manifestUrl: string): AvplayBackend | und
   if (!/^http:\/\/127\.0\.0\.1:40324\/[a-f0-9]{32}\/manifest\.mpd$/.test(manifestUrl)) return undefined;
   return createLocalProbePlayer(manifestUrl);
 }
-export function createCastProbePlayer(url: string): AvplayBackend | undefined {
+export function createCastProbePlayer(url: string, initialization?: PreparationInitialization): AvplayBackend | undefined {
   if (!/^http:\/\/127\.0\.0\.1:40324\/[a-f0-9]{32}\/cast\.mp4$/.test(url)) return undefined;
-  return createLocalProbePlayer(url, true);
+  return createLocalProbePlayer(url, true, initialization);
 }
 export function createProbePlayer(): AvplayBackend | undefined { return createLocalProbePlayer('http://127.0.0.1:40323/probe.mpd'); }
-function createLocalProbePlayer(manifestUrl: string, progressiveBuffering = false): AvplayBackend | undefined {
+// Private fixed-room preflight result only; SDK owns subsequent HLS networking.
+// This probe does not claim curl destination/redirect enforcement inside AVPlay.
+export function createLiveProbePlayer(url: string): AvplayBackend | undefined {
+  try { return createLocalProbePlayer(liveCdnUrl(url, 'm3u8')); } catch { return undefined; }
+}
+export function createLiveRelayProbePlayer(url: string): AvplayBackend | undefined {
+  return createLiveRelayPlayer(url);
+}
+export function createLiveRelayPlayer(url:string):AvplayBackend|undefined {
+  try { return createLocalProbePlayer(liveRelayUrl(url)); } catch { return undefined; }
+}
+function createLocalProbePlayer(manifestUrl: string, progressiveBuffering = false, initialization?: PreparationInitialization): AvplayBackend | undefined {
   const api = platform.webapis?.avplay as AvplayApi | undefined;
   const saver = platform.webapis?.appcommon as ScreenSaverApi | undefined;
   if (!api || !saver || ['open', 'getState', 'setListener', 'setDisplayRect', 'prepareAsync', 'play', 'pause', 'seekTo', 'stop', 'close'].some(key => typeof (api as unknown as Record<string, unknown>)[key] !== 'function') || typeof saver.setScreenSaver !== 'function' || !saver.AppCommonScreenSaverState) return undefined;
   return new AvplayBackend(api, saver, url => {
     if (url !== manifestUrl) throw new Error('fixed_probe_source_only');
     return url;
-  }, progressiveBuffering);
+  }, progressiveBuffering, false, initialization);
 }
 
 export function probeAudioState(): string {
@@ -88,7 +114,8 @@ export function probeAudioState(): string {
 }
 
 // Dedicated synthetic probe only; no alias enumeration or permission grants.
-export function probeKeyManagerApi(): ProbeKeyManagerApi | undefined { return platform.tizen?.keymanager; }
+export function keyManagerDataApi(): ProbeKeyManagerApi | undefined { return platform.tizen?.keymanager; }
+export function probeKeyManagerApi(): ProbeKeyManagerApi | undefined { return keyManagerDataApi(); }
 
 // Only our two fixed probe identities, never an application inventory.
 export function probeApplicationIdentity(role: 'owner' | 'observer'): boolean {

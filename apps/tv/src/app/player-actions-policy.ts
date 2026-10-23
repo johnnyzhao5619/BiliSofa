@@ -1,0 +1,2 @@
+declare const BILISOFA_PRODUCT_ACTIONS:boolean;
+export const PRODUCT_ACTIONS=typeof BILISOFA_PRODUCT_ACTIONS!=='undefined'&&BILISOFA_PRODUCT_ACTIONS;

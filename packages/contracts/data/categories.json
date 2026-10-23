@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "source": "https://s1.hdslb.com/bfs/static/2233-monorepo/popular/static/js/index.55b42adc.js",
+  "sourceSha256": "20904573916562ac9cd5e42fe32feb0d6f9d2aadad341e3736df807f80860b50",
+  "configurationSource": "https://api.bilibili.com/x/kv-frontend/namespace/data?appKey=333.1339&nscode=10",
+  "configurationSha256": "eec0edd0eb7d826cb54821360783921f50f2bc5124dbf77689c95a56796fe5ba",
+  "selection": "public popular_page_sort UGC entries only; PGC ranking excluded from this lane",
+  "categories": [
+    {
+      "id": 1005,
+      "label": "动画",
+      "route": "douga"
+    },
+    {
+      "id": 1008,
+      "label": "游戏",
+      "route": "game"
+    },
+    {
+      "id": 1007,
+      "label": "鬼畜",
+      "route": "kichiku"
+    },
+    {
+      "id": 1003,
+      "label": "音乐",
+      "route": "music"
+    },
+    {
+      "id": 1004,
+      "label": "舞蹈",
+      "route": "dance"
+    },
+    {
+      "id": 1001,
+      "label": "影视",
+      "route": "cinephile"
+    },
+    {
+      "id": 1002,
+      "label": "娱乐",
+      "route": "ent"
+    },
+    {
+      "id": 1010,
+      "label": "知识",
+      "route": "knowledge"
+    },
+    {
+      "id": 1012,
+      "label": "科技数码",
+      "route": "tech"
+    },
+    {
+      "id": 1020,
+      "label": "美食",
+      "route": "food"
+    },
+    {
+      "id": 1013,
+      "label": "汽车",
+      "route": "car"
+    },
+    {
+      "id": 1014,
+      "label": "时尚美妆",
+      "route": "fashion"
+    },
+    {
+      "id": 1018,
+      "label": "体育运动",
+      "route": "sports"
+    },
+    {
+      "id": 1024,
+      "label": "动物",
+      "route": "animal"
+    }
+  ]
+}

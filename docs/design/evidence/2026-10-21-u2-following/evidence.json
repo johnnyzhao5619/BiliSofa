@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-21",
+  "scope": "U2 following and followed PGC product browse; desktop synthetic boundaries only",
+  "generatedAt": "2026-10-21T23:21:47.863Z",
+  "candidate": {
+    "root": "dist/product-collections-app",
+    "version": "0.33.0",
+    "manifestSha256": "2cd06975bb5349391bf62175a2b63feb88549fc667394fdd2bc683596e7c6db4",
+    "sourceHash": "f0d30c08bd84bbb98bd529f7d1a90a00aee4d589cbefaa9ce6a49ae905d3111e",
+    "verifiedInputs": 233,
+    "verifiedFiles": 27,
+    "signed": false,
+    "deployed": false
+  },
+  "frozen": [
+    {
+      "root": "dist/recommend-app",
+      "manifestSha256": "07b060c43fc83263ee48501f918e999116946fde88690d755544def4ac8e5149",
+      "sourceHash": "580a87361f75e09c4092f1827ab48c175da45a7df422c742c43373a12f98774d",
+      "verifiedFiles": 27
+    },
+    {
+      "root": "dist/u1-app",
+      "manifestSha256": "7a2c2c09664e09dbcd99cb6e2443aa56295cb20041bb840c8258e34565b3264c",
+      "sourceHash": "9a825d3ed159405233441602edb6d188eb0efeedb07a1f57ff730326f4cddfcf",
+      "verifiedFiles": 27
+    },
+    {
+      "root": "dist/product-ui-app",
+      "manifestSha256": "ad881c566d606d66e3030713413cece08305819930fff389d76491e6b396cd65",
+      "sourceHash": "def0d19dc94d043ea51f8765c302a6d04631ded210c2ac779e588a5f6cb699ba",
+      "verifiedFiles": 27
+    },
+    {
+      "root": "dist/product-library-app",
+      "manifestSha256": "c868190ecee475247a9f6b374e9838c4809cb7da31254e130456d829cf21b0c4",
+      "sourceHash": "ac1680998d5b673895352d42b88e5de2d86c4f13a29d5da38a1df54b3e3c957c",
+      "verifiedFiles": 27
+    },
+    {
+      "root": "dist/product-discovery-app",
+      "manifestSha256": "53dcd103ad68e3b44348d5426d87340f6582101a2eb218c54b0873c1647b4730",
+      "sourceHash": "26de910ac1460408cc7f911c72f91fd33f2d48a2f9d3fd2e09debd9c5ad2f55d",
+      "verifiedFiles": 27
+    }
+  ],
+  "tests": {
+    "modules": 275,
+    "unitContracts": 631,
+    "followingUI": 9,
+    "searchRegression": 8,
+    "libraryRegression": 9,
+    "shellRegression": 6
+  },
+  "gitBase": "610e8c21ec50b13449cd88625a5f726db7d83450",
+  "dirtyWorkspace": true,
+  "device": {
+    "installedVersion": "0.28.0",
+    "candidateInstalled": false,
+    "acceptance": "OPEN"
+  },
+  "screenshots": {
+    "following.png": "dfc0fe4c6f459e6800c7936fdd4c37a51fa20776db7dee82fd717a98d0dfa180",
+    "catalog.png": "300df3769a420f49998182968373b37d44f8487fcadd5cc123fbf73605b5802c",
+    "catalog-guest.png": "b7dfc75a56148c2636ef01e77f3d38a84ed35edf5fdf93cf5a66d0facded95c9"
+  }
+}

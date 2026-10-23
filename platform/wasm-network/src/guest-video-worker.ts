@@ -11,11 +11,13 @@ interface NativeModule {
 }
 const worker = globalThis as unknown as { onmessage: ((event: MessageEvent) => void) | null; postMessage(value: GuestVideoResult | GuestBridgeEvent): void; importScripts(...paths: string[]): void; Module?: NativeModule };
 let active: GuestVideoRequest | undefined, cancelled = false, completed = false, stage = 0;
-let bridgeReady = false, token = '', refreshes = 0;
+let bridgeReady = false, token = '', refreshes = 0, rangeRetries = 0;
+let delayed:ReturnType<typeof setTimeout>|undefined;
 let detail: GuestVideoDetail | undefined, plan: GuestVideoPlan | undefined;
 function finish(code: string): void {
   if (!active || completed) return;
   completed = true;
+  clearTimeout(delayed);delayed=undefined;
   if (!/[.](source_ranges_ok|cancelled|native_unavailable|bridge_stopped|bridge_failed_[0-9]+)$/.test(code)) code = `ugc.${['view', 'playurl', 'video', 'audio'][stage]}_${code.slice(4)}`;
   const summary = code === 'ugc.source_ranges_ok' && plan ? { bvid: plan.detail.bvid, title: plan.detail.title, owner: plan.detail.owner, durationSec: plan.durationSec, pages: plan.detail.pages, width: plan.video.width, height: plan.video.height, videoCodec: plan.video.codec, audioCodec: plan.audio.codec } : undefined;
   // No URL, CID, response/header or signature ever leaves this Worker.
@@ -52,6 +54,13 @@ function closed(): void {
     if (rc !== 0) {
       const reason = m._guest_reject_reason?.() ?? 0;
       if (!Number.isInteger(reason) || reason < 0 || reason > 3) throw new Error();
+      // The native closed frame has returned. Only this bounded, pre-play range
+      // timeout is eligible; no TLS/HTTP/policy failure or unknown close retries.
+      if(rc===28 && (status===0||status===206) && reason===0 && (stage===2||stage===3) && active?.operation==='guest-video-play' && !bridgeReady && rangeRetries===0 && plan && plan.expiresAt>=Date.now()+75000){
+        rangeRetries++;
+        worker.postMessage(parseGuestBridgeEvent({version:1,scope:active.scope,operation:active.operation,closed:false,code:'ugc.range_retry_once'}));
+        delayed=setTimeout(()=>{delayed=undefined;next();},750);return;
+      }
       finish(reason ? `ugc.${['', 'response_too_large', 'headers_too_large', 'range_invalid'][reason]}` : `ugc.transport_${rc}`); return;
     }
     if (stage < 2 && status !== 200 || stage >= 2 && status !== 206) { finish(status >= 100 ? `ugc.http_${status}` : 'ugc.invalid_response'); return; }
@@ -79,7 +88,7 @@ function closed(): void {
 worker.onmessage = async event => {
   if (active) {
     const v = event.data;
-    if (v && typeof v === 'object' && Object.keys(v).length === 4 && v.version === 1 && v.control === 'stop' && v.operation === active.operation && JSON.stringify(v.scope) === JSON.stringify(active.scope)) { cancelled = true; if (bridgeReady) { try { worker.Module!._bridge_stop!(); } catch { /* Parent must not infer cleanup. */ } } }
+    if (v && typeof v === 'object' && Object.keys(v).length === 4 && v.version === 1 && v.control === 'stop' && v.operation === active.operation && JSON.stringify(v.scope) === JSON.stringify(active.scope)) { cancelled = true; if(delayed!==undefined){clearTimeout(delayed);delayed=undefined;finish('ugc.cancelled');return;} if (bridgeReady) { try { worker.Module!._bridge_stop!(); } catch { /* Parent must not infer cleanup. */ } } }
     return;
   }
   try { active = parseGuestVideoRequest(event.data); } catch { return; }
@@ -87,7 +96,7 @@ worker.onmessage = async event => {
   catch { finish('ugc.native_unavailable'); return; }
   if (cancelled) { finish('ugc.cancelled'); return; }
   worker.Module = { arguments: [], noInitialRun: true, noExitRuntime: true, onRuntimeInitialized: next, print(line) {
-    if (line === 'GUEST:closed') { closed(); return; }
+    if (line === 'GUEST:closed') { setTimeout(closed, 0); return; }
     if (line === 'BRIDGE:ready' && active?.operation === 'guest-video-play' && plan && !bridgeReady) {
       bridgeReady = true;
       worker.postMessage(parseGuestBridgeEvent({ version: 1, scope: active.scope, operation: active.operation, closed: false, code: 'ugc.bridge_ready', url: guestBridgeManifestUrl(token), summary: { bvid: plan.detail.bvid, title: plan.detail.title, owner: plan.detail.owner, durationSec: plan.durationSec, pages: plan.detail.pages, width: plan.video.width, height: plan.video.height, videoCodec: plan.video.codec, audioCodec: plan.audio.codec } }));

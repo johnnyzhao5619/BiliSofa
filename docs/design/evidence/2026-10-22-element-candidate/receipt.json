@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "feature": "F06_R07_ELEMENT_BACKEND_CANDIDATE",
+  "packaged": false,
+  "signed": false,
+  "deployed": false,
+  "productionIntegrated": false,
+  "installedVersionUnchanged": "0.43.0",
+  "sourceInputs": {
+    "apps/tv/src/platform/element-video.ts": "27f64bce9e87edeb8c531e2187bb7d273609ec2ef48a3013660da37954129590",
+    "packages/contracts/src/playback-rate.ts": "311440b7f1237e57bcb8bcd97b0c6ee53d29ea4076c8ee6c131192f0a8ecc422",
+    "packages/media/src/rate-observation.ts": "20d8a0b1d36db9e228a4adda41bd6ba64a6033cbf86d777325c88ade33aec832",
+    "tests/unit/element-video.test.ts": "3eb03102aea5bdc00bb00704ce5c155ab890b23440ed992cf273bad6bf692077",
+    "tests/unit/rate-observation.test.ts": "d60c057aa93d66109b07b885ddd29a00e4cb9227637e48da4c4d604c62ebe718",
+    "tests/media-element/entry.ts": "aa04c32bf9843d85cea6146d8850688497a802616f7a98f38d6190186a22b96a",
+    "tests/media-element/server.py": "8d785e34d56bc2e4319f74f1dc39cb8ee9d23c0870f5a04547a806f71ed41a7f",
+    "tests/media-element/browser.py": "41dea53f08b88d03e3519c384c18408921bd7b26b69f006dfeefac0fdf911b83"
+  },
+  "verification": {
+    "strictAndBoundaries": {
+      "result": "PASS",
+      "modules": 293,
+      "log": ".local/r07-element/check.log"
+    },
+    "fullUnitContractsBeforeResetFix": {
+      "result": "PASS",
+      "count": 687,
+      "log": ".local/r07-element/unit.log",
+      "scope": "BEFORE_FINAL_RESET_FIX_AND_NEW_REGRESSION"
+    },
+    "targetedAfterResetFix": {
+      "result": "PASS",
+      "count": 20,
+      "files": [
+        "tests/unit/element-video.test.ts",
+        "tests/unit/rate-observation.test.ts",
+        "tests/unit/vod-rate.test.ts"
+      ]
+    },
+    "currentFullSuite": "NOT_RERUN_AFTER_FINAL_RESET_FIX",
+    "browserRealMedia": {
+      "exit": 1,
+      "passedRates": [
+        0.25,
+        0.5,
+        0.75,
+        1
+      ],
+      "insufficientRate": 1.25,
+      "unexecutedRates": [
+        1.5,
+        1.75,
+        2
+      ],
+      "realDash": "NOT_REACHED",
+      "tv": "NOT_PERFORMED"
+    }
+  },
+  "deploymentPolicy": "USER_REQUESTED_NO_DEPLOYMENT_DOCUMENTATION_AND_THIRD_PARTY_HANDOFF_ONLY"
+}

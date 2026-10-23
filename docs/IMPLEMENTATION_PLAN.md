@@ -1,48 +1,42 @@
-# BiliSofa: all-function single-release plan
+# 实施计划与版本范围
 
-Date: 2026-10-14. Product release target: one complete v1.0.0. Canonical scope is docs/PRD.md. Architecture constraint is ADR-001: fully on-TV, no external runtime service.
+更新：2026-10-22。保留[PRD](PRD.md)的F01–F20跟踪。用户最新指示当前不做直播，按[ADR-068](adr/068-current-scope-and-reversible-interactions.md)排除直播及其依赖，保留代码/历史且不记PASS；真实双账号功能/验收也按ADR-069从当前版本排除；其余必需功能仍按完整v1.0.0交付，内部包不是产品版本。日常不依赖常开电脑、NAS、LAN网关或项目云服务。
 
-User-approved revision: [ADR-003](adr/003-read-only-comments-danmaku.md) makes comments/replies and VOD/live danmaku read-only. F15/F16 remain traceability IDs merged into reading/display work; remove their editors, publishing/deletion/sending integrations and write acceptance. F03 plans app-contained pinyin-initial input/suggestions. Other planned writes remain.
+**当前用户要求先不部署，只更新文档与[第三方验收任务](THIRD_PARTY_ACCEPTANCE_PROMPT.md)。0.43.0所请求投屏/F11组通过，R07为未部署源码候选。以下为保留的实施计划，不是立即执行授权。**
 
-## Work packages
+## 工作包与退出条件
 
-| Work | Tasks and evidence | Dependency | Rough effort |
-| --- | --- | --- | --- |
-| W00 Initialization | Git/main, MIT, README, PRD, architecture, feature IDs, acceptance and open-source plan | User-approved initialization | Completed: skeleton/documents only |
-| W01 Retail feasibility | Signed socket/cURL WGT; Worker, TLS/cookies, per-account requests, TCP listen, UDP multicast; real official casting discovery/control; MPD/4K/HDR playback. Evaluate .NET only if necessary | SDK/signing setup and actual TV | 1–3 weeks; decision gate |
-| W02 On-TV foundation | Runtime boundary, account store, cast listeners, contracts, remote focus/search-input ownership, lifecycle, media adapter, meaningful CI | Chosen standalone route | 2–3 weeks |
-| W03 Accounts/content | F01–F05/F07/F13, all account views and switching, queries/pagination, cloud progress, personal queues | W02 | 2–3 weeks |
-| W04 Full media | F06/F17–F19, codecs/qualities/audio, speed, UGC/PGC/live, 4K/HDR where supported | W01/02/03 | 2–4 weeks |
-| W05 Overlay/interaction | F08–F12/F14–F16: read-only comments/replies/danmaku, subtitles/settings/recovery; F11/F14 writes with confirmation/state re-read; no comment/danmaku editor or sending | W03/04 | Re-estimate after W01 and ADR-003; previous 2–3 weeks is historical |
-| W06 Official casting | F20, discovery/protocol, content handoff, commands/state, account attribution, multiple sender/remote ownership, disconnect/recovery | W01 proves viable, W02/04 | 2–4 weeks |
-| W07 Full acceptance/release | F01–F20 actual TV/official phones, fault/soak/upgrade/rollback, licenses/documentation, one v1.0.0 Release | All required work passes | 2–3 weeks |
+| ID | 范围 | 退出条件 |
+| --- | --- | --- |
+| W00 | 工程/文档/许可证初始化 | 可追踪工程与范围；已完成 |
+| W01 | 零售TV运行时、网络、存储、媒体、官方投屏可行性 | 精确设备证据/权限/运行时ADR；阶段按ADR-027归档，用户跳过项仍OPEN |
+| W02 | 合同、账号代次、焦点/输入/返回栈、生命周期、存储、播放器与诊断 | 有效装配、清理/旧回调门禁、量化基线和恢复证据 |
+| W03 | F01–F05/F07/F13账号/内容/私人数据 | 真实数据/分页/单账号身份失效与恢复；真实双账号按ADR-069排除，云写须独立授权 |
+| W04 | F06/F17–F19媒体，直播按ADR-068排除当前交付 | 真实轨道/控制/分P/合集/循环/倍速、PGC/高画质及合理回退；剩余固定门槛见W04收尾表 |
+| W05 | F08–F12/F14–F16叠加、设置、只读评论/弹幕及保留互动 | 同步/安全文本/焦点/恢复；授权写入与回查/防重放 |
+| W06 | F20未修改官方三端投屏，直播依赖按ADR-068排除 | 非直播内容/控制/状态/所有权、争用、断连与生命周期恢复 |
+| W07 | 全量验收与发布准备 | 30普通视频、两小时混合、故障/休眠/升级回退、独立运行、最终包/许可/文档 |
 
-Effort is provisional and candidate-dependent. The previous 13–23 week estimate included comment/danmaku authoring; re-estimate after W01 and ADR-003 rather than promising a fixed saving. Permissions/protocol authorization or unsupported hardware can block a requirement indefinitely. Two developers may work on independent work packages, with the same final gate. No automatic agent delegation is implied.
+运行路线已选择单WGT/Web＋电视内Worker/WASM/cURL＋AVPlay（ADR-027），不再写成等待初次W01选型。.NET仅在具体必需能力受阻时重新评估；不能把它的模块直接当作WGT组件。
 
-There is no MVP/base/expanded release. Test packages are internal evidence; no full-release claim until every required item passes. Do not move a blocked required feature to another version.
+## 当前开发顺序
 
-## W01 experiments
+以[ADR-070](adr/070-product-closure-and-tv-experience.md)和[收口台账](PRODUCT_CLOSURE.md)为唯一顺序。0.39.0按ADR-081处理用户反馈的稳定列表/缺图/目标互动及遥控简化，集中补验受影响模块；R03所请求正常路径已收口；R06/R09、小数倍速与U5仍开放，失败不反复盲试。
 
-- Prove the exact firmware and signed package installs, launches and remains usable after power cycle with no development server.
-- Test Socket Extension in Worker: real bind/listen/accept, receive/send UDP and multicast discovery, not just symbol existence. Phone communicates directly with TV.
-- Test cURL HTTPS certificate validation, redirect handling, readable Set-Cookie, separate cookie jars, CSRF request and account identity. Use deliberate user-approved testing actions.
-- Prove same-account progress reads/writes; two accounts must not inherit a global browser cookie identity.
-- Serve an in-memory MPD inside the TV process if needed; prove AVPlay can access it and reach media; compare with MSE.
-- Use unchanged Android/iPhone/iPad official Bilibili apps for casting. Generic DLNA command tools alone are insufficient.
-- Confirm foreground receiver cleanup and Home/sleep behavior. Auto-wake/cold-launch requires separate evidence and is not assumed.
-- If WASM fails, prove .NET route against the same tests rather than assuming SDK support equals retail compatibility.
+1. U1：续播名称与受控封面合同、隐藏直播入口、设计token/导航/卡片、焦点与路由恢复。
+2. U2：首页/搜索/我的、私人片库和单账号/设置；完整UP/动态与分区有新来源依据时补齐，阻塞保持公开。
+3. U3：详情/播放、选P集、轨道回退、字幕弹幕与只读评论的统一表现；保留原媒体/投屏协调器。
+4. U4：F11分阶段能力/可逆互动、投屏/控制权与账号恢复；F14、F17真写按各自暂停/具体授权边界。
+5. U5：补余下内容/设备矩阵，集中T1–T8、性能/故障/升级回退与最终包准备；未完成项不能因界面完成自动关闭。
 
-## Engineering and release
+原W04工程CLOSED WITH CARRYOVER（ADR-058）、W05遗留、W06所请求iPhone组及后续分模块USER PASS全部保留；不回到旧工作包起点重做。直播按最新ADR-068排除当前交付，不再使用ADR-057承诺后续版本。完整模块就绪后统一部署/验证，只补失败影响项，不逐入口/控件或纯取证小包要求用户反复操作。实际结果见[实施状态](IMPLEMENTATION_STATUS.md)。
 
-Choose build/package tooling only after runtime gate. Preserve reference modules with their licenses. Establish contracts, account generation guards, request cancellation, idempotent read retries and ambiguous write status queries. Never execute arbitrary danmaku/remote update code.
+## 固定边界
 
-Public GitHub repo planned: OWNER/BiliSofa or owner-approved lowercase equivalent. Create it when GitHub publication is requested. CI later verifies type/static checks, real parsing/state tests, TV UI navigation, packaging and license/credential inspection. Device-account writes and private signing remain outside untrusted PR CI.
+- ADR-003：评论/回复与点播/直播弹幕只读；F15/F16与F10/F08/F18合并，不建设编辑/发送/删除接口。其他规划中的账号写操作仍在范围内。
+- 云进度两次具体授权均已使用，目标未确认且用户要求跳过；日志保留，不重发。其他真实写入须单独具体授权。
+- UI只有一个真实焦点/返回栈；平台全局集中到适配器；账号/媒体代次、取消与双关闭必须贯穿异步链路。
+- TLS、目的地、凭据、解析/资源边界和依赖原许可保留；不引入外部网关、不伪装官方设备或伪造权益。
+- 除用户明确批准的ADR-068直播及ADR-069真实双账号排除外，其他未完成/外部阻塞保持OPEN，不擅自移至后续产品版本。GitHub/Release发布需明确授权，当前未commit/push/发布。
 
-Complete release contains fixed source, package for user signing, target-TV locally signed package, licenses, build/sign/install instructions, compatibility and acceptance matrix. Preserve author signing identity and an upgrade rollback procedure. No signing private key/device session in public artifacts.
-
-## Practices applied to work packages
-
-- W01: capture actual model/firmware/engine and privilege matrix; prove Worker/CSP/socket/cURL, package persistence, media, search input/pinyin-initial candidates, Voice Guide and visibility transitions. Full comment/danmaku Chinese editing is no longer a gate. See [platform rules](TIZEN_PRACTICES.md).
-- W02: establish [dependency boundaries](PROJECT_STRUCTURE.md), [coding/state/resource rules](ENGINEERING.md), FocusRouter/InputRouter and the [TV UI contract](TV_UI.md); measure a device performance baseline before setting budgets.
-- W03–W06: each feature includes empty/loading/error/recovery and focus/Back behavior; F03 also owns search input/candidates. Account generation applies to reads and writes; unknown-write handling applies only to retained write features. Comment/reply/danmaku modules remain read-only.
-- W07: add cross-cutting UI/lifecycle/security/package evidence to existing F01–F20 gates. Required items remain UNVERIFIED until actual results. This documentation update does not execute those tests.
+[验收](ACCEPTANCE.md) · [工程规则](ENGINEERING.md) · [结构](PROJECT_STRUCTURE.md) · [历史实施过程](archive/2026-10-19-process-records/IMPLEMENTATION_PLAN.md)

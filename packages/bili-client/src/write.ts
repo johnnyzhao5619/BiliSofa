@@ -7,6 +7,7 @@ function key(intent: WriteIntent): string {
   if (!Number.isSafeInteger(intent.generation) || intent.generation < 0) throw new DomainError('invalid');
   return JSON.stringify([text(intent.accountId), intent.generation, text(intent.action), text(intent.targetId)]);
 }
+// Legacy portable state model only; the app uses durable RetainedWrites instead.
 // Entries are retained across account switches. Unknown outcomes block replay, including after switching back.
 export class WriteCoordinator {
   private entries = new Map<string, WriteState>();

@@ -1,8 +1,9 @@
+import { OFFER_REASONS,decodeOfferObservation } from './cast-offer-diagnostics.ts';
 import { boundedMessage, DomainError, parseScope, record, type Scope } from './index.ts';
-import { parseReceiverCommand, receiverId, RECEIVER_FACTS, type ReceiverCommand } from './cast-receiver.ts';
+import { mediaGeneration, parseReceiverCommand, receiverId, RECEIVER_FACTS, type ReceiverCommand } from './cast-receiver.ts';
 import { SOAP_PROBE_FACTS, SOURCE_POLICY_REASONS, CAST_MEDIA_REQUESTS } from './upnp.ts';
-export interface CastProbeRequest { version: 1; operation: 'cast-discovery'; scope: Scope; address: string; uuid: string; token: string; }
-export interface CastProbeResult { version: 1; operation: 'cast-discovery'; scope: Scope; closed: boolean; code: string; command?: { id: number; value: ReceiverCommand }; }
+export interface CastProbeRequest { version: 1; operation: 'cast-discovery'; scope: Scope; address: string; uuid: string; token: string; receiverApproval?: 'next-source' | 'session'; }
+export interface CastProbeResult { version: 1; operation: 'cast-discovery'; scope: Scope; closed: boolean; code: string; command?: { id: number; value: ReceiverCommand }; transition?: { generation: number; token: string }; }
 export function isPrivateProbeAddress(value: unknown): value is string {
   if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]{0,2})(?:\.(?:0|[1-9][0-9]{0,2})){3}$/.test(value)) return false;
   const p = value.split('.').map(Number);
@@ -15,18 +16,29 @@ function guestScope(value: unknown): Scope {
 }
 export function parseCastProbeRequest(value: unknown): CastProbeRequest {
   const v = boundedMessage(value), scope = guestScope(v.scope);
-  if (Object.keys(v).length !== 6 || Object.keys(v).some(k => !['version', 'operation', 'scope', 'address', 'uuid', 'token'].includes(k)) || v.version !== 1 || v.operation !== 'cast-discovery' || !isPrivateProbeAddress(v.address) || typeof v.uuid !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(v.uuid) || typeof v.token !== 'string' || !/^[a-f0-9]{32}$/.test(v.token)) throw new DomainError('invalid');
-  return { version: 1, operation: 'cast-discovery', scope, address: v.address, uuid: v.uuid, token: v.token };
+  if (![6, 7].includes(Object.keys(v).length) || Object.keys(v).some(k => !['version', 'operation', 'scope', 'address', 'uuid', 'token', 'receiverApproval'].includes(k)) || 'receiverApproval' in v && !['next-source','session'].includes(String(v.receiverApproval)) || v.version !== 1 || v.operation !== 'cast-discovery' || !isPrivateProbeAddress(v.address) || typeof v.uuid !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(v.uuid) || typeof v.token !== 'string' || !/^[a-f0-9]{32}$/.test(v.token)) throw new DomainError('invalid');
+  return { version: 1, operation: 'cast-discovery', scope, address: v.address, uuid: v.uuid, token: v.token, ...(v.receiverApproval === 'next-source' || v.receiverApproval === 'session' ? { receiverApproval: v.receiverApproval } : {}) };
 }
-export function parseCastProbeResult(value: unknown): CastProbeResult {
+export function parseCastProbeResult(value: unknown, product=false): CastProbeResult {
   const v = boundedMessage(value), scope = guestScope(v.scope);
+  if (v.code === 'cast.transition_requested') {
+    const t = record(v.transition);
+    if (mediaGeneration(t.generation,product?2147483646:4) < 2) throw new DomainError('invalid');
+    if (Object.keys(v).length !== 6 || Object.keys(v).some(k => !['version','operation','scope','closed','code','transition'].includes(k)) || v.version !== 1 || v.operation !== 'cast-discovery' || v.closed !== false || Object.keys(t).length !== 2 || typeof t.token !== 'string' || !/^[a-f0-9]{32}$/.test(t.token)) throw new DomainError('invalid');
+    return { version: 1, operation: 'cast-discovery', scope, closed: false, code: v.code, transition: { generation: mediaGeneration(t.generation,product?2147483646:4), token: t.token } };
+  }
   if (v.code === 'cast.receiver_command') {
     const command = record(v.command);
     if (Object.keys(v).length !== 6 || Object.keys(v).some(k => !['version', 'operation', 'scope', 'closed', 'code', 'command'].includes(k)) || Object.keys(command).length !== 2 || v.version !== 1 || v.operation !== 'cast-discovery' || v.closed !== false) throw new DomainError('invalid');
-    return { version: 1, operation: 'cast-discovery', scope, closed: false, code: v.code, command: { id: receiverId(command.id), value: parseReceiverCommand(command.value) } };
+    return { version: 1, operation: 'cast-discovery', scope, closed: false, code: v.code, command: { id: receiverId(command.id,product?2147483647:1024), value: parseReceiverCommand(command.value) } };
   }
   const flow = typeof v.code === 'string' ? /^cast\.media_flow_([es])_c([0-4])_p([0-4])_w(0|[1-9][0-9]{0,2})_m(0|[1-9][0-9]{0,2})_l([0-6])$/.exec(v.code) : null;
-  const extra = typeof v.code === 'string' && ((RECEIVER_FACTS as readonly string[]).some(f => v.code === 'cast.receiver_' + f) || /^cast\.media_(limit_(bytes|windows|connections|lease)|(?:retry|resume)_[1-3])$/.test(v.code) || !!flow && Number(flow[3]) <= Number(flow[2]) && Number(flow[4]) <= 256 && Number(flow[5]) <= 128);
-  if (Object.keys(v).length !== 5 || Object.keys(v).some(k => !['version', 'operation', 'scope', 'closed', 'code'].includes(k)) || v.version !== 1 || v.operation !== 'cast-discovery' || typeof v.closed !== 'boolean' || typeof v.code !== 'string' || v.code.length > 96 || !(extra && !v.closed) && !(v.closed ? /^cast\.(cancelled|native_unavailable|failed_(10|11|12|13|131|132|14|16)|closed(?:_(?:0|[1-9][0-9]{0,2})){7})$/ : new RegExp(`^cast\\.(ready|media_(request_(${CAST_MEDIA_REQUESTS.join('|')})|approved|ready|served|stopped|expired|unavailable|failed|issue_(?:0|[1-5][0-9]{2})_(?:0|[1-9][0-9]{0,2}))|source_(policy_(${SOURCE_POLICY_REASONS.join('|')})|candidate_valid|upgrade_planned|started|pass|invalid_request|invalid_media|failed_(?:0|[1-5][0-9]{2})_(?:0|[1-9][0-9]{0,2}))|seen_(search|reply|description_request|service_request|control_rejected|setup_rejected|protocol_query)|soap_(${SOAP_PROBE_FACTS.join('|')}))$`)).test(v.code)) throw new DomainError('invalid');
+  const init = typeof v.code === 'string' ? /^cast\.source_init_mib_([1-9][0-9]{0,2})$/.exec(v.code) : null;
+  const read = typeof v.code === 'string' ? /^cast\.media_read_mib_([1-9][0-9]{0,2})$/.exec(v.code) : null;
+  const isolatedTimeout = typeof v.code === 'string' && /^cast\.media_timeout_isolated_g[1-4]$/.test(v.code);
+  const productGeneration=product&&typeof v.code==='string'?/^cast\.(?:transition_(?:accepted|decoder_closed|native_closed|ready)_|media_timeout_isolated_g)([1-9][0-9]{0,9})$/.exec(v.code):null;
+  const productFact=!!productGeneration&&Number(productGeneration[1])<=2147483646||product&&typeof v.code==='string'&&v.code.startsWith('cast.product_offer_')&&(OFFER_REASONS as readonly string[]).includes(v.code.slice(19));
+  const extra = typeof v.code === 'string' && (productFact || !!decodeOfferObservation(v.code) || v.code === 'cast.offer_limit_reached' || v.code === 'cast.transition_failed' || /^cast\.transition_(accepted|decoder_closed|native_closed|ready)_[2-4]$/.test(v.code) || !!read && Number(read[1]) <= 128 && Number(read[1]) % 4 === 0 || v.code === 'cast.media_pump_burst' || v.code === 'cast.source_init_over_128_mib' || !!init && Number(init[1]) <= 128 || /^cast\.cleanup_cause_(native_unconfirmed|runtime_aborted|worker_exception)$/.test(v.code) || /^cast\.listener_limit_(connections|lease)$/.test(v.code) || /^cast\.position_wire_v1_(?:0[1-9a-f]|1[0-9a-f])$/.test(v.code) || /^cast\.source_layout_(moov_first|mdat_first|fragmented|prefix_exhausted|invalid)$/.test(v.code) || (RECEIVER_FACTS as readonly string[]).some(f => v.code === 'cast.receiver_' + f) || /^cast\.media_(limit_(bytes|windows|connections|lease)|(?:retry|resume)_[1-3])$/.test(v.code) || !!flow && Number(flow[3]) <= Number(flow[2]) && Number(flow[4]) <= 256 && Number(flow[5]) <= 128);
+  if (Object.keys(v).length !== 5 || Object.keys(v).some(k => !['version', 'operation', 'scope', 'closed', 'code'].includes(k)) || v.version !== 1 || v.operation !== 'cast-discovery' || typeof v.closed !== 'boolean' || typeof v.code !== 'string' || v.code.length > 96 || !((extra || isolatedTimeout) && !v.closed) && !(v.closed ? /^cast\.(cancelled|native_unavailable|failed_(10|11|12|13|131|132|14|16)|closed(?:_(?:0|[1-9][0-9]{0,2})){7})$/ : new RegExp(`^cast\\.(ready|media_(request_(${CAST_MEDIA_REQUESTS.join('|')})|approved|ready|served|stopped|expired|unavailable|failed|issue_(?:0|[1-5][0-9]{2})_(?:0|[1-9][0-9]{0,2}))|source_(policy_(${SOURCE_POLICY_REASONS.join('|')})|candidate_valid|upgrade_planned|started|pass|invalid_request|invalid_media|failed_(?:0|[1-5][0-9]{2})_(?:0|[1-9][0-9]{0,2}))|seen_(search|reply|description_request|service_request|control_rejected|setup_rejected|protocol_query)|soap_(${SOAP_PROBE_FACTS.join('|')}))$`)).test(v.code)) throw new DomainError('invalid');
   return { version: 1, operation: 'cast-discovery', scope, closed: v.closed, code: v.code };
 }

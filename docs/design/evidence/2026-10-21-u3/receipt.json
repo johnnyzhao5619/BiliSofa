@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "version": "0.34.0",
+  "name": "BiliSofa",
+  "applicationId": "BiliSofa01.TV",
+  "uiSourceHash": "69d71c964eb569041c67c2a324fc670e73cd80c364e5665dd79dc4f0863b656d",
+  "uiManifestSha256": "fdf96ba5d64f55ef864e099c99b620fc646183e1cc780344072e4fd97513c533",
+  "unsignedSha256": "bc7b121fc280bae8d6492b0ec0589a99fa3b4dcaed14ba7a55467c642b364df3",
+  "signedSha256": "a7144081e934c83c44a642d9b1f5deb9014e522e57e49a9b7752e3899a9a084c",
+  "signedAt": "2026-10-22T00:11:45.129706+00:00",
+  "deployment": {
+    "schema": 1,
+    "applicationId": "BiliSofa01.TV",
+    "version": "0.34.0",
+    "signedSha256": "a7144081e934c83c44a642d9b1f5deb9014e522e57e49a9b7752e3899a9a084c",
+    "uiSourceHash": "69d71c964eb569041c67c2a324fc670e73cd80c364e5665dd79dc4f0863b656d",
+    "startedAt": "2026-10-22T00:12:02.149998+00:00",
+    "deviceAcceptance": "UNVERIFIED",
+    "state": {
+      "exit": 0,
+      "platformSuccess": true
+    },
+    "capability": {
+      "exit": 0,
+      "platformSuccess": true
+    },
+    "install": {
+      "exit": 0,
+      "platformSuccess": true
+    },
+    "launch": {
+      "exit": 0,
+      "platformSuccess": true
+    }
+  },
+  "verification": {
+    "modules": 280,
+    "unitContractPassed": 631,
+    "uiPassed": 79,
+    "newUiPassed": 13,
+    "packageNegativePassed": 6,
+    "frozenFilesVerified": 162,
+    "nativeModulesUnchanged": 17
+  },
+  "deviceUserAcceptance": "USER_PASS_REQUESTED_A_F",
+  "notes": "Browser UI and media fixtures are synthetic. Platform install/launch is not TV playback acceptance.",
+  "sourceArchiveSha256": "171947ef7e3e6c8a0ce4637ff6d602b23cfda90d392765644e9fff68020991f8",
+  "userReportedOpenIssues": [
+    "home rail cannot enter content without continue watching",
+    "following update videos readonly",
+    "four-card explicit paging cumbersome",
+    "queue player missing more controls",
+    "cast page needs product interaction refinement"
+  ]
+}

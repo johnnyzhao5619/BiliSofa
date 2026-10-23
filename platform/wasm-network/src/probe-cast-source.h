@@ -12,11 +12,21 @@ static unsigned long long cast_source_total=0,cast_source_verified_total=0;
 static unsigned char cast_source_bytes[512];
 static size_t cast_source_size=0,cast_source_headers=0;
 static double cast_source_until=0;
+static int cast_transition_enabled=0,cast_media_generation=1;
+static double cast_session_until=0;
+static char cast_media_token[33],cast_transition_token[33];
+static unsigned long long cast_carry_bytes=0;
+static unsigned int cast_carry_windows=0,cast_carry_retries=0;
+static int cast_carry_connections=0;
+BILISOFA_GUEST_EXPORT void cast_transition_enable(void) { if(!cast_started)cast_transition_enabled=1; }
+BILISOFA_GUEST_EXPORT uintptr_t cast_transition_buffer(void) { return (uintptr_t)cast_transition_token; }
 static int cast_source_valid(const char *url) {
   if(!url || strlen(url)>2048 || strncmp(url,"https://",8))return 0;
   const char *end=strchr(url+8,'/');if(!end || end-(url+8)>253)return 0;
   const char *suffix=".bilivideo.com";size_t n=(size_t)(end-(url+8));
-  if(n<=strlen(suffix) || strncmp(end-strlen(suffix),suffix,strlen(suffix)))return 0;
+  const char *akam="upos-hz-mirrorakam.akamaized.net";
+  int bili_akam=n==strlen(akam) && !strncmp(url+8,akam,n);
+  if(!bili_akam && (n<=strlen(suffix) || strncmp(end-strlen(suffix),suffix,strlen(suffix))))return 0;
   const char *label=url+8;
   for(const char *c=label;c<end;c++) {
     if(*c=='.'){if(c==label || c[-1]=='-' || c-label>63)return 0;label=c+1;}
@@ -71,13 +81,51 @@ static void cast_source_forget(void) {
   memset(cast_source_retained,0,sizeof(cast_source_retained));cast_source_ready=0;cast_source_expires=0;cast_source_verified_total=0;
 }
 static void cast_source_stop(void) { cast_source_close_transfer();cast_source_forget(); }
+/* Bounded top-level ISO BMFF prefix classification; no atom payload parsing,
+   offsets/brands/raw bytes in logs, extra fetches or assumptions about codecs. */
+static const char *cast_source_layout(const unsigned char *bytes,size_t count,unsigned long long total) {
+  size_t at=0;
+  for(unsigned int boxes=0;boxes<32;boxes++) {
+    if(at>count || count-at<8)return "prefix_exhausted";
+    unsigned long long size=0;for(int i=0;i<4;i++)size=(size<<8)|bytes[at+i];
+    size_t head=8;
+    if(size==1){if(count-at<16)return "prefix_exhausted";size=0;for(int i=0;i<8;i++)size=(size<<8)|bytes[at+8+i];head=16;}
+    else if(!size)size=total>=at?total-at:0;
+    if(total<at || size<head || size>total-at)return "invalid";
+    if(!memcmp(bytes+at+4,"moov",4))return "moov_first";
+    if(!memcmp(bytes+at+4,"mdat",4))return "mdat_first";
+    if(!memcmp(bytes+at+4,"moof",4))return "fragmented";
+    if(size>count-at)return "prefix_exhausted";
+    at+=(size_t)size;
+  }
+  return "prefix_exhausted";
+}
+/* Read only top-level sizes already in the 512-byte prefix. No moov allocation. */
+static unsigned int cast_source_moov_mib(const unsigned char *bytes,size_t count,unsigned long long total) {
+  size_t at=0;
+  for(unsigned int boxes=0;boxes<32;boxes++) {
+    if(at>count || count-at<8)return 0;
+    unsigned long long size=0;for(int i=0;i<4;i++)size=(size<<8)|bytes[at+i];
+    size_t head=8;
+    if(size==1){if(count-at<16)return 0;size=0;for(int i=0;i<8;i++)size=(size<<8)|bytes[at+8+i];head=16;}
+    else if(!size)size=total>=at?total-at:0;
+    if(total<at || size<head || size>total-at)return 0;
+    if(!memcmp(bytes+at+4,"moov",4)){unsigned long long mib=(size+1048575)/1048576;return mib>128?129:(unsigned int)mib;}
+    if(!memcmp(bytes+at+4,"mdat",4) || !memcmp(bytes+at+4,"moof",4) || size>count-at)return 0;
+    at+=(size_t)size;
+  }
+  return 0;
+}
 static void cast_source_finish(int code) {
   long status=0;if(cast_source_easy)curl_easy_getinfo(cast_source_easy,CURLINFO_RESPONSE_CODE,&status);
   int good=code==0 && status==206 && cast_source_range && cast_source_size==512 && !memcmp(cast_source_bytes+4,"ftyp",4);
-  unsigned long long total=cast_source_total;cast_source_close_transfer();
+  unsigned long long total=cast_source_total;
+  const char *layout=good?cast_source_layout(cast_source_bytes,cast_source_size,total):NULL;
+  unsigned int init_mib=good?cast_source_moov_mib(cast_source_bytes,cast_source_size,total):0;
+  cast_source_close_transfer();
   if(good && !cast_unconfirmed) { cast_source_ready=1;cast_source_verified_total=total;cast_source_expires=http_now()+60; } else cast_source_forget();
   if(cast_unconfirmed)puts("CAST:failed:17");
-  else if(good)puts("CAST:source:pass");
+  else if(good){printf("CAST:layout:%s\n",layout);if(init_mib>128)puts("CAST:init:over_128_mib");else if(init_mib)printf("CAST:init:%u\n",init_mib);puts("CAST:source:pass");}
   else if(!code && status==206)puts("CAST:source:invalid_media");
   else printf("CAST:source:failed:%ld:%d\n",status>=100 && status<=599?status:0,code>=0 && code<=999?code:2);
   fflush(stdout);
@@ -86,6 +134,7 @@ BILISOFA_GUEST_EXPORT uintptr_t cast_source_buffer(void) { return (uintptr_t)cas
 BILISOFA_GUEST_EXPORT int cast_source_begin(unsigned int length) {
   if(!cast_started || !cast_rpc_enabled || cast_unconfirmed || cast_source_attempted || cast_source_multi) { memset(cast_source_input,0,sizeof(cast_source_input));return 0; }
   cast_source_attempted=1;
+  if(cast_transition_enabled && !cast_session_until)cast_session_until=http_now()+300;
   if(!length || length>2048 || memchr(cast_source_input,0,length))goto invalid;
   cast_source_input[length]=0;if(!cast_source_valid(cast_source_input))goto invalid;
   if(curl_global_init(CURL_GLOBAL_DEFAULT)!=CURLE_OK)goto failed;cast_source_global=1;
@@ -121,12 +170,33 @@ BILISOFA_GUEST_EXPORT int cast_media_begin(void) {
   cast_media_attempted=1;cast_source_ready=0;
   const char *d=strstr(cast_source_retained,"?deadline=");if(!d)d=strstr(cast_source_retained,"&deadline=");
   double remaining=(double)strtoull(d+10,NULL,10)-(double)time(NULL)-5;
-  int result=bridge_progressive_begin(cast_token,cast_source_retained,remaining,cast_source_verified_total);
+  if(cast_transition_enabled && remaining>cast_session_until-http_now())remaining=cast_session_until-http_now();
+  int result=bridge_progressive_begin(cast_transition_enabled?cast_media_token:cast_token,cast_source_retained,remaining,cast_source_verified_total);
   cast_source_forget();
   if(result){if(bridge_unconfirmed)cast_unconfirmed=1;puts("CAST:media:failed");fflush(stdout);return -1;}
-  /* The explicit TV action may extend this bounded probe by at most 3 minutes. */
+  if(cast_transition_enabled){bridge_stream_bytes=cast_carry_bytes;bridge_windows=cast_carry_windows;bridge_connections=cast_carry_connections;bridge_retry_count=cast_carry_retries;}
+  /* The explicit TV action may extend this bounded probe by at most 5 minutes. */
   if(cast_deadline<bridge_deadline+1)cast_deadline=bridge_deadline+1;
   return 1;
+}
+/* Invoked only after the scoped UI ACK that its previous decoder is closed.
+   Keeps the discovery listener/owner and all cumulative media budgets alive. */
+BILISOFA_GUEST_EXPORT int cast_transition_begin(unsigned int length,unsigned int generation) {
+  if(!cast_transition_enabled || !cast_started || cast_unconfirmed || bridge_unconfirmed || generation!=(unsigned int)cast_media_generation+1 || generation>4 || http_now()<0 || http_now()+10>=cast_session_until || !length || length>2048 || memchr(cast_source_input,0,length) || cast_transition_token[32]!=0 || strlen(cast_transition_token)!=32 || strspn(cast_transition_token,"0123456789abcdef")!=32 || !strcmp(cast_transition_token,cast_media_token) || bridge_fd<0 || !bridge_multi || bridge_stream_bytes>=BRIDGE_STREAM_BUDGET || bridge_windows>=256 || bridge_connections>=512) {
+    memset(cast_source_input,0,sizeof(cast_source_input));memset(cast_transition_token,0,sizeof(cast_transition_token));return 0;
+  }
+  cast_source_input[length]=0;
+  if(!cast_source_valid(cast_source_input)){memset(cast_source_input,0,sizeof(cast_source_input));memset(cast_transition_token,0,sizeof(cast_transition_token));return 0;}
+  char next[2049],token[33];memcpy(next,cast_source_input,length+1);memcpy(token,cast_transition_token,33);
+  cast_carry_bytes=bridge_stream_bytes;cast_carry_windows=bridge_windows;cast_carry_connections=bridge_connections;cast_carry_retries=bridge_retry_count;
+  if(bridge_deadline<cast_session_until)cast_session_until=bridge_deadline;
+  bridge_stop();cast_source_stop();memset(cast_transition_token,0,sizeof(cast_transition_token));
+  if(bridge_unconfirmed || cast_unconfirmed){cast_unconfirmed=1;memset(next,0,sizeof(next));memset(token,0,sizeof(token));return -1;}
+  cast_source_attempted=cast_media_attempted=0;cast_media_generation=(int)generation;
+  memcpy(cast_media_token,token,33);memset(token,0,sizeof(token));
+  memcpy(cast_source_input,next,length+1);memset(next,0,sizeof(next));
+  puts("CAST:transition:closed");fflush(stdout);
+  return cast_source_begin(length);
 }
 static void cast_source_tick(void) {
   if(cast_source_ready && (http_now()<0 || http_now()>=cast_source_expires)){cast_source_forget();puts("CAST:media:expired");fflush(stdout);}

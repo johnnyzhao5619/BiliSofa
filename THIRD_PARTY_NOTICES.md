@@ -90,3 +90,29 @@ Original MIT BiliSofa code uses wire facts researched in OCF UPnP AVTransport v1
 
 
 0.0.28 W01/F20内部候选：progressive HTTP与有界续段见docs/adr/007-progressive-mp4-http-probe.md（docs内为adr/...）。八个C文件修改后已实际Samsung SDK重编译；仍为probe-only旧网络依赖，不批准真实账号产品栈。无新依赖/权限/外部服务/复制客户端身份或实现；新增HTTP/API事实仅按官方RFC/Samsung枚举，保留原第三方许可。TV新包声画仍需用户反馈，不能把prepare失败或HOST通过更改为实际播放PASS。
+
+
+0.0.44补充原创AVTransport服务描述序列化与单轨时间回复，依据公开UPnP AVTransport:1标准的协议字段/类型（来源见docs/research的S29）。未复制、捆绑或重新许可规范正文/XML实现，未新增第三方运行时/SDK/客户端身份。固定SCPD不是完整UPnP兼容认证声明，GENA未接通；现有上游依赖许可保持。
+
+0.0.45原创最小DIDL-Lite序列化按S29/S30的协议字段生成当前已批准资源信息，不复制规范XML/schema、不透传第三方opaque metadata、无新运行时依赖或客户端身份。现有许可证保持，实际手机兼容性仍按设备记录验收。
+
+
+## Isolated modern dependency build experiment (2026-10-16, W01/W02)
+
+`network-candidate.lock.json` pins curl8.23.0 (curl license) and OpenSSL3.5.9 (Apache-2.0) to official HTTPS archives and published SHA256. `tools/build-network-candidate.py` builds separate static libraries with the existing Samsung compiler. `tools/link-network-candidate.py` retains original license text and runtime/CA notices under ignored build/network-candidate/licenses. No upstream implementation is copied into original app sources. These candidate libraries are **not included in the 0.0.52 diagnostic WGT**, which retains the exact 0.0.51 native artifacts/legacy dependency notices. Experimental build/link or a new version number does not approve authenticated use or complete a security audit; see ADR-013.
+
+
+The separate **BiliSofa W01 Network / BiliNet001.Probe 0.0.1–0.0.6** internal WGT bundles the isolated curl8.23.0/OpenSSL3.5.9 candidate, Samsung Emscripten runtime and unmodified Mozilla CA snapshot; it does not link zlib. Its third-party-licenses directory contains the original curl license, OpenSSL Apache-2.0 LICENSE and retained compiler/runtime/CA notices with exact hashes. The legacy OpenSSL/zlib notices above describe the normal main probe, including installed0.0.54, rather than dependencies linked into this independent experiment. The network-validation program/UI/worker are original BiliSofa MIT code. Fixed anonymous badssl test endpoints are sourced from https://badssl.com/; no site content, third-party test implementation or client identity is bundled. Actual network/security/device results remain separate from license/provenance checks; authenticated use is not approved by this package.
+
+
+Independent network005/006 builds curl8.23.0 with the original BiliSofa patch `curl-8.23.0-tizen-close-drain.patch`, guarded by BILISOFA_TIZEN_NO_CLOSE_DRAIN. It omits only the optional close-time TCP drain; normal socket destruction and TLS validation remain. The official archive and target input/output/patch SHA256 are pinned. Upstream curl license/copyright remain intact; this is a locally modified binary, not the unmodified upstream release. Patch scope and pending device A/B are documented in ADR-015. No vendor SDK source is changed.
+
+
+0.0.55 modern main-media experiment uses the same pinned curl 8.23.0 (local close-drain patch) and OpenSSL 3.5.9 artifacts as the separate network candidate described above. `package:native:modern` bundles their actual license texts and compiler/runtime/CA notices; legacy default packaging retains its original notices. No new upstream code or client identity is added. See ADR-016; this is not credential or full-runtime acceptance.
+
+## QR rendering for W01/G3 (2026-10-16)
+
+qrcode-generator 2.0.4, Copyright (c) 2009 Kazuhiko Arase, MIT; https://github.com/kazuhikoarase/qrcode-generator . npm archive integrity is pinned in package-lock.json. No upstream changes; only a narrow original canvas adapter uses its QR matrix. Full upstream MIT text is retained at platform/third-party/qrcode-generator-LICENSE.txt and must accompany a package bundling this runtime. No remote QR rendering service, dynamic code or official-client identity/keys are used. Original project MIT does not replace this notice.
+
+
+W03 0.7.0 uses the same pinned AOSP PinyinIME dictionary derivation for local F03 keyword input (Apache-2.0, source/hash details in packages/search/data/README.md). The generated search-words.json and unmodified search-NOTICE are bundled in the app; the original MIT license does not relicense this data. Input/network adapters are original code. No additional client identity, key, external runtime or third-party implementation is introduced.

@@ -1,6 +1,8 @@
 # Acceptance register
 
-Status: all feature results below are UNVERIFIED. Repository initialization is not implementation acceptance.
+Current execution: [R01–R15 closure register and final T1–T8 grouped checks](PRODUCT_CLOSURE.md), with the [TV product design](TV_PRODUCT_DESIGN.md), under ADR-070. This page retains full-feature gates; it does not create a second independent manual test campaign. Productization has implemented and user-tested groups; full final acceptance remains open. Current user instruction: no deployment; use [independent acceptance task](THIRD_PARTY_ACCEPTANCE_PROMPT.md).
+
+Status: full-feature acceptance remains incomplete. Minimal USER PASS groups and frozen package evidence are maintained in [implementation status](IMPLEMENTATION_STATUS.md) and the [test report](TEST_REPORT.md); UNVERIFIED below means the full feature gate is still open, not that no implementation or device evidence exists. Live features/dependent branches are EXCLUDED from current delivery by the latest user instruction ([ADR-068](adr/068-current-scope-and-reversible-interactions.md)); keep prior evidence/code, and hide current entries in the next candidate.
 
 Current scope follows the user-approved [ADR-003](adr/003-read-only-comments-danmaku.md). Comments/replies and VOD/live danmaku are view-only; F15/F16 retain IDs but no longer require authoring, deletion or sending. Removing those requirements is not a PASS.
 
@@ -18,27 +20,27 @@ Required product proof: disconnect/shut down every development computer and exte
 | F08 | UNVERIFIED | Target-TV result, source/API evidence where applicable; actual OS/firmware/account/content conditions |
 | F09 | UNVERIFIED | Target-TV result, source/API evidence where applicable; actual OS/firmware/account/content conditions |
 | F10 | UNVERIFIED | Target-TV result, source/API evidence where applicable; actual OS/firmware/account/content conditions |
-| F11 | UNVERIFIED | Target-TV result, source/API evidence where applicable; actual OS/firmware/account/content conditions |
+| F11 | Requested normal paths USER PASS; final faults OPEN | 0.43 follow/restore, exact-folder cancel/add/remove/restore and Back/Home USER PASS; like/watch-later inherit prior evidence. Do not repeat writes; identity/unknown fault integration remains separate |
 | F12 | UNVERIFIED | Target-TV result, source/API evidence where applicable; actual OS/firmware/account/content conditions |
-| F13 | UNVERIFIED | Target-TV result, source/API evidence where applicable; actual OS/firmware/account/content conditions |
+| F13 | Current delivery EXCLUDED by user | ADR-069: real dual-account functionality/A-B acceptance not required; retain code/evidence and single-account identity, storage, session/lifecycle security |
 | F14 | UNVERIFIED | Target-TV result, source/API evidence where applicable; actual OS/firmware/account/content conditions |
 | F15 | UNVERIFIED | Read-only comments/replies with F10: sorting/pagination/recovery/safe text/focus; no editor, publish/reply/delete action or corresponding write request |
-| F16 | UNVERIFIED | Read-only VOD/live danmaku with F08/F18: display/settings/timeline/recovery; no editor/send action or corresponding write request |
+| F16 | UNVERIFIED / live EXCLUDED | Read-only VOD display/settings/timeline/recovery with F08; live-dependent acceptance excluded under ADR-068; no editor/send action or corresponding write request |
 | F17 | UNVERIFIED | Target-TV result, source/API evidence where applicable; actual OS/firmware/account/content conditions |
-| F18 | UNVERIFIED | Actual live content/quality/recovery and read-only live danmaku; no live-danmaku send; other planned live functions retained |
+| F18 | Current delivery EXCLUDED by user; prior browse PASS/playback FAIL retained | ADR-068; current entry hiding pending; excluded is not PASS or a promised future version |
 | F19 | UNVERIFIED | Target-TV result, source/API evidence where applicable; actual OS/firmware/account/content conditions |
-| F20 | UNVERIFIED | Target-TV result, source/API evidence where applicable; actual OS/firmware/account/content conditions |
+| F20 | UNVERIFIED / live EXCLUDED | Unchanged official Android/iPhone/iPad senders: non-live playback/control/recovery remains required; live-dependent acceptance excluded under ADR-068 |
 
 ## Cross-cutting gates
 
 - Official casting from unchanged Android/iPhone/iPad Bilibili apps, actual media playback and bidirectional control. A discovered name is not success.
 - Target TV resolution, HDR, sound, speed, subtitles and danmaku synchronization; desktop/emulator results are separate.
-- At least two accounts, login/expire/switch/logout, true source-end reads and retained writes with no cross-account leakage; comment/reply/danmaku reads must not trigger their excluded write endpoints.
-- At least 30 ordinary videos plus available PGC/live/high-quality samples. Two-hour mixed-play endurance, network interruption, Home/sleep, rapid navigation, version upgrade and rollback.
+- Single-account login/expiry/re-login/logout, protected storage, guest/account separation and stale-request rejection; real A/B account functionality and acceptance are excluded by ADR-069. True source-end reads and specifically authorized retained writes remain required; comment/reply/danmaku reads must not trigger excluded write endpoints.
+- At least 30 ordinary videos plus available PGC/high-quality samples for W07; live-dependent samples are excluded under ADR-068. Two-hour mixed-play endurance, network interruption, Home/sleep, rapid navigation, version upgrade and rollback.
 - Network parsing limits, approved UI acceptance of casting, TLS validation, credential scoping, no repeated ambiguous writes, no arbitrary content execution.
 - App stays functional after installation/development machine shutdown and power cycle.
 
-Each test record must contain: feature ID, steps, expected/actual behavior, TV/firmware, sender App/OS version, account/content entitlement and region, anonymized evidence, PASS/FAIL/BLOCKED. Required failures remain unfinished.
+Each test record must contain: feature ID, steps, expected/actual behavior, TV/firmware, sender App/OS version, account/content entitlement and region, anonymized evidence, PASS/FAIL/BLOCKED/DEFERRED. Required failures remain unfinished; DEFERRED requires an explicit scope decision and is never PASS.
 
 ## Tizen engineering gates (UNVERIFIED)
 

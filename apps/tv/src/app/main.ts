@@ -1,4 +1,5 @@
 import { CastReceiverPlayer } from './cast-receiver-player.ts';
+import { SessionProbeWorker } from '../platform/session-probe-worker.ts';
 import { PlayerCoordinator } from '../../../../packages/media/src/player.ts';
 import { SessionManager } from '../../../../packages/bili-client/src/session.ts';
 import { DomainError, parseDiagnosticReport } from '../../../../packages/contracts/src/index.ts';
@@ -24,6 +25,7 @@ const dialog = document.querySelector<HTMLElement>('#exit-dialog')!;
 const environment = inspectPlatform();
 const session = new SessionManager();
 const worker = new ProbeWorker();
+const sessionWire = new SessionProbeWorker();
 const focus = new FocusRouter(document, root);
 let preferences: ProbePreferences | undefined;
 try { preferences = new ProbePreferences(localStorage); } catch { /* Storage denied is a capability result. */ }
@@ -31,9 +33,10 @@ let probeStorage: Storage | undefined;
 try { probeStorage = localStorage; } catch { /* Report unavailable, do not fall back for persistence evidence. */ }
 const persistenceProbe = new KeyManagerPersistenceProbe(probeKeyManagerApi(), probeStorage);
 let marker = preferences?.read()?.marker ?? 0;
-const entries: { caseId: string; verdict: string; code: string; evidence: string; kind: 'capability' | 'progress' | 'metadata' }[] = [];
+let diagnosticRun = 0;
+const entries: { run: number; caseId: string; verdict: string; code: string; evidence: string; kind: 'capability' | 'progress' | 'metadata' }[] = [];
 function add(caseId: string, verdict: string, code: string, kind: 'capability' | 'progress' | 'metadata' = 'capability'): void {
-  entries.push({ caseId, verdict, code, kind, evidence: environment.environment === 'desktop-only' ? 'desktop' : 'device-observation-pending-review' });
+  entries.push({ run: diagnosticRun, caseId, verdict, code, kind, evidence: environment.environment === 'desktop-only' ? 'desktop' : 'device-observation-pending-review' });
   if (entries.length > 64) entries.shift();
   results.replaceChildren(...entries.slice(-12).map(entry => {
     const line = document.createElement('p');
@@ -55,6 +58,13 @@ let returnToPopular = false;
 let mediaPlayer: PlayerCoordinator | undefined;
 let phonePlayer: CastReceiverPlayer | undefined;
 let mediaFailure: (() => string) | undefined;
+let mediaClosed: (() => boolean) | undefined;
+let decoderPoisoned = false;
+let unclosedDecoder: PlayerCoordinator | undefined;
+function decoderAvailable(): boolean {
+  if (!decoderPoisoned) return true;
+  add('W01-media', 'BLOCKED', 'avplay.transition_decoder_close_unconfirmed_restart_required'); return false;
+}
 let mediaSeekHistory = '';
 let activeControlCheck: AbortController | undefined;
 function seekHistory(outcome: 'w' | 's' | 'r' | 'e' | 'f' | 't' | 'c'): void {
@@ -78,12 +88,12 @@ const popularView = new PopularView(document.querySelector<HTMLElement>('#popula
   automationEpoch++; session.invalidate(); void worker.dispose().catch(() => add('W01-worker', 'FAIL', 'worker.socket_cleanup_unconfirmed_restart_required')); lan.textContent = '';
 }, bvid => { void startGuestMedia(bvid); });
 const castView = new CastProbeView(document.querySelector<HTMLElement>('#cast-dialog')!, root, focus, () => {
-  automationEpoch++; stopMedia(); popularView.close(); searchInput.close(); session.invalidate(); void worker.dispose().catch(() => add('W01-worker', 'FAIL', 'worker.socket_cleanup_unconfirmed_restart_required')); lan.textContent = '';
+  automationEpoch++; stopMedia(); diagnosticRun++; popularView.close(); searchInput.close(); session.invalidate(); void worker.dispose().catch(() => add('W01-worker', 'FAIL', 'worker.socket_cleanup_unconfirmed_restart_required')); lan.textContent = '';
 }, result => {
   const cleanup = result.code === 'cast.native_closed_confirmed' || result.code.startsWith('cast.closed_');
   const sourceResult = /^cast\.source_(pass|failed_|invalid_)/.test(result.code);
-  add(cleanup ? 'W01-cast-cleanup' : result.code.startsWith('cast.source_') ? 'W01-cast-source' : result.code.startsWith('cast.media_') ? 'W01-cast-media' : 'W01-cast-discovery', cleanup || result.code === 'cast.source_pass' ? 'PASS' : sourceResult || result.code === 'cast.media_failed' || result.code === 'cast.receiver_command_failed' || result.code.startsWith('cast.media_issue_') ? 'FAIL' : result.closed ? result.code.includes('unavailable') ? 'BLOCKED' : 'FAIL' : 'UNVERIFIED', result.code, result.closed || sourceResult || result.code === 'cast.media_failed' || result.code === 'cast.receiver_command_failed' || result.code.startsWith('cast.media_issue_') ? 'capability' : 'progress');
-}, (url, controlCheck, receiverMode) => { void startCastMedia(url, controlCheck, receiverMode); }, () => stopMedia(), (id, value) => { if (phonePlayer) phonePlayer.execute(id, value); else castView.acknowledge(id, false); });
+  add(cleanup ? 'W01-cast-cleanup' : result.code.startsWith('cast.source_') ? 'W01-cast-source' : result.code.startsWith('cast.media_') ? 'W01-cast-media' : 'W01-cast-discovery', cleanup || result.code === 'cast.source_pass' ? 'PASS' : sourceResult || result.code === 'cast.media_failed' || (result.code === 'cast.receiver_command_failed' || result.code === 'cast.transition_failed') || result.code.startsWith('cast.media_issue_') ? 'FAIL' : result.closed ? result.code.includes('unavailable') ? 'BLOCKED' : 'FAIL' : 'UNVERIFIED', result.code, result.closed || sourceResult || result.code === 'cast.media_failed' || (result.code === 'cast.receiver_command_failed' || result.code === 'cast.transition_failed') || result.code.startsWith('cast.media_issue_') ? 'capability' : 'progress');
+}, (url, controlCheck, receiverMode, initMib, generation, replacing) => { void startCastMedia(url, controlCheck, receiverMode, initMib, generation, replacing); }, () => stopMedia(), (id, value) => { if (phonePlayer) phonePlayer.execute(id, value); else castView.acknowledge(id, false); }, closeCastDecoderForTransition);
 const input = new InputRouter(document, focus, () => { if (castView.back()) return; if (popularView.back()) return; if (searchInput.back()) return; if (!mediaDialog.hidden) { activeControlCheck?.abort(); automationEpoch++; stopMedia(true); return; } if (!dialog.hidden) closeExit(); else openExit(); }, isBack, event => searchInput.key(event));
 function diagnosticReport(): string {
   return parseDiagnosticReport(JSON.stringify({ schema: 1, build: document.querySelector<HTMLMetaElement>('meta[name="build-id"]')?.content, environment: inspectPlatform(), marker, entries: diagnosticEntries(entries).map(({ caseId, verdict, code, kind }) => ({ caseId, verdict, code, kind })) }));
@@ -133,9 +143,11 @@ document.querySelector('#inspect')!.addEventListener('click', () => {
 document.querySelector('#wasm')!.addEventListener('click', () => { void run('wasm'); });
 document.querySelector('#native')!.addEventListener('click', () => { void run('native'); });
 document.querySelector('#cast')!.addEventListener('click', () => { void castView.show(); });
-document.querySelector('#cast-receiver')!.addEventListener('click', () => { void castView.show(false, false, true); });
+document.querySelector('#cast-handshake')!.addEventListener('click', () => { if (decoderAvailable()) void castView.show(false, false, true, true); });
+document.querySelector('#cast-session')!.addEventListener('click', () => { if (decoderAvailable()) void castView.show(false, false, true, true, true); });
+document.querySelector('#cast-receiver')!.addEventListener('click', () => { if (decoderAvailable()) void castView.show(false, false, true); });
 document.querySelector('#media-phone')!.addEventListener('click', () => { mediaFeedback.textContent = phonePlayer?.handBack() ? '已交还本次手机控制' : '请等待当前准备或跳转完成'; });
-document.querySelector('#cast-controls')!.addEventListener('click', () => { void castView.show(false, true); });
+document.querySelector('#cast-controls')!.addEventListener('click', () => { if (decoderAvailable()) void castView.show(false, true); });
 document.querySelector('#http')!.addEventListener('click', () => { void run('http'); });
 document.querySelector('#stop')!.addEventListener('click', () => {
   automationEpoch++; stopMedia(); void worker.dispose().catch(() => add('W01-worker', 'FAIL', 'worker.socket_cleanup_unconfirmed_restart_required')); session.invalidate(); lan.textContent = ''; add('W01-worker', 'UNVERIFIED', 'stopped');
@@ -220,7 +232,19 @@ add('W01-start', 'UNVERIFIED', `${environment.environment}_marker_${marker}`, 'm
 focus.initial('inspect');
 
 
+function closeCastDecoderForTransition(): boolean {
+  phonePlayer = undefined;
+  if (mediaTimer) clearInterval(mediaTimer); mediaTimer = undefined;
+  const old = mediaPlayer, closed = mediaClosed; mediaPlayer = undefined; mediaFailure = mediaClosed = undefined;
+  try { if (!old) throw new Error(); old.close(); } catch { decoderPoisoned = true; }
+  if (decoderPoisoned || closed?.() !== true) { decoderPoisoned = true; unclosedDecoder = old; decoderAvailable(); return false; }
+  mediaFeedback.textContent = ''; mediaStatus.textContent = '正在换集/切P，重新检查播放源；可随时Back取消';
+  return true;
+}
 function stopMedia(restorePopular = false, outcome?: string): void {
+  // Retain an uncertain decoder for idempotent stop/exit cleanup; never reuse it.
+  try { unclosedDecoder?.close(); } catch { /* Poison remains until process restart. */ }
+  mediaClosed = undefined;
   phonePlayer = undefined; document.querySelector<HTMLButtonElement>('#media-phone')!.hidden = true;
   castView.close();
   const guestLeaseActive = returnToPopular && mediaPlayer !== undefined;
@@ -237,6 +261,7 @@ function stopMedia(restorePopular = false, outcome?: string): void {
   if (restore) popularView.resumeAfterPlayback(outcome);
 }
 async function startMedia(): Promise<void> {
+  if (!decoderAvailable()) return;
   document.querySelector('#media-title')!.textContent = 'W01 · 本地合成声画';
   automationEpoch++; stopMedia(); session.invalidate(); void worker.dispose().catch(() => add('W01-worker', 'FAIL', 'worker.socket_cleanup_unconfirmed_restart_required')); lan.textContent = '';
   const backend = createProbePlayer();
@@ -281,6 +306,24 @@ async function startMedia(): Promise<void> {
 // Explicit internal build only: guest networking and owned synthetic KeyManager data.
 // No account data/writes or media autoplay.
 const autoMode = document.querySelector<HTMLMetaElement>('meta[name="probe-auto"]')?.content;
+document.querySelector('#session-wire')!.addEventListener('click', () => { void runSessionWire(); });
+async function runSessionWire(automated = false): Promise<void> {
+  if (!automated) automationEpoch++;
+  stopMedia(); session.invalidate(); lan.textContent = '';
+  const task = session.begin('session-wire');
+  try {
+    await worker.dispose(); await sessionWire.dispose();
+    if (!session.accepts(task.scope)) return;
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2,'0')).join('');
+    const result = await sessionWire.run({ version: 1, operation: 'session-probe', scope: task.scope, token }, task.signal, result => { if (session.accepts(task.scope)) add('W01-session-wire','UNVERIFIED',result.code,'progress'); });
+    if (session.accepts(task.scope)) add('W01-session-wire',result.code === 'session.pass_all_closed' ? 'PASS' : result.code === 'session.native_unavailable' ? 'BLOCKED' : result.code === 'session.cancelled' ? 'UNVERIFIED' : 'FAIL',result.code);
+  } catch (error) { if (session.accepts(task.scope)) add('W01-session-wire','FAIL',error instanceof DomainError ? 'session.worker_' + error.code : 'session.worker_failed'); }
+  finally { task.finish(); }
+}
+if (autoMode === '7') {
+  const owner = automationEpoch;
+  void (async () => { await runSessionWire(true); if (owner === automationEpoch && !document.hidden) await run('http',true); })();
+}
 if (autoMode === '6') {
   // Explicit internal startup-only build: prove bind/TTL/join, stop with native
   // ACK, then expose the fixed report. It cannot prove phone discovery or media.
@@ -325,6 +368,7 @@ if (autoMode === '1') {
 }
 
 async function startGuestMedia(bvid: string): Promise<void> {
+  if (!decoderAvailable()) return;
   document.querySelector('#media-title')!.textContent = 'W01 · 游客真实视频';
   automationEpoch++; stopMedia(); session.invalidate(); lan.textContent = ''; returnToPopular = true;
   const task = session.begin('guest-video-play'); mediaTask = task;
@@ -362,25 +406,34 @@ async function startGuestMedia(bvid: string): Promise<void> {
 
 // Explicit TV approval only. The URL is the current cast Worker's private
 // loopback token, never the sender URL, and the adapter checks the fixed route.
-async function startCastMedia(url: string, controlCheck = false, receiverMode = false): Promise<void> {
+async function startCastMedia(url: string, controlCheck = false, receiverMode = false, initMib?: number, generation = 1, replacing = false): Promise<void> {
   const epoch = automationEpoch;
-  if (mediaPlayer || !mediaDialog.hidden) { stopMedia(); return; }
-  const backend = createCastProbePlayer(url);
+  if (!decoderAvailable()) { stopMedia(); return; }
+  if (mediaPlayer || !mediaDialog.hidden && !replacing) { stopMedia(); return; }
+  const backend = createCastProbePlayer(url, initMib === undefined ? undefined : { mib: initMib, latestProgress: () => castView.preparationProgressAt });
   if (!backend) { add('W01-cast-media', 'BLOCKED', 'cast.avplay_unavailable'); stopMedia(); if (controlCheck) await finishAutoReport(epoch); return; }
-  const player = new PlayerCoordinator(backend); mediaPlayer = player; mediaFailure = () => backend.failureSummary(); mediaSeekHistory = '';
+  const player = new PlayerCoordinator(backend); mediaPlayer = player; mediaFailure = () => backend.failureSummary(); mediaClosed = () => backend.closureConfirmed(); mediaSeekHistory = '';
   document.querySelector('#media-title')!.textContent = 'W01 · 官方投送候选声画';
-  mediaDialog.hidden = false; root.inert = true; document.body.classList.add('media-active'); focus.enterModal(mediaDialog);
+  const enter = mediaDialog.hidden; mediaDialog.hidden = false; root.inert = true; document.body.classList.add('media-active'); if (enter) focus.enterModal(mediaDialog);
   mediaStatus.textContent = '正在准备已检查候选';
   if (receiverMode) {
     document.querySelector<HTMLButtonElement>('#media-phone')!.hidden = false;
-    phonePlayer = new CastReceiverPlayer(player, url, () => mediaPlayer === player && !document.hidden, () => backend.durationMs(), value => castView.snapshot(value), (id, accepted) => castView.acknowledge(id, accepted), ok => castView.seekResult(ok), fact => castView.noteReceiver(fact));
+    phonePlayer = new CastReceiverPlayer(player, url, () => mediaPlayer === player && !document.hidden, () => backend.durationMs(), value => castView.snapshot(value, generation), (id, accepted) => castView.acknowledge(id, accepted), ok => castView.seekResult(ok), fact => castView.noteReceiver(fact), stage => {
+      if (mediaPlayer !== player) return;
+      if (stage === 'started') { seekHistory('w'); mediaFeedback.textContent = '手机跳转中，请稍候'; }
+      else { seekHistory(stage === 'succeeded' ? backend.failureSummary().startsWith('avplay.seek_restart_') ? 'r' : 's' : 'f'); add('W01-media', stage === 'succeeded' ? 'UNVERIFIED' : 'FAIL', backend.failureSummary(), stage === 'succeeded' ? 'progress' : 'capability'); mediaFeedback.textContent = stage === 'succeeded' ? '手机跳转已响应，请核对进度和声画' : '手机跳转未完成，请用手机重新播放或返回 · ' + backend.failureSummary(); }
+    });
   }
+  let durationSeen = false, streamSeen = false;
   const pulse = () => {
     if (mediaPlayer !== player) return;
     phonePlayer?.snapshot();
-    mediaStatus.textContent = `${player.seeking ? '跳转中，请稍候' : player.state} · ${(player.timeMs / 1000).toFixed(1)} 秒 · ${receiverMode ? '本次手机控制已开放；遥控操作后需交还' : '候选最长3分钟 · 手机控制未接通'}`;
+    if (!streamSeen && player.state === 'playing' && player.timeMs >= 1000) { streamSeen = true; add('W01-media-facts', 'UNVERIFIED', backend.streamSummary(), 'metadata'); }
+    if (!durationSeen && phonePlayer && phonePlayer.knownDurationMs > 0) { durationSeen = true; add('W01-cast-duration', 'UNVERIFIED', 'avplay.receiver_duration_known', 'metadata'); }
+    mediaStatus.textContent = `${player.seeking ? '跳转中，请稍候' : player.state} · ${(player.timeMs / 1000).toFixed(1)}${phonePlayer && phonePlayer.knownDurationMs > 0 ? ' / ' + (phonePlayer.knownDurationMs / 1000).toFixed(1) : ''} 秒 · ${receiverMode ? '本次手机控制已开放；遥控操作后需交还' : '候选最长5分钟 · 手机控制未接通'}`;
+    if ((player.state === 'preparing' || player.seeking) && initMib !== undefined && initMib > 8) mediaStatus.textContent = `${player.seeking ? '正在重新读取' : '正在读取'}较大索引（约${initMib} MiB）· 本轮累计已接收${castView.preparationReadMib} MiB · 可随时Back取消`;
     if ((!receiverMode && player.state === 'idle') || player.state === 'error') {
-      add('W01-cast-media', player.state === 'error' ? 'FAIL' : 'UNVERIFIED', player.state === 'error' ? 'cast.avplay_error' : 'cast.stream_completed_visual_audio_review_required'); stopMedia();
+      add('W01-cast-media', player.state === 'error' ? 'FAIL' : 'UNVERIFIED', player.state === 'error' ? backend.failureSummary() : 'cast.stream_completed_visual_audio_review_required'); stopMedia();
     }
   };
   let phase: 'prepare' | 'play' = 'prepare';

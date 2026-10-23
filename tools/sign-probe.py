@@ -6,7 +6,7 @@ import zipfile
 
 root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('variant', choices=['basic', 'native', 'isolation'])
+parser.add_argument('variant', choices=['basic', 'native', 'isolation', 'network'])
 parser.add_argument('--profile', default='BiliSofa')
 args = parser.parse_args()
 private = Path(os.environ.get('BILISOFA_PRIVATE_DIR', str(Path.home()/'.local/share/BiliSofa'))).resolve()
@@ -40,7 +40,7 @@ for role in ['0', '1']:
   if role == '1' and key.resolve().is_relative_to(root/'.local/tizen-studio'):
     raise SystemExit('BLOCKED profile.sdk_default_distributor; create Samsung TV Distributor')
 
-verify = [sys.executable, str(root/'tools/verify-package.py')]
+verify = [sys.executable, str(root/('tools/verify-network-probe.py' if args.variant == 'network' else 'tools/verify-package.py'))]
 if args.variant in ['native','isolation']:
   verify.append('--isolation' if args.variant == 'isolation' else '--native')
 result = command(verify, 'sign-input-integrity.log')
@@ -98,7 +98,7 @@ with zipfile.ZipFile(signed) as archive:
 normalized = output/f'probe-{args.variant}-signed.wgt'
 normalized.write_bytes(signed.read_bytes())
 normalized.chmod(0o600)
-record = {'schema': 1, 'variant': args.variant, 'package': str(normalized), 'sha256': hashlib.sha256(normalized.read_bytes()).hexdigest(), 'sourceHash': expected_build['sourceHash'], 'profile': args.profile, 'version': expected_build['version'], 'automation': expected_build['automation'], 'applicationId': 'BiliIsola1.Probe' if args.variant == 'isolation' else 'BiliProbe1.Probe', 'certificateDateAndIssuerPreflight': 'PASS', 'deviceInstallation': 'UNVERIFIED'}
+record = {'schema': 1, 'variant': args.variant, 'package': str(normalized), 'sha256': hashlib.sha256(normalized.read_bytes()).hexdigest(), 'sourceHash': expected_build['sourceHash'], 'profile': args.profile, 'version': expected_build['version'], 'automation': expected_build['automation'], 'applicationId': 'BiliIsola1.Probe' if args.variant == 'isolation' else 'BiliNet001.Probe' if args.variant == 'network' else 'BiliProbe1.Probe', 'certificateDateAndIssuerPreflight': 'PASS', 'deviceInstallation': 'UNVERIFIED'}
 manifest = private/f'signed-{args.variant}-manifest.json'
 manifest.write_text(json.dumps(record, indent=2)+'\n')
 manifest.chmod(0o600)

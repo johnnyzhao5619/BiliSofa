@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "dateUtc": "2026-10-21T19:32:55.222564+00:00",
+  "stage": "U1 product shell and home/search candidate; remaining product surfaces and TV acceptance OPEN",
+  "developmentVersion": "0.30.0",
+  "installedVersion": "0.28.0",
+  "uiSourceHash": "def0d19dc94d043ea51f8765c302a6d04631ded210c2ac779e588a5f6cb699ba",
+  "manifestSha256": "ad881c566d606d66e3030713413cece08305819930fff389d76491e6b396cd65",
+  "screenshots": {
+    "home-synthetic.png": "031a692c9424b26351809a930aee7b048ea89607224013f59136b3e39805abc2",
+    "detail-synthetic.png": "dbb57ae8b17939e5abee890f5bdc613622fe971b11d8cc631db26d7b80bd0237"
+  },
+  "boundaries": [
+    "Synthetic native/media/image fixtures; no live endpoint or retail TV proof",
+    "11 live UI scenarios skipped by approved exclusion",
+    "No WGT, signing, installation, account POST, commit or publication",
+    "CORS/TV image decoding, Voice Guide, sofa-distance readability and performance remain UNVERIFIED"
+  ],
+  "checks": {
+    "strictModules": 267,
+    "unitContractsPassed": 625,
+    "syntheticUiPassed": 46,
+    "liveUiSkipped": 11
+  },
+  "frozenVerified": [
+    {
+      "root": "dist/recommend-app",
+      "sourceHash": "580a87361f75e09c4092f1827ab48c175da45a7df422c742c43373a12f98774d",
+      "filesVerified": 27,
+      "manifestSha256": "07b060c43fc83263ee48501f918e999116946fde88690d755544def4ac8e5149"
+    },
+    {
+      "root": "dist/u1-app",
+      "sourceHash": "9a825d3ed159405233441602edb6d188eb0efeedb07a1f57ff730326f4cddfcf",
+      "filesVerified": 27,
+      "manifestSha256": "7a2c2c09664e09dbcd99cb6e2443aa56295cb20041bb840c8258e34565b3264c"
+    }
+  ]
+}

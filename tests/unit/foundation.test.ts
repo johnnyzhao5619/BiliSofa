@@ -44,7 +44,7 @@ test('W02/F14 confirm duplicate is blocked during send and after unknown outcome
   assert.equal(await writes.submit(intent, async () => 'confirmed', true), 'confirmed');
 });
 test('W02/F14 send exceptions produce unknown rather than retryable failure', async () => {
-  const writes = new WriteCoordinator(); const intent = { accountId: 'A', generation: 1, action: 'comment', targetId: 'v' };
+  const writes = new WriteCoordinator(); const intent = { accountId: 'A', generation: 1, action: 'like', targetId: 'v' };
   assert.equal(await writes.submit(intent, async () => { throw new Error('timeout'); }, true), 'unknown');
   assert.equal(await writes.reconcile(intent, async () => 'applied'), 'confirmed');
   assert.throws(() => writes.releaseConfirmed({ ...intent, targetId: 'other' }), { code: 'unknown' });

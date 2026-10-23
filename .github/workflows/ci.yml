@@ -1,4 +1,4 @@
-name: Candidate probe checks
+name: TV candidate and foundation checks
 on:
   push:
   pull_request:
@@ -24,4 +24,21 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:ui
       - run: python3 tools/verify-package.py
+      - run: npm run build:foundation
+      - run: npm run test:ui:foundation
+      - run: npm run package:foundation-preview
+      - run: npm run build:app
+      - run: npm run test:ui:queue
+      - run: npm run test:ui:follow-updates
+      - run: npm run test:ui:favorites
+      - run: npm run test:ui:history
+      - run: npm run test:ui:library
+      - run: npm run test:ui:app
+      - run: npm run test:ui:search
+      - run: npm run test:ui:catalog
+      - run: npm run test:ui:media
+      - run: npm run test:ui:cast-app
+      - run: npm run test:ui:local-app
+      - run: npm run build:app:w04
+      - run: npm run test:ui:w04-media
 # No signing profiles, account writes, installation or release actions in CI.

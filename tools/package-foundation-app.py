@@ -1,0 +1,127 @@
+"""Build/verify unsigned internal WGT from explicit UI, identity and anonymous media inputs."""
+from pathlib import Path
+from candidate_native import load_candidate
+import argparse,hashlib,json,re,zipfile,subprocess,xml.etree.ElementTree as ET
+parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--w04',action='store_true');parser.add_argument('--w05',action='store_true');parser.add_argument('--w06',action='store_true');parser.add_argument('--recommend',action='store_true');parser.add_argument('--product-player',action='store_true');parser.add_argument('--product-acceptance-fix',action='store_true');parser.add_argument('--product-cast-clock',action='store_true');parser.add_argument('--product-cast-seek',action='store_true');parser.add_argument('--product-cast-start',action='store_true');parser.add_argument('--product-recovery',action='store_true');parser.add_argument('--product-stream',action='store_true');parser.add_argument('--product-instant',action='store_true');parser.add_argument('--product-actions',action='store_true');parser.add_argument('--product-interactions',action='store_true');parser.add_argument('--product-browse',action='store_true');args=parser.parse_args()
+product_acceptance_fix=args.product_acceptance_fix;product_cast_clock=args.product_cast_clock or product_acceptance_fix;product_cast_seek=args.product_cast_seek or product_cast_clock;product_cast_start=args.product_cast_start or product_cast_seek;product_recovery=args.product_recovery or product_cast_start;product_stream=args.product_stream or product_recovery;product_instant=args.product_instant or product_stream;product_actions=args.product_actions or product_instant;product_interactions=args.product_interactions or product_actions;product_browse=args.product_browse or product_interactions;product_player=args.product_player or product_browse;recommend=args.recommend or product_player;w06=args.w06 or recommend;w05=args.w05 or w06;w04=args.w04 or w05;version='0.44.0' if product_acceptance_fix else '0.43.0' if product_cast_clock else '0.42.0' if product_cast_seek else '0.41.0' if product_cast_start else '0.40.0' if product_recovery else '0.39.0' if product_stream else '0.38.0' if product_instant else '0.37.0' if product_actions else '0.36.0' if product_interactions else '0.35.0' if product_browse else '0.34.0' if product_player else '0.28.0' if recommend else '0.25.0' if w06 else '0.24.1' if w05 else '0.21.4' if w04 else '0.20.0'
+ROOT=Path(__file__).resolve().parents[1];STAGE=ROOT/('dist/product-acceptance-fix-app' if product_acceptance_fix else 'dist/product-cast-clock-app' if product_cast_clock else 'dist/product-cast-seek-app' if product_cast_seek else 'dist/product-cast-start-app' if product_cast_start else 'dist/product-recovery-app' if product_recovery else 'dist/product-stream-app' if product_stream else 'dist/product-instant-app' if product_instant else 'dist/product-actions-app' if product_actions else 'dist/product-interactions-app' if product_interactions else 'dist/product-browse-app' if product_browse else 'dist/product-player-app' if product_player else 'dist/recommend-app' if recommend else 'dist/w06-app' if w06 else 'dist/w05-app' if w05 else 'dist/w04-app' if w04 else 'dist/foundation-app');NATIVE=ROOT/'build/identity'
+subprocess.run(['python3',str(ROOT/'tools/category-data.py'),'--check'],check=True)
+def sha(data):return hashlib.sha256(data).hexdigest()
+def checked(path,h):
+ if path.is_symlink() or not path.resolve().is_relative_to(ROOT) or sha(path.read_bytes())!=h:raise SystemExit('Foundation input digest mismatch')
+ return path.read_bytes()
+ui=json.loads((STAGE/'ui-manifest.json').read_text());native=json.loads((NATIVE/'manifest.json').read_text());candidate=json.loads((ROOT/'build/network-candidate/manifest.json').read_text())
+if ui['schema']!=1 or native['schema']!=1 or native['libraryBuild']!=json.loads((ROOT/'.local/network-upgrade/candidate-libraries.json').read_text()) or candidate['libraryBuild']!=native['libraryBuild']:raise SystemExit('Foundation provenance mismatch')
+if sha(json.dumps(ui['inputs'],ensure_ascii=False,separators=(',',':')).encode())!=ui['sourceHash']:raise SystemExit('Foundation source manifest mismatch')
+if {p.name for p in STAGE.iterdir()}!=set(ui['files'])|{'ui-manifest.json'}:raise SystemExit('Unexpected foundation stage file')
+for name,h in ui['inputs'].items():checked(ROOT/name,h)
+for name,h in native['sourceInputs'].items():checked(ROOT/name,h)
+files={name:checked(STAGE/name,h) for name,h in ui['files'].items()}
+for name,h in native['files'].items():files['identity/'+name]=checked(NATIVE/name,h)
+if set(native['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Identity file mismatch')
+if sha(files['identity/probe.data'])!=native['caSha256']:raise SystemExit('Identity CA mismatch')
+files['identity/manifest.json']=(NATIVE/'manifest.json').read_bytes()
+library_dir=ROOT/'build/library';library=json.loads((library_dir/'manifest.json').read_text())
+if library['schema']!=1 or library['libraryBuild']!=native['libraryBuild'] or library['caSha256']!=native['caSha256'] or set(library['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Library provenance mismatch')
+for name,h in library['sourceInputs'].items():checked(ROOT/name,h)
+for name,h in library['files'].items():files['library/'+name]=checked(library_dir/name,h)
+if sha(files['library/probe.data'])!=library['caSha256']:raise SystemExit('Library CA mismatch')
+files['library/manifest.json']=(library_dir/'manifest.json').read_bytes()
+for marker in [b'https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/nav?update_baseline=&offset=%s',b'https://api.bilibili.com/x/v3/fav/folder/list4navigate',b'https://api.bilibili.com/x/v2/medialist/resource/list?mobi_app=web&type=3&biz_id=%s&ps=4&desc=true&sort_field=3&tid=0&otype=2&with_current=false&direction=false&preview=0&use_pn=true&pn=%d',b'https://api.bilibili.com/x/web-interface/history/cursor?max=%s&view_at=%s&business=%s',b'https://api.bilibili.com/x/web-interface/nav',b'https://api.bilibili.com/x/v2/medialist/toview/web?mobi_app=web&ps=4&desc=true&otype=2&with_current=false&direction=false&preview=0&use_pn=true&pn=%d']:
+ if marker not in files['library/probe.wasm']:raise SystemExit('Library fixed route missing')
+for bad in [b'/x/passport',b'/qrcode',b'/heartbeat',b'/x/player/',b'/toview/add',b'/toview/del',b'/history/delete',b'/history/clear',b'/history/report',b'/history/shadow',b'/fav/resource/deal',b'/fav/resource/batch-del',b'/fav/folder/add',b'/fav/folder/del',b'/dynamic/create',b'/dynamic/rm',b'/dynamic/thumb']:
+ if bad in files['library/probe.wasm']:raise SystemExit('Library unrelated route')
+catalog_dir=ROOT/'build/catalog';catalog=json.loads((catalog_dir/'manifest.json').read_text())
+if catalog['schema']!=1 or catalog['libraryBuild']!=native['libraryBuild'] or catalog['caSha256']!=native['caSha256'] or set(catalog['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Catalog provenance mismatch')
+for name,h in catalog['sourceInputs'].items():checked(ROOT/name,h)
+for name,h in catalog['files'].items():files['catalog/'+name]=checked(catalog_dir/name,h)
+if sha(files['catalog/probe.data'])!=catalog['caSha256']:raise SystemExit('Catalog CA mismatch')
+files['catalog/manifest.json']=(catalog_dir/'manifest.json').read_bytes()
+for bad in [b'/x/player/',b'/heartbeat',b'/x/web-interface/view',b'/popular?',b'/x/passport',b'/nav']:
+ if bad in files['catalog/probe.wasm']:raise SystemExit('Catalog unrelated route')
+if b'https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all' not in files['catalog/probe.wasm']:raise SystemExit('Catalog fixed route missing')
+if b'https://api.bilibili.com/x/web-interface/ranking/v2?rid=%d&type=all' not in files['catalog/probe.wasm']:raise SystemExit('Catalog category route missing')
+search_dir=ROOT/'build/search';search=json.loads((search_dir/'manifest.json').read_text())
+if search['schema']!=1 or search['libraryBuild']!=native['libraryBuild'] or search['caSha256']!=native['caSha256'] or set(search['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Search provenance mismatch')
+for name,h in search['sourceInputs'].items():checked(ROOT/name,h)
+for name,h in search['files'].items():files['search/'+name]=checked(search_dir/name,h)
+if sha(files['search/probe.data'])!=search['caSha256']:raise SystemExit('Search CA mismatch')
+files['search/manifest.json']=(search_dir/'manifest.json').read_bytes()
+for bad in [b'/x/player/',b'/heartbeat',b'/x/web-interface/view',b'/ranking/',b'/popular?',b'/x/passport']:
+ if bad in files['search/probe.wasm']:raise SystemExit('Search unrelated route')
+if b'https://api.bilibili.com/x/web-interface/wbi/search/type?%s&w_rid=%s' not in files['search/probe.wasm'] or b'https://api.bilibili.com/x/web-interface/nav' not in files['search/probe.wasm']:raise SystemExit('Search fixed route missing')
+if any(marker not in files['search/probe.wasm'] for marker in [b'keyword=%s&page=%d&page_size=4&search_type=video&wts=%s',b'keyword=%s&page=%d&page_size=4&search_type=bili_user&wts=%s',b'keyword=%s&page=%d&page_size=4&search_type=media_bangumi&wts=%s',b'keyword=%s&page=%d&page_size=4&search_type=live_room&wts=%s']):raise SystemExit('Search fixed query missing')
+if b'https://api.bilibili.com/x/web-interface/search/type?' in files['search/probe.wasm']:raise SystemExit('Search unsigned fallback forbidden')
+hot_dir=ROOT/'build/hot-search';hot=json.loads((hot_dir/'manifest.json').read_text())
+if hot['schema']!=1 or hot['libraryBuild']!=native['libraryBuild'] or hot['caSha256']!=native['caSha256'] or set(hot['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Hot search provenance mismatch')
+for name,h in hot['sourceInputs'].items():checked(ROOT/name,h)
+for name,h in hot['files'].items():files['hot-search/'+name]=checked(hot_dir/name,h)
+if sha(files['hot-search/probe.data'])!=hot['caSha256']:raise SystemExit('Hot search CA mismatch')
+files['hot-search/manifest.json']=(hot_dir/'manifest.json').read_bytes()
+for bad in [b'/x/player/',b'/heartbeat',b'/x/web-interface/',b'/x/passport',b'/nav',b'/main/suggest']:
+ if bad in files['hot-search/probe.wasm']:raise SystemExit('Hot search unrelated route')
+if b'https://s.search.bilibili.com/main/hotword' not in files['hot-search/probe.wasm']:raise SystemExit('Hot search fixed route missing')
+if sha(files['search-words.json'])!='c723c86e502613bdaf3c613b5638ece0fe38772d92165b48f2d3ca140ba3256b' or sha(files['search-NOTICE'])!='b5830d96fb5a7e7e7ebcc295f352846b4b998e78fdc8f9aa68e134d2e4b39986':raise SystemExit('Search dictionary/license mismatch')
+media_files,media_manifest,_,_=load_candidate()
+for name,data in media_files.items():files['native/'+name]=data
+files['native/manifest.json']=(json.dumps(media_manifest,indent=2)+'\n').encode()
+for name,h in candidate['licenses'].items():files['third-party-licenses/'+name]=checked(ROOT/'build/network-candidate/licenses'/name,h)
+qr=json.loads((ROOT/'platform/third-party/qrcode-generator.lock.json').read_text())
+# Original pinned QR license retained; npm dependency is already in the lockfile.
+files['third-party-licenses/qrcode-generator-MIT.txt']=checked(ROOT/'platform/third-party/qrcode-generator-LICENSE.txt',qr['licenseSha256'])
+checked(ROOT/'node_modules/qrcode-generator'/qr['runtime'],qr['runtimeSha256'])
+# W04 runtime directories are explicit and independently paired to their exact
+# source/output manifests. No fallback to the old probe or another build folder.
+w04_manifests={}
+if w04:
+ expected_csp=b"default-src 'none'; script-src 'self' 'wasm-unsafe-eval' file://wgt-widget/; worker-src 'self'; child-src 'self'; style-src 'self'; connect-src 'self' http://127.0.0.1:40324 http://127.0.0.1:40325; media-src http://127.0.0.1:40324 http://127.0.0.1:40325; object-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'"
+ if product_player:expected_csp=expected_csp.replace(b"; media-src",b" https://i0.hdslb.com https://i1.hdslb.com https://i2.hdslb.com; media-src").replace(b"img-src 'self'",b"img-src 'self' blob:")
+ policies=re.findall(rb'<meta http-equiv="Content-Security-Policy" content="([^"]*)">',files['index.html'])
+ if policies!=[expected_csp]:raise SystemExit('W04 CSP mismatch')
+ required={
+  'vod':[b'https://www.bilibili.com/video/%s'],
+  'vod-api':[b'https://api.bilibili.com/x/web-interface/view?bvid=%s',b'https://api.bilibili.com/x/player/wbi/playurl?%s&w_rid=%s'],
+  'pgc-read':[b'/pgc/view/web/season?season_id=%s',b'/pgc/player/web/playurl?cid=%s&ep_id=%s&fnval=4048&fnver=0&fourk=1&qn=127'],
+  'pgc-follow':[b'/pgc/view/web/season?season_id=%s',b'/pgc/web/follow/%s',b'/x/space/bangumi/follow/list?%s&w_rid=%s',b'season_id=%s&csrf=%s'],
+  'live-read':[b'/xlive/web-ucenter/user/following?page=%s&page_size=9&ignoreRecord=1&hit_ab=false',b'/xlive/web-room/v1/dM/gethistory?roomid=%s&room_type=0',b'/room/v1/area/getList',b'/xlive/web-interface/v1/second/getList?%s&w_rid=%s'],
+  'live-product':[b'/xlive/web-room/v2/index/getRoomPlayInfo?room_id=%s&protocol=1&format=1&codec=0&qn=%s&platform=web&ptype=8',b'LIVE:relay_ready']}
+ if recommend:required['recommend']=[b'/x/web-interface/wbi/index/top/feed/rcmd?%s&w_rid=%s',b'brush=%s&feed_version=V8',b'&ps=12&web_location=1430650&wts=%s']
+ if w06:required['cast-product']=[b'<friendlyName>BiliSofa</friendlyName>',b'TVReceiver/1',b'cast.mp4',b'CAST:transition:closed']
+ if w05:required['overlay-read']=[b'/x/player/wbi/v2',b'/x/v2/dm/wbi/web/seg.so',b'oid=%s&pid=%s&segment_index=%s&type=1&wts=%s',b'https://aisubtitle.hdslb.com/',b'/bfs/subtitle/',b'/pgc/view/web/season?season_id=%s']
+ if w05:required['video-interactions']=[b'/x/web-interface/archive/relation?aid=%s',b'/x/v3/fav/folder/created/list-all?type=2&rid=%s&up_mid=%s',b'/x/relation?fid=%s',b'/x/v2/history/toview',b'/x/web-interface/archive/like',b'/x/v3/fav/resource/deal',b'/x/v2/history/toview/%s',b'/x/relation/modify',b'/x/web-interface/coin/add',b'aid=%s&multiply=%s&select_like=0&csrf=%s',b'rid=%s&type=2&%s_media_ids=%s&csrf=%s',b'fid=%s&act=%d&re_src=14&csrf=%s']
+ if w05:required['comments-read']=[b'/x/v2/reply/wbi/main?%s&w_rid=%s',b'mode=%s&oid=%s&pagination_str=%s&plat=1&seek_rpid=0&type=1&web_location=1315875&wts=%s',b'/x/v2/reply/reply?oid=%s&pn=%s&ps=10&root=%s&type=1']
+ for folder,markers in required.items():
+  directory=ROOT/'build'/folder;path=directory/'manifest.json';module=json.loads(path.read_text())
+  if module['schema']!=1 or module['libraryBuild']!=native['libraryBuild'] or module['caSha256']!=native['caSha256'] or set(module['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('W04 native provenance mismatch: '+folder)
+  for name,h in module['sourceInputs'].items():checked(ROOT/name,h)
+  for name,h in module['files'].items():files[folder+'/'+name]=checked(directory/name,h)
+  data=files[folder+'/probe.wasm'];script=files[folder+'/probe.js']
+  if sha(files[folder+'/probe.data'])!=module['caSha256'] or data[:8]!=b'\0asm\1\0\0\0' or re.search(rb'\beval\s*\(|new Function',script):raise SystemExit('W04 native runtime policy mismatch: '+folder)
+  if any(marker not in data for marker in markers):raise SystemExit('W04 native fixed route missing: '+folder)
+  forbidden=[b'/heartbeat',b'/x/passport',b'/qrcode',b'/toview/add',b'/toview/del',b'/history/report',b'/history/delete',b'/fav/resource/deal',b'/dynamic/create',b'/x/web-interface/coin',b'/x/web-interface/like']
+  if folder=='video-interactions':forbidden=[x for x in forbidden if x not in [b'/toview/add',b'/toview/del',b'/fav/resource/deal',b'/x/web-interface/coin']]+[b'/x/v2/dm/post',b'/x/v2/reply/add',b'/x/v2/reply/del',b'/x/v2/reply/like',b'/x/v2/reply/action',b'/archive/like/triple']
+  if folder=='cast-product' and module.get('policy',{}).get('cumulativeProbeQuotas') is not False:raise SystemExit('Cast product still has probe quotas')
+  if folder in ['overlay-read','comments-read','video-interactions','cast-product','recommend']:forbidden+=[b'/x/v2/dm/post',b'/x/v2/reply/add',b'/x/v2/reply/del']
+  if folder=='comments-read':forbidden+=[b'/x/v2/dm/',b'/x/v2/reply/like',b'/x/v2/reply/action',b'/x/v2/reply/report']
+  if folder!='pgc-follow':forbidden+=[b'/pgc/web/follow/']
+  if any(bad in data for bad in forbidden):raise SystemExit('W04 native unrelated route: '+folder)
+  if folder=='vod' and module.get('policy',{}).get('cumulativeProbeQuotas') is not False:raise SystemExit('W04 bridge still has probe quotas')
+  files[folder+'/manifest.json']=path.read_bytes();w04_manifests[folder]=sha(path.read_bytes())
+xml=ET.fromstring(files['config.xml']);ns={'w':'http://www.w3.org/ns/widgets','t':'http://tizen.org/ns/widgets'};app=xml.find('t:application',ns)
+if app.attrib['id']!='BiliSofa01.TV' or app.attrib['package']!='BiliSofa01' or xml.attrib['version']!=version or xml.find('w:content',ns).attrib['src']!='index.html':raise SystemExit('Foundation identity mismatch')
+if {x.attrib['name'] for x in xml.findall('t:privilege',ns)}!=({'http://tizen.org/privilege/internet'}|({'http://developer.samsung.com/privilege/productinfo'} if w04 else set())) or [x.attrib for x in xml.findall('w:access',ns)]!=[{'origin':'http://127.0.0.1:40324','subdomains':'false'}]+([{'origin':'http://127.0.0.1:40325','subdomains':'false'}] if w04 else [])+([{'origin':'https://i'+str(i)+'.hdslb.com','subdomains':'false'} for i in range(3)] if product_player else []):raise SystemExit('Foundation network privilege mismatch')
+if set(ui['files'])!=({'recommend-worker.js'} if recommend else set())|({'cast-product-worker.js'} if w06 else set())|({'overlay-worker.js','comments-worker.js','interaction-worker.js'} if w05 else set())|({'vod-source-worker.js','vod-bridge-worker.js','pgc-follow-worker.js','live-product-worker.js'} if w04 else set())|{'app.js','library-worker.js','hot-search-worker.js','search-worker.js','initials-worker.js','search-words.json','search-NOTICE','catalog-worker.js','identity-worker.js','guest-worker.js','guest-video-worker.js','cast-worker.js','index.html','style.css','config.xml','icon.png','LICENSE','THIRD_PARTY_NOTICES.md'}:raise SystemExit('Foundation UI allowlist mismatch')
+for name,data in files.items():
+ if name.startswith('/') or '..' in Path(name).parts or any(p in data for p in [b'/Users/',b'-----BEGIN PRIVATE KEY-----',b'SESSDATA=',b'bili_jct=']):raise SystemExit('Foundation private or unsafe payload')
+for bad in [b'/x/player/',b'/heartbeat',b'BV14GHy6bE9n',b'/x/web-interface/view']:
+ if bad in files['identity/probe.wasm'] or bad in files['identity-worker.js']:raise SystemExit('Foundation includes probe/progress routes')
+if any(b'new Function' in files[name] for name in ['identity/probe.js','native/probe.js','catalog/probe.js','search/probe.js','hot-search/probe.js','library/probe.js']) or b"connect-src 'self'" not in files['index.html']:raise SystemExit('Foundation runtime policy mismatch')
+files['build.json']=(json.dumps({'schema':1,'identity':'BiliSofa01.TV','version':version,'recommendNativeManifests':{k:v for k,v in w04_manifests.items() if k=='recommend'},'w06NativeManifests':{k:v for k,v in w04_manifests.items() if k=='cast-product'},'w04NativeManifests':{k:v for k,v in w04_manifests.items() if k not in ['overlay-read','comments-read','video-interactions','cast-product','recommend']},'w05NativeManifests':{k:v for k,v in w04_manifests.items() if k in ['overlay-read','comments-read','video-interactions']},'purpose':('U2 account/settings and U3 shared player/read layers; earlier capabilities retained; device acceptance OPEN; ' if product_player else 'F12 local bookmarks and private list-cache management; earlier modules retained; device acceptance OPEN; ' if recommend else 'W06 product official casting; device matrix OPEN; ' if w06 else 'W05 account interaction candidate with durable explicit confirmation and readonly modules; no real account write acceptance; ' if w05 else 'W04 F06/F17-F19 integrated candidate; area API-352 and F19 rights/capability gaps remain; no real account writes or device acceptance; ' if w04 else '')+'W03 local identity playback queue and verified-account read-only follow updates, favorites, history and watch-later lists with existing category/search/media/cast; unsigned; not product/device acceptance','uiSourceHash':ui['sourceHash'],'nativeManifestSha256':sha((NATIVE/'manifest.json').read_bytes()),'hotNativeManifestSha256':sha(files['hot-search/manifest.json']),'searchNativeManifestSha256':sha(files['search/manifest.json']),'libraryNativeManifestSha256':sha(files['library/manifest.json']),'catalogNativeManifestSha256':sha(files['catalog/manifest.json']),'mediaNativeManifestSha256':sha(files['native/manifest.json']),'qrDependency':qr,'files':{n:sha(v) for n,v in sorted(files.items())}},indent=2)+'\n').encode()
+package=ROOT/('dist/BiliSofa-0.44.0-unsigned.wgt' if product_acceptance_fix else 'dist/BiliSofa-0.43.0-unsigned.wgt' if product_cast_clock else 'dist/BiliSofa-0.42.0-unsigned.wgt' if product_cast_seek else 'dist/BiliSofa-0.41.0-unsigned.wgt' if product_cast_start else 'dist/BiliSofa-0.40.0-unsigned.wgt' if product_recovery else 'dist/BiliSofa-0.39.0-unsigned.wgt' if product_stream else 'dist/BiliSofa-0.38.0-unsigned.wgt' if product_instant else 'dist/BiliSofa-0.37.0-unsigned.wgt' if product_actions else 'dist/BiliSofa-0.36.0-unsigned.wgt' if product_interactions else 'dist/BiliSofa-0.35.0-unsigned.wgt' if product_browse else 'dist/BiliSofa-U3-0.34.0-unsigned.wgt' if product_player else 'dist/BiliSofa-W03-recommend-unsigned.wgt' if recommend else 'dist/BiliSofa-W06-cast-unsigned.wgt' if w06 else 'dist/BiliSofa-W05-interactions-unsigned.wgt' if w05 else 'dist/BiliSofa-W04-media-unsigned.wgt' if w04 else 'dist/BiliSofa-W03-account-details-unsigned.wgt')
+with zipfile.ZipFile(package,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+ for name,data in sorted(files.items()):
+  info=zipfile.ZipInfo(name,(2026,10,17,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED;info.external_attr=0o100644<<16;z.writestr(info,data)
+with zipfile.ZipFile(package) as z:
+ if set(z.namelist())!=set(files) or any(z.read(n)!=data for n,data in files.items()):raise SystemExit('Foundation archive differs')
+package.with_suffix('.wgt.sha256').write_text(sha(package.read_bytes())+'  '+package.name+'\n')
+print(('U5 third-party acceptance fixes' if product_acceptance_fix else 'U4 canonical cast clock' if product_cast_clock else 'U4 state-correct cast seek' if product_cast_seek else 'U4 bounded cast startup alignment' if product_cast_start else 'U4 single-account recovery' if product_recovery else 'U4 stable browse and targeted controls' if product_stream else 'U4 single-click player actions and page cache' if product_instant else 'U4 direct player actions' if product_actions else 'U4 reversible interactions' if product_interactions else 'U3 shared product player' if product_player else 'W03 account recommendations' if recommend else 'W06 official casting' if w06 else 'W05 account interactions' if w05 else 'W04 integrated media' if w04 else 'W03 catalog/account/media/receiver')+' unsigned WGT verified '+sha(package.read_bytes())+'; not installed/device accepted')

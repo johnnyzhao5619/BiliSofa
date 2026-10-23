@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "kind": "DERIVED_NUMERIC_DEVICE_OBSERVATION",
+  "observedVersion": "0.42.0",
+  "observedUiSourceHash": "2557d771ac47232d5adad0903ab7f3292ddd6bd50478ea77f7d763fd6d379d2a",
+  "observedSignedSha256": "abec6339007d37b0204536919fd74d06324fb0ca2471107a6c6f810502e64c82",
+  "privateNumericTraceSha256": "c560dea9f3f5043179566f5ec39a7a526ae5730bdae4e3e0dab2f99ef9d5e55f",
+  "rawTracePublished": false,
+  "normalizedSeek": {
+    "code": "command_seek",
+    "at": 57472,
+    "targetMs": 2000,
+    "actualMs": 2080,
+    "durationMs": 440808,
+    "state": "playing",
+    "first": true,
+    "startedAgo": 2305,
+    "seeking": false,
+    "owner": "sender"
+  },
+  "sdkNonzeroSeekCount": 1,
+  "reopenOffsetCount": 0,
+  "validSdkTimeBeforeMs": 2080,
+  "firstSdkTimesAfterMs": [
+    2546,
+    5150,
+    5651,
+    6151
+  ],
+  "lastSdkTimeMs": 64715,
+  "userObservation": "APPROXIMATELY_1S_TO_4S_THEN_OBSERVED_ABOUT_64S",
+  "userStoppedAtObservationEnd": true,
+  "automatic64sStop": "NOT_REPORTED_USER_CONFIRMED_MANUAL_STOP",
+  "manualControlGroup": "NOT_TESTED",
+  "sdkForwardPositionSelectionCause": "UNRESOLVED"
+}

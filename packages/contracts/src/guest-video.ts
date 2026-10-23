@@ -2,6 +2,12 @@ import { DomainError, boundedMessage, finite, parseScope, record, text, type Sco
 export interface GuestVideoRequest { version: 1; scope: Scope; operation: 'guest-video-source' | 'guest-video-play'; bvid: string; }
 export interface GuestVideoSummary { bvid: string; title: string; owner: string; durationSec: number; pages: number; width: number; height: number; videoCodec: string; audioCodec: string; }
 export interface GuestVideoResult { version: 1; scope: Scope; operation: 'guest-video-source'; closed: true; code: string; summary?: GuestVideoSummary; }
+/** Only normalized terminal failure codes; never arbitrary native/log strings. */
+export function parseGuestFailureCode(value: unknown): string {
+  const code=text(value,96);
+  if(!/^ugc\.(cancelled|native_unavailable|bridge_stopped|bridge_failed_(10|12|16)|(?:view|playurl|video|audio)_(?:invalid_response|response_too_large|headers_too_large|unsupported|expired_source|duration_mismatch|cdn_unavailable|transport_[0-9]{1,3}|http_[1-5][0-9]{2}|api_error|range_invalid))$/.test(code)) throw new DomainError('invalid');
+  return code;
+}
 export function parseGuestVideoRequest(value: unknown): GuestVideoRequest {
   const v = boundedMessage(value), raw = record(v.scope), scope = parseScope(raw), bvid = text(v.bvid, 12);
   if (v.version !== 1 || !['guest-video-source', 'guest-video-play'].includes(String(v.operation)) || !/^BV[A-Za-z0-9]{10}$/.test(bvid) || scope.accountId !== 'guest' || ![scope.mediaSessionId, scope.requestId].every(id => /^[A-Za-z0-9_-]{1,64}$/.test(id)) || Object.keys(raw).length !== 4 || Object.keys(v).length !== 4 || Object.keys(v).some(k => !['version', 'scope', 'operation', 'bvid'].includes(k))) throw new DomainError('invalid');
@@ -30,7 +36,7 @@ export function parseGuestBridgeEvent(value: unknown): GuestBridgeEvent {
   const v = boundedMessage(value), scope = parseGuestVideoRequest({ version: 1, scope: v.scope, operation: 'guest-video-play', bvid: 'BV0000000000' }).scope;
   if (v.version !== 1 || v.operation !== 'guest-video-play' || typeof v.closed !== 'boolean' || Object.keys(v).some(k => !['version', 'scope', 'operation', 'closed', 'code', 'url', 'summary'].includes(k))) throw new DomainError('invalid');
   if (!v.closed) {
-    if (/^ugc[.](source_refresh_once|source_backup_selected|bridge_(manifest|video|audio)_served|bridge_issue_[0-5]?[0-9]{1,2}_curl_[0-9]{1,3})$/.test(String(v.code))) {
+    if (/^ugc[.](source_refresh_once|source_backup_selected|range_retry_once|bridge_(manifest|video|audio)_served|bridge_issue_[0-5]?[0-9]{1,2}_curl_[0-9]{1,3})$/.test(String(v.code))) {
       if (v.url !== undefined || v.summary !== undefined) throw new DomainError('invalid');
       return { version: 1, scope, operation: 'guest-video-play', closed: false, code: String(v.code) };
     }

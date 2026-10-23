@@ -1,0 +1,40 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {LocalProfiles} from '../../apps/tv/src/platform/local-profile-store.ts';
+import {accountRuntime} from '../../apps/tv/src/platform/account-runtime.ts';
+import {parseReadCacheClear} from '../../packages/contracts/src/private-account.ts';
+import {parseRecommendationBody} from '../../packages/bili-client/src/recommendations.ts';
+import type {RecommendationRequest} from '../../packages/contracts/src/recommendations.ts';
+const bv='BV0000000001',point={bvid:bv,part:1 as const,timeMs:12000,durationMs:80000,updatedAt:10000};
+function store(){const values=new Map<string,string>();let block='';const profiles=new LocalProfiles({getItem:k=>values.get(k)??null,setItem(k,v){if(k!==block)values.set(k,v);},removeItem:k=>{values.delete(k);}});return {values,profiles,block:(key:string)=>{block=key;}};}
+test('F12 bookmark inventory merges sorted P1/P2 snapshots with stable copies and fixed identity, without a storage write',()=>{
+ const h=store(),a=h.profiles.profile('bili_101'),b=h.profiles.profile('bili_202');a.progress(point);a.progressPart({...point,part:2,updatedAt:20000});b.progressPart({...point,part:2,timeMs:22000});const before=[...h.values];
+ const r=a.bookmarks!();assert.equal(r.kind,'ok');if(r.kind==='ok'){assert.deepEqual(r.items.map(p=>p.part),[2,1]);r.items[0]!.timeMs=1;}const actual=a.bookmarks!();if(actual.kind==='ok')assert.equal(actual.items[0]!.timeMs,12000);assert.deepEqual([...h.values],before);assert.deepEqual(h.profiles.profile('guest').bookmarks!(),{kind:'ok',items:[]});
+});
+test('F12 record-only clear preserves preferences, other identities, queues, search, protected-store names and unknown journals',()=>{
+ const h=store(),a=h.profiles.profile('bili_101'),b=h.profiles.profile('bili_202');a.preferences({resumePrompt:false,jumpSeconds:30});a.progress(point);a.progressPart({...point,part:2});b.progress(point);
+ for(const key of ['bilisofa.queue.v2.bili_101','bilisofa.search.v1.bili_101','bilisofa.retained-writes.v1','bilisofa.w01.progress-once.v1','bilisofa.session.v1.slot0'])h.values.set(key,'preserve-synthetic');
+ assert.equal(a.clearBookmarks!(),'deleted');assert.deepEqual(a.bookmarks!(),{kind:'ok',items:[]});const r=a.read();if(r.kind==='ok')assert.deepEqual(r.value.preferences,{resumePrompt:false,jumpSeconds:30});assert.equal(b.readPart(bv,1).kind,'ok');assert.equal([...h.values.values()].filter(v=>v==='preserve-synthetic').length,5);
+});
+test('F12 corrupt/future record partition is never overwritten or mistaken for an empty complete inventory',()=>{
+ const h=store(),a=h.profiles.profile('guest');a.progress(point);for(const raw of ['bad','{"schema":2}']){h.values.set('bilisofa.parts.v1.guest',raw);const before=[...h.values];assert.notEqual(a.bookmarks!().kind,'ok');assert.notEqual(a.clearBookmarks!(),'deleted');assert.deepEqual([...h.values],before);}assert.equal(new LocalProfiles(undefined).profile('guest').bookmarks!().kind,'unavailable');
+});
+test('F12 partially confirmed record deletion stays unconfirmed and can be inspected without rewriting or changing preferences',()=>{
+ const h=store(),a=h.profiles.profile('guest');a.preferences({resumePrompt:true,jumpSeconds:10});a.progress(point);a.progressPart({...point,part:2});h.block('bilisofa.parts.v1.guest');assert.equal(a.clearBookmarks!(),'unconfirmed');const r=a.bookmarks!();if(r.kind==='ok')assert.deepEqual(r.items.map(p=>p.part),[2]);const p=a.read();if(p.kind==='ok')assert.equal(p.value.preferences.jumpSeconds,10);
+});
+test('F12 deleting one part retains the same BV other P and cache-clear DTO admits no private or arbitrary fields',()=>{
+ const h=store(),a=h.profiles.profile('guest');a.progress(point);a.progressPart({...point,part:2});assert.equal(a.forgetPart(bv,2),'saved');const r=a.bookmarks!();if(r.kind==='ok')assert.deepEqual(r.items.map(p=>p.part),[1]);assert.deepEqual(parseReadCacheClear({cleared:true}),{cleared:true});for(const v of [{cleared:false},{cleared:true,account:'private'},null])assert.throws(()=>parseReadCacheClear(v));
+});
+const account={schema:1 as const,id:'bili_123',uid:'123',name:'合成',expiresAt:Date.now()+600000,cookieLines:'.bilibili.com\tTRUE\t/\tTRUE\t0\tSESSDATA\tsynthetic\n.bilibili.com\tTRUE\t/\tTRUE\t0\tbili_jct\tsynthetic\n'},scope={accountId:account.id,generation:1,mediaSessionId:'cache',requestId:'r1'};
+const batch=()=>parseRecommendationBody(JSON.stringify({code:0,data:{mid:123,item:[{goto:'av',id:1,bvid:bv,title:'合成',owner:{name:'合成'},duration:80}]}}),'123');
+test('F12 clearing private cache makes no network operation and resets the next recommendation read to a fresh first source without losing the account',async()=>{
+ const prior=globalThis.Worker,requests:RecommendationRequest[]=[];class Fake{onmessage:((e:{data:unknown})=>void)|undefined;constructor(_file:string){}postMessage(q:RecommendationRequest){requests.push(q);queueMicrotask(()=>this.onmessage?.({data:{version:1,operation:q.operation,scope:q.scope,closed:true,kind:'ok',batch:batch()}}));}terminate(){}}
+ globalThis.Worker=Fake as unknown as typeof Worker;try{const r=accountRuntime(account),signal=new AbortController().signal;await r.readRecommendations!({page:1},scope,signal);await r.readRecommendations!({page:1},scope,signal);assert.equal(requests.length,1);assert.deepEqual(await r.clearReadCaches!(scope,signal),{cleared:true});assert.equal(requests.length,1);await r.readRecommendations!({page:1},scope,signal);assert.equal(requests.length,2);assert.equal(requests[1]!.index,0);assert.equal(requests[1]!.freshType,0);assert.equal(requests[1]!.shown,'');await r.close();}finally{globalThis.Worker=prior;}
+});
+test('F12 pending read is cancelled and actually closed before cache clear; a late callback cannot restore the old snapshot',async()=>{
+ const prior=globalThis.Worker;let held=true,stopped=0;const requests:RecommendationRequest[]=[],instances:Fake[]=[];class Fake{onmessage:((e:{data:unknown})=>void)|undefined;q:RecommendationRequest|undefined;constructor(_f:string){instances.push(this);}postMessage(value:RecommendationRequest&{control?:string}){if(value.control){stopped++;queueMicrotask(()=>this.onmessage?.({data:{version:1,operation:value.operation,scope:value.scope,closed:true,kind:'error',code:'cancelled',detail:'recommend.cancelled'}}));return;}requests.push(value);this.q=value;if(!held)queueMicrotask(()=>this.onmessage?.({data:{version:1,operation:value.operation,scope:value.scope,closed:true,kind:'ok',batch:batch()}}));}terminate(){}}
+ globalThis.Worker=Fake as unknown as typeof Worker;try{const r=accountRuntime(account),signal=new AbortController().signal,reading=r.readRecommendations!({page:1},scope,signal),rejected=assert.rejects(reading,{code:'cancelled'});await new Promise<void>(yes=>setImmediate(yes));await r.clearReadCaches!(scope,signal);await rejected;assert.equal(stopped,1);const old=instances[0]!;old.onmessage?.({data:{version:1,operation:old.q!.operation,scope:old.q!.scope,closed:true,kind:'ok',batch:batch()}});held=false;await r.readRecommendations!({page:1},scope,signal);assert.equal(requests[1]!.index,0);await r.close();}finally{globalThis.Worker=prior;}
+});
+test('F12 unknown native closure forbids a successful cache clear or capability reuse',async()=>{
+ const prior=globalThis.Worker;let count=0;class Fake{onerror:(()=>void)|undefined;constructor(_f:string){count++;}postMessage(){queueMicrotask(()=>this.onerror?.());}terminate(){}}
+ globalThis.Worker=Fake as unknown as typeof Worker;try{const r=accountRuntime(account),signal=new AbortController().signal;await assert.rejects(r.readRecommendations!({page:1},scope,signal),{code:'unknown'});await assert.rejects(r.clearReadCaches!(scope,signal),{code:'unknown'});assert.equal(count,1);assert.equal((await r.close()).closed,false);}finally{globalThis.Worker=prior;}
+});

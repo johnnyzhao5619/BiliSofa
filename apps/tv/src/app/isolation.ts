@@ -31,7 +31,8 @@ focus.initial('stop');
 const identified = probeApplicationIdentity('observer');
 add('W01-storage-identity', identified ? 'UNVERIFIED' : 'BLOCKED', identified ? 'keymanager.observer_identity_confirmed' : 'keymanager.observer_identity_unconfirmed', 'metadata');
 if (identified) {
-  const result = probeForeignSyntheticRead(probeKeyManagerApi()); add('W01-cross-package-read', result.verdict, result.code);
+  if (document.querySelector<HTMLMetaElement>('meta[name="isolation-mode"]')?.content === 'https-vault') add('W01-storage-fixture', 'UNVERIFIED', 'keymanager.observer_fixture_https_vault', 'metadata');
+  const result = probeForeignSyntheticRead(probeKeyManagerApi(), document.querySelector<HTMLMetaElement>('meta[name="isolation-mode"]')?.content === 'https-vault' ? 'https-vault' : 'legacy'); add('W01-cross-package-read', result.verdict, result.code);
 }
 // No real account data and no foreign writes. A served report closes sockets before
 // exit, so the owner can reopen and prove its synthetic bytes remained unchanged.

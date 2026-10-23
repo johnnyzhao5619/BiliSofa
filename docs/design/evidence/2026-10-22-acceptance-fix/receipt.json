@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.44.0",
+  "basedOn": "0.43.0",
+  "uiSourceHash": "0b944be2d166e9cb96c3de8f2f949f4c3030b8bc7f6df2a72648424eb0cfde1f",
+  "uiManifestSha256": "e4fa6a239b1d6f8e355f59cb749e6d2052c9aa906ba827e50bf081bf43409ecb",
+  "unsignedSha256": "89fb445d944a74b0357a1b1006e008b460e23353001f3d9eddb7324f0b7a3a35",
+  "signedSha256": "8ba0f6707f90bebaf0c86fd6de2cbc43e794009a92ae3d603400cf9a9c67f0ca",
+  "signedAt": "2026-10-23T02:40:46.924953+00:00",
+  "sourceArchiveSha256": "81336bbac992f5b8cafb77123203ee1bcb16a95bde1179705e2c43a00db44a25",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.44.0",
+        "signedSha256": "8ba0f6707f90bebaf0c86fd6de2cbc43e794009a92ae3d603400cf9a9c67f0ca",
+        "uiSourceHash": "0b944be2d166e9cb96c3de8f2f949f4c3030b8bc7f6df2a72648424eb0cfde1f",
+        "startedAt": "2026-10-23T02:50:42.028573+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "timeoutOrUnavailable": true
+        }
+      },
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.44.0",
+        "signedSha256": "8ba0f6707f90bebaf0c86fd6de2cbc43e794009a92ae3d603400cf9a9c67f0ca",
+        "uiSourceHash": "0b944be2d166e9cb96c3de8f2f949f4c3030b8bc7f6df2a72648424eb0cfde1f",
+        "startedAt": "2026-10-23T02:51:29.937541+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "recoveryBeforeSecondAttempt": "single SDB disconnect/connect to the same authorized target after capability timeout",
+    "lastConfirmedDeviceVersion": "0.44.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.44.0",
+      "signedSha256": "8ba0f6707f90bebaf0c86fd6de2cbc43e794009a92ae3d603400cf9a9c67f0ca",
+      "uiSourceHash": "0b944be2d166e9cb96c3de8f2f949f4c3030b8bc7f6df2a72648424eb0cfde1f",
+      "startedAt": "2026-10-23T02:51:29.937541+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs043": [
+    "apps/tv/src/app/navigation.ts",
+    "apps/tv/src/app/vod-comments.ts",
+    "packages/bili-client/src/interaction-writes.ts",
+    "packages/media/src/vod-track-preference.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "modules": 293,
+    "unitContractPassed": 692,
+    "acceptanceFixUiPassed": 2,
+    "retainedCastSeekClockUiPassed": 10,
+    "baseline043SameSpecsFailed": 2,
+    "packageNegativePassed": 6,
+    "frozenDistFilesVerifiedUnchanged": 802,
+    "buildFilesVerifiedUnchanged": 176,
+    "uiSourceInputs": 249,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModulesUnchangedVs043": 17,
+    "nativeResourcesUnchangedVs043": 68,
+    "certificatePreflight": "PASS"
+  },
+  "fixes": {
+    "P1-02_F11_journal_eviction": "SOURCE_AND_LOCAL_PASS",
+    "P2-01_reply_detail_and_modal_depth": "SOURCE_AND_SYNTHETIC_UI_PASS",
+    "P2-02_default_quality": "SOURCE_AND_SYNTHETIC_UI_PASS",
+    "P1-01_R07_rate_observation": "SOURCE_ONLY_NOT_IN_PACKAGE"
+  },
+  "deviceAcceptance": "REQUESTED_M1_M2_USER_PASS",
+  "requestedUserResults": {
+    "m1UgcReplyFullTextAndLayeredBack": "USER_PASS",
+    "m1PgcRepliesListOpens": "USER_PASS",
+    "m2ColdStartDefaultBestAvcUpTo1080p": "USER_PASS",
+    "reportedAt": "2026-10-22",
+    "userStatement": "测试全部通过，没有问题"
+  },
+  "notCoveredByUserResults": [
+    "F11_JOURNAL_EVICTION_AT_256_ROWS",
+    "FAVORITES_FOLDER_DEEP_PATH",
+    "OVERLAY_FILTER_INPUT_ON_PGC_OR_FOLDER_PATH",
+    "HDR_4K_DEFAULTS",
+    "R07_FRACTIONAL_RATE",
+    "FULL_T1_T8_MATRIX"
+  ],
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false
+}

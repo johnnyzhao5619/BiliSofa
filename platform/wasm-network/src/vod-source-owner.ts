@@ -1,0 +1,158 @@
+import { DomainError } from '../../../packages/contracts/src/index.ts';
+import type { PrivateAccount } from '../../../packages/contracts/src/private-account.ts';
+import { parsePrivateAccount } from '../../../packages/contracts/src/private-account.ts';
+import { parseVodChoice, type VodCapabilities, type VodChoice } from '../../../packages/contracts/src/vod-catalog.ts';
+import { parseVodCapabilities, parseVodReadResult, vodNonce, vodReadQuery, type VodReadResult } from '../../../packages/contracts/src/vod-runtime.ts';
+import type { PrivateVodPlan, VodSourceTotals } from '../../../packages/contracts/src/vod-private.ts';
+import { resolveVodTracks, type PrivateVodCatalog, type PrivateVodDetail } from '../../../packages/bili-client/src/vod-catalog.ts';
+import { vodBridgeMetadata } from '../../../packages/media/src/vod-mpd.ts';
+import type { PrivateOverlayBinding } from '../../../packages/contracts/src/overlay-binding.ts';
+
+export interface VodReadApi {
+  catalog(bvid: string, part: number, id: string, signal: AbortSignal, account?: PrivateAccount): Promise<{ detail: PrivateVodDetail; catalog: PrivateVodCatalog }>;
+  inspect(plan: PrivateVodPlan, signal: AbortSignal): Promise<VodSourceTotals>;
+  close(): Promise<void>;
+}
+/** This DTO is legal only on the source-to-bridge private MessagePort. */
+export interface PrivateVodOffer { bvid: string; video: string; audio: string; metadata: string; expiresAt: number; }
+interface Lease { id: string; choice: VodChoice; plan: PrivateVodPlan; metadata?: string; }
+function identityVideo(c: PrivateVodCatalog, i: number): string {
+  const v = c.summary.videos[i]!, t = c.video[i]!;
+  return JSON.stringify([v.quality, v.codec, v.width, v.height, v.fps, t.codec, t.bandwidth, t.initialization, t.indexRange]);
+}
+function identityAudio(c: PrivateVodCatalog, i: number): string {
+  const a = c.summary.audios[i]!, t = c.audio[i]!;
+  return JSON.stringify([a.codec, t.codec, t.bandwidth, t.initialization, t.indexRange]);
+}
+/** One private catalog and one media lease. All native reads finish their close
+ * acknowledgement before a public result or a private source offer is returned. */
+export class VodSourceOwner {
+  private account: PrivateAccount | undefined;
+  private readonly capabilities: VodCapabilities;
+  private cache: { detail: PrivateVodDetail; catalog: PrivateVodCatalog } | undefined;
+  private lease: Lease | undefined;
+  private work: Promise<unknown> | undefined;
+  private controller: AbortController | undefined;
+  private generation = 0;
+  private poisoned = false;
+  private closing: Promise<void> | undefined;
+  constructor(private readonly api: VodReadApi, capabilities: VodCapabilities, account: PrivateAccount | undefined,
+    private readonly nonce: () => string, private readonly now: () => number = Date.now) {
+    this.capabilities = parseVodCapabilities(capabilities);
+    this.account = account === undefined ? undefined : parsePrivateAccount(account);
+  }
+  private serial<T>(action: (signal: AbortSignal, generation: number) => Promise<T>): Promise<T> {
+    if (this.poisoned || this.closing) return Promise.reject(new DomainError(this.poisoned ? 'unknown' : 'cancelled'));
+    if (this.work) return Promise.reject(new DomainError('invalid'));
+    const controller = new AbortController(), generation = this.generation;
+    this.controller = controller;
+    const work = Promise.resolve().then(() => action(controller.signal, generation)).catch(error => {
+      if (error instanceof DomainError && error.code === 'unknown') this.poisoned = true;
+      throw error;
+    }).finally(() => { if (this.work === work) { this.work = undefined; this.controller = undefined; } });
+    this.work = work; return work;
+  }
+  private check(signal: AbortSignal, generation: number): void {
+    if (this.poisoned) throw new DomainError('unknown');
+    if (signal.aborted || generation !== this.generation || this.closing) throw new DomainError('cancelled');
+    if (this.account && this.account.expiresAt <= this.now()) throw new DomainError('login');
+  }
+  overlayBinding(catalogId: string): PrivateOverlayBinding {
+    vodNonce(catalogId);
+    if (this.poisoned || this.closing || !this.cache || this.cache.catalog.summary.id !== catalogId) throw new DomainError(this.poisoned ? 'unknown' : 'cancelled');
+    const item = this.cache.catalog.summary.item;
+    return { version: 1, kind: 'overlay-binding', bvid: item.bvid, part: item.part, cid: this.cache.catalog.cid };
+  }
+  async read(value: unknown): Promise<VodReadResult> {
+    const query = vodReadQuery(value);
+    if (this.lease) throw new DomainError('invalid');
+    // Invalidate old selections before any new read, including a failed read.
+    if (!this.work && !this.closing) this.cache = undefined;
+    return this.serial(async (signal, generation) => {
+      this.check(signal, generation);
+      const result = await this.api.catalog(query.bvid, query.part, vodNonce(this.nonce()), signal, this.account);
+      this.check(signal, generation);
+      const publicResult = parseVodReadResult({ detail: result.detail.summary, catalog: result.catalog.summary });
+      if (publicResult.catalog.item.bvid !== query.bvid || publicResult.catalog.item.part !== query.part) throw new DomainError('invalid');
+      this.cache = result; return publicResult;
+    });
+  }
+  /** A fixed private API callback may read a public season summary through the
+   * same serialized owner; it cannot overlap a bridge lease or a media read. */
+  summary<T>(read: (signal: AbortSignal, account: PrivateAccount | undefined) => Promise<T>): Promise<T> {
+    if (this.lease) return Promise.reject(new DomainError('invalid'));
+    if (!this.work && !this.closing) this.cache = undefined;
+    return this.serial(async (signal, generation) => {
+      this.check(signal, generation); const result = await read(signal, this.account);
+      this.check(signal, generation); return result;
+    });
+  }
+  private async refresh(plan: PrivateVodPlan, choice: VodChoice, signal: AbortSignal, generation: number): Promise<PrivateVodPlan> {
+    const previous = this.cache;
+    if (!previous || choice.catalogId !== previous.catalog.summary.id) throw new DomainError('invalid');
+    const next = await this.api.catalog(plan.item.bvid, plan.item.part, vodNonce(this.nonce()), signal, this.account);
+    this.check(signal, generation);
+    const old = previous.catalog, c = next.catalog;
+    if (c.cid !== old.cid || c.summary.item.bvid !== plan.item.bvid || c.summary.item.part !== plan.item.part || c.durationMs !== plan.durationMs) throw new DomainError('invalid');
+    const vi = Number(choice.videoKey.slice(1)), ai = Number(choice.audioKey.slice(1));
+    const vs = identityVideo(old, vi), as = identityAudio(old, ai);
+    const video = c.video.map((_v, i) => i).filter(i => identityVideo(c, i) === vs), audio = c.audio.map((_a, i) => i).filter(i => identityAudio(c, i) === as);
+    if (video.length !== 1 || audio.length !== 1) throw new DomainError('unsupported');
+    const renewed = resolveVodTracks(c, { catalogId: c.summary.id, videoKey: `v${video[0]}`, audioKey: `a${audio[0]}` }, this.capabilities);
+    // Stable public keys continue to address the same representation. Refresh
+    // changes private URLs only; changed representations require explicit read.
+    if (renewed.expiresAt <= plan.expiresAt || renewed.expiresAt < this.now() + 90000) throw new DomainError('timeout');
+    return renewed;
+  }
+  private offer(plan: PrivateVodPlan, metadata: string): PrivateVodOffer {
+    if (plan.expiresAt < this.now() + 60000) throw new DomainError('timeout');
+    return { bvid: plan.item.bvid, video: plan.video.url, audio: plan.audio.url, metadata, expiresAt: plan.expiresAt };
+  }
+  attach(id: string, value: unknown): Promise<PrivateVodOffer> {
+    vodNonce(id); const choice = parseVodChoice(value);
+    if (this.lease || this.work || !this.cache || choice.catalogId !== this.cache.catalog.summary.id) return Promise.reject(new DomainError('invalid'));
+    const plan = resolveVodTracks(this.cache.catalog, choice, this.capabilities), lease: Lease = { id, choice, plan };
+    this.lease = lease;
+    return this.serial(async (signal, generation) => {
+      this.check(signal, generation);
+      if (lease.plan.expiresAt < this.now() + 90000) lease.plan = await this.refresh(lease.plan, choice, signal, generation);
+      const totals = await this.api.inspect(lease.plan, signal);
+      this.check(signal, generation); lease.metadata = vodBridgeMetadata(lease.plan, totals);
+      return this.offer(lease.plan, lease.metadata);
+    });
+  }
+  renew(id: string): Promise<PrivateVodOffer> {
+    const lease = this.lease;
+    if (!lease || id !== lease.id || !lease.metadata) return Promise.reject(new DomainError('invalid'));
+    return this.serial(async (signal, generation) => {
+      this.check(signal, generation);
+      const plan = await this.refresh(lease.plan, lease.choice, signal, generation), totals = await this.api.inspect(plan, signal);
+      this.check(signal, generation);
+      const metadata = vodBridgeMetadata(plan, totals);
+      if (metadata !== lease.metadata) throw new DomainError('invalid');
+      const offer = this.offer(plan, metadata); lease.plan = plan; return offer;
+    });
+  }
+  /** Called only after actual bridge closure. Cancels any refresh and drains its
+   * native close before the bridge may publish a parent-facing close ACK. */
+  async release(id: string): Promise<void> {
+    if (this.lease && this.lease.id !== id) throw new DomainError('invalid');
+    this.generation++; this.controller?.abort();
+    try { await this.work; } catch (error) { if (error instanceof DomainError && error.code === 'unknown') this.poisoned = true; }
+    try { await this.api.close(); } catch { this.poisoned = true; }
+    if (this.poisoned) throw new DomainError('unknown');
+    this.lease = undefined;
+  }
+  close(): Promise<void> {
+    if (!this.closing) {
+      if (this.lease) return Promise.reject(new DomainError('invalid'));
+      this.generation++; this.controller?.abort(); this.cache = undefined; this.account = undefined;
+      this.closing = (async () => {
+        try { await this.work; } catch (error) { if (error instanceof DomainError && error.code === 'unknown') this.poisoned = true; }
+        try { await this.api.close(); } catch { this.poisoned = true; }
+        if (this.poisoned) throw new DomainError('unknown');
+      })();
+    }
+    return this.closing;
+  }
+}

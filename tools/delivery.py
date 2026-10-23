@@ -1,4 +1,4 @@
-"""Freeze the exact no-HEAD source manifest used by the probe build."""
+"""Freeze the exact source manifest used by the probe build."""
 from pathlib import Path
 import hashlib,json,zipfile,subprocess
 root=Path(__file__).resolve().parents[1]
@@ -14,8 +14,10 @@ with zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) a
   archive.writestr(info,data)
 subprocess.run(['python3',str(root/'tools/verify-package.py')],check=True)
 package=root/'dist/BiliSofa-W01-basic-unsigned.wgt'
+revision=subprocess.run(['git','rev-parse','--verify','HEAD'],cwd=root,capture_output=True,text=True)
+sourceRevision=revision.stdout.strip() if revision.returncode==0 else 'NO_HEAD'
 report={
- 'schema':1,'sourceRevision':'NO_HEAD','sourceSnapshotHash':manifest['sourceHash'],
+ 'schema':1,'sourceRevision':sourceRevision,'sourceSnapshotHash':manifest['sourceHash'],
  'sourceArchive':out.name,'sourceArchiveSha256':hashlib.sha256(out.read_bytes()).hexdigest(),
  'package':package.name,'packageSha256':hashlib.sha256(package.read_bytes()).hexdigest(),
  'signed':False,'nativeNetworkBundled':False,'deviceAcceptance':'UNVERIFIED','productVersionComplete':False,
@@ -26,7 +28,7 @@ if nativePackage.exists():
  with zipfile.ZipFile(nativePackage) as archive:
   nativeBuild=json.loads(archive.read('build.json'))
  if nativeBuild['sourceHash']!=manifest['sourceHash']: raise SystemExit('Native package source snapshot mismatch: rebuild/package:native')
- report['nativeProbe']={'package':nativePackage.name,'packageSha256':hashlib.sha256(nativePackage.read_bytes()).hexdigest(),'version':'0.0.38','signed':False,'networkBundled':True,'deviceAcceptance':'UNVERIFIED','dependencyVersions':nativeBuild['dependencyVersions']}
+ report['nativeProbe']={'package':nativePackage.name,'packageSha256':hashlib.sha256(nativePackage.read_bytes()).hexdigest(),'version':nativeBuild['version'],'signed':False,'networkBundled':True,'deviceAcceptance':'UNVERIFIED','dependencyVersions':nativeBuild['dependencyVersions']}
 isolationPackage=root/'dist/BiliSofa-W01-isolation-unsigned.wgt'
 if isolationPackage.exists():
  subprocess.run(['python3',str(root/'tools/verify-package.py'),'--isolation'],check=True)

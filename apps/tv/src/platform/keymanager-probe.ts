@@ -1,9 +1,6 @@
 import type { Verdict } from '../../../../packages/contracts/src/index.ts';
-export interface ProbeKeyManagerApi {
-  saveData(name: string, rawData: string, password: null, success: () => void, error: () => void): void;
-  getData(alias: { name: string; packageId?: string }): unknown;
-  removeData(alias: { name: string }): void;
-}
+import type { KeyManagerDataApi as ProbeKeyManagerApi } from './keymanager-data-api.ts';
+export type { KeyManagerDataApi as ProbeKeyManagerApi } from './keymanager-data-api.ts';
 const owners = new WeakMap<ProbeKeyManagerApi, { busy: boolean }>();
 const notFound = (error: unknown) => !!error && typeof error === 'object' && 'name' in error && error.name === 'NotFoundError';
 export interface KeyManagerProbeResult { verdict: Verdict; code: string; }

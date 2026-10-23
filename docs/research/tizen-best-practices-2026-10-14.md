@@ -82,3 +82,17 @@ S23续核：KeyManagerAlias.packageId明确数据所属包，getData默认要求
 
 
 - S28 游客普通UGC一手端点行为观察：固定api.bilibili.com的/x/web-interface/view及/x/player/playurl（fnval16/qn16/no account）；HOST同样本HTTP200/API0/AVC+AAC，CDN两轨仅增加规范公开视频页Referer即从403变为206/512bytes/ftyp。原始资料仓库外；不是公开稳定API/全内容权益或TV播放证明。AVPlay属性以[S10 API](https://developer.samsung.com/smarttv/develop/api-references/samsung-product-api-references/avplay-api.html)公开合同为边界，不注入未记录的任意header。媒体桥异步候选参考[curl_multi_perform](https://curl.se/libcurl/c/curl_multi_perform.html)、[WRITEFUNCTION](https://curl.se/libcurl/c/CURLOPT_WRITEFUNCTION.html)、[easy_pause](https://curl.se/libcurl/c/curl_easy_pause.html)；SDK curl7.68不能使用后加入的CURL_WRITEFUNC_ERROR。详情与严格源检查实际TV结果另记。
+
+
+- S29 [UPnP AVTransport:1 Service Template v1.01](https://upnp.org/specs/av/UPnP-av-AVTransport-v1-Service.pdf)，2026-10-16复核第2.2.23/2.4.5/3节：单轨时间字段及GetPositionInfo参数/状态变量关联；位置由控制点轮询，不是LastChange连续事件。0.0.44原创固定SCPD仅声明已实现动作，不复制规范XML或宣称UPnP认证；事件订阅仍未实现。该SOURCE依据不能替代官方手机实际显示/定位验收。
+
+- S30 [UPnP ContentDirectory:1](https://upnp.org/specs/av/UPnP-av-ContentDirectory-v1-Service.pdf)，2026-10-16复核DIDL-Lite命名空间/必需item属性和res.duration定义，配合S29的CurrentTrackMetaData/AVTransportURIMetaData。0.0.45仅原创生成当前已批准资源的最小描述，不复制schema/透传原始metadata；SOURCE不等于手机已采用。
+
+
+2026-10-16 W01/F20内部记录：0.0.48官方Android实际连续超过90秒/手机时间正常，2:57停止报告明确media_limit_lease，为三分钟探针预算而非平台时长上限。0.0.49按ADR-011将progressive媒体/接收许可改为五分钟，其他网络/权限边界不变；321本地检查及本机安装/启动/清理通过，完整短片/三端仍待验收。详见IMPLEMENTATION_STATUS与TEST_REPORT的0.0.49记录，不推广为Samsung通用能力。
+
+
+2026-10-16 W01/F20后续：0.0.49完整218秒声画与手机/TV进度USER PASS，但投屏清理unknown，诊断HTTP自身关闭不能替代cast关闭。0.0.50修正父层310秒不足以覆盖5分钟发现＋5分钟媒体的缺口，改610秒有界看门狗；native租期/权限/媒体不改，5秒ACK与poison保护不变。补固定失败分类/失败关闭进度保留。251本地检查及本机安装/启动清理通过，旧unknown实际原因和播放后清理仍待取证，不将源码缺口自动认定为该TV样本根因。
+
+
+- S31 [Bilibili官方视频测速页面](https://www.bilibili.com/blackboard/video-diagnostics.html?bvid=BV1KS4y197BN&cid=455022263)：2026-10-16搜索抓取的官方表格列出upos-hz-mirrorakam.akamaized.net；页面为动态测速，直接静态抓取只有表头。该页面可支持Bilibili视频专用节点候选，不证明任意akamaized.net主机归属、手机失败源精确主机或电视实际可播。058按ADR-018只增加该精确主机，保留双层策略/TLS/期限/范围/格式/预算，实际发送端与电视结果须独立取得；用户专栏/第三方实现不作为CDN信任范围依据。

@@ -8,13 +8,13 @@
 #define BRIDGE_BUFFER 65536
 #define BRIDGE_RANGE 2097152ULL
 struct bridge_client {
-  int fd, kind, head, request_done, header_done, paused, done, status, valid_range, length_seen, streaming, next_window, upstream_ready, whole, retries, resume_window;
+  int fd, kind, head, request_done, header_done, paused, done, status, valid_range, length_seen, streaming, next_window, upstream_ready, whole, retries, resume_window, body_forwarded;
   CURL *easy;
   char request[4097], header[512];
   size_t request_size, header_size, header_sent, used, sent, upstream_headers;
   unsigned char buffer[BRIDGE_BUFFER];
   unsigned long long start, end, actual_end, total, received, length, announced_length, response_start, response_end, response_length;
-  double deadline, upstream_deadline, retry_at;
+  double deadline, upstream_deadline, retry_at, body_forwarded_at;
 };
 static struct bridge_client bridge_clients[BRIDGE_CLIENTS] = { {.fd=-1}, {.fd=-1}, {.fd=-1}, {.fd=-1} };
 static int bridge_fd = -1, bridge_unconfirmed = 0, bridge_connections = 0, bridge_global = 0;
@@ -30,7 +30,8 @@ static void bridge_request_note(int kind) {
 }
 static unsigned int bridge_duration_ms;
 static int bridge_seen[3], bridge_error_noted, bridge_progressive, bridge_external_loop;
-static unsigned int bridge_flow_seen,bridge_limit_seen,bridge_retry_count;
+static unsigned int bridge_flow_seen,bridge_limit_seen,bridge_retry_count,bridge_burst_noted,bridge_read_mib_noted,bridge_timeout_isolated;
+static unsigned long long bridge_forwarded;
 static void bridge_flow_snapshot(char phase) {
   unsigned int bit=phase=='e'?1:2;if(!bridge_progressive || !bridge_progressive_total || (bridge_flow_seen&bit))return;
   bridge_flow_seen|=bit;unsigned int active=0,paused=0;
@@ -103,7 +104,7 @@ static size_t bridge_body(char *data, size_t size, size_t count, void *context) 
   if(c->streaming && n>BRIDGE_STREAM_BUDGET-bridge_stream_bytes){bridge_limit_note("bytes");bridge_flow_snapshot('e');return 0;}
   if (n > BRIDGE_BUFFER - c->used) { c->paused = 1; return CURL_WRITEFUNC_PAUSE; }
   c->upstream_deadline=http_now()+15;
-  memcpy(c->buffer + c->used, data, n); c->used += n; c->received += n;if(c->streaming)bridge_stream_bytes+=n;return n;
+  memcpy(c->buffer + c->used, data, n); c->used += n; c->received += n;if(c->streaming){bridge_stream_bytes+=n;unsigned int mib=(unsigned int)(bridge_stream_bytes/4194304)*4;if(mib>bridge_read_mib_noted){bridge_read_mib_noted=mib;printf("BRIDGE:read_mib:%u\n",mib);fflush(stdout);}}return n;
 }
 static size_t bridge_header(char *data, size_t size, size_t count, void *context) {
   struct bridge_client *c = context; char line[4097];
@@ -209,6 +210,19 @@ static int bridge_retry_range(struct bridge_client *c,int code,double now) {
   c->retries++;c->paused=c->next_window=0;c->retry_at=now+.25;
   printf(resumable?"BRIDGE:resume:%u\n":"BRIDGE:retry:%u\n",++bridge_retry_count);fflush(stdout);return 1;
 }
+/* One failed range is not a whole-player failure when a different validated
+   range is actively supplying body bytes. Close only that failed request; no
+   extra retry or deadline extension. Decoder errors and all other failures keep
+   their existing fatal path. At most one such isolation per media source. */
+static int bridge_isolate_timeout(struct bridge_client *c,int code,double now) {
+  if(!bridge_progressive || bridge_timeout_isolated || bridge_unconfirmed || !c->streaming || c->head || code!=CURLE_OPERATION_TIMEDOUT || c->status!=206 || !c->upstream_ready || !c->valid_range || now<0)return 0;
+  for(int i=0;i<BRIDGE_CLIENTS;i++) {
+    struct bridge_client *other=&bridge_clients[i];
+    if(other==c || other->fd<0 || !other->streaming || other->head || other->kind!=c->kind || other->status!=206 || !other->upstream_ready || !other->valid_range || !other->body_forwarded || now<other->body_forwarded_at || now-other->body_forwarded_at>2)continue;
+    bridge_timeout_isolated=1;puts("BRIDGE:request_timeout:1");fflush(stdout);return 1;
+  }
+  return 0;
+}
 /* A progressive response describes the whole selected interval; each upstream
    transfer remains at most 2 MiB. No unsolicited 206 for a full GET. */
 static int bridge_progressive_range(const char *value,unsigned long long *start,unsigned long long *end,int *kind) {
@@ -270,7 +284,7 @@ static int bridge_listen(void) {
   if (!bridge_multi || bridge_fd<0) { bridge_stop(); return bridge_unconfirmed ? 17 : 10; }
   int reuse=1; struct sockaddr_in address; memset(&address,0,sizeof(address)); address.sin_family=AF_INET; address.sin_addr.s_addr=htonl(INADDR_LOOPBACK); address.sin_port=htons(BILISOFA_BRIDGE_PORT);
   if (setsockopt(bridge_fd,SOL_SOCKET,SO_REUSEADDR,&reuse,sizeof(reuse))<0 || bind(bridge_fd,(struct sockaddr *)&address,sizeof(address))<0 || listen(bridge_fd,4)<0) { bridge_stop(); return bridge_unconfirmed ? 17 : 12; }
-  bridge_connections=0; memset(bridge_seen,0,sizeof(bridge_seen)); bridge_error_noted=0;bridge_flow_seen=bridge_limit_seen=bridge_retry_count=0;
+  bridge_connections=0; memset(bridge_seen,0,sizeof(bridge_seen)); bridge_error_noted=0;bridge_flow_seen=bridge_limit_seen=bridge_retry_count=bridge_burst_noted=bridge_read_mib_noted=bridge_timeout_isolated=0;bridge_forwarded=0;
   return 0;
 }
 static int bridge_begin(const char *bvid,const char *token,const char *video,const char *audio,const char *metadata) {
@@ -299,8 +313,47 @@ static int bridge_progressive_begin(const char *token,const char *url,double rem
   strcpy(bridge_referer,"https://www.bilibili.com/");
   int opened=bridge_listen();if(opened)return opened;
   bridge_progressive_total=total;bridge_stream_bytes=0;bridge_windows=0;memset(bridge_request_seen,0,sizeof(bridge_request_seen));
-  bridge_deadline=http_now()+(remaining<180?remaining:180);
+  /* Internal progressive-cast probe: five minutes including setup/pauses;
+     the signed destination deadline can only shorten the window. */
+  bridge_deadline=http_now()+(remaining<300?remaining:300);
   puts("BRIDGE:ready");fflush(stdout);return 0;
+}
+static void bridge_io_round(double now) {
+  int running=0;
+  if (curl_multi_perform(bridge_multi,&running)!=CURLM_OK) { bridge_unconfirmed=1; bridge_stop(); return; }
+  int remaining=0; CURLMsg *message;
+  while ((message=curl_multi_info_read(bridge_multi,&remaining))) {
+    if (message->msg!=CURLMSG_DONE) continue;
+    struct bridge_client *c=NULL; curl_easy_getinfo(message->easy_handle,CURLINFO_PRIVATE,&c);
+    if (!c) continue;
+    if (message->data.result!=CURLE_OK || !c->header_done || (c->streaming && !c->upstream_ready) || (!c->head && c->received!=c->length)) { if(bridge_retry_range(c,(int)message->data.result,now))continue;if(!bridge_isolate_timeout(c,(int)message->data.result,now))bridge_note_error(c->status,(int)message->data.result); bridge_error(c,502); continue; }
+    if(c->streaming && c->actual_end<c->response_end)c->next_window=1;else c->done=1;
+    if (curl_multi_remove_handle(bridge_multi,c->easy)!=CURLM_OK) bridge_unconfirmed=1;
+    curl_easy_cleanup(c->easy); c->easy=NULL;
+  }
+  for (int i=0;i<BRIDGE_CLIENTS;i++) {
+    struct bridge_client *c=&bridge_clients[i]; if (c->fd<0 || !c->header_done) continue;
+    const char *bytes=NULL; size_t length=0; int header=c->header_sent<c->header_size;
+    if (header) { bytes=c->header+c->header_sent; length=c->header_size-c->header_sent; }
+    else if (c->used>c->sent) { bytes=(const char *)c->buffer+c->sent; length=c->used-c->sent; }
+    if (length) {
+      int flags=0;
+#ifdef MSG_NOSIGNAL
+      flags=MSG_NOSIGNAL;
+#endif
+      ssize_t n=send(c->fd,bytes,length,flags);
+      if (n>0) { if(c->streaming){c->deadline=now+20;bridge_forwarded+=(unsigned long long)n;if(!header){c->body_forwarded=1;c->body_forwarded_at=now;}} if (header) c->header_sent+=(size_t)n; else c->sent+=(size_t)n; }
+      else if (n==0 || (errno!=EAGAIN && errno!=EWOULDBLOCK && errno!=EINTR)) { bridge_drop(c); continue; }
+    }
+    if (c->sent==c->used) c->sent=c->used=0;
+    if(c->next_window && !c->used && c->header_sent==c->header_size){c->next_window=0;c->start=c->actual_end+1;bridge_transfer(c);}
+    if (c->done && c->header_sent==c->header_size && !c->used) {
+      int kind=c->kind, success=!c->head && ((kind==0 && c->status==200) || (kind>0 && kind<3 && c->status==206));
+      if (bridge_drop(c) && success && !bridge_seen[kind]) { bridge_seen[kind]=1; printf("BRIDGE:served:%d\n",kind); fflush(stdout); }
+      continue;
+    }
+    if (c->paused && c->easy && BRIDGE_BUFFER-c->used>=16384) { c->paused=0;c->upstream_deadline=now+15; if (curl_easy_pause(c->easy,CURLPAUSE_CONT)!=CURLE_OK) bridge_error(c,502); }
+  }
 }
 static void bridge_tick(void) {
   if (bridge_fd<0) return;
@@ -318,7 +371,7 @@ static void bridge_tick(void) {
     }
     if ((!c->streaming || !c->request_done) && now>=c->deadline) { bridge_drop(c); continue; }
     if(c->retry_at>0 && now>=c->retry_at)bridge_transfer(c);
-    if(c->streaming && c->easy && !c->paused && now>=c->upstream_deadline){if(bridge_retry_range(c,CURLE_OPERATION_TIMEDOUT,now))continue;bridge_note_error(c->status,28);bridge_error(c,502);continue;}
+    if(c->streaming && c->easy && !c->paused && now>=c->upstream_deadline){if(bridge_retry_range(c,CURLE_OPERATION_TIMEDOUT,now))continue;if(!bridge_isolate_timeout(c,CURLE_OPERATION_TIMEDOUT,now))bridge_note_error(c->status,28);bridge_error(c,502);continue;}
     if (!c->request_done) {
       ssize_t n=recv(c->fd,c->request+c->request_size,4096-c->request_size,0);
       if (n>0) {
@@ -330,40 +383,20 @@ static void bridge_tick(void) {
       } else if (n==0 || (errno!=EAGAIN && errno!=EWOULDBLOCK && errno!=EINTR)) { bridge_drop(c); continue; }
     }
   }
-  int running=0;
-  if (curl_multi_perform(bridge_multi,&running)!=CURLM_OK) { bridge_unconfirmed=1; bridge_stop(); return; }
-  int remaining=0; CURLMsg *message;
-  while ((message=curl_multi_info_read(bridge_multi,&remaining))) {
-    if (message->msg!=CURLMSG_DONE) continue;
-    struct bridge_client *c=NULL; curl_easy_getinfo(message->easy_handle,CURLINFO_PRIVATE,&c);
-    if (!c) continue;
-    if (message->data.result!=CURLE_OK || !c->header_done || (c->streaming && !c->upstream_ready) || (!c->head && c->received!=c->length)) { if(bridge_retry_range(c,(int)message->data.result,now))continue;bridge_note_error(c->status,(int)message->data.result); bridge_error(c,502); continue; }
-    if(c->streaming && c->actual_end<c->response_end)c->next_window=1;else c->done=1;
-    if (curl_multi_remove_handle(bridge_multi,c->easy)!=CURLM_OK) bridge_unconfirmed=1;
-    curl_easy_cleanup(c->easy); c->easy=NULL;
-  }
-  for (int i=0;i<BRIDGE_CLIENTS;i++) {
-    struct bridge_client *c=&bridge_clients[i]; if (c->fd<0 || !c->header_done) continue;
-    const char *bytes=NULL; size_t length=0; int header=c->header_sent<c->header_size;
-    if (header) { bytes=c->header+c->header_sent; length=c->header_size-c->header_sent; }
-    else if (c->used>c->sent) { bytes=(const char *)c->buffer+c->sent; length=c->used-c->sent; }
-    if (length) {
-      int flags=0;
-#ifdef MSG_NOSIGNAL
-      flags=MSG_NOSIGNAL;
-#endif
-      ssize_t n=send(c->fd,bytes,length,flags);
-      if (n>0) { if(c->streaming)c->deadline=now+20; if (header) c->header_sent+=(size_t)n; else c->sent+=(size_t)n; }
-      else if (n==0 || (errno!=EAGAIN && errno!=EWOULDBLOCK && errno!=EINTR)) { bridge_drop(c); continue; }
-    }
-    if (c->sent==c->used) c->sent=c->used=0;
-    if(c->next_window && !c->used && c->header_sent==c->header_size){c->next_window=0;c->start=c->actual_end+1;bridge_transfer(c);}
-    if (c->done && c->header_sent==c->header_size && !c->used) {
-      int kind=c->kind, success=!c->head && ((kind==0 && c->status==200) || (kind>0 && kind<3 && c->status==206));
-      if (bridge_drop(c) && success && !bridge_seen[kind]) { bridge_seen[kind]=1; printf("BRIDGE:served:%d\n",kind); fflush(stdout); }
-      continue;
-    }
-    if (c->paused && c->easy && BRIDGE_BUFFER-c->used>=16384) { c->paused=0;c->upstream_deadline=now+15; if (curl_easy_pause(c->easy,CURLPAUSE_CONT)!=CURLE_OK) bridge_error(c,502); }
+  /* A 50 ms main-loop interval must not cap a ready stream to one cURL read.
+     Drain only while progress occurs, with fixed rounds/bytes/time budgets.
+     No additional payload buffer, no busy wait, and no change to source/lease. */
+  double quantum_start=now;unsigned long long sent_start=bridge_forwarded;
+  for(unsigned int round=0;round<(bridge_progressive?8U:1U);round++) {
+    unsigned long long before=bridge_stream_bytes+bridge_forwarded;
+    bridge_io_round(now);
+    if(bridge_fd<0)return;
+    unsigned long long after=bridge_stream_bytes+bridge_forwarded;
+    if(round && after>before && !bridge_burst_noted){bridge_burst_noted=1;puts("BRIDGE:pump:burst");fflush(stdout);}
+    double next=http_now();
+    if(next<0 || next>=bridge_deadline){bridge_limit_note("lease");bridge_stop();return;}
+    if(after==before || bridge_forwarded-sent_start>=1048576 || next-quantum_start>=.010)break;
+    now=next;
   }
 }
 #endif
