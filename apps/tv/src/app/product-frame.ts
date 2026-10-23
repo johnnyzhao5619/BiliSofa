@@ -3,7 +3,10 @@ import type { TvShell } from './tv-shell.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 const destinations = [['home', '首页', 'M3 10 12 3l9 7v11h-6v-7H9v7H3Z'], ['search', '搜索', 'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14M15 15l7 7'], ['following', '关注', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8M19 8v6m-3-3h6'], ['catalog', '番剧影视', 'm3 3 18 9-18 9Z'], ['library', '我的', 'M4 3h16v18H4ZM8 7h8M8 11h8M8 15h5'], ['cast', '投屏', 'M3 9V3h18v18h-6M3 15a6 6 0 0 1 6 6M3 11a10 10 0 0 1 10 10M3 19v2h2'], ['account', '账号', 'M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8M4 21v-2a8 6 0 0 1 16 0v2'], ['settings', '设置', 'M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6']] as const;
 export function productButton(id: string, label: string, action: () => void): HTMLButtonElement { const b = document.createElement('button'); b.dataset.focusId = id; b.textContent = label; b.onclick = action; return b; }
+/** Pages with an inner level (e.g. home grid opened from a shelf) register their own Back step. */
+export const frameBack = new WeakMap<HTMLElement, () => boolean>();
 export function productFrame(owner: ResourceOwner, shell: TvShell, route: PageRoute, content: HTMLElement, contentBack?:()=>boolean): HTMLElement {
+    contentBack ??= frameBack.get(content);
     const frame = document.createElement('section');
     frame.className = 'tv-frame';
     frame.dataset.initialFocusId = content.dataset.initialFocusId??'nav-' + route.page;

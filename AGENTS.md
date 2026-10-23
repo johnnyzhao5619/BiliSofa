@@ -22,7 +22,7 @@
 - Socket Extension calls run in a Worker. Browser networking restrictions do not prove that all Tizen runtimes require an external server.
 - Preserve upstream licenses/notices; MIT covers original code. Do not relabel CC-BY-NC documents/data. Record authentication routes rather than embedding another client's identity/keys uncritically.
 - No credentials, Samsung keys, DUIDs, personal addresses or raw captures in source/logs. Keep TLS validation, destination scoping and bounded parsing; outside text is never executable content.
-- Separate source/API/browser/emulator/device evidence. Device proof is required for codecs/rate/HDR, sockets, casting, Voice Guide, lifecycle and persistence.
+- Separate source/API/browser/emulator/device evidence. Device proof is required for codecs/rate/HDR, sockets, casting, lifecycle and persistence. Voice Guide is not a requirement (user decision 2026-10-23, [ADR-089](docs/adr/089-voice-guide-not-required.md)); keep existing ARIA but do not gate on it.
 - Match current user authorization. Research/document/skill work does not itself authorize SDK installation, business implementation, TV deployment or GitHub publication. Do not add/run application tests unless the user requests testing or verification.
 
 ## Reviewable changes

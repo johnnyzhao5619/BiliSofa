@@ -6,7 +6,7 @@ function uint(n: number): number[] { const result: number[] = []; do { const b =
 function number(k: number, n: number) { return [...uint(k * 8), ...uint(n)]; }
 function string(k: number, s: string) { const bytes = [...new TextEncoder().encode(s)]; return [...uint(k * 8 + 2), ...uint(bytes.length), ...bytes]; }
 function segment(index = 1) { const body = [...number(2, (index - 1) * 360000 + 1000), ...number(3, 1), ...number(5, 0xffffff), ...string(7, `真实链路合成弹幕${index}`), ...string(12, String(index))]; return Buffer.from([10, ...uint(body.length), ...body]); }
-export async function overlay(page: Page, variant: 'normal' | 'empty' | 'fail' | 'slow' | 'sparse' = 'normal') {
+export async function overlay(page: Page, variant: 'normal' | 'empty' | 'fail' | 'slow' | 'sparse' = 'normal', start = true) {
   const calls: number[] = [], parts: number[] = [];
   await page.route('**/overlay-read/probe.js', route => route.fulfill({ contentType: 'text/javascript', body: native.replace('__CLOSE_DELAY__', variant === 'slow' ? '1000' : '0') }));
   await page.route('**/synthetic-overlay-api', async route => {
@@ -21,5 +21,5 @@ export async function overlay(page: Page, variant: 'normal' | 'empty' | 'fail' |
       { body: [{ from: 0, to: 800, content: lang + ' <script>纯文本</script>\n第二行' }] };
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
   });
-  const errors = await setup(page, true, 'package', false, variant === 'sparse' ? 1000 : 100); return { calls, parts, errors };
+  const errors = await setup(page, start, 'package', false, variant === 'sparse' ? 1000 : 100); return { calls, parts, errors };
 }

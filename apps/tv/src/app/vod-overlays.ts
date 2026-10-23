@@ -9,6 +9,7 @@ import { MediaOverlayView } from '../ui/media-overlays.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { TvShell } from './tv-shell.ts';
 import { searchKeyword } from './search-keyword.ts';
+import { PRODUCT_READING } from './reading-policy.ts';
 
 /** Optional reads never control or close the decoder. The media page provides
  * actual snapshots; the shell remains the only keyboard/focus owner. */
@@ -78,6 +79,13 @@ export class VodOverlays {
       if (selected && this.preferences.subtitles.enabled) await this.selectSubtitle(selected);
     }).catch(error => { if (!this.owner.signal.aborted && ticket === this.ticket) this.metadataStatus = this.error('字幕', error); }).finally(() => { if (ticket === this.ticket) this.reading = false; });
   }
+  /** Subtitle state in viewer terms: shown inside the subtitle panel so “no subtitles” is visible, not silent. */
+  private subtitleStatus(): string {
+    if (this.reading && !this.tracks.length) return '正在读取字幕轨道';
+    if (!this.tracks.length) return this.metadataStatus.includes('失败') ? this.metadataStatus : this.metadataStatus.includes('登录') ? '这个视频的字幕需要登录后才能读取' : '这个视频没有可用字幕';
+    if (!this.preferences.subtitles.enabled) return `字幕已关闭（有${this.tracks.length}条可用）`;
+    return this.metadataStatus;
+  }
   private error(label: string, error: unknown): string { return `${label}读取失败（overlay.${error instanceof DomainError ? error.code : 'invalid'}），可手动重读，不影响播放`; }
   private ensureSegment(time: number, duration: number): void {
     if (!this.source || this.reading || this.owner.signal.aborted || !this.preferences.danmaku.enabled) return;
@@ -111,9 +119,13 @@ export class VodOverlays {
     this.preferences = parseOverlayPreferences(this.preferences); this.session.configure(this.preferences);
     const result = this.store?.save(this.preferences) ?? 'unavailable'; this.preferenceStatus = result === 'saved' ? '已保存当前身份的叠加设置' : `本次设置已生效，保存未确认（${result}）`;
   }
-  settings(): void {
+  /** One-press player switch (ADR-090); same preference and save path as the settings panel. */
+  danmakuEnabled(): boolean { return this.preferences.danmaku.enabled; }
+  toggleDanmaku(): void { this.preferences.danmaku.enabled = !this.preferences.danmaku.enabled; this.save(); }
+  /** scope (0.47 reading build): '字幕' and '弹幕设置' open separate panels with their own status. */
+  settings(scope?: 'danmaku' | 'subtitles'): void {
     this.shell.openModal('vod-overlay-settings', child => {
-      const node = document.createElement('section'); node.className = 'vod-picker overlay-settings'; const heading = document.createElement('h2'), status = document.createElement('p'), grid = document.createElement('div'); heading.textContent = '弹幕 / 字幕 · 只读观看设置'; status.setAttribute('role', 'status'); grid.className = 'vod-grid';
+      const node = document.createElement('section'); node.className = 'vod-picker overlay-settings'; const heading = document.createElement('h2'), status = document.createElement('p'), grid = document.createElement('div'); heading.textContent = '弹幕与字幕'; status.setAttribute('role', 'status'); grid.className = 'vod-grid';
       const button = (id: string, action: () => void) => { const b = document.createElement('button'); b.dataset.focusId = id; b.addEventListener('click', () => { if (!child.signal.aborted) { action(); render(); } }); return b; };
       const cycle = (current: number, choices: number[]) => choices[(choices.indexOf(current) + 1) % choices.length]!;
       const dm = button('overlay-dm', () => { this.preferences.danmaku.enabled = !this.preferences.danmaku.enabled; this.save(); });
@@ -131,29 +143,56 @@ export class VodOverlays {
       const reload = button('overlay-reload', () => { this.catalogId = ''; });
       const reset = button('overlay-reset', () => this.resetPreferences());
       const back = button('overlay-back', () => { void this.shell.back(); }); back.textContent = '返回播放';
+      // ADR-093: adjustable rows read “名称 ‹ 值 ›” and step with Left/Right inside fixed choices.
+      const value = (name: string, current: string) => PRODUCT_READING ? `${name} ‹ ${current} ›` : `${name}：${current}`;
       function renderText(b: HTMLElement, value: string) { if (b.textContent !== value) b.textContent = value; }
       const render = () => {
         if (child.signal.aborted) return; const d = this.preferences.danmaku, s = this.preferences.subtitles;
-        renderText(dm, `弹幕：${d.enabled ? '开启' : '关闭'}`); dm.setAttribute('aria-pressed', String(d.enabled)); renderText(size, `弹幕字号：${d.fontSize}`); renderText(opacity, `弹幕透明度：${Math.round(d.opacity * 100)}%`); renderText(density, `同屏上限：${d.density}`); renderText(area, `弹幕区域：${d.area * 100}%`); renderText(filter, `关键词过滤：${d.filters.length}项`);
-        renderText(subtitles, `字幕：${s.enabled ? '开启' : '关闭'}`); subtitles.setAttribute('aria-pressed', String(s.enabled)); renderText(language, `字幕语言：${this.tracks.find(t => t.key === this.selected)?.label ?? '无可用轨道'}`); language.disabled = !this.tracks.length; renderText(subsize, `字幕字号：${s.fontSize}`); renderText(early, '字幕提前0.5秒'); renderText(late, '字幕延后0.5秒'); renderText(zero, `字幕偏移：${s.offsetMs / 1000}秒 · 归零`); renderText(reload, '重新读取本项叠加数据'); renderText(reset, '重置当前身份叠加偏好'); renderText(status, [this.metadataStatus, this.danmakuStatus, this.preferenceStatus].filter(Boolean).join('；'));
+        renderText(dm, `弹幕：${d.enabled ? '开启' : '关闭'}`); dm.setAttribute('aria-pressed', String(d.enabled)); renderText(size, value('弹幕字号', String(d.fontSize))); renderText(opacity, value('弹幕透明度', `${Math.round(d.opacity * 100)}%`)); renderText(density, value('同屏上限', String(d.density))); renderText(area, value('弹幕区域', `${d.area * 100}%`)); renderText(filter, `关键词过滤：${d.filters.length}项`);
+        renderText(subtitles, `字幕：${s.enabled ? '开启' : '关闭'}`); subtitles.setAttribute('aria-pressed', String(s.enabled)); renderText(language, `字幕语言：${this.tracks.find(t => t.key === this.selected)?.label ?? '无可用轨道'}`); language.disabled = !this.tracks.length; renderText(subsize, value('字幕字号', String(s.fontSize))); renderText(early, '字幕提前0.5秒'); renderText(late, '字幕延后0.5秒'); renderText(zero, PRODUCT_READING ? value('字幕偏移', `${s.offsetMs > 0 ? '+' : ''}${s.offsetMs / 1000}秒`) : `字幕偏移：${s.offsetMs / 1000}秒 · 归零`); renderText(reload, '重新读取本项叠加数据'); renderText(reset, '重置当前身份叠加偏好'); renderText(status, (scope === 'subtitles' ? [this.subtitleStatus(), this.preferenceStatus] : scope === 'danmaku' ? [this.danmakuStatus, this.preferenceStatus] : [this.metadataStatus, this.danmakuStatus, this.preferenceStatus]).filter(Boolean).join('；'));
       };
-      grid.append(dm, size, opacity, density, area, filter, subtitles, language, subsize, early, late, zero, reload, reset); node.append(heading, status, back, grid); render(); const timer = setInterval(render, 300); child.add('overlay-settings-status', () => clearInterval(timer)); return node;
-    }, 'overlay-back');
+      grid.append(dm, size, opacity, density, area, filter, subtitles, language, subsize, early, late, zero, reload, reset);
+      if (PRODUCT_READING && scope) {
+        const subtitleRows = [subtitles, language, subsize, early, late, zero];
+        for (const row of [dm, size, opacity, density, area, filter, ...subtitleRows]) row.hidden = scope === 'subtitles' ? !subtitleRows.includes(row) : subtitleRows.includes(row);
+        heading.textContent = scope === 'subtitles' ? '字幕设置' : '弹幕设置';
+      }
+      if (PRODUCT_READING) {
+        early.hidden = late.hidden = true; node.classList.add('overlay-stepper');
+        const step = (current: number, choices: number[], direction: number) => choices[Math.max(0, Math.min(choices.length - 1, Math.max(0, choices.indexOf(current)) + direction))]!;
+        // save() replaces the preference object, so every step reads the current one.
+        const p = () => this.preferences;
+        const stepped = new Map<HTMLElement, (direction: -1 | 1) => void>([
+          [size, d => { p().danmaku.fontSize = step(p().danmaku.fontSize, [24, 32, 40, 48, 64], d); }],
+          [opacity, d => { p().danmaku.opacity = step(p().danmaku.opacity, [.25, .5, .75, 1], d); }],
+          [density, d => { p().danmaku.density = step(p().danmaku.density, [8, 16, 24, 48, 64], d); }],
+          [area, d => { p().danmaku.area = step(p().danmaku.area, [.25, .5, 1], d); }],
+          [subsize, d => { p().subtitles.fontSize = step(p().subtitles.fontSize, [28, 36, 40, 48, 60, 72], d); }],
+          [zero, d => { p().subtitles.offsetMs = Math.max(-60000, Math.min(60000, p().subtitles.offsetMs + d * 500)); }],
+        ]);
+        this.shell.modalInput(child, { back: () => false, key: event => {
+          const direction = ['ArrowLeft', 'Left'].includes(event.key) || event.keyCode === 37 ? -1 : ['ArrowRight', 'Right'].includes(event.key) || event.keyCode === 39 ? 1 : 0;
+          const change = direction ? stepped.get(document.activeElement as HTMLElement) : undefined;
+          if (!change || child.signal.aborted) return false;
+          change(direction as -1 | 1); this.save(); render(); return true;
+        } });
+      } back.hidden = true; node.append(heading, status, back, grid); render(); const timer = setInterval(render, 300); child.add('overlay-settings-status', () => clearInterval(timer)); return node;
+    }, scope === 'subtitles' ? 'overlay-subtitles' : 'overlay-dm');
   }
   private languages(): void {
     this.shell.openModal('overlay-languages', child => {
       const node = document.createElement('section'); node.className = 'vod-picker'; const title = document.createElement('h2'), grid = document.createElement('div'); title.textContent = '选择字幕语言'; grid.className = 'vod-grid'; let page = 0;
       const back = document.createElement('button'), previous = document.createElement('button'), next = document.createElement('button'); back.textContent = '返回叠加设置'; back.dataset.focusId = 'overlay-language-back'; back.onclick = () => { void this.shell.back(); }; previous.textContent = '上一页'; next.textContent = '下一页'; previous.onclick = () => { page--; render(); }; next.onclick = () => { page++; render(); }; previous.dataset.focusId = 'overlay-language-prev'; next.dataset.focusId = 'overlay-language-next';
-      const render = () => { if (child.signal.aborted) return; grid.replaceChildren(...this.tracks.slice(page * 4, page * 4 + 4).map(track => { const b = document.createElement('button'); b.textContent = track.label + (track.automatic ? ' · 自动生成' : ''); b.dataset.focusId = 'overlay-track-' + track.key; b.setAttribute('aria-pressed', String(track.key === this.selected)); b.onclick = () => { if (child.signal.aborted) return; this.preferences.subtitles.language = track.language; this.preferences.subtitles.enabled = true; this.save(); void this.shell.back().then(() => { if (!this.owner.signal.aborted) return this.selectSubtitle(track); }).catch(error => { if (!this.owner.signal.aborted) this.metadataStatus = this.error('字幕', error); }); }; return b; })); previous.disabled = page === 0; next.disabled = (page + 1) * 4 >= this.tracks.length; grid.querySelector<HTMLButtonElement>('button')?.focus(); }; node.append(title, grid, back, previous, next); render(); return node;
-    }, 'overlay-language-back');
+      const render = () => { if (child.signal.aborted) return; grid.replaceChildren(...this.tracks.slice(page * 4, page * 4 + 4).map(track => { const b = document.createElement('button'); b.textContent = track.label + (track.automatic ? ' · 自动生成' : ''); b.dataset.focusId = 'overlay-track-' + track.key; b.setAttribute('aria-pressed', String(track.key === this.selected)); b.onclick = () => { if (child.signal.aborted) return; this.preferences.subtitles.language = track.language; this.preferences.subtitles.enabled = true; this.save(); void this.shell.back().then(() => { if (!this.owner.signal.aborted) return this.selectSubtitle(track); }).catch(error => { if (!this.owner.signal.aborted) this.metadataStatus = this.error('字幕', error); }); }; return b; })); previous.disabled = page === 0; next.disabled = (page + 1) * 4 >= this.tracks.length; previous.hidden = next.hidden = this.tracks.length <= 4; back.hidden = this.tracks.length > 0; (grid.querySelector<HTMLButtonElement>('button[aria-pressed=true]') ?? grid.querySelector<HTMLButtonElement>('button') ?? back).focus(); }; page = Math.max(0, Math.floor(this.tracks.findIndex(t => t.key === this.selected) / 4)); node.append(title, grid, back, previous, next); render(); return node;
+    }, this.tracks.length ? 'overlay-track-' + (this.tracks.find(t => t.key === this.selected) ?? this.tracks[0]!).key : 'overlay-language-back');
   }
   private filters(): void {
     this.shell.openModal('overlay-filters', child => {
       const node = document.createElement('section'); node.className = 'vod-picker'; const title = document.createElement('h2'), grid = document.createElement('div'), status = document.createElement('p'); title.textContent = '弹幕关键词过滤 · 点词删除'; grid.className = 'vod-grid'; let page = 0;
       const add = document.createElement('button'), back = document.createElement('button'), previous = document.createElement('button'), next = document.createElement('button'); add.textContent = '添加过滤词 · 首字母输入'; add.dataset.focusId = 'overlay-filter-add'; back.textContent = '返回叠加设置'; back.dataset.focusId = 'overlay-filter-back'; back.onclick = () => { void this.shell.back(); }; previous.textContent = '上一页'; next.textContent = '下一页'; previous.dataset.focusId = 'overlay-filter-prev'; next.dataset.focusId = 'overlay-filter-next'; previous.onclick = () => { page--; render(); }; next.onclick = () => { page++; render(); };
-      const render = () => { if (child.signal.aborted) return; page = Math.min(page, Math.max(0, Math.ceil(this.preferences.danmaku.filters.length / 4) - 1)); grid.replaceChildren(...this.preferences.danmaku.filters.slice(page * 4, page * 4 + 4).map((word, i) => { const b = document.createElement('button'); b.textContent = word; b.dataset.focusId = 'overlay-filter-' + i; b.onclick = () => { if (child.signal.aborted) return; this.preferences.danmaku.filters = this.preferences.danmaku.filters.filter(w => w !== word); this.save(); render(); add.focus(); }; return b; })); status.textContent = `${this.preferences.danmaku.filters.length}/64项；仅过滤观看，不发送弹幕`; add.disabled = this.preferences.danmaku.filters.length >= 64; previous.disabled = page === 0; next.disabled = (page + 1) * 4 >= this.preferences.danmaku.filters.length; };
+      const render = () => { if (child.signal.aborted) return; page = Math.min(page, Math.max(0, Math.ceil(this.preferences.danmaku.filters.length / 4) - 1)); grid.replaceChildren(...this.preferences.danmaku.filters.slice(page * 4, page * 4 + 4).map((word, i) => { const b = document.createElement('button'); b.textContent = word; b.dataset.focusId = 'overlay-filter-' + i; b.onclick = () => { if (child.signal.aborted) return; this.preferences.danmaku.filters = this.preferences.danmaku.filters.filter(w => w !== word); this.save(); render(); add.focus(); }; return b; })); status.textContent = `${this.preferences.danmaku.filters.length}/64项；仅过滤观看，不发送弹幕`; add.disabled = this.preferences.danmaku.filters.length >= 64; previous.disabled = page === 0; next.disabled = (page + 1) * 4 >= this.preferences.danmaku.filters.length; previous.hidden = next.hidden = this.preferences.danmaku.filters.length <= 4; back.hidden = !add.disabled; };
       add.onclick = () => { this.shell.openModal('overlay-filter-input', input => searchKeyword(input, this.shell, word => { if (child.signal.aborted) return; if (!this.preferences.danmaku.filters.includes(word)) this.preferences.danmaku.filters.push(word); this.save(); render(); }, '过滤词'), 'keyword-key-a'); }; node.append(title, status, grid, back, add, previous, next); render(); return node;
-    }, 'overlay-filter-back');
+    }, 'overlay-filter-add');
   }
   private resetPreferences(): void {
     this.shell.openModal('overlay-reset', child => {

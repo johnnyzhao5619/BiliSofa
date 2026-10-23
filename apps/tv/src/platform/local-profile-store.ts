@@ -11,7 +11,7 @@ export class LocalProfiles {
   profile(owner: string): ProfileStore {
     const identity=localOwner(owner);
     const key = 'bilisofa.local.v1.' + identity, partKey = 'bilisofa.parts.v1.' + localOwner(owner), storage = this.storage;
-    const labelKey = 'bilisofa.resume-labels.v1.' + identity;
+    const labelKey = 'bilisofa.resume-labels.v1.' + identity, continuousKey = 'bilisofa.playback-continuous.v1.' + identity;
     const readLabels = (): {kind:'ok';value:ResumeLabels} | {kind:'unavailable'|'corrupt'|'future'} => {
       if (!storage) return {kind:'unavailable'};
       let raw: string | null;
@@ -94,6 +94,8 @@ export class LocalProfiles {
       },
       readTracks:()=>{const value=this.trackIntents.get(identity);return value?{...value}:undefined;},
       rememberTracks:value=>{const parsed=parseVodTrackPreference(value);this.trackIntents.delete(identity);if(this.trackIntents.size>=16)this.trackIntents.delete(this.trackIntents.keys().next().value!);this.trackIntents.set(identity,parsed);},
+      readContinuous:()=>{if(!storage)return undefined;try{const raw=storage.getItem(continuousKey);return raw==='1'?true:raw==='0'?false:undefined;}catch{return undefined;}},
+      rememberContinuous:value=>{if(!storage)return 'unavailable';const raw=value?'1':'0';try{storage.setItem(continuousKey,raw);return storage.getItem(continuousKey)===raw?'saved':'unconfirmed';}catch{return 'unconfirmed';}},
       read,
       preferences(value: PlaybackPreferences) { const parsed = parsePreferences(value); return write(doc => { doc.preferences = parsed; }); },
       progress(value: ResumePoint) { const parsed = parseResumePoint(value); return write(doc => { doc.resume = [parsed,...doc.resume.filter(r => r.bvid !== parsed.bvid)].slice(0,64); }); },
@@ -126,7 +128,7 @@ export class LocalProfiles {
       clear: () => { this.trackIntents.delete(identity);
         if (!storage) return 'unavailable';
         let confirmed = true;
-        for (const target of [key, partKey, labelKey]) {
+        for (const target of [key, partKey, labelKey, continuousKey]) {
           try { storage.removeItem(target); if (storage.getItem(target) !== null) confirmed = false; }
           catch { confirmed = false; }
         }

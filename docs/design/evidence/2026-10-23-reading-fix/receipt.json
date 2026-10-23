@@ -1,0 +1,137 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.47.1",
+  "basedOn": "0.47.0",
+  "uiSourceHash": "12a9880116db24928e9256f90d512df1017ccde87de23b2f71b27509f9a71b22",
+  "uiManifestSha256": "151bc6f852ad3e9de7a46f522d1e7eb54a0f1d4b3b0035511c5a1f761cb4855e",
+  "unsignedSha256": "1fa9162e3c60ae008c55154f7c3c623f8c389212a9b600f9ce8d7dc8e1eaa5d6",
+  "signedSha256": "b97860742681a032b74c91c0ebe4874a4f904fda5179240d8400cff42c125284",
+  "signedAt": "2026-10-23T12:02:50.811371+00:00",
+  "sourceArchiveSha256": "345e59794aa9421c49cb04d1f2d691d0dcc40f368427f2e8a79d5d8293c1dda1",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.47.1",
+        "signedSha256": "b97860742681a032b74c91c0ebe4874a4f904fda5179240d8400cff42c125284",
+        "uiSourceHash": "12a9880116db24928e9256f90d512df1017ccde87de23b2f71b27509f9a71b22",
+        "startedAt": "2026-10-23T12:03:12.721262+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "timeoutOrUnavailable": true
+        }
+      },
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.47.1",
+        "signedSha256": "b97860742681a032b74c91c0ebe4874a4f904fda5179240d8400cff42c125284",
+        "uiSourceHash": "12a9880116db24928e9256f90d512df1017ccde87de23b2f71b27509f9a71b22",
+        "startedAt": "2026-10-23T12:09:38.016894+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.47.1",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.47.1",
+      "signedSha256": "b97860742681a032b74c91c0ebe4874a4f904fda5179240d8400cff42c125284",
+      "uiSourceHash": "12a9880116db24928e9256f90d512df1017ccde87de23b2f71b27509f9a71b22",
+      "startedAt": "2026-10-23T12:09:38.016894+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs047": [
+    "apps/tv/public/product-ui.css",
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/keyword-pad.ts",
+    "apps/tv/src/app/product-search.ts",
+    "apps/tv/src/app/reading-policy.ts",
+    "apps/tv/src/app/vod-overlays.ts",
+    "apps/tv/src/app/vod-workspace.ts",
+    "apps/tv/src/ui/product-panel.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.47.1",
+    "modules": 301,
+    "unitContractPassed": 701,
+    "readingUiPassed": 12,
+    "newFixSpecs": 5,
+    "baseline047FixSpecsFailed": 5,
+    "retainedPolishUiPassed": 18,
+    "portedSpecOnFrozen046Passed": 8,
+    "retainedCastWakeOnlyPassed": 1,
+    "retainedCastClockSeekPassed": 10,
+    "packageNegativePassed": 8,
+    "unsignedSha256": "1fa9162e3c60ae008c55154f7c3c623f8c389212a9b600f9ce8d7dc8e1eaa5d6",
+    "changedVs047": [
+      "app.js",
+      "build.json",
+      "config.xml",
+      "style.css"
+    ],
+    "frozenDistFilesVerifiedUnchanged": 922,
+    "stage047Restored": true,
+    "uiSourceInputs": 257,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModulesUnchangedVs047": 17,
+    "nativeResourcesUnchangedVs047": 68,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.47.1 device-feedback fixes (ADR-092/093 addenda): search left edge back to the keyboard with a 4-column grid and a 搜索 key; subtitle-only panel with subtitle status and a separate 弹幕设置 entry; single-column settings list",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_RETEST_S1_S3_S5",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs047": true
+}

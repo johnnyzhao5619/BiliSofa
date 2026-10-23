@@ -3,12 +3,13 @@ import {productPanel} from '../ui/product-panel.ts';
 import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import type { PageRoute, ReturnAnchor } from '../../../../packages/contracts/src/navigation.ts';
 import { FocusRouter } from '../ui/focus.ts';
-import { InputRouter } from '../ui/input.ts';
+import { InputRouter, type MediaCommand } from '../ui/input.ts';
 import { NavigationStack } from './navigation.ts';
 import { ResourceOwner, type CloseSummary } from './resource-owner.ts';
 export type PageFactory = (route: PageRoute, owner: ResourceOwner) => HTMLElement;
 interface ModalFrame { id: string; node: HTMLElement; owner: ResourceOwner; }
-export interface ModalInput { back(): boolean; key(event: KeyboardEvent): boolean; }
+/** media() lets a player below an open panel keep remote media keys; layers are asked top-down. */
+export interface ModalInput { back(): boolean; key(event: KeyboardEvent): boolean; media?(command: MediaCommand): boolean; }
 const closed = (): CloseSummary => ({ closed: true, failed: [] });
 /** One input/focus owner. Async data work belongs to the mounted view's owner. */
 export class TvShell {
@@ -30,12 +31,14 @@ export class TvShell {
   private revalidation: AbortController | undefined;
   constructor(private readonly document: Document, private readonly root: HTMLElement, private readonly overlays: HTMLElement,
     private readonly factory: PageFactory, mapBack: (e: KeyboardEvent) => boolean, private readonly rootBack: () => void,
-    private readonly closeBudgetMs = 6000, private readonly pendingBack?: () => void) {
+    private readonly closeBudgetMs = 6000, private readonly pendingBack?: () => void, mapMedia?: (e: KeyboardEvent) => MediaCommand | undefined) {
     if (root === overlays || root.contains(overlays) || overlays.contains(root)) throw new DomainError('invalid');
     this.focus = new FocusRouter(document, root);
     this.input = new InputRouter(document, this.focus, () => { void this.back(); }, mapBack, event => {
       const frame=this.modals.at(-1);
       if(this.hidden||this.disposed||this.closingModal)return false;
+      const media=mapMedia?.(event);
+      if(media){if(event.repeat&&media!=='forward'&&media!=='rewind')return true;for(const layer of [...this.modals].reverse())if(!layer.owner.signal.aborted&&this.modalInputs.get(layer.owner)?.media?.(media))return true;return false;}
       if(frame)return !frame.owner.signal.aborted&&((this.modalInputs.get(frame.owner)?.key(event)??false)||continuousGridKey(event));
       return !!this.pageOwner&&!this.pageOwner.signal.aborted&&((this.pageInputs.get(this.pageOwner)?.key(event)??false)||continuousGridKey(event));
     });

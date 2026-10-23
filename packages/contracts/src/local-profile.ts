@@ -18,6 +18,9 @@ export interface ProfileStore {
   clearBookmarks?():LocalWrite;
   readTracks?():VodTrackPreference|undefined;
   rememberTracks?(value:VodTrackPreference):void;
+  /** Continuous-play choice in its own key (ADR-093), so older readers of the profile document are unaffected. */
+  readContinuous?():boolean|undefined;
+  rememberContinuous?(value:boolean):LocalWrite;
   read(): LocalRead;
   preferences(value: PlaybackPreferences): LocalWrite;
   progress(value: ResumePoint): LocalWrite;
@@ -43,7 +46,7 @@ export function parsePartResumes(raw: string): { schema: 1; resume: PartResumePo
   return { schema: 1, resume };
 }
 export function localOwner(value: unknown): string { return value === 'guest' ? value : parseAccountId(value); }
-export function defaults(): LocalProfile { return { schema: 1, preferences: { resumePrompt: true, jumpSeconds: 5 }, resume: [] }; }
+export function defaults(): LocalProfile { return { schema: 1, preferences: { resumePrompt: true, jumpSeconds: 10 }, resume: [] }; }
 export function parsePreferences(value: unknown): PlaybackPreferences {
   const v = record(value);
   if (Object.keys(v).length !== 2 || typeof v.resumePrompt !== 'boolean' || ![5,10,30].includes(Number(v.jumpSeconds)) || typeof v.jumpSeconds !== 'number') throw new DomainError('invalid');

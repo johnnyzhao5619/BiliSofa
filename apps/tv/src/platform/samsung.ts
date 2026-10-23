@@ -2,9 +2,11 @@ import type { ProbeKeyManagerApi } from './keymanager-probe.ts';
 import { AvplayBackend, type AvplayApi, type ScreenSaverApi, type PreparationInitialization } from './avplay.ts';
 import { liveCdnUrl, liveRelayUrl } from '../../../../packages/contracts/src/live-probe.ts';
 import type { VodCapabilities } from '../../../../packages/contracts/src/vod-catalog.ts';
+import type { MediaCommand } from '../ui/input.ts';
 interface ProductInfo { getModel(): string; getFirmware(): string; }
+interface InputDeviceKey { name: string; code: number; }
 interface SamsungGlobals {
-  tizen?: { keymanager?: ProbeKeyManagerApi; tvaudiocontrol?: { isMute(): boolean; getVolume(): number }; systeminfo?: { getCapability(name: string): string | boolean | number; getPropertyValue?(name: string, success: (value: { ipAddress?: unknown; status?: unknown }) => void, error: () => void): void }; application?: { getCurrentApplication(): { exit(): void; appInfo?: { id?: unknown } } } };
+  tizen?: { tvinputdevice?: { getSupportedKeys(): InputDeviceKey[]; registerKey(name: string): void }; keymanager?: ProbeKeyManagerApi; tvaudiocontrol?: { isMute(): boolean; getVolume(): number }; systeminfo?: { getCapability(name: string): string | boolean | number; getPropertyValue?(name: string, success: (value: { ipAddress?: unknown; status?: unknown }) => void, error: () => void): void }; application?: { getCurrentApplication(): { exit(): void; appInfo?: { id?: unknown } } } };
   webapis?: { productinfo?: ProductInfo; avplay?: unknown; appcommon?: unknown };
 }
 const platform = globalThis as unknown as SamsungGlobals;
@@ -49,6 +51,26 @@ export function inspectPlatform(): Record<string, string> {
   };
 }
 export function isBack(event: KeyboardEvent): boolean { return event.keyCode === 10009 || event.key === 'Escape'; }
+const MEDIA_KEYS = new Map<string, MediaCommand>([['MediaPlayPause', 'play-pause'], ['MediaPlay', 'play'], ['MediaPause', 'pause'], ['MediaStop', 'stop'], ['MediaFastForward', 'forward'], ['MediaRewind', 'rewind']]);
+// Samsung remote defaults; a TV's own getSupportedKeys() codes replace them once registered.
+const mediaCodes = new Map<number, MediaCommand>([[10252, 'play-pause'], [415, 'play'], [19, 'pause'], [413, 'stop'], [417, 'forward'], [412, 'rewind']]);
+/** Registers only media keys the TV reports (tv.inputdevice privilege). Mandatory
+ * arrows/Enter/Back need no registration, so any failure leaves them untouched. */
+export function registerMediaKeys(): 'registered' | 'none' | 'unavailable' {
+  const input = platform.tizen?.tvinputdevice; if (!input) return 'unavailable';
+  let registered = 0;
+  try {
+    for (const key of input.getSupportedKeys().slice(0, 256)) {
+      const command = MEDIA_KEYS.get(key.name);
+      if (!command || !Number.isSafeInteger(key.code)) continue;
+      try { input.registerKey(key.name); mediaCodes.set(key.code, command); registered++; } catch { /* Unsupported key remains unregistered. */ }
+    }
+  } catch { return 'unavailable'; }
+  return registered ? 'registered' : 'none';
+}
+export function mediaCommand(event: Pick<KeyboardEvent, 'key' | 'keyCode'>): MediaCommand | undefined {
+  return mediaCodes.get(event.keyCode) ?? MEDIA_KEYS.get(event.key);
+}
 export function exitApplication(): boolean {
   if (!platform.tizen?.application) return false;
   try { platform.tizen.application.getCurrentApplication().exit(); return true; } catch { return false; }

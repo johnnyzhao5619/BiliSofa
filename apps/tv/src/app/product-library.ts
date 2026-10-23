@@ -85,6 +85,8 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
     void read(currentPage);
   } });
   continuous.setAttribute('role', 'switch');
+  // An empty list offers a way to content instead of a refresh that cannot change it.
+  const browse = button('browse', '去首页看看', () => { void shell.navigateTop({ page: 'home' }); }); browse.hidden = true;
   previous.disabled = next.disabled = true;
   const filterButtons = tabs.map(([kind, label]) => { const b = button('tab-' + kind, label, () => { if (folder)
     return; memory.tab = kind; void read(memory.pages[kind] ?? 1); }); if (kind !== 'local' && kind !== 'queue')
@@ -92,7 +94,7 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
   const login=button('login','登录查看账号片库',()=>{void shell.navigateTop({page:'account'});});
   if (folder) filters.append(back);
   else{filters.append(...filterButtons);if(services.workspace.state.kind!=='active')filters.append(login);}
-  paging.append(previous, next, refresh, ...(folder ? [] : [continuous, back]));
+  paging.append(browse, previous, next, refresh, ...(folder ? [] : [continuous, back]));
   const feed=PRODUCT_BROWSE?new ContinuousGrid(owner,grid,{load:page=>read(page,false,undefined,undefined,true),restored:page=>{currentPage=page;memory.pages[currentKind]=page;},top:()=>folder?prefix+'-back':'library-tab-'+currentKind,left:()=>folder?prefix+'-back':'nav-library',bottom:()=>prefix+'-refresh'}):undefined;
   if(feed)previous.hidden=next.hidden=true;
   function currentTarget(entry: Entry): {
@@ -253,12 +255,13 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
       if(page>=25&&!noMore&&source.kind!=='local'&&source.kind!=='queue')status.textContent+=' · 当前读取上限25页，可刷新查看最新';
       previous.disabled = page <= 1;
       next.disabled = noMore || page >= (currentKind === 'local' && !folder ? 48 : 25);
-      refresh.disabled = false;
+      refresh.disabled = false; refresh.textContent = '刷新';
+      browse.hidden = !!folder || buttons.length > 0 || grid.querySelector('button') !== null || !(source.kind === 'local' || source.kind === 'queue'); refresh.hidden = !browse.hidden;
       wire();
       const now = document.activeElement as HTMLElement | null, owns = !panel.isConnected || panel.contains(now) || now === document.body || now?.dataset.focusId === 'nav-library';
       if (!retained && owns && !owner.signal.aborted && (folder || !document.querySelector('#overlays>section'))) {
         const wanted = restore ?? memory.anchors[currentKind] ?? activeId;
-        const target = buttons.find(b => b.dataset.focusId === wanted) ?? buttons[Math.max(0, Math.min(buttons.length - 1, (ordinal ?? ((page - 1) * 4)) - (page - 1) * 4))] ?? refresh;
+        const target = buttons.find(b => b.dataset.focusId === wanted) ?? buttons[Math.max(0, Math.min(buttons.length - 1, (ordinal ?? ((page - 1) * 4)) - (page - 1) * 4))] ?? (browse.hidden ? refresh : browse);
         if (panel.isConnected)
           target.focus();
         else
@@ -271,8 +274,8 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
         return;
       if(!feed)art.close();
       if(!feed)grid.replaceChildren();
-      status.textContent = error instanceof DomainError && error.code === 'login' ? '登录已失效，请在账号中重新扫码' : `片库暂未加载（${error instanceof DomainError ? error.code : 'unknown'}），本机数据保留，可重新读取或返回`;
-      refresh.disabled = error instanceof DomainError && error.code === 'unknown';
+      status.textContent = error instanceof DomainError && error.code === 'login' ? '登录已失效，请在账号中重新扫码' : '片库暂时无法加载，本机数据仍保留，可重试或返回'; status.title = error instanceof DomainError ? error.code : 'unknown';
+      refresh.disabled = error instanceof DomainError && error.code === 'unknown'; refresh.hidden = false; refresh.textContent = '重试'; browse.hidden = true;
       continuous.disabled = true;
       wire();
       if (panel.contains(document.activeElement) || document.activeElement === document.body)
@@ -288,7 +291,7 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
     buttons.forEach((b, i) => { b.dataset.left = i % 4 ? buttons[i - 1]!.dataset.focusId : folder ? back.dataset.focusId : 'nav-library'; b.dataset.right = buttons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = up; b.dataset.down = refresh.dataset.focusId; });
     const activeFilters = [...filterButtons,...(!folder&&services.workspace.state.kind!=='active'?[login]:[])].filter(b => !b.disabled && !b.hidden);
     activeFilters.forEach((b, i) => { b.dataset.left = activeFilters[i - 1]?.dataset.focusId ?? 'nav-library'; b.dataset.right = activeFilters[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = b.dataset.focusId; b.dataset.down = buttons[0]?.dataset.focusId ?? refresh.dataset.focusId; });
-    const controls = [previous, next, refresh, ...(continuous.hidden ? [] : [continuous]), back].filter(b => !b.disabled && !b.hidden);
+    const controls = [browse, previous, next, refresh, ...(continuous.hidden ? [] : [continuous]), back].filter(b => !b.disabled && !b.hidden);
     controls.forEach((b, i) => { b.dataset.left = controls[i - 1]?.dataset.focusId ?? (folder ? back.dataset.focusId : 'nav-library'); b.dataset.right = controls[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = buttons[0]?.dataset.focusId ?? up; b.dataset.down = b.dataset.focusId; });
     feed?.wire();
   }

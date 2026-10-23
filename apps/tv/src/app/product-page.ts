@@ -16,6 +16,9 @@ import type { AppDiagnostics } from './app-diagnostics.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { TvShell } from './tv-shell.ts';
 import { productButton } from './product-frame.ts';
+import { clockTime } from '../ui/content-card.ts';
+import { beginResume, takeResume } from './resume-memory.ts';
+import { PRODUCT_READING } from './reading-policy.ts';
 import { productHome, type HomeMemory, type HomeServices } from './product-home.ts';
 import { productRecommendations } from './product-recommendations.ts';
 import { searchKeyword } from './search-keyword.ts';
@@ -65,6 +68,7 @@ interface Services {
 /** Product destination composition; individual legacy readers retain their owners. */
 export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRoute, memory: ProductMemory, dependencies: Services): HTMLElement {
     const { profile, queue, history, feedback, diagnostics, workspace, unavailable, vod } = dependencies, state = workspace.state;
+    const identity = state?.kind === 'active' ? state.account.id : 'guest';
     const section = document.createElement('section'), title = document.createElement('h1');
     section.append(title);
     const identityKey = state?.kind === 'active' ? state.account.id : 'guest';
@@ -82,9 +86,20 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
         return; if (!vod) {
         feedback.textContent = typeof unavailable==='string'?unavailable:'当前平台缺少可用播放器';
         return;
-    } shell.openModal('vod-player', child => vodWorkspace(child, shell, feedback, { bvid: card.bvid, part: 1 }, profile, diagnostics, vod.caps, () => vod.open(), source => createGuestProbePlayer(source.url), queue, false, position), PRODUCT_STREAM?'vod-toggle':'vod-back'); };
-    const playTarget=(target:{bvid:string;part:number},position:number)=>{if(owner.signal.aborted)return;if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}shell.openModal('vod-player',child=>vodWorkspace(child,shell,feedback,target,profile,diagnostics,vod.caps,()=>vod.open(),source=>createGuestProbePlayer(source.url),queue,false,position),PRODUCT_STREAM?'vod-toggle':'vod-back');};
-    const services: HomeServices = { profile, queue, feedback, play, ...(dependencies.libraryEnabled?{local:{play:playTarget,openLibrary:()=>{memory.library.tab='local';void shell.navigateTop({page:'library'});}}}:{}), ...(state?.kind === 'active' ? { name: state.account.name, recommend: productRecommendations(owner, workspace) } : {}) };
+    } beginResume(identity); shell.openModal('vod-player', child => vodWorkspace(child, shell, feedback, { bvid: card.bvid, part: 1 }, profile, diagnostics, vod.caps, () => vod.open(), source => createGuestProbePlayer(source.url), queue, false, position), PRODUCT_STREAM?'vod-toggle':'vod-back'); };
+    const playTarget=(target:{bvid:string;part:number},position:number)=>{if(owner.signal.aborted)return;if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}beginResume(identity);shell.openModal('vod-player',child=>vodWorkspace(child,shell,feedback,target,profile,diagnostics,vod.caps,()=>vod.open(),source=>createGuestProbePlayer(source.url),queue,false,position),PRODUCT_STREAM?'vod-toggle':'vod-back');};
+    // Detail-page part list (ADR-091): one bounded read whose access is closed before any player opens.
+    const parts: HomeServices['parts'] = vod ? async (bvid, signal) => { const access = await vod.open(); try { return (await access.read({ bvid, part: 1 }, signal)).detail.parts.map(p => ({ part: p.part, title: p.title, durationMs: p.durationMs })); } finally { await access.close(); } } : undefined;
+    // ADR-093 G4: after Home released the player, the first page shown offers to continue that item; it never autoplays.
+    const resume = PRODUCT_READING && vod ? takeResume(identity) : undefined;
+    if (resume) setTimeout(() => { if (owner.signal.aborted || shell.restartRequired) return; shell.openModal('resume-detail', child => {
+        const panel = document.createElement('section'), heading = document.createElement('h2'), note = document.createElement('p'), actions = document.createElement('div');
+        panel.className = 'tv-detail tv-detail-page'; heading.textContent = resume.title; note.textContent = `上次看到 ${clockTime(resume.timeMs / 1000)} / ${clockTime(resume.durationMs / 1000)}`; actions.className = 'tv-detail-actions';
+        const go = (position: number) => { void shell.closeOwnedModal(child).then(() => { if (!owner.signal.aborted && !shell.restartRequired) playTarget({ bvid: resume.bvid, part: resume.part }, position); }); };
+        const primary = productButton('resume-continue', `继续观看 · ${clockTime(resume.timeMs / 1000)}`, () => go(resume.timeMs)); primary.className = 'tv-primary';
+        actions.append(primary, productButton('resume-start', '从头播放', () => go(0))); panel.append(heading, note, actions); return panel;
+    }, 'resume-continue'); }, 0);
+    const services: HomeServices = { profile, queue, feedback, play, playPart: playTarget, ...(parts ? { parts } : {}), ...(dependencies.libraryEnabled?{local:{play:playTarget,openLibrary:()=>{memory.library.tab='local';void shell.navigateTop({page:'library'});}}}:{}), ...(state?.kind === 'active' ? { name: state.account.name, recommend: productRecommendations(owner, workspace) } : {}) };
     if(route.page==='library'&&dependencies.libraryEnabled)return productLibrary(owner,shell,{profile,queue,workspace,feedback,play:playTarget,playQueue:(items,index,continuous)=>{if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}queuePlayback(shell,items,index,continuous,profile,diagnostics,feedback,vod);}},memory.library);
     if (route.page === 'home')
         return productHome(owner, shell, services, memory.home);
@@ -120,9 +135,9 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
         privateAction('favorite-folders-open', '收藏夹', child => favorites(child, shell, workspace, queue), 'favorite-folders-back');
     }
     if (route.page === 'cast') {
-        if(PRODUCT_BROWSE){const local=profile.read();return productCast(owner,shell,feedback,local.kind==='ok'?local.value.preferences.jumpSeconds:5,diagnostics);}
+        if(PRODUCT_BROWSE){const local=profile.read();return productCast(owner,shell,feedback,local.kind==='ok'?local.value.preferences.jumpSeconds:10,diagnostics);}
         const local = profile.read();
-        section.append(castEntry(owner, shell, feedback, local.kind === 'ok' ? local.value.preferences.jumpSeconds : 5, diagnostics));
+        section.append(castEntry(owner, shell, feedback, local.kind === 'ok' ? local.value.preferences.jumpSeconds : 10, diagnostics));
     }
     if (state?.kind !== 'active' && (route.page === 'following' || route.page === 'library' || route.page === 'catalog')) {
         const note = document.createElement('p');

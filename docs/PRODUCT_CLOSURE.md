@@ -1,6 +1,6 @@
 # 当前交付收口与剩余门槛
 
-更新：2026-10-22。**0.40.0账号更新A/B/C USER PASS**，0.39.0所请求三组及随后一次点赞通过。0.41.0主动定位/停止等所请求项USER PASS，但进程首投回退FAIL；0.42.0同秒冗余Seek前跳已取证；0.43.0 Android所请求首投/控制组及iPhone首投/声画时间/停止组USER PASS；[回执](design/evidence/2026-10-22-cast-clock/receipt.json)。F11所请求关注/收藏正常路径亦USER PASS。U4/U5及完整门槛继续OPEN。[第三方验收](acceptance/third-party/2026-10-22T213335-0400/REPORT.md)发现的P1-02/P2-01/P1-01/P2-02已按[ADR-087](adr/087-third-party-acceptance-fixes.md)完成源码修正、本地692项通过，并已构建签名0.44.0候选（[证据](design/evidence/2026-10-22-acceptance-fix/README.md)）并升级安装到电视；M1回复全文/M2默认画质USER PASS（[用户结果](design/evidence/2026-10-22-acceptance-fix/USER_ACCEPTANCE.md)），其余门槛不变。
+更新：2026-10-22。**0.40.0账号更新A/B/C USER PASS**，0.39.0所请求三组及随后一次点赞通过。0.41.0主动定位/停止等所请求项USER PASS，但进程首投回退FAIL；0.42.0同秒冗余Seek前跳已取证；0.43.0 Android所请求首投/控制组及iPhone首投/声画时间/停止组USER PASS；[回执](design/evidence/2026-10-22-cast-clock/receipt.json)。F11所请求关注/收藏正常路径亦USER PASS。U4/U5及完整门槛继续OPEN。[第三方验收](acceptance/third-party/2026-10-22T213335-0400/REPORT.md)发现的P1-02/P2-01/P1-01/P2-02已按[ADR-087](adr/087-third-party-acceptance-fixes.md)完成源码修正、本地692项通过，并已构建签名0.44.0候选（[证据](design/evidence/2026-10-22-acceptance-fix/README.md)）并升级安装到电视；M1回复全文/M2默认画质USER PASS（[用户结果](design/evidence/2026-10-22-acceptance-fix/USER_ACCEPTANCE.md)），其余门槛不变。0.45.0第一批遥控快改（[ADR-088](adr/088-remote-media-keys-and-direct-controls.md)）已签名并升级安装，所请求R1–R6 USER PASS（R7 Voice Guide按ADR-089非需求移除）；R15仍OPEN。0.46.0第二批（ADR-090/091：播放器主行/⚙侧栏/连播倒计时、首页货架、整页详情）已签名并升级安装，所请求P1–P7 USER PASS；R15整体仍OPEN。0.47.0第三批（ADR-092/093：一页式搜索、单列评论、设置调值、Home返回续看、连播偏好）已签名并升级安装（平台确认），设备验收待用户S1–S6。
 
 **当前执行边界：用户要求先不部署，转文档及[第三方独立验收](THIRD_PARTY_ACCEPTANCE_PROMPT.md)。0.43.0冻结，R07候选未集成/打包/部署，停止进一步应用及设备操作。**
 
@@ -66,7 +66,7 @@ R04/R05外部拒绝、R08暂停、R09真实授权、R10条件样本均不能阻�
 | T4 播放/阅读 | UGC与PGC→暂停/非零seek/选P集/轨道回退→字幕弹幕/评论→原卡；自然结束队列一次 | 声画/进度、叠加同步、控制层隐藏/唤回、返回锚点和清理 |
 | T5 互动 | 继承F11所请求正常路径USER PASS；只补真正受影响的身份/未知写故障；F17/F14按各自授权与暂停决定 | 用户确认实际账号状态；unknown只查询不自动重发。未授权不执行 |
 | T6 投屏 | 三端受影响路径；代表发送端完成控制/换P/争用/停止；Home后重新显式允许接收 | 原官方App，声画/双端时间与所有权一致；旧证据可继承但注明包差异 |
-| T7 可用性/无障碍 | 远距中文、长标题、深列表、Voice Guide、减少动画、弱网/空态/权限提示 | TV实测焦点与朗读一致；桌面ARIA不冒充TV通过 |
+| T7 可用性/无障碍 | 远距中文、长标题、深列表、减少动画、弱网/空态/权限提示 | TV实测焦点与远距可读；Voice Guide按ADR-089非需求；桌面ARIA不冒充TV通过 |
 | T8 耐久/交付 | 30条清单＋两小时混合，网络/休眠/Home，升级回退、数据保持、关电脑独立运行 | 自动指标/日志与必要用户声画观察配对；最终包hash/来源/限制齐全 |
 
 最多一轮完整T1–T8及受失败修复影响的补回归；不要求已通过且无改动的分支重复长播。外部阻塞没有新证据时暂停该项，继续其他项。最终报告分别列PASS、FAIL、BLOCKED、PAUSED、条件未验证、用户排除；不使用一个总“通过”掩盖它们。

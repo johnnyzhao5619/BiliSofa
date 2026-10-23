@@ -4,6 +4,10 @@
 
 | 工件 | 当前结论 |
 | --- | --- |
+| 0.47.1第三批真机反馈修正 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`b9786074…5284`（证书预检PASS，权限与0.47.0相同）；首次SDB能力确认超时、重连未连上；用户确认电视开机并处于开发者模式后，重启本机SDB服务再连接，**第二次升级安装/启动platformSuccess（不清数据）**；源码归档`345e5979…dda1`；设备复验待用户S1/S3/S5；仅前端（app.js/style.css/config.xml/build.json变化，原生/许可78个文件与0.47.0一致）；未签名WGT `1fa9162e3c60ae008c55154f7c3c623f8c389212a9b600f9ce8d7dc8e1eaa5d6`；[验证](design/evidence/2026-10-23-reading-fix/README.md) |
+| 0.47.0第三批 | **已签名并升级安装/启动（平台确认，一次成功，不清数据）**；ADR-092/093；用户S2/S4/S6 USER PASS；S5连播记忆PASS但⚙“循环”上移FAIL；S1、S3 FAIL；[hash/源码/验证](design/evidence/2026-10-23-reading/README.md) |
+| 0.46.0第二批2A | **已签名并升级安装/启动（平台确认，不清数据）**；首次SDB未连上，同目标重连后第二次成功；ADR-090/091；所请求P1–P7 USER PASS；[hash/源码/验证](design/evidence/2026-10-23-polish/README.md) |
+| 0.45.0第一批遥控快改 | **已签名并升级安装/启动（平台确认，一次成功，不清数据）**；ADR-088；新增tv.inputdevice权限；本地696单元/13合成UI/8包负例通过；所请求R1–R6 USER PASS（R7按ADR-089移除）；[hash/源码/验证](design/evidence/2026-10-23-remote/README.md) |
 | 0.44.0第三方验收修正 | **已签名并升级安装/启动（平台确认，不清数据）**；首次capability超时，SDB同目标重连后第二次成功；M1回复全文/M2默认画质USER PASS；ADR-087修正（F11日志淘汰、回复层级、默认画质），本地692单元/12合成UI/6负例通过；[hash/源码/验证](design/evidence/2026-10-22-acceptance-fix/README.md) |
 | 0.43.0当前位置幂等 | Android所请求组、iPhone首投/声画时间/停止及F11关注/收藏所请求组USER PASS，完整矩阵OPEN；[hash/源码/平台回执](design/evidence/2026-10-22-cast-clock/receipt.json) |
 | 0.42.0播放态投屏定位 | 用户报告向前跳转，所请求控制组未测；[hash/源码/平台回执](design/evidence/2026-10-22-cast-seek/receipt.json) |

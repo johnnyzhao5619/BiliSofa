@@ -1,0 +1,117 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.47.0",
+  "basedOn": "0.46.0",
+  "uiSourceHash": "815c929d41334a67e98c7366fb5deb9f6e8981280021f2d7df346a4d8ddfa6e6",
+  "uiManifestSha256": "d06be51907ed1318932f4c7168707b3f1ff9daee47e1c8134db882b994e9b8e5",
+  "unsignedSha256": "2cbe5a54852392ef609f484af9af6d9b7a03551c0ac102739bb0603acec36dd3",
+  "signedSha256": "53a81495e09454f54f5394e381e57e685ae0b5b13c8a25faf156a997d30eb598",
+  "signedAt": "2026-10-23T04:56:34.209008+00:00",
+  "sourceArchiveSha256": "7687e28dfe74ee009850533606b7011ec369aa182755f4ba593afc596e5c9158",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.47.0",
+        "signedSha256": "53a81495e09454f54f5394e381e57e685ae0b5b13c8a25faf156a997d30eb598",
+        "uiSourceHash": "815c929d41334a67e98c7366fb5deb9f6e8981280021f2d7df346a4d8ddfa6e6",
+        "startedAt": "2026-10-23T04:57:21.853107+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.47.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.47.0",
+      "signedSha256": "53a81495e09454f54f5394e381e57e685ae0b5b13c8a25faf156a997d30eb598",
+      "uiSourceHash": "815c929d41334a67e98c7366fb5deb9f6e8981280021f2d7df346a4d8ddfa6e6",
+      "startedAt": "2026-10-23T04:57:21.853107+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs046": [
+    "apps/tv/public/product-ui.css",
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/keyword-pad.ts",
+    "apps/tv/src/app/product-page.ts",
+    "apps/tv/src/app/product-search.ts",
+    "apps/tv/src/app/reading-policy.ts",
+    "apps/tv/src/app/resume-memory.ts",
+    "apps/tv/src/app/vod-comments.ts",
+    "apps/tv/src/app/vod-overlays.ts",
+    "apps/tv/src/app/vod-workspace.ts",
+    "apps/tv/src/platform/local-profile-store.ts",
+    "apps/tv/src/ui/product-panel.ts",
+    "packages/contracts/src/local-profile.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "modules": 301,
+    "unitContractPassed": 701,
+    "readingUiPassed": 7,
+    "baseline046SameSpecsFailed": 6,
+    "baseline046SameSpecsRun": 7,
+    "retainedPolishUiPassed": 18,
+    "retainedCastWakeOnlyPassed": 1,
+    "retainedCastClockSeekPassed": 10,
+    "packageNegativePassed": 8,
+    "frozenDistFilesVerifiedUnchanged": 892,
+    "buildFilesVerifiedUnchanged": 176,
+    "uiSourceInputs": 257,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModulesUnchangedVs046": 17,
+    "nativeResourcesUnchangedVs046": 68,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "ADR-092/093 batch 3: one-page search, single-column comments, overlay value stepping, resume after Home, remembered continuous play",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_S1_S6",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs046": true
+}

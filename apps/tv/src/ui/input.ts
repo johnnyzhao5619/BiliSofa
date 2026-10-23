@@ -1,4 +1,6 @@
 import type { FocusRouter } from './focus.ts';
+/** Remote media keys after the platform adapter maps them; never raw key codes. */
+export type MediaCommand = 'play-pause' | 'play' | 'pause' | 'stop' | 'forward' | 'rewind';
 export function shouldConfirm(event: { isComposing: boolean; keyCode: number; repeat: boolean }, composing: boolean, cooling: boolean): boolean {
   return !event.isComposing && event.keyCode !== 229 && !event.repeat && !composing && !cooling;
 }

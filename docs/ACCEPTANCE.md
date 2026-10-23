@@ -44,7 +44,7 @@ Each test record must contain: feature ID, steps, expected/actual behavior, TV/f
 
 ## Tizen engineering gates (UNVERIFIED)
 
-- UI: direction-only Smart Remote navigation, one actual/visual focus, list restoration, dialog ownership, search-input/candidate/Back ordering and Voice Guide; no required numeric/colored key. Full Chinese comment/danmaku editing is excluded.
+- UI: direction-only Smart Remote navigation, one actual/visual focus, list restoration, dialog ownership, search-input/candidate/Back ordering (Voice Guide removed as a requirement by ADR-089); no required numeric/colored key. Full Chinese comment/danmaku editing is excluded.
 - Lifecycle: foreground→Home/input switch→resume, long hidden interval/expired URL, network change, sleep/power cycle and full process recreation; no duplicate listeners/socket/player or lost essential state.
 - Package/security: minimal privileges and signer level, actual CSP/WASM compatibility, no required dev server, private session storage, scoped credentials/redirects, bounded LAN parsing, stable upgrade identity/data migration.
 - Performance: record cold-start interactive time, key feedback, first frame, seek recovery, dropped frames, peak/mixed-play memory and two-hour growth; budgets derive from target-device baseline.

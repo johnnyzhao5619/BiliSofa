@@ -10,9 +10,13 @@ import type { ResourceOwner } from './resource-owner.ts';
 import type { TvShell } from './tv-shell.ts';
 import { PublicContentRuntime } from '../platform/content-runtime.ts';
 import { CoverArt } from '../platform/cover-art.ts';
-import { contentCard, clockTime } from '../ui/content-card.ts';
+import { contentCard, clockTime, viewsText } from '../ui/content-card.ts';
 import { productButton } from './product-frame.ts';
+import { contentLoadFailureText } from './user-messages.ts';
 import { categoryPicker } from './category-picker.ts';
+import { homeShelves } from './product-shelves.ts';
+import { PRODUCT_POLISH } from './polish-policy.ts';
+import { frameBack } from './product-frame.ts';
 export interface HomeSource {
     kind: 'popular' | 'ranking' | 'category' | 'recommend' | 'search';
     page: number;
@@ -21,6 +25,8 @@ export interface HomeSource {
 }
 export interface HomeMemory {
     source: HomeSource;
+    /** Shelves landing or the full grid opened by “查看更多” (ADR-091). */
+    mode?: 'shelves' | 'grid';
 }
 export interface HomeServices {
     profile: ProfileStore;
@@ -29,6 +35,8 @@ export interface HomeServices {
     name?: string;
     local?:{play(target:{bvid:string;part:number},position:number):void;openLibrary():void};
     play(card: PopularCard, position: number): void;
+    playPart?(target: { bvid: string; part: number }, position: number): void;
+    parts?(bvid: string, signal: AbortSignal): Promise<{ part: number; title: string; durationMs: number }[]>;
     recommend?(page: number, signal: AbortSignal, refresh: boolean): Promise<{
         items: PopularCard[];
         noMore: boolean;
@@ -98,6 +106,8 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
         void read(false);
     } });
     previous.disabled = next.disabled = true;
+    // Refresh is a recovery action: shown only for a failed or empty source, never as a trailing stop.
+    refresh.hidden = true;
     const feed=PRODUCT_BROWSE?new ContinuousGrid(owner,grid,{load:page=>{memory.source.page=page;return read(false);},restored:page=>{memory.source.page=page;},top:()=>sourceButtons.find(b=>b.getAttribute('aria-pressed')==='true')?.dataset.focusId??'source-popular',left:()=>search?'nav-search':'nav-home',bottom:()=> 'home-refresh'}):undefined;
     if(feed)previous.hidden=next.hidden=true;
     paging.append(previous, next, refresh);
@@ -110,7 +120,8 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
             heading.textContent = card.title;
             panel.setAttribute('aria-labelledby', heading.id);
             const by = document.createElement('p');
-            by.textContent = `${card.owner} · ${clockTime(card.durationSec)}`;
+            by.textContent = `${card.owner} · ${clockTime(card.durationSec)}${PRODUCT_POLISH && card.views > 0 ? ` · ${viewsText(card.views)}播放` : ''}`;
+            if (PRODUCT_POLISH) panel.classList.add('tv-detail-page');
             const saved = services.profile.readPart(card.bvid, 1);
             const at = saved.kind === 'ok' && saved.value && saved.value.timeMs < card.durationSec * 1000 ? saved.value.timeMs : 0;
             let opening = false;
@@ -127,7 +138,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
             const result = document.createElement('p');
             result.setAttribute('role', 'status');
             actions.append(productButton('detail-enqueue', '加入本机队列 · 首P', () => { if (child.signal.aborted)
-                return; const outcome = services.queue.add({ bvid: card.bvid, title: card.title }); result.textContent = outcome === 'saved' ? '已加入本机队列' : outcome === 'full' ? '本机队列已满' : `本机队列保存未确认（${outcome}）`; }), productButton('detail-back', '返回视频列表', () => { void shell.closeOwnedModal(child); }));
+                return; const outcome = services.queue.add({ bvid: card.bvid, title: card.title }); result.textContent = outcome === 'saved' ? '已加入本机队列' : outcome === 'full' ? '本机队列已满' : `本机队列保存未确认（${outcome}）`; }));
             const id = document.createElement('p');
             id.className = 'tv-secondary';
             id.textContent = card.bvid;
@@ -137,7 +148,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
             summary.append(heading, by);
             const picture = document.createElement('div');
             picture.className = 'tv-detail-picture';
-            const thumbnail = grid.querySelector<HTMLImageElement>(`[data-focus-id="home-card-${card.bvid}"] img`);
+            const thumbnail = node.querySelector<HTMLImageElement>(`[data-focus-id="home-card-${card.bvid}"] img, [data-focus-id$="-${card.bvid}"] img`);
             if (thumbnail) {
                 const image = thumbnail.cloneNode() as HTMLImageElement;
                 image.alt = '';
@@ -146,9 +157,32 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
             else
                 picture.textContent = 'BiliSofa';
             header.append(picture, summary);
+            // The BV id is a support detail, not viewing information.
+            id.hidden = true;
             panel.append(header, actions, result, id);
+            if (PRODUCT_POLISH && services.parts && services.playPart) detailParts(child, panel, actions, card);
             return panel;
         }, 'detail-play');
+    }
+    /** Multi-part list on the detail page; reading is cancelled and awaited before the detail closes. */
+    function detailParts(child: ResourceOwner, panel: HTMLElement, actions: HTMLElement, card: PopularCard): void {
+        const row = document.createElement('div'), note = document.createElement('p'), controller = new AbortController();
+        row.className = 'tv-detail-parts'; note.className = 'tv-secondary'; note.setAttribute('role', 'status'); note.textContent = '正在读取分P';
+        const pending = services.parts!(card.bvid, controller.signal).then(list => {
+            if (child.signal.aborted) return;
+            if (list.length < 2) { note.textContent = ''; return; }
+            note.textContent = `共 ${list.length}P`;
+            const buttons = list.slice(0, 48).map(item => {
+                const saved = services.profile.readPart(card.bvid, item.part), at = saved.kind === 'ok' && saved.value && saved.value.timeMs < item.durationMs ? saved.value.timeMs : 0;
+                return productButton(`detail-part-${item.part}`, `P${item.part} · ${item.title} · ${clockTime(item.durationMs / 1000)}${at ? ' · 看到 ' + clockTime(at / 1000) : ''}`, () => { void shell.closeOwnedModal(child).then(() => { if (!owner.signal.aborted && !shell.restartRequired) services.playPart!({ bvid: card.bvid, part: item.part }, at); }); });
+            });
+            const top = [...actions.querySelectorAll<HTMLButtonElement>('button[data-focus-id]')];
+            buttons.forEach((b, i) => { b.dataset.left = buttons[i - 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.right = buttons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = top[0]?.dataset.focusId ?? b.dataset.focusId; b.dataset.down = b.dataset.focusId; });
+            top.forEach(b => { b.dataset.down = buttons[0]?.dataset.focusId ?? b.dataset.focusId; });
+            row.replaceChildren(...buttons);
+        }).catch(() => { if (!child.signal.aborted) note.textContent = '分P列表暂时无法读取，可直接播放'; });
+        child.add('detail-parts', async () => { controller.abort(); await pending; });
+        panel.append(note, row);
     }
     async function read(fresh: boolean, replace=false): Promise<void> {
         if (busy && !replace || owner.signal.aborted)
@@ -190,6 +224,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
             buttons.forEach((b, i) => { const id = (at: number) => buttons[at]?.dataset.focusId ?? b.dataset.focusId!; b.dataset.left = i % 4 ? id(i - 1) : search ? 'nav-search' : 'nav-home'; b.dataset.right = i % 4 < 3 ? id(i + 1) : id(i); b.dataset.up = selected?.dataset.focusId ?? (search ? 'search-input' : 'source-popular'); b.dataset.down = 'home-refresh'; });
             if(feed){const currentArt=art;feed.commit(sourceKey,query.page,buttons,result.noMore,query.kind==='ranking'||query.kind==='category'?25:query.kind==='recommend'?1000000:10,result.firstPage??1,()=>currentArt.close());}
             else grid.replaceChildren(...buttons);
+            refresh.textContent = '刷新'; refresh.hidden = buttons.length > 0 || (!!feed && grid.querySelector('button') !== null);
             status.textContent = buttons.length ? `${query.kind === 'ranking' ? '全站排行榜' : query.kind === 'category' ? '分区排行榜' : query.kind === 'recommend' ? '当前账号推荐' : query.kind === 'search' ? `“${query.keyword}” 的视频` : '热门视频'}${feed?' · 向下浏览更多':' · 第 '+query.page+' 页'}` : '暂时没有视频，可换一个栏目';
             previous.disabled = query.page <= ('firstPage' in result ? Number(result.firstPage) : 1);
             next.disabled = result.noMore || query.page >= (query.kind === 'ranking' || query.kind === 'category' ? 25 : query.kind === 'recommend' ? 1000000 : 10);
@@ -206,7 +241,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
             if (committed)
                 memory.source = { ...committed };
             const code = error instanceof PopularReadError || error instanceof SearchReadError ? error.detail : error instanceof ContentApiError ? 'API ' + error.apiCode : error instanceof DomainError ? error.code : 'invalid';
-            status.textContent = `视频暂未加载（${code}）。${oldCards ? '下方保留上次内容，' : ' '}可刷新或换栏目`;
+            status.textContent = contentLoadFailureText(!!oldCards); status.title = code; refresh.textContent = '重试'; refresh.hidden = false;
         }
         finally {
             if (!owner.signal.aborted&&ticket===epoch) {
@@ -217,13 +252,25 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
             }
         }
     }
-    function wireTools(): void { if(continuing){const cards=[...continuing.node.querySelectorAll<HTMLButtonElement>('.tv-continuing-grid button')],all=continuing.node.querySelector<HTMLButtonElement>('[data-focus-id=continuing-all]');if(all){if(cards.at(-1))cards.at(-1)!.dataset.right='continuing-all';all.dataset.left=cards.at(-1)?.dataset.focusId??'nav-home';all.dataset.right=sourceButtons.find(b=>!b.disabled)?.dataset.focusId??'source-popular';all.dataset.up=cards.at(-1)?.dataset.focusId??'nav-home';all.dataset.down=all.dataset.right;}} const searchButtons = [...tools.querySelectorAll<HTMLButtonElement>('.tv-search-actions button')]; searchButtons.forEach((b, i) => { b.dataset.left = searchButtons[i - 1]?.dataset.focusId ?? 'nav-search'; b.dataset.right = searchButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = continuing?.first()??b.dataset.focusId; b.dataset.down = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? b.dataset.focusId; }); sourceButtons.forEach((b, i) => { b.dataset.left = i ? sourceButtons[i - 1]!.dataset.focusId : 'nav-home'; b.dataset.right = sourceButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = continuing?.first()??b.dataset.focusId; b.dataset.down = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? 'home-refresh'; }); const available = [previous, next, refresh].filter(b => !b.disabled && !b.hidden); available.forEach((b, i) => { b.dataset.left = available[i - 1]?.dataset.focusId ?? (search ? 'nav-search' : 'nav-home'); b.dataset.right = available[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? 'search-input'; b.dataset.down = b.dataset.focusId; }); feed?.wire(); }
+    function wireTools(): void { wireTools0(); if(shelves&&continuing&&!gridMode){const row=shelves.firstRowIds(),cards=[...continuing.node.querySelectorAll<HTMLButtonElement>('.tv-continuing-grid button,[data-focus-id=continuing-all]')];cards.forEach((b,j)=>{b.dataset.down=row[Math.min(j,row.length-1)]??b.dataset.focusId;});} }
+    function wireTools0(): void { if(continuing){const cards=[...continuing.node.querySelectorAll<HTMLButtonElement>('.tv-continuing-grid button')],all=continuing.node.querySelector<HTMLButtonElement>('[data-focus-id=continuing-all]');if(all){if(cards.at(-1))cards.at(-1)!.dataset.right='continuing-all';all.dataset.left=cards.at(-1)?.dataset.focusId??'nav-home';all.dataset.right=sourceButtons.find(b=>!b.disabled)?.dataset.focusId??'source-popular';all.dataset.up=cards.at(-1)?.dataset.focusId??'nav-home';all.dataset.down=all.dataset.right;}} const searchButtons = [...tools.querySelectorAll<HTMLButtonElement>('.tv-search-actions button')]; searchButtons.forEach((b, i) => { b.dataset.left = searchButtons[i - 1]?.dataset.focusId ?? 'nav-search'; b.dataset.right = searchButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = continuing?.first()??b.dataset.focusId; b.dataset.down = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? b.dataset.focusId; }); sourceButtons.forEach((b, i) => { b.dataset.left = i ? sourceButtons[i - 1]!.dataset.focusId : 'nav-home'; b.dataset.right = sourceButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = continuing?.first()??b.dataset.focusId; b.dataset.down = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? 'home-refresh'; }); const available = [previous, next, refresh].filter(b => !b.disabled && !b.hidden); available.forEach((b, i) => { b.dataset.left = available[i - 1]?.dataset.focusId ?? (search ? 'nav-search' : 'nav-home'); b.dataset.right = available[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? 'search-input'; b.dataset.down = b.dataset.focusId; }); feed?.wire(); }
+    // Shelves landing (PRODUCT_POLISH): the existing continuous grid becomes the “查看更多” page.
+    const shelvesEnabled = PRODUCT_POLISH && !search;
+    let gridMode = !shelvesEnabled || memory.mode === 'grid', returnTo = '';
+    const openGrid = (source: HomeSource, from: string) => { if (owner.signal.aborted) return; returnTo = from; memory.source = { ...source, page: 1 }; memory.mode = 'grid'; gridMode = true; showMode(); const tab = sourceButtons.find(b => b.dataset.focusId === 'source-' + source.kind); tab?.focus(); void read(false, true).then(() => { if (gridMode && document.activeElement === tab) grid.querySelector<HTMLElement>('[data-focus-id]')?.focus(); }); };
+    const shelves = shelvesEnabled ? homeShelves(owner, services, () => wireTools(), detail, openGrid, () => { openGrid(memory.source.kind === 'search' || memory.source.kind === 'category' ? { kind: 'popular', page: 1 } : memory.source, 'shelf-categories'); category.click(); }, () => continuing?.first()) : undefined;
+    const shelfArea = document.createElement('div'); shelfArea.className = 'tv-shelf-area';
+    if (shelves) shelfArea.append(...(continuing ? [continuing.node] : []), shelves.node);
+    function showMode(): void { if (!shelves) return; shelfArea.hidden = gridMode; for (const part of [tools, status, grid, paging]) part.hidden = !gridMode; }
+    if (shelves) frameBack.set(node, () => { if (!gridMode) return false; gridMode = false; memory.mode = 'shelves'; readAbort?.abort(); showMode(); (node.querySelector<HTMLElement>(`[data-focus-id="${returnTo}"]`) ?? node.querySelector<HTMLElement>(`[data-focus-id="${shelves.first() ?? ''}"]`))?.focus(); return true; });
+    if (shelves) node.append(eyebrow, title, shelfArea, tools, status, grid, paging); else
     node.append(eyebrow,title,...(continuing?[continuing.node]:[]),tools,status,grid,paging);
+    showMode();
     const returned=(event:FocusEvent)=>{if(!continuing||continuing.node.contains(event.target as Node))return;continuing.refresh();wireTools();};node.addEventListener('focusin',returned);owner.add('home-continuing-focus',()=>node.removeEventListener('focusin',returned));
     wireTools();
-    if (!search || memory.source.keyword)
+    if (gridMode && (!search || memory.source.keyword))
         void read(false);
-    else {
+    else if (search) {
         status.textContent = '输入首字母选词，或从热搜、历史开始';
         refresh.disabled = true;
     }

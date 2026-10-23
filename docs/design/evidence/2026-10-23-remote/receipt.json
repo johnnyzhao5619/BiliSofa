@@ -1,0 +1,135 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.45.0",
+  "basedOn": "0.44.0",
+  "uiSourceHash": "907a1ac9d64ce89661c864d10565a7531f666306d3264a891b0374e30160be7e",
+  "uiManifestSha256": "0700370bd21213b871daaf5863771077f36de71191c583ae01379cc65cd3add3",
+  "unsignedSha256": "f9192505811bafecdb846f66f7c83ff3eecd7f454f94483071118763428159b4",
+  "signedSha256": "acb95126691bc715cb34962943a1db601cc2add5bfbd5be7cd81b7cc86aa580e",
+  "signedAt": "2026-10-23T03:57:00.247801+00:00",
+  "sourceArchiveSha256": "aef732f8fc586558ebe25b82a6cfa37bf323b010b611d2e0bbd6a65c6cf514b0",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.45.0",
+        "signedSha256": "acb95126691bc715cb34962943a1db601cc2add5bfbd5be7cd81b7cc86aa580e",
+        "uiSourceHash": "907a1ac9d64ce89661c864d10565a7531f666306d3264a891b0374e30160be7e",
+        "startedAt": "2026-10-23T03:57:39.829214+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.45.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.45.0",
+      "signedSha256": "acb95126691bc715cb34962943a1db601cc2add5bfbd5be7cd81b7cc86aa580e",
+      "uiSourceHash": "907a1ac9d64ce89661c864d10565a7531f666306d3264a891b0374e30160be7e",
+      "startedAt": "2026-10-23T03:57:39.829214+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs044": [
+    "apps/tv/public/product-ui.css",
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/cast-entry.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/player-interactions.ts",
+    "apps/tv/src/app/player-presentation.ts",
+    "apps/tv/src/app/product-account.ts",
+    "apps/tv/src/app/product-following.ts",
+    "apps/tv/src/app/product-home.ts",
+    "apps/tv/src/app/product-library.ts",
+    "apps/tv/src/app/product-page.ts",
+    "apps/tv/src/app/product-search.ts",
+    "apps/tv/src/app/queue-playback.ts",
+    "apps/tv/src/app/tv-shell.ts",
+    "apps/tv/src/app/user-messages.ts",
+    "apps/tv/src/app/vod-comments.ts",
+    "apps/tv/src/app/vod-controls.ts",
+    "apps/tv/src/app/vod-overlays.ts",
+    "apps/tv/src/app/vod-workspace.ts",
+    "apps/tv/src/platform/samsung.ts",
+    "apps/tv/src/ui/input.ts",
+    "packages/contracts/src/local-profile.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "modules": 294,
+    "unitContractPassed": 696,
+    "remoteUiPassed": 13,
+    "baseline044SameSpecsFailed": 11,
+    "baseline044SameSpecsRun": 12,
+    "retained044UiPassed": 11,
+    "retained044SupersededByLabel": 1,
+    "packageNegativePassed": 8,
+    "frozenDistFilesVerifiedUnchanged": 832,
+    "buildFilesVerifiedUnchanged": 176,
+    "uiSourceInputs": 250,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModulesUnchangedVs044": 17,
+    "nativeResourcesUnchangedVs044": 68,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "ADR-088 batch one: media keys (tv.inputdevice), local hidden-layer direct play/seek with 1.2 s auto-commit, Stop exits to card, 10 s default step, panel current focus, redundant buttons removed, viewer messages without codes, resume row reachable, transient notices clear",
+  "deviceAcceptance": "REQUESTED_R1_R6_USER_PASS",
+  "requestedUserResults": {
+    "r1MediaKeys": "USER_PASS",
+    "r2HiddenLayerDirectControls": "USER_PASS",
+    "r3PickerCurrentFocus": "USER_PASS",
+    "r4PageSweep": "USER_PASS",
+    "r5ResumeReachable": "USER_PASS",
+    "r6AndroidCastRegressionNoTakeover": "USER_PASS",
+    "r7VoiceGuide": "REMOVED_BY_USER_NOT_A_REQUIREMENT",
+    "reportedAt": "2026-10-23",
+    "userStatement": "R1-R6全部通过；R7请移除，这不是需求"
+  },
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "addedPrivilege": "http://tizen.org/privilege/tv.inputdevice"
+}

@@ -29,7 +29,8 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
   const available = tabs.filter(([kind]) => route === 'following' || kind !== 'updates');
   const node = document.createElement('section');
   node.className = 'tv-following';
-  node.dataset.initialFocusId = 'following-search';
+  // Guests start on the sign-in action, the page's only way to its content.
+  node.dataset.initialFocusId = privateContent ? 'following-search' : 'following-login';
   const heading = document.createElement('h1');
   heading.id = 'following-title';
   heading.textContent = route === 'following' ? '关注' : '番剧影视';
@@ -75,7 +76,7 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     void read(page + 1); });
   const refresh = button('following-refresh', '刷新', () => { if (!busy && !blocked)
     void read(1, true, true); });
-  const login = button('following-login', '登录查看关注与已追列表', () => { void shell.navigateTop({ page: 'account' }); });
+  const login = button('following-login', route === 'following' ? '登录查看关注更新' : '登录查看追番与追剧', () => { void shell.navigateTop({ page: 'account' }); });
   paging.append(previous, next, refresh);
   const feed=PRODUCT_BROWSE?new ContinuousGrid(owner,grid,{load:page=>read(page),restored:value=>{page=value;memory.pages[memory.tab]=value;},top:()=> 'following-tab-'+memory.tab,left:()=> 'nav-'+route,bottom:()=> 'following-refresh'}):undefined;
   if(feed)previous.hidden=next.hidden=true;
@@ -188,7 +189,7 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
       const code = error instanceof DomainError ? error.code : 'unknown';
       if(code==='cancelled'){status.textContent='已保留当前内容，向下可继续浏览';return;}
       blocked = code === 'unknown';
-      status.textContent = blocked ? '资源关闭未确认，请退出并重新打开应用' : code === 'login' ? '登录已失效，请重新扫码' : `内容暂未加载（${kind === 'updates' ? 'follow' : 'pgc'}.${code}），可刷新或返回${grid.childElementCount ? '；下方保留上次同类内容' : ''}`;
+      status.textContent = blocked ? '资源关闭未确认，请退出并重新打开应用' : code === 'login' ? '登录已失效，请重新扫码' : `内容暂时无法加载，可重试或返回${grid.childElementCount ? '；下方保留上次同类内容' : ''}`; status.title = `${kind === 'updates' ? 'follow' : 'pgc'}.${code}`;
     }
     finally {
       if (!owner.signal.aborted && ticket === generation) {

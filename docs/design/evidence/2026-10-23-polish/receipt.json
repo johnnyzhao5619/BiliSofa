@@ -1,0 +1,141 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.46.0",
+  "basedOn": "0.45.0",
+  "uiSourceHash": "f6303e5db1a91f325cfd085bc669bfb1df8c879939f4ee034c9716158a29c53a",
+  "uiManifestSha256": "25eba74aabd8cd8d02c36438b49e23bcba51955fdd67b77b78ce758081da5400",
+  "unsignedSha256": "6831517c1209156524acda7c284aa6eb616bfa6c039bf22139725e1f2c17fae1",
+  "signedSha256": "13d1f3d64378abdf3e0d3d226115ecb7b772a99216140046491d7bd52cb543bf",
+  "signedAt": "2026-10-23T04:35:53.650166+00:00",
+  "sourceArchiveSha256": "410ca969a717d6ff5110f544aa599d85f6e59ac6539cbc15687b5b91137560fe",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.46.0",
+        "signedSha256": "13d1f3d64378abdf3e0d3d226115ecb7b772a99216140046491d7bd52cb543bf",
+        "uiSourceHash": "f6303e5db1a91f325cfd085bc669bfb1df8c879939f4ee034c9716158a29c53a",
+        "startedAt": "2026-10-23T04:36:26.671846+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 1,
+          "platformSuccess": false
+        }
+      },
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.46.0",
+        "signedSha256": "13d1f3d64378abdf3e0d3d226115ecb7b772a99216140046491d7bd52cb543bf",
+        "uiSourceHash": "f6303e5db1a91f325cfd085bc669bfb1df8c879939f4ee034c9716158a29c53a",
+        "startedAt": "2026-10-23T04:36:44.308995+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "recoveryBeforeSecondAttempt": "single SDB disconnect/connect to the same authorized target after a state error",
+    "lastConfirmedDeviceVersion": "0.46.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.46.0",
+      "signedSha256": "13d1f3d64378abdf3e0d3d226115ecb7b772a99216140046491d7bd52cb543bf",
+      "uiSourceHash": "f6303e5db1a91f325cfd085bc669bfb1df8c879939f4ee034c9716158a29c53a",
+      "startedAt": "2026-10-23T04:36:44.308995+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs045": [
+    "apps/tv/public/product-ui.css",
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/player-presentation.ts",
+    "apps/tv/src/app/polish-policy.ts",
+    "apps/tv/src/app/product-frame.ts",
+    "apps/tv/src/app/product-home.ts",
+    "apps/tv/src/app/product-page.ts",
+    "apps/tv/src/app/product-shelves.ts",
+    "apps/tv/src/app/vod-overlays.ts",
+    "apps/tv/src/app/vod-workspace.ts",
+    "apps/tv/src/ui/content-card.ts",
+    "packages/media/src/next-up.ts",
+    "packages/media/src/seek-acceleration.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "modules": 298,
+    "unitContractPassed": 699,
+    "polishUiPassed": 18,
+    "portedAdr088UiPassed": 8,
+    "baseline045SameSpecsFailed": 18,
+    "retainedCastWakeOnlyPassed": 1,
+    "retainedCastClockSeekPassed": 10,
+    "packageNegativePassed": 8,
+    "frozenDistFilesVerifiedUnchanged": 862,
+    "buildFilesVerifiedUnchanged": 176,
+    "uiSourceInputs": 254,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModulesUnchangedVs045": 17,
+    "nativeResourcesUnchangedVs045": 68,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "ADR-090/091 batch 2A: icon main row, settings panel, danmaku switch, seek acceleration, same-video next-up countdown, home shelves, focus lift, full-page detail with parts",
+  "deviceAcceptance": "REQUESTED_P1_P7_USER_PASS",
+  "requestedUserResults": {
+    "p1MainRowIconsStateDanmakuSwitch": "USER_PASS",
+    "p2SettingsPanel": "USER_PASS",
+    "p3HeldSeekAcceleration": "USER_PASS",
+    "p4NextUpCountdownAndCancel": "USER_PASS",
+    "p5HomeShelves": "USER_PASS",
+    "p6FullPageDetailParts": "USER_PASS",
+    "p7AndroidCastRegressionNoTakeover": "USER_PASS",
+    "reportedAt": "2026-10-23",
+    "userStatement": "P1-P7 全部验证通过"
+  },
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs045": true
+}
