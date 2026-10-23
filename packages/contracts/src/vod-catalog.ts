@@ -1,10 +1,25 @@
-import { DomainError, record, text } from './index.ts';
+import { DomainError, record, text, parseCoverReference, type CoverReference } from './index.ts';
 export const VOD_RATES=[1,2] as const;
 export type VodRate=typeof VOD_RATES[number];
 export type RepeatMode='off'|'one'|'all';
 export interface VodItem {bvid:string;part:number;title:string;durationMs:number;}
 export interface VodCollectionEntry {title:string;item?:VodItem;}
-export interface VodDetail {title:string;owner:string;parts:VodItem[];collection?:{title:string;entries:VodCollectionEntry[]};}
+/** Optional detail-page facts from the same view response (0.48.0). Missing facts are omitted, never guessed. */
+export interface VodAbout {description?:string;publishedAt?:number;views?:number;likes?:number;danmaku?:number;face?:CoverReference;}
+export interface VodDetail {title:string;owner:string;parts:VodItem[];collection?:{title:string;entries:VodCollectionEntry[]};about?:VodAbout;}
+const ABOUT_COUNT=Number.MAX_SAFE_INTEGER;
+/** Description text may keep line breaks; every other control character is rejected. */
+export function aboutText(value:unknown):string{if(typeof value!=='string'||!value.length||value.length>2000||/[\u0000-\u0009\u000b-\u001f\u007f]/.test(value))throw new DomainError('invalid');return value;}
+export function parseVodAbout(value:unknown):VodAbout{
+ const v=record(value),allowed=['description','publishedAt','views','likes','danmaku','face'];if(!Object.keys(v).length||Object.keys(v).some(k=>!allowed.includes(k)))throw new DomainError('invalid');
+ const count=(n:unknown)=>{if(!Number.isSafeInteger(n)||(n as number)<0||(n as number)>ABOUT_COUNT)throw new DomainError('invalid');return n as number;};
+ const about:VodAbout={};
+ if(v.description!==undefined)about.description=aboutText(v.description);
+ if(v.publishedAt!==undefined){if(!Number.isSafeInteger(v.publishedAt)||(v.publishedAt as number)<=0||(v.publishedAt as number)>=4102444800)throw new DomainError('invalid');about.publishedAt=v.publishedAt as number;}
+ for(const k of ['views','likes','danmaku'] as const)if(v[k]!==undefined)about[k]=count(v[k]);
+ if(v.face!==undefined)about.face=parseCoverReference(v.face);
+ return about;
+}
 export type VideoCodec='avc'|'hevc'|'av1';
 export type AudioCodec='aac'|'eac3'|'flac';
 export interface VodVideoOption {key:string;quality:number;label:string;codec:VideoCodec;width:number;height:number;fps:number;bandwidth:number;}
@@ -36,11 +51,12 @@ export function vodChoiceSupported(catalog:VodCatalog,value:unknown,caps:VodCapa
  const choice=parseVodChoice(value);if(choice.catalogId!==catalog.id)return false;const video=catalog.videos.find(v=>v.key===choice.videoKey),audio=catalog.audios.find(a=>a.key===choice.audioKey);return !!video&&!!audio&&caps.video.includes(video.codec)&&caps.audio.includes(audio.codec)&&caps.qualities.includes(video.quality)&&video.width<=caps.maxWidth&&video.height<=caps.maxHeight&&video.fps<=caps.maxFps;
 }
 export function parseVodDetailSummary(value:unknown):VodDetail{
- const v=record(value),keys=['title','owner','parts',...(v.collection===undefined?[]:['collection'])];vodKeys(v,keys);
+ const v=record(value),keys=['title','owner','parts',...(v.collection===undefined?[]:['collection']),...(v.about===undefined?[]:['about'])];vodKeys(v,keys);
  if(!Array.isArray(v.parts)||!v.parts.length||v.parts.length>10000)throw new DomainError('invalid');
  const parts=v.parts.map(parseVodItem);
  if(parts.some((p,i)=>p.part!==i+1||p.bvid!==parts[0]!.bvid))throw new DomainError('invalid');
  const result:VodDetail={title:text(v.title,120),owner:text(v.owner,48),parts};
+ if(v.about!==undefined)result.about=parseVodAbout(v.about);
  if(v.collection!==undefined){
   const c=record(v.collection);vodKeys(c,['title','entries']);if(!Array.isArray(c.entries)||c.entries.length>10000)throw new DomainError('invalid');
   result.collection={title:text(c.title,120),entries:c.entries.map(raw=>{const entry=record(raw);vodKeys(entry,['title',...(entry.item===undefined?[]:['item'])]);return {title:text(entry.title,120),...(entry.item===undefined?{}:{item:parseVodItem(entry.item)})};})};

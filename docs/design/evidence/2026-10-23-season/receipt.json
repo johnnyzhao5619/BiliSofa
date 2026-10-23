@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.49.0",
+  "basedOn": "0.48.0",
+  "uiSourceHash": "054df360c11e19a051ff735f1ebbb099a84541b83aaddc43602636901a2661eb",
+  "uiManifestSha256": "48f32b7f7de60660e565aafd4d651e617c35cf050635fbab780047720e645b28",
+  "unsignedSha256": "d148586f502ff024e28e23cdecab8b357caa2f0edd0b4db8481a69ff28a4a878",
+  "signedSha256": "cd08619bcf8f58d73bffb46d7d8d6bfa4c34f197c4b924eec2552c6db850e6ef",
+  "signedAt": "2026-10-23T14:56:40.232060+00:00",
+  "sourceArchiveSha256": "6438d7db3d68f530d49b1768ce44165fe30c64aa0eb2a1007d378ea449853e1a",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.49.0",
+        "signedSha256": "cd08619bcf8f58d73bffb46d7d8d6bfa4c34f197c4b924eec2552c6db850e6ef",
+        "uiSourceHash": "054df360c11e19a051ff735f1ebbb099a84541b83aaddc43602636901a2661eb",
+        "startedAt": "2026-10-23T14:57:13.775715+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.49.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.49.0",
+      "signedSha256": "cd08619bcf8f58d73bffb46d7d8d6bfa4c34f197c4b924eec2552c6db850e6ef",
+      "uiSourceHash": "054df360c11e19a051ff735f1ebbb099a84541b83aaddc43602636901a2661eb",
+      "startedAt": "2026-10-23T14:57:13.775715+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs048": [
+    "apps/tv/public/product-ui.css",
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/full-text.ts",
+    "apps/tv/src/app/pgc-follows.ts",
+    "apps/tv/src/app/pgc-hot-read.ts",
+    "apps/tv/src/app/product-following.ts",
+    "apps/tv/src/app/product-home.ts",
+    "apps/tv/src/app/product-page.ts",
+    "apps/tv/src/app/product-season.ts",
+    "apps/tv/src/app/rate-probe.ts",
+    "apps/tv/src/app/season-policy.ts",
+    "apps/tv/src/platform/content-runtime.ts",
+    "apps/tv/src/platform/ranking-worker.ts",
+    "packages/bili-client/src/pgc-season.ts",
+    "packages/bili-client/src/ranking.ts",
+    "packages/contracts/src/pgc-season.ts",
+    "packages/contracts/src/ranking.ts",
+    "platform/wasm-network/src/catalog-worker.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.49.0",
+    "modules": 307,
+    "unitContractPassed": 711,
+    "nativeCatalogPassed": 10,
+    "seasonUiPassed": 3,
+    "baseline048SeasonSpecsFailed": 3,
+    "retainedDetailUiPassed": 3,
+    "retainedReadingUiPassed": 17,
+    "retainedPolishUiPassed": 18,
+    "retainedCastWakeOnlyPassed": 1,
+    "retainedCastClockSeekPassed": 10,
+    "packageNegativePassed": 8,
+    "unsignedSha256": "d148586f502ff024e28e23cdecab8b357caa2f0edd0b4db8481a69ff28a4a878",
+    "uiSourceInputs": 265,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModules": 17,
+    "nativeFilesChangedVs048": [
+      "catalog/manifest.json",
+      "catalog/probe.js",
+      "catalog/probe.wasm"
+    ],
+    "nativeResourcesUnchangedVs048": 68,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.49.0 (ADR-096): product season page, one-press bangumi follow with visible failure reasons, public hot bangumi ranking (catalog relinked into build/catalog-pgc), rate probe v2",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_Q1_Q4",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs048": true
+}

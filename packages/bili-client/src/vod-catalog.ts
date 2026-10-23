@@ -1,6 +1,7 @@
 import { DomainError, record, text } from '../../contracts/src/index.ts';
-import { parseVodCatalog, parseVodChoice, vodBvid, vodChoiceSupported, vodInteger, type AudioCodec, type VideoCodec, type VodCapabilities, type VodCatalog, type VodDetail, type VodItem } from '../../contracts/src/vod-catalog.ts';
+import { parseVodCatalog, parseVodChoice, vodBvid, vodChoiceSupported, vodInteger, type AudioCodec, type VideoCodec, type VodCapabilities, type VodCatalog, type VodDetail, type VodAbout, type VodItem } from '../../contracts/src/vod-catalog.ts';
 import { GuestVideoError, guestCdnUrl } from './guest-video.ts';
+import { publicArtwork } from './public-artwork.ts';
 import type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-private.ts';
 export type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-private.ts';
 
@@ -24,6 +25,16 @@ function data(raw: string): Record<string, unknown> {
 }
 function caption(value: unknown, max: number): string { return text(value, 2048).slice(0, max); }
 function optionalFlag(value: unknown): boolean { return value !== undefined && value !== false && value !== 0; }
+/** Detail-page facts are optional: a missing or malformed field is dropped and never blocks playback. */
+function vodAbout(d: Record<string, unknown>): VodAbout | undefined {
+  const about: VodAbout = {};
+  if (typeof d.desc === 'string') { const description = d.desc.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 2000); if (description && description !== '-') about.description = description; }
+  if (Number.isSafeInteger(d.pubdate) && (d.pubdate as number) > 0 && (d.pubdate as number) < 4102444800) about.publishedAt = d.pubdate as number;
+  const stat = d.stat !== null && typeof d.stat === 'object' ? d.stat as Record<string, unknown> : {};
+  for (const [key, field] of [['views', 'view'], ['likes', 'like'], ['danmaku', 'danmaku']] as const) { const n = stat[field]; if (Number.isSafeInteger(n) && (n as number) >= 0) about[key] = n as number; }
+  const owner = d.owner !== null && typeof d.owner === 'object' ? d.owner as Record<string, unknown> : {}, face = publicArtwork(owner.face); if (face) about.face = face;
+  return Object.keys(about).length ? about : undefined;
+}
 export function parseVodDetail(raw: string, bvid: string): PrivateVodDetail {
   vodBvid(bvid);
   const d = data(raw), rights = record(d.rights);
@@ -41,6 +52,7 @@ export function parseVodDetail(raw: string, bvid: string): PrivateVodDetail {
   const guestAllowed = rights.pay === 0 && rights.ugc_pay === 0 && !['arc_pay', 'ugc_pay_preview', 'movie'].some(k => optionalFlag(rights[k])) &&
     !['is_chargeable_season', 'is_upower_exclusive', 'is_upower_play', 'is_upower_preview'].some(k => optionalFlag(d[k]));
   const summary: VodDetail = { title, owner, parts: parts.map(p => ({ ...p.item })) };
+  const about = vodAbout(d); if (about) summary.about = about;
   if (d.ugc_season !== undefined && d.ugc_season !== null) {
     const season = record(d.ugc_season);
     if (!Array.isArray(season.sections) || season.sections.length > 128) throw new DomainError('invalid');

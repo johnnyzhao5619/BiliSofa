@@ -28,6 +28,10 @@ import { watchLater } from './watch-later.ts';
 import { exitApplication, isBack, mediaCommand, registerMediaKeys } from '../platform/samsung.ts';
 import {PRODUCT_POLISH} from './polish-policy.ts';
 import {PRODUCT_READING,READING_FIX,READING_FIX2} from './reading-policy.ts';
+import {PRODUCT_DETAIL} from './detail-policy.ts';
+import {PRODUCT_SEASON,SEASON_STATUS_READ} from './season-policy.ts';
+import {productButton} from './product-frame.ts';
+import {rateProbe} from './rate-probe.ts';
 import { drawQr, clearQr } from '../ui/qr-code.ts';
 import { TvShell } from './tv-shell.ts';
 import { castEntry } from './cast-entry.ts';
@@ -75,6 +79,8 @@ declare const BILISOFA_PRODUCT_REMOTE:boolean;
 const remote=typeof BILISOFA_PRODUCT_REMOTE!=='undefined'&&BILISOFA_PRODUCT_REMOTE;
 if(PRODUCT_POLISH)document.body.classList.add('product-polish');
 if(PRODUCT_READING)document.body.classList.add('product-reading');
+if(PRODUCT_DETAIL)document.body.classList.add('product-detail');
+if(PRODUCT_SEASON)document.body.classList.add('product-season');
 const castClock=typeof BILISOFA_PRODUCT_CAST_CLOCK!=='undefined'&&BILISOFA_PRODUCT_CAST_CLOCK;
 const castSeek=typeof BILISOFA_PRODUCT_CAST_SEEK!=='undefined'&&BILISOFA_PRODUCT_CAST_SEEK;
 const castStart=typeof BILISOFA_PRODUCT_CAST_START!=='undefined'&&BILISOFA_PRODUCT_CAST_START;
@@ -89,7 +95,7 @@ const root = document.querySelector<HTMLElement>('#pages')!, overlays = document
 if(productUi){let notice:ReturnType<typeof setTimeout>|undefined;new MutationObserver(()=>{clearTimeout(notice);const text=feedback.textContent??'';if(text&&!/正在|未确认|扫码|登录|失效|重新打开|权限/.test(text))notice=setTimeout(()=>{if(feedback.textContent===text)feedback.textContent='';},4000);}).observe(feedback,{childList:true,characterData:true,subtree:true});}
 const repository = protectedAccountStore(), login = new LoginCoordinator(repository, () => new IdentityWorkerClient());
 const queues=localQueues();
-const profiles = localProfiles(), diagnostics = new AppDiagnostics(READING_FIX2?'U5-reading-0.47.2':READING_FIX?'U5-reading-0.47.1':PRODUCT_READING?'U5-reading-0.47.0':PRODUCT_POLISH?'U5-polish-0.46.0':remote?'U5-remote-0.45.0':castClock?'U4-cast-clock-0.43.0':castSeek?'U4-cast-seek-0.42.0':castStart?'U4-cast-start-0.41.0':PRODUCT_RECOVERY?'U4-recovery-0.40.0':PRODUCT_STREAM?'U4-stream-0.39.0':PRODUCT_INSTANT?'U4-instant-0.38.0':PRODUCT_ACTIONS?'U4-actions-0.37.0':PRODUCT_INTERACTIONS?'U4-interactions-0.36.0':PRODUCT_BROWSE?'U3-browse-0.35.0':productPlayerEnabled?'U3-player-0.34.0':productCollectionsEnabled?'U2-following-0.33.0':productDiscoveryEnabled?'U2-search-0.32.0':productLibraryEnabled?'U2-library-0.31.0':productUi?'U1-shell-0.30.0':typeof BILISOFA_U1!=='undefined'&&BILISOFA_U1?'U1-content-0.29.0':typeof BILISOFA_RECOMMEND!=='undefined'&&BILISOFA_RECOMMEND?'W05-local-data-0.28.0':typeof BILISOFA_W06!=='undefined'&&BILISOFA_W06?'W06-cast-0.25.0':typeof BILISOFA_W05!=='undefined'&&BILISOFA_W05?'W05-interactions-0.24.1':w04?'W04-development-0.21.0':'W03-account-details-0.20.0'); diagnostics.add('app','started');if(PRODUCT_INSTANT)document.body.classList.add('product-instant');if(PRODUCT_STREAM)document.body.classList.add('product-stream');
+const profiles = localProfiles(), diagnostics = new AppDiagnostics(SEASON_STATUS_READ?'U5-season-0.49.1':PRODUCT_SEASON?'U5-season-0.49.0':PRODUCT_DETAIL?'U5-detail-0.48.0':READING_FIX2?'U5-reading-0.47.2':READING_FIX?'U5-reading-0.47.1':PRODUCT_READING?'U5-reading-0.47.0':PRODUCT_POLISH?'U5-polish-0.46.0':remote?'U5-remote-0.45.0':castClock?'U4-cast-clock-0.43.0':castSeek?'U4-cast-seek-0.42.0':castStart?'U4-cast-start-0.41.0':PRODUCT_RECOVERY?'U4-recovery-0.40.0':PRODUCT_STREAM?'U4-stream-0.39.0':PRODUCT_INSTANT?'U4-instant-0.38.0':PRODUCT_ACTIONS?'U4-actions-0.37.0':PRODUCT_INTERACTIONS?'U4-interactions-0.36.0':PRODUCT_BROWSE?'U3-browse-0.35.0':productPlayerEnabled?'U3-player-0.34.0':productCollectionsEnabled?'U2-following-0.33.0':productDiscoveryEnabled?'U2-search-0.32.0':productLibraryEnabled?'U2-library-0.31.0':productUi?'U1-shell-0.30.0':typeof BILISOFA_U1!=='undefined'&&BILISOFA_U1?'U1-content-0.29.0':typeof BILISOFA_RECOMMEND!=='undefined'&&BILISOFA_RECOMMEND?'W05-local-data-0.28.0':typeof BILISOFA_W06!=='undefined'&&BILISOFA_W06?'W06-cast-0.25.0':typeof BILISOFA_W05!=='undefined'&&BILISOFA_W05?'W05-interactions-0.24.1':w04?'W04-development-0.21.0':'W03-account-details-0.20.0'); diagnostics.add('app','started');if(PRODUCT_INSTANT)document.body.classList.add('product-instant');if(PRODUCT_STREAM)document.body.classList.add('product-stream');
 const histories=searchHistories();
 const writes = new RetainedWrites(writeJournal());
 function writeSummary(id:string){const old=writes.summary(id),video=typeof BILISOFA_W05!=='undefined'&&BILISOFA_W05?interactionWrites().summary(id):{total:0,unknown:0};return old&&video?{total:old.total+video.total,unknown:old.unknown+video.unknown}:undefined;}
@@ -124,7 +130,16 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
   const history=histories.profile(state?.kind==='active'?state.account.id:'guest');
   let accountBack:(()=>boolean)|undefined;
   const wrap=(view:HTMLElement)=>productUi?productFrame(owner,shell,route,view,accountBack):view;
-  if (route.page === 'settings') {const view=localSettings(owner, shell, profile, diagnostics, () => state?.kind === 'active' ? writeSummary(state.account.id) : 'guest',history,state?.kind==='active'?()=>{shell.openModal('read-cache-clear',child=>readCacheClear(child,shell,workspace),'cache-keep');}:undefined,queue,productUi?()=>{void shell.navigateTop({page:'home'});}:undefined);return wrap(productPlayerEnabled?productSettings(owner,shell,view,localOverlayPreferences(state?.kind==='active'?state.account.id:'guest')):view);}
+  const openVodAccess=async(caps:Parameters<typeof createVodAccess>[0]):Promise<VodAccess>=>{
+    if(state?.kind!=='active')return createVodAccess(caps);
+    return workspace.read((runtime,scope,signal)=>{if(!runtime.openVod)throw new DomainError('unsupported');return runtime.openVod(scope,signal);},value=>{
+      const candidate=value as VodAccess;if(!candidate||typeof candidate.read!=='function'||typeof candidate.transport!=='function'||typeof candidate.close!=='function')throw new DomainError('invalid');return candidate;
+    });
+  };
+  if (route.page === 'settings') {const view=localSettings(owner, shell, profile, diagnostics, () => state?.kind === 'active' ? writeSummary(state.account.id) : 'guest',history,state?.kind==='active'?()=>{shell.openModal('read-cache-clear',child=>readCacheClear(child,shell,workspace),'cache-keep');}:undefined,queue,productUi?()=>{void shell.navigateTop({page:'home'});}:undefined);const probeDevice=PRODUCT_DETAIL&&w04?vodRuntimeStatus():undefined,probeCaps=probeDevice?.kind==='available'?probeDevice.capabilities:undefined;
+    // R07 rate probe (ADR-095) lives in 帮助与诊断 and only runs when the viewer starts it.
+    const probe=probeCaps?productButton('settings-rate-probe','倍速探查（诊断）',()=>{if(!owner.signal.aborted)shell.openModal('rate-probe',child=>rateProbe(child,shell,probeCaps,()=>openVodAccess(probeCaps),profile),'rate-probe-start');}):undefined;
+    return wrap(productPlayerEnabled?productSettings(owner,shell,view,localOverlayPreferences(state?.kind==='active'?state.account.id:'guest'),probe):view);}
   const section = document.createElement('section'), title = document.createElement('h1'); title.textContent = route.page === 'account' ? '账号管理' : 'BiliSofa'; section.append(title);
   if (route.page !== 'account') {
     const device=w04?vodRuntimeStatus():undefined,caps=device?.kind==='available'?device.capabilities:undefined;
@@ -135,12 +150,7 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
       if(signal.aborted)throw new DomainError('cancelled');return createLiveAccess(media?caps:undefined);
     };
     const playLive=(card:LiveCard)=>{if(!LIVE_IN_CURRENT_DELIVERY||owner.signal.aborted)return;if(!caps){feedback.textContent=unavailable||'设备媒体状态未确认';return;}shell.openModal('live-playback',child=>liveWorkspace(child,shell,card,liveOpen,()=>createLiveAccess(),source=>createLiveRelayPlayer(source.url),diagnostics),'live-player-back');};
-    const vod=caps?{caps,open:async():Promise<VodAccess>=>{
-      if(state?.kind!=='active')return createVodAccess(caps);
-      return workspace.read((runtime,scope,signal)=>{if(!runtime.openVod)throw new DomainError('unsupported');return runtime.openVod(scope,signal);},value=>{
-        const candidate=value as VodAccess;if(!candidate||typeof candidate.read!=='function'||typeof candidate.transport!=='function'||typeof candidate.close!=='function')throw new DomainError('invalid');return candidate;
-      });
-    },openPgc:(seasonId:string)=>openPgcMedia(seasonId,caps),playLive:(card:import('../../../../packages/contracts/src/live-search.ts').LiveSearchCard)=>playLive({roomId:card.roomId,title:card.title,owner:card.owner,category:card.category,state:card.state}),...(state?.kind==='active'?{follows:(child:ResourceOwner)=>pgcFollows(child,workspace)}:{})}:undefined;
+    const vod=caps?{caps,open:()=>openVodAccess(caps),openPgc:(seasonId:string)=>openPgcMedia(seasonId,caps),playLive:(card:import('../../../../packages/contracts/src/live-search.ts').LiveSearchCard)=>playLive({roomId:card.roomId,title:card.title,owner:card.owner,category:card.category,state:card.state}),...(state?.kind==='active'?{follows:(child:ResourceOwner)=>pgcFollows(child,workspace)}:{})}:undefined;
     if(productUi)return wrap(productPage(owner,shell,route,productMemory,{profile,queue,history,feedback,diagnostics,workspace,unavailable,vod,libraryEnabled:productLibraryEnabled,discoveryEnabled:productDiscoveryEnabled,collectionsEnabled:productCollectionsEnabled}));
     const identity = document.createElement('p');
     identity.textContent = state?.kind === 'active' ? `当前账号：${state.account.name}` : '当前为游客'; section.append(identity);

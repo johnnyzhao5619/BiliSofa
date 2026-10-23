@@ -22,7 +22,7 @@ class PgcFollowTest(unittest.TestCase):
                 elif is_list:
                     query,_,signature=self.path.split('?',1)[1].rpartition('&w_rid=');params=urllib.parse.parse_qs(query);joined='a'*32+'b'*32;indices=[46,47,18,2,53,8,23,32,15,50,10,31,58,3,45,35,27,43,5,49,33,9,42,19,29,28,14,39,12,38,41,13];mix=''.join(joined[i] for i in indices)
                     if raw or set(params)!={'follow_status','playform','pn','ps','type','vmid','wts'} or any(params.get(k)!=[v] for k,v in {'follow_status':'0','playform':'web','pn':'1','ps':'4','type':'2','vmid':'101'}.items()) or signature!=hashlib.md5((query+mix).encode()).hexdigest():violations.append('wbi-list')
-                elif raw or self.path not in ['/x/web-interface/nav','/pgc/view/web/season?season_id=123']:violations.append('read-shape')
+                elif raw or self.path not in ['/x/web-interface/nav','/pgc/view/web/season/user/status?season_id=123']:violations.append('read-shape')
                 body=b'x'*16385 if mode=='body' else b'{"code":0,"data":{}}'
                 try:
                     self.send_response(302 if mode=='redirect' else 503 if mode=='post-error' and method=='POST' else 200)
@@ -38,7 +38,7 @@ class PgcFollowTest(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stderr);self.assertEqual(violations,[]);self.assertNotIn(b'synthetic-session',result.stdout);self.assertNotIn(b'csrf=',result.stdout)
         self.assertIn(b'VODAPI:unclosed' if mode=='unknown' else b'VODAPI:closed',result.stdout);return requests
     def test_exact_fixed_methods_body_and_get_reset(self):
-        self.assertEqual(self.case('normal'),[('GET','/x/web-interface/nav'),('GET','/x/space/bangumi/follow/list'),('POST','/pgc/web/follow/add'),('GET','/pgc/view/web/season?season_id=123'),('POST','/pgc/web/follow/del'),('GET','/x/web-interface/nav')])
+        self.assertEqual(self.case('normal'),[('GET','/x/web-interface/nav'),('GET','/x/space/bangumi/follow/list'),('POST','/pgc/web/follow/add'),('GET','/pgc/view/web/season/user/status?season_id=123'),('POST','/pgc/web/follow/del'),('GET','/x/web-interface/nav')])
     def test_rejected_inputs_open_no_requests(self):self.assertEqual(self.case('bounds'),[])
     def test_redirect_not_followed(self):self.assertEqual(self.case('redirect'),[('GET','/x/web-interface/nav')])
     def test_wrong_ca_no_http(self):self.assertEqual(self.case('wrong-ca'),[])

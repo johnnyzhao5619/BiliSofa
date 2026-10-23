@@ -1,15 +1,18 @@
 # 当前实施状态
 
-更新：2026-10-23。完整v1.0.0仍未完成。[唯一收口台账](PRODUCT_CLOSURE.md) · [签名与部署记录](SIGNING_DEVICE_RECORD.md)（逐版本历史） · [测试报告](TEST_REPORT.md)。本页只记当前结论。
+更新：2026-10-23。完整v1.0.0仍未完成。已安装0.49.1。[唯一收口台账](PRODUCT_CLOSURE.md) · [签名与部署记录](SIGNING_DEVICE_RECORD.md)（逐版本历史） · [测试报告](TEST_REPORT.md)。本页只记当前结论。
 
 ## 当前验收对象
 
 | 对象 | 当前事实 | 证据 |
 | --- | --- | --- |
-| 已安装0.47.2 | 前端第一至三批（[ADR-088](adr/088-remote-media-keys-and-direct-controls.md)、ADR-090–094）累积在此包：遥控媒体键与隐藏态直达、播放器主行/⚙侧栏/连播倒计时、首页货架与整页详情、一页式搜索、单列评论、设置左右调值、Home返回续看、连播偏好，以及真机反馈修正（搜索左边缘与“搜索”键、课程行跳过、选词后焦点；字幕/弹幕分面板、AI字幕地址、⚙列表上移）。仅`overlay-read`原生模块重链接，其余原生不变。已签名并升级安装/启动（平台确认，不清数据）。**所请求R1–R6、P1–P7、S1–S6全部USER PASS**（S5于0.47.1、S1/S3于0.47.2复验通过）。 | [证据](design/evidence/2026-10-23-reading-fix2/README.md) · [ADR-094](adr/094-search-course-rows-and-ai-subtitle-files.md) |
+| 已安装0.49.1 | ADR-096文末：追番状态改读B站本人状态接口（原生`pgc-follow`只改一条只读路由，新目录链接），打开详情先读一次；写入被拒显示代码，受理但回读未变不报成功、下一次只查询；修正“已取消追番”误报。本地713单元/新3条合成UI（对冻结0.49.0全部失败）/回归49条/8包负例通过；签名`e76c619c…0e79`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`56cc3f29…fbaa4`，**Q3复验USER PASS** | [证据](design/evidence/2026-10-23-season-fix/README.md) |
+| 0.49.0（USER证据来源） | [ADR-096](adr/096-product-season-page-follow-toggle-and-hot-ranking.md)：番剧详情产品页（封面、简介、主播放、分组与横排剧集，卡片直达）；追番改为一键切换并显示失败原因；番剧影视新增公开“热门番剧”（原生`catalog`新增一条固定只读路由，新目录链接）；倍速探查v2（加0.25×/2×，统计等待与缓冲）。本地307模块/711单元/原生10/新3条合成UI（对冻结0.48.0全部失败）/回归49条/8包负例通过；签名`cd08619b…e6ef`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`6438d7db…3e1a`，**用户Q1/Q2 USER PASS；Q3 FAIL（见0.49.1）；Q4倍速：本机video仅0.5×/0.75×可用，0.25×停住，快档约1.1–1.2×封顶** | [证据](design/evidence/2026-10-23-season/README.md) |
+| 0.48.0（USER证据来源） | [ADR-095](adr/095-detail-facts-and-rate-probe.md)：详情页补简介、发布日期、点赞/弹幕数与UP头像（仅TS，来自已读的视频详情响应）；“设置 → 帮助与诊断”加按需运行的倍速探查（R07电视判定用，生产仍1×/2×）。本地303模块/707单元/新3条合成UI（对冻结0.47.2全部失败）/回归46条/8包负例通过；签名`223813c4…49efc`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`8d1a535a…0193`，**用户Z1 USER PASS；Z2倍速0.5/0.75×通过、≥1×均off；Z3 FAIL（见ADR-096）** | [证据](design/evidence/2026-10-23-detail/README.md) |
+| 0.47.2（USER证据来源） | 前端第一至三批（[ADR-088](adr/088-remote-media-keys-and-direct-controls.md)、ADR-090–094）累积在此包：遥控媒体键与隐藏态直达、播放器主行/⚙侧栏/连播倒计时、首页货架与整页详情、一页式搜索、单列评论、设置左右调值、Home返回续看、连播偏好，以及真机反馈修正（搜索左边缘与“搜索”键、课程行跳过、选词后焦点；字幕/弹幕分面板、AI字幕地址、⚙列表上移）。仅`overlay-read`原生模块重链接，其余原生不变。已签名并升级安装/启动（平台确认，不清数据）。**所请求R1–R6、P1–P7、S1–S6全部USER PASS**（S5于0.47.1、S1/S3于0.47.2复验通过）。 | [证据](design/evidence/2026-10-23-reading-fix2/README.md) · [ADR-094](adr/094-search-course-rows-and-ai-subtitle-files.md) |
 | 0.43.0（USER证据来源） | Android所请求首投/非零定位/暂停继续/回0停止、iPhone首投/声画时间/停止，以及F11关注切换恢复、收藏取消/增删恢复、Back/Home均USER PASS；点赞/稍后再看继承已有结果 | [冻结包/源码回执](design/evidence/2026-10-22-cast-clock/receipt.json)、[投屏分项](design/evidence/2026-10-22-cast-clock/USER_ACCEPTANCE.md)、[F11](design/evidence/2026-10-22-cast-clock/F11_ACCEPTANCE_READY.md) |
 | 0.44.0（USER证据来源） | ADR-087三项修正；仅6个UI输入相对0.43.0变化，原生模块不变，R07适配器不在包内；升级安装/启动获平台确认；**M1回复全文（UGC/番剧楼中楼）与M2默认画质USER PASS**（[用户结果](design/evidence/2026-10-22-acceptance-fix/USER_ACCEPTANCE.md)）；0.43.0既有USER PASS组因相关源码未变而继承 | [回执与本地验证](design/evidence/2026-10-22-acceptance-fix/README.md) |
-| 当前R07源码候选 | HTML video适配器/固定小数倍速合同及相关检查已实现；**未集成生产、未打包、未签名、未部署**。生产AVPlay/菜单仍只提供1×/2× | [ADR-086](adr/086-fractional-rate-element-candidate.md)、[候选分层结果](design/evidence/2026-10-22-element-candidate/README.md) |
+| R07小数倍速（设备限制） | HTML video适配器/固定小数倍速合同及相关检查已实现；**按ADR-097不接入生产**：本机video仅0.5×/0.75×可用、0.25×停住、快档约1.1–1.2×封顶；只保留诊断探查。生产AVPlay/菜单仍只提供1×/2× | [ADR-086](adr/086-fractional-rate-element-candidate.md)、[候选分层结果](design/evidence/2026-10-22-element-candidate/README.md) |
 
 R07候选（ADR-086）本地：strict/边界293模块通过；DOM关闭修正前全量687项通过，修正后针对性20项通过，当前全量未重跑。真实桌面MP4台架0.25/0.5/0.75/1×通过；1.25×有效窗口不足中止（退出1），其余三档及真实DASH未执行，无电视小数倍速/人工声音通过。
 
@@ -39,7 +42,7 @@ R07候选（ADR-086）本地：strict/边界293模块通过；DOM关闭修正前
 | F03 搜索 | 首字母候选、四类搜索、热搜、历史开关/清空/重开最小组通过；0.47一页式搜索、选词即搜、“搜索”键与课程行跳过（ADR-092/094）S1 USER PASS | 最终错误/会话集成矩阵 |
 | F04 动态/UP | UP搜索/摘要/预览、关注更新导航最小组通过 | 完整动态、UP主页/投稿，接口阻塞未解除 |
 | F05 私人内容/队列 | 稍后再看、云端历史、收藏只读；旧首P队列/私人列表入队USER PASS；0.27.0逐P队列所请求A–D USER PASS，未分列可选项不外推 | 完整类型/权限、完整连续自然结束设备矩阵 |
-| F06 播放控制 | 0.21.1 A/B所请求控制、轨道、分P/记录/结束策略USER PASS；0.21.3缺4K自动回退1080P高码率播放USER PASS；0.45媒体键/隐藏态直达（ADR-088）R1–R6、0.46长按加速/连播倒计时（ADR-090）P3/P4 USER PASS | 小数倍速仅有未集成/未部署候选（ADR-086）；无样本合集/源失效及完整媒体矩阵 |
+| F06 播放控制 | 0.21.1 A/B所请求控制、轨道、分P/记录/结束策略USER PASS；0.21.3缺4K自动回退1080P高码率播放USER PASS；0.45媒体键/隐藏态直达（ADR-088）R1–R6、0.46长按加速/连播倒计时（ADR-090）P3/P4 USER PASS | 小数倍速仅有未集成/未部署候选（ADR-086）；无样本合集/源失效及完整媒体矩阵 |；小数倍速按本机设备限制记录（ADR-097），非PASS、保留候选代码
 | F07 续播/接续 | 本地首P及0.27.0所请求P2队列续播组USER PASS；0.47 Home返回续看与连播偏好（ADR-093）S4/S5 USER PASS | 云进度用户要求跳过；双向接续未完成 |
 | F08 弹幕 | 真实读取/绘制/过滤/设置A–D及0.22.1滚动连续性所请求组USER PASS；0.46一键开关、0.47左右调值与独立“弹幕设置”（ADR-090/093）USER PASS | 完整性能仍未覆盖 |
 | F09 字幕 | 真实读取/多行/偏移/语言设置A–D及0.22.1控制层/字幕空间所请求组USER PASS；0.47字幕设置独立面板与状态、AI字幕无扩展名地址（ADR-093/094）S3 USER PASS | 完整轨道/语言样本不外推 |

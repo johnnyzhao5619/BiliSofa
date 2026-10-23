@@ -32,6 +32,8 @@ import { followUpdates } from './follow-updates.ts';
 import { pgcFollowList } from './pgc-follow-list.ts';
 import { pgcFollows } from './pgc-follows.ts';
 import { pgcSeasonWorkspace } from './pgc-season.ts';
+import { productSeason } from './product-season.ts';
+import { PRODUCT_SEASON } from './season-policy.ts';
 import { watchLater } from './watch-later.ts';
 import { cloudHistory } from './cloud-history.ts';
 import { favorites } from './favorites.ts';
@@ -89,7 +91,7 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
     } beginResume(identity); shell.openModal('vod-player', child => vodWorkspace(child, shell, feedback, { bvid: card.bvid, part: 1 }, profile, diagnostics, vod.caps, () => vod.open(), source => createGuestProbePlayer(source.url), queue, false, position), PRODUCT_STREAM?'vod-toggle':'vod-back'); };
     const playTarget=(target:{bvid:string;part:number},position:number)=>{if(owner.signal.aborted)return;if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}beginResume(identity);shell.openModal('vod-player',child=>vodWorkspace(child,shell,feedback,target,profile,diagnostics,vod.caps,()=>vod.open(),source=>createGuestProbePlayer(source.url),queue,false,position),PRODUCT_STREAM?'vod-toggle':'vod-back');};
     // Detail-page part list (ADR-091): one bounded read whose access is closed before any player opens.
-    const parts: HomeServices['parts'] = vod ? async (bvid, signal) => { const access = await vod.open(); try { return (await access.read({ bvid, part: 1 }, signal)).detail.parts.map(p => ({ part: p.part, title: p.title, durationMs: p.durationMs })); } finally { await access.close(); } } : undefined;
+    const parts: HomeServices['parts'] = vod ? async (bvid, signal) => { const access = await vod.open(); try { const detail = (await access.read({ bvid, part: 1 }, signal)).detail; return { items: detail.parts.map(p => ({ part: p.part, title: p.title, durationMs: p.durationMs })), ...(detail.about ? { about: detail.about } : {}) }; } finally { await access.close(); } } : undefined;
     // ADR-093 G4: after Home released the player, the first page shown offers to continue that item; it never autoplays.
     const resume = PRODUCT_READING && vod ? takeResume(identity) : undefined;
     if (resume) setTimeout(() => { if (owner.signal.aborted || shell.restartRequired) return; shell.openModal('resume-detail', child => {
@@ -106,8 +108,9 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
     const openSeason = (card: {
         seasonId: string;
     }) => { if (owner.signal.aborted)
-        return; if(!vod){feedback.textContent=typeof unavailable==='string'?unavailable:'当前平台缺少可用播放器';return;} shell.openModal('pgc-season', child => pgcSeasonWorkspace(child, shell, profile, diagnostics, feedback, vod.caps, () => vod.openPgc(card.seasonId), source => createGuestProbePlayer(source.url), state?.kind === 'active' ? actionOwner => pgcFollows(actionOwner, workspace) : undefined, '返回原卡'), 'pgc-season-back'); };
-    if((route.page==='following'||route.page==='catalog')&&dependencies.collectionsEnabled){const page=route.page;return productFollowing(owner,shell,page,memory[page]??={tab:page==='following'?'updates':'bangumi',pages:{},anchors:{}},{workspace,openSeason,play:target=>{const saved=profile.readPart(target.bvid,target.part);playTarget(target,saved.kind==='ok'&&saved.value?saved.value.timeMs:0);},openSearch:type=>{memory.discovery??={type,pages:{}};memory.discovery.type=type;void shell.navigateTop({page:'search'});}});}
+        return; if(!vod){feedback.textContent=typeof unavailable==='string'?unavailable:'当前平台缺少可用播放器';return;} if (PRODUCT_SEASON) { shell.openModal('product-season', child => productSeason(child, shell, profile, diagnostics, feedback, vod.caps, () => vod.openPgc(card.seasonId), source => createGuestProbePlayer(source.url), state?.kind === 'active' ? pgcFollows(child, workspace) : undefined), 'season-play'); return; }
+        shell.openModal('pgc-season', child => pgcSeasonWorkspace(child, shell, profile, diagnostics, feedback, vod.caps, () => vod.openPgc(card.seasonId), source => createGuestProbePlayer(source.url), state?.kind === 'active' ? actionOwner => pgcFollows(actionOwner, workspace) : undefined, '返回原卡'), 'pgc-season-back'); };
+    if((route.page==='following'||route.page==='catalog')&&dependencies.collectionsEnabled){const page=route.page;return productFollowing(owner,shell,page,memory[page]??={tab:page==='following'?'updates':PRODUCT_SEASON?'hot':'bangumi',pages:{},anchors:{}},{workspace,openSeason,play:target=>{const saved=profile.readPart(target.bvid,target.part);playTarget(target,saved.kind==='ok'&&saved.value?saved.value.timeMs:0);},openSearch:type=>{memory.discovery??={type,pages:{}};memory.discovery.type=type;void shell.navigateTop({page:'search'});}});}
     if(route.page==='search'&&dependencies.discoveryEnabled)return productSearch(owner,shell,memory.discovery??=( {type:'video',pages:{}}),{history,profile,queue,feedback,play,openSeason});
     if (route.page === 'search')
         return productHome(owner, shell, services, memory.search, { remember: keyword => { history.remember(keyword); }, tools: accepted => { const tools = document.createElement('div'); tools.className = 'tv-search-actions'; tools.append(productButton('search-input', '输入关键词', () => { shell.openModal('search-keyword', child => searchKeyword(child, shell, accepted), 'keyword-key-a'); }), productButton('search-hot', '热搜', () => { shell.openModal('search-hot', child => hotSearch(child, shell, accepted), 'hot-back'); }), productButton('search-history', '搜索历史', () => { shell.openModal('search-history', child => historyPanel(child, shell, history, accepted), 'history-back'); }), productButton('search-up', '搜索UP主', () => { shell.openModal('up-keyword', child => searchKeyword(child, shell, keyword => { if (!owner.signal.aborted)

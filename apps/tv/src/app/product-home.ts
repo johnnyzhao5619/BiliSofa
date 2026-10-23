@@ -16,6 +16,11 @@ import { contentLoadFailureText } from './user-messages.ts';
 import { categoryPicker } from './category-picker.ts';
 import { homeShelves } from './product-shelves.ts';
 import { PRODUCT_POLISH } from './polish-policy.ts';
+import { PRODUCT_DETAIL } from './detail-policy.ts';
+import { openFullText, needsFullText } from './full-text.ts';
+import type { VodAbout } from '../../../../packages/contracts/src/vod-catalog.ts';
+/** Local calendar date of a Unix-seconds timestamp, e.g. 2026-10-23. */
+const dateText = (seconds: number) => { const d = new Date(seconds * 1000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 import { frameBack } from './product-frame.ts';
 export interface HomeSource {
     kind: 'popular' | 'ranking' | 'category' | 'recommend' | 'search';
@@ -36,7 +41,7 @@ export interface HomeServices {
     local?:{play(target:{bvid:string;part:number},position:number):void;openLibrary():void};
     play(card: PopularCard, position: number): void;
     playPart?(target: { bvid: string; part: number }, position: number): void;
-    parts?(bvid: string, signal: AbortSignal): Promise<{ part: number; title: string; durationMs: number }[]>;
+    parts?(bvid: string, signal: AbortSignal): Promise<{ items: { part: number; title: string; durationMs: number }[]; about?: VodAbout }>;
     recommend?(page: number, signal: AbortSignal, refresh: boolean): Promise<{
         items: PopularCard[];
         noMore: boolean;
@@ -160,16 +165,28 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
             // The BV id is a support detail, not viewing information.
             id.hidden = true;
             panel.append(header, actions, result, id);
-            if (PRODUCT_POLISH && services.parts && services.playPart) detailParts(child, panel, actions, card);
+            if (PRODUCT_POLISH && services.parts && services.playPart) detailParts(child, panel, actions, card, summary, by);
             return panel;
         }, 'detail-play');
     }
     /** Multi-part list on the detail page; reading is cancelled and awaited before the detail closes. */
-    function detailParts(child: ResourceOwner, panel: HTMLElement, actions: HTMLElement, card: PopularCard): void {
+    /** Detail facts from the same read as the part list (ADR-095); absent facts leave no gap. */
+    function detailAbout(child: ResourceOwner, summary: HTMLElement, by: HTMLElement, actions: HTMLElement, about: VodAbout): void {
+        const count = (n: number) => viewsText(n);
+        const facts = [about.publishedAt ? `发布于 ${dateText(about.publishedAt)}` : '', about.likes !== undefined ? `${count(about.likes)}点赞` : '', about.danmaku !== undefined ? `${count(about.danmaku)}弹幕` : ''].filter(Boolean);
+        if (facts.length) { const meta = document.createElement('p'); meta.className = 'tv-detail-meta'; meta.textContent = facts.join(' · '); summary.append(meta); }
+        if (about.face) { const faces = new CoverArt(); child.add('detail-face', () => faces.close()); void faces.load(about.face).then(url => { if (!url || child.signal.aborted) return; const image = document.createElement('img'); image.className = 'tv-detail-face'; image.alt = ''; image.src = url; by.prepend(image); }); }
+        if (!about.description) return;
+        const text = about.description, description = document.createElement('p'); description.className = 'tv-detail-desc'; description.textContent = text; summary.append(description);
+        // Long text is clamped to four lines; the full text opens as its own layer and Back returns here.
+        if (needsFullText(text)) actions.append(productButton('detail-description', '简介全文', () => openFullText(shell, 'detail-description', '简介', text)));
+    }
+    function detailParts(child: ResourceOwner, panel: HTMLElement, actions: HTMLElement, card: PopularCard, summary: HTMLElement, by: HTMLElement): void {
         const row = document.createElement('div'), note = document.createElement('p'), controller = new AbortController();
         row.className = 'tv-detail-parts'; note.className = 'tv-secondary'; note.setAttribute('role', 'status'); note.textContent = '正在读取分P';
-        const pending = services.parts!(card.bvid, controller.signal).then(list => {
+        const pending = services.parts!(card.bvid, controller.signal).then(({ items: list, about }) => {
             if (child.signal.aborted) return;
+            if (PRODUCT_DETAIL && about) detailAbout(child, summary, by, actions, about);
             if (list.length < 2) { note.textContent = ''; return; }
             note.textContent = `共 ${list.length}P`;
             const buttons = list.slice(0, 48).map(item => {

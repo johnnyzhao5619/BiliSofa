@@ -1,5 +1,5 @@
 import { parseRankingRequest, parseRankingResult, type RankingRequest, type RankingResult } from '../../../packages/contracts/src/ranking.ts';
-import { parseRankingBody } from '../../../packages/bili-client/src/ranking.ts';
+import { parseRankingBody, parsePgcRankingBody } from '../../../packages/bili-client/src/ranking.ts';
 interface NativeModule {
   arguments: string[]; noInitialRun: boolean; onRuntimeInitialized(): void;
   print(line: unknown): void; printErr(): void; onAbort(): void; locateFile(name: string): string;
@@ -9,10 +9,10 @@ interface NativeModule {
 }
 const worker = globalThis as unknown as { onmessage: ((event: MessageEvent) => void) | null; postMessage(value: RankingResult): void; importScripts(...paths: string[]): void; Module?: NativeModule };
 let active: RankingRequest | undefined, cancelled = false, completed = false;
-function finish(data: Pick<RankingResult, 'kind' | 'status' | 'code'> & Partial<Pick<RankingResult, 'items' | 'apiCode'>>): void {
+function finish(data: Pick<RankingResult, 'kind' | 'status' | 'code'> & Partial<Pick<RankingResult, 'items' | 'apiCode' | 'seasons'>>): void {
   if (!active || completed) return;
   completed = true;
-  worker.postMessage(parseRankingResult({ version: 1, scope: active.scope, operation: active.operation, ...(active.operation==='public-category-ranking'?{categoryId:active.categoryId}:{}), closed: true, items: [], ...data }));
+  worker.postMessage(parseRankingResult({ version: 1, scope: active.scope, operation: active.operation, ...(active.operation==='public-category-ranking'?{categoryId:active.categoryId}:{}), closed: true, items: [], ...(active.operation==='public-pgc-ranking'?{seasons:[]}:{}), ...data }));
 }
 worker.onmessage = async event => {
   if (active) {
@@ -30,7 +30,7 @@ worker.onmessage = async event => {
   } catch { finish({ kind: 'transport_error', status: 0, code: 'ranking.native_unavailable' }); return; }
   if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'ranking.cancelled' }); return; }
   worker.Module = {
-    arguments: active.operation==='public-category-ranking'?['category-ranking',String(active.categoryId)]:['ranking'], noInitialRun: true,
+    arguments: active.operation==='public-category-ranking'?['category-ranking',String(active.categoryId)]:active.operation==='public-pgc-ranking'?['pgc-ranking']:['ranking'], noInitialRun: true,
     onRuntimeInitialized() {
       if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'ranking.cancelled' }); return; }
       try { worker.Module!.callMain!(worker.Module!.arguments); }
@@ -53,7 +53,8 @@ worker.onmessage = async event => {
         if (!heap || !Number.isInteger(start) || start < 0 || !Number.isInteger(length) || length < 1 || length > 524288 || start + length > heap.length) throw new Error();
         // The raw public response never crosses postMessage or stdout. No headers,
         // Set-Cookie values, URLs, raw JSON or outside markup enter diagnostics.
-        const parsed = parseRankingBody(new TextDecoder('utf-8', { fatal: true }).decode(heap.subarray(start, start + length)));
+        const body = new TextDecoder('utf-8', { fatal: true }).decode(heap.subarray(start, start + length));
+        const parsed = active!.operation === 'public-pgc-ranking' ? parsePgcRankingBody(body) : parseRankingBody(body);
         finish({ kind: parsed.apiCode === 0 ? 'ok' : 'api_error', status, code: parsed.apiCode === 0 ? 'ranking.ok' : 'ranking.api_error', ...parsed });
       } catch { finish({ kind: 'invalid_response', status: status >= 100 && status <= 599 ? status : 0, code: 'ranking.invalid_response' }); }
       }, 0);

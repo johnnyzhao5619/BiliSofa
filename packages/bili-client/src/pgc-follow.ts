@@ -12,3 +12,10 @@ export function parsePgcFollowBody(raw:string,value:PgcFollowQuery):PgcFollowPag
  const items=d.list.map(value=>{const e=record(value);const ep=e.new_ep===undefined||e.new_ep===null?undefined:record(e.new_ep);return {seasonId:pgcRawId(e.season_id),title:text(e.title,160),status:typeof ep?.index_show==='string'&&ep.index_show?text(ep.index_show,96):'',progress:typeof e.progress==='string'&&e.progress?text(e.progress,96):''};});
  return parsePgcFollowPage({...query,total,noMore:items.length<4||query.page*4>=total,items});
 }
+/** Dedicated per-user season status (0.49.1). The season view is cached content and its
+ * user_status may lag a write; this read is the follow state. A logged-out reply is login loss. */
+export function parsePgcFollowStatusBody(raw:string):'yes'|'no'|'unknown' {
+ const root=pgcFollowRoot(raw);if(root.code!==0)throw new DomainError(root.code===-101?'login':root.code===-403?'permission':'network');
+ const v=record(root.result??root.data);if(v.login!==1&&v.login!==true)throw new DomainError('login');
+ return v.follow===1?'yes':v.follow===0?'no':'unknown';
+}

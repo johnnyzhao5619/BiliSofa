@@ -372,3 +372,68 @@ python3 tools/deploy-foundation-app.py --product-player
 ## `CONTRIBUTING.md`
 
 Candidate probe commands now exist: `npm ci --ignore-scripts`, `npm run check`, `npm test`, `npm run build`, `npm run package`, `npm run test:ui`. See docs/DEVELOPMENT.md for browser setup and the separately blocked Samsung native build. These validate candidates, not a selected final runtime. CI contains actual checking/tests/build/package/UI checks and no private signing/account/device actions; no hosted CI run is claimed before publication.
+
+## `docs/TEST_REPORT.md`（0.48.0安装后移出）
+
+## 已安装0.47.2（ADR-094；含前端第一至三批）
+
+| 层次 | 实际结果 |
+| --- | --- |
+| strict/边界 | 301模块，退出0 |
+| 单元/合同 | 703/703（+2：课程行跳过；AI字幕地址与单轨跳过） |
+| 原生 | `overlay-read.test.py` 8/8（新增AI地址接受/拒绝） |
+| 合成UI（`dist/product-reading-fix2-app`） | 17/17：0.47.1原12条＋新5条（课程行页正常显示、空/失败时焦点留在“搜索”键×2、AI字幕可读且外域轨道跳过、全部不支持时显示unsupported） |
+| 负对照（冻结0.47.1） | 新5条全部失败 |
+| 回归 | 0.46.0全套18/18、投屏只唤回1/1、投屏定位/同秒幂等10/10；旧搜索套件30/31（冻结foundation构建的账号移除文案旧期望，已有问题） |
+| API（本机匿名，非电视） | 2字/4字关键词均返回4行；含`ketang`行的3页旧解析拒绝、新解析各得3条 |
+| 包 | 负例8/8；未签名WGT `5487c146…d4d6`；与0.47.1相比变化限于前端、两个Worker与`overlay-read`的wasm/manifest；权限不变；冻结dist 952/build不变 |
+| 签名/部署 | 签名`c602062d…1efc`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`2199303c…fbae`；[回执](design/evidence/2026-10-23-reading-fix2/receipt.json) |
+| 用户 | S1/S3复验USER PASS；此前S2/S4/S6（0.47.0）、S5（0.47.1）、P1–P7（0.46.0）、R1–R6（0.45.0）USER PASS |
+
+## `docs/TEST_REPORT.md`（0.49.0安装后移出）
+
+## 已安装0.48.0（ADR-095）
+
+| 层次 | 实际结果 |
+| --- | --- |
+| strict/边界 | 303模块，退出0 |
+| 单元/合同 | 707/707 |
+| 合成UI | 0.48.0新3条通过、对冻结0.47.2全部失败；阅读17/17、0.46.0全套18/18、投屏1/1与10/10 |
+| 包 | 负例8/8；未签名WGT `739b088f…e1ea`；原生与权限同0.47.2 |
+| 签名/部署 | 签名`223813c4…49efc`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`8d1a535a…0193`；[回执](design/evidence/2026-10-23-detail/receipt.json) |
+| 用户 | Z1 USER PASS；Z2倍速0.5/0.75×通过、1×/1.25×/1.5×斜率0.81/0.9/1.05（off）；Z3 FAIL → ADR-096 |
+
+[证据](design/evidence/2026-10-23-detail/README.md)
+
+## R07决定前的行（ADR-097）
+
+`docs/PRODUCT_CLOSURE.md`：
+
+| R07 / F05、F06、F17 | 基本队列、分P、番剧、缺轨回退通过，完整类型/权益与自然结束仍不全；小数倍速仅有未集成候选（ADR-086）；[候选证据](design/evidence/2026-10-22-element-candidate/README.md)为桌面MP4前四档通过、1.25窗口不足中止，真实DASH/电视未验；倍速判定已收紧为相邻档可区分（ADR-087），1.25×及以上旧观测不沿用 | 有效/失效/无权限条目、选集/分P、自然下一项/停止策略形成有限用例；所有入口共用正确播放与返回合同。完成小数倍速后端选择/实播验证；只补缺口，既有基本声画不重测 |
+
+`docs/IMPLEMENTATION_STATUS.md`：
+
+| F06 播放控制 | 0.21.1 A/B所请求控制、轨道、分P/记录/结束策略USER PASS；0.21.3缺4K自动回退1080P高码率播放USER PASS；0.45媒体键/隐藏态直达（ADR-088）R1–R6、0.46长按加速/连播倒计时（ADR-090）P3/P4 USER PASS | 小数倍速仅有未集成/未部署候选（ADR-086）；无样本合集/源失效及完整媒体矩阵 |
+
+`docs/IMPLEMENTATION_STATUS.md`：
+
+| 当前R07源码候选 | HTML video适配器/固定小数倍速合同及相关检查已实现；**未集成生产、未打包、未签名、未部署**。生产AVPlay/菜单仍只提供1×/2× | [ADR-086](adr/086-fractional-rate-element-candidate.md)、[候选分层结果](design/evidence/2026-10-22-element-candidate/README.md) |
+
+`docs/TEST_REPORT.md`：
+
+## 当前R07源码候选（未集成/未部署）
+
+## `docs/TEST_REPORT.md`（0.49.1安装后移出）
+
+## 已安装0.49.0（ADR-096）
+
+| 层次 | 实际结果 |
+| --- | --- |
+| strict/边界 | 307模块，退出0 |
+| 单元/合同 | 711/711；原生catalog 10/10 |
+| 合成UI | 新3条通过、对冻结0.48.0全部失败；详情3/3、阅读17/17、0.46.0全套18/18、投屏1/1与10/10 |
+| 包 | 负例8/8；未签名WGT `d148586f…a878`；原生仅`catalog/`变化；权限不变 |
+| 签名/部署 | 签名`cd08619b…e6ef`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`6438d7db…3e1a`；[回执](design/evidence/2026-10-23-season/receipt.json) |
+| 用户 | Q1/Q2 USER PASS；Q3 FAIL → 0.49.1；Q4：0.25×与紧随其后的0.5×斜率0、1.25/1.5/2×为1.09/1.17/0.85，均无等待且缓冲充足 |
+
+[证据](design/evidence/2026-10-23-season/README.md)

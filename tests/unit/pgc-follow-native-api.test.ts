@@ -19,7 +19,7 @@ test('F17 native follow list derives private vmid only after exact-identity nav 
 });
 test('F17 native add/del use private CSRF, acknowledge only once and never claim readback or automatically retry',async()=>{
  for(const follow of [true,false]){const f=fixture();const result=await f.api.execute({kind:'write',seasonId:'123',follow},account,new AbortController().signal);assert.deepEqual(result,{kind:'write',ack:'accepted'});assert.deepEqual(f.calls,[0,follow?7:8]);assert.equal(f.inputs[1],'123|'+'a'.repeat(32));assert.ok(!JSON.stringify(result).includes('csrf'));assert.ok(f.heap.every(n=>n===0));}
- const f=fixture('rejected');assert.deepEqual(await f.api.execute({kind:'write',seasonId:'123',follow:true},account,new AbortController().signal),{kind:'write',ack:'rejected'});assert.deepEqual(f.calls,[0,7]);
+ const f=fixture('rejected');assert.deepEqual(await f.api.execute({kind:'write',seasonId:'123',follow:true},account,new AbortController().signal),{kind:'write',ack:'rejected',apiCode:-111});assert.deepEqual(f.calls,[0,7]); // 0.49.1 keeps B站's code for the page
 });
 test('F17 identity mismatch or invalid CSRF never reaches a POST',async()=>{
  for(const mode of ['mismatch','bad-csrf']){const f=fixture(mode),value=mode==='bad-csrf'?{...account,cookieLines:account.cookieLines.replace('a'.repeat(32),'synthetic-csrf')}:account;await assert.rejects(f.api.execute({kind:'write',seasonId:'123',follow:true},value,new AbortController().signal),{code:'login'});assert.deepEqual(f.calls,[0]);}

@@ -1,7 +1,11 @@
 """Build catalog-only TV WASM from pinned local libraries. No sign/install/network."""
 from pathlib import Path
 import hashlib,json,os,re,subprocess
-ROOT=Path(__file__).resolve().parents[1];BASE=ROOT/'.local/network-upgrade';SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk';PREFIX=BASE/'stage/bilisofa/network';OUT=ROOT/'build/catalog'
+ROOT=Path(__file__).resolve().parents[1];BASE=ROOT/'.local/network-upgrade';SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk';PREFIX=BASE/'stage/bilisofa/network'
+import sys
+# --out keeps the frozen module intact (0.49.0 links into build/catalog-pgc).
+OUT=ROOT/(sys.argv[sys.argv.index('--out')+1] if '--out' in sys.argv else 'build/catalog')
+if OUT.parent!=ROOT/'build' or not OUT.name.startswith('catalog'):raise SystemExit('Catalog output must stay under build/catalog*')
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 subprocess.run(['python3',str(ROOT/'tools/category-data.py'),'--check'],check=True)
 subprocess.run(['python3',str(ROOT/'tools/build-network-candidate.py'),'check'],check=True)

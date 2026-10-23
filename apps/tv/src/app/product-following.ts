@@ -6,7 +6,10 @@ import type { TvShell } from './tv-shell.ts';
 import { ProductLibraryRead, type LibraryEntry } from './product-library-read.ts';
 import { libraryCard } from '../ui/library-card.ts';
 import { productButton } from './product-frame.ts';
-export type FollowingTab = 'updates' | 'bangumi' | 'drama';
+import { PRODUCT_SEASON } from './season-policy.ts';
+import { PgcHotRead } from './pgc-hot-read.ts';
+import { CoverArt } from '../platform/cover-art.ts';
+export type FollowingTab = 'updates' | 'bangumi' | 'drama' | 'hot';
 export interface FollowingMemory {
   tab: FollowingTab;
   pages: Partial<Record<FollowingTab, number>>;
@@ -20,17 +23,23 @@ interface Services {
     seasonId: string;
   }): void;
 }
-const tabs = [['updates', '关注更新'], ['bangumi', '我的追番'], ['drama', '我的追剧']] as const;
+const tabs = [['hot', '热门番剧'], ['updates', '关注更新'], ['bangumi', '我的追番'], ['drama', '我的追剧']] as const;
 /** Same product cards; source-bound summaries never invent playable IDs. */
 export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'following' | 'catalog', memory: FollowingMemory, services: Services): HTMLElement {
   const privateContent = services.workspace.state.kind === 'active';
+  // 0.49.0 (ADR-096): 番剧影视 opens on the public 热门番剧 ranking, which guests can browse too.
+  const hot = PRODUCT_SEASON && route === 'catalog';
   if (route === 'catalog' && memory.tab === 'updates')
-    memory.tab = 'bangumi';
-  const available = tabs.filter(([kind]) => route === 'following' || kind !== 'updates');
+    memory.tab = hot ? 'hot' : 'bangumi';
+  if (!hot && memory.tab === 'hot') memory.tab = route === 'following' ? 'updates' : 'bangumi';
+  const available = tabs.filter(([kind]) => kind === 'hot' ? hot : route === 'following' || kind !== 'updates');
+  const open = () => privateContent || memory.tab === 'hot';
+  const hotReader = hot ? new PgcHotRead(owner) : undefined, art = hot ? new CoverArt() : undefined;
+  if (art) owner.add('following-art', () => art.close());
   const node = document.createElement('section');
   node.className = 'tv-following';
   // Guests start on the sign-in action, the page's only way to its content.
-  node.dataset.initialFocusId = privateContent ? 'following-search' : 'following-login';
+  node.dataset.initialFocusId = privateContent || hot ? 'following-search' : 'following-login';
   const heading = document.createElement('h1');
   heading.id = 'following-title';
   heading.textContent = route === 'following' ? '关注' : '番剧影视';
@@ -94,6 +103,8 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
   function details(card: LibraryEntry): void {
     if (busy && !feed || owner.signal.aborted)
       return;
+    // A season card opens the season page itself; the intermediate panel only repeated it.
+    if (PRODUCT_SEASON && card.seasonId && !card.target) { services.openSeason({ seasonId: card.seasonId }); return; }
     shell.openModal('following-detail', child => {
       const panel = document.createElement('section');
       panel.className = 'tv-library-detail';
@@ -125,27 +136,29 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     search.dataset.left = 'nav-' + route;
     search.dataset.right = search.dataset.focusId;
     search.dataset.up = search.dataset.focusId;
-    search.dataset.down = privateContent ? tab : 'following-login';
+    search.dataset.down = privateContent || hot ? tab : 'following-login';
     login.dataset.left = 'nav-' + route;
     login.dataset.right = login.dataset.focusId;
     login.dataset.up = 'following-search';
     login.dataset.down = login.dataset.focusId;
-    tabButtons.forEach((b, i) => { b.disabled = !privateContent || blocked; b.setAttribute('aria-pressed', String(b.dataset.focusId === tab)); b.dataset.left = tabButtons[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = tabButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = 'following-search'; b.dataset.down = cards[0]?.dataset.focusId ?? (!refresh.disabled ? 'following-refresh' : 'following-search'); });
+    tabButtons.forEach((b, i) => { b.disabled = (!privateContent && b.dataset.focusId !== 'following-tab-hot') || blocked; b.setAttribute('aria-pressed', String(b.dataset.focusId === tab)); b.dataset.left = tabButtons[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = tabButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = 'following-search'; b.dataset.down = cards[0]?.dataset.focusId ?? (!refresh.disabled ? 'following-refresh' : 'following-search'); });
     const enabled = [previous, next, refresh].filter(b => !b.disabled && !b.hidden);
     cards.forEach((b, i) => { b.dataset.left = cards[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = cards[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = tab; b.dataset.down = enabled[0]?.dataset.focusId ?? tab; });
     enabled.forEach((b, i) => { b.dataset.left = enabled[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = enabled[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = cards[0]?.dataset.focusId ?? tab; b.dataset.down = b.dataset.focusId; });
     feed?.wire();
   }
   function controls(): void {
-    source.textContent = memory.tab === 'updates' ? '网页关注更新摘要 · 完整动态暂不可用' : memory.tab === 'bangumi' ? '当前账号的追番列表' : '当前账号的追剧列表';
+    source.textContent = memory.tab === 'hot' ? '公开番剧排行（近三日），不是个性化推荐' : memory.tab === 'updates' ? '网页关注更新摘要 · 完整动态暂不可用' : memory.tab === 'bangumi' ? '当前账号的追番列表' : '当前账号的追剧列表';
+    source.hidden = !open();
     search.disabled = blocked;
-    previous.disabled = !privateContent || busy || blocked || page === 1;
-    next.disabled = !privateContent || busy || blocked || noMore || page >= maxPage();
-    refresh.disabled = !privateContent || busy || blocked;
+    previous.disabled = !open() || busy || blocked || page === 1;
+    next.disabled = !open() || busy || blocked || noMore || page >= maxPage();
+    refresh.disabled = !open() || busy || blocked;
+    grid.hidden = !open(); login.hidden = privateContent || memory.tab === 'hot';
     wire();
   }
   async function read(target: number, replace = false, fresh = false): Promise<void> {
-    if (!privateContent || owner.signal.aborted || blocked)
+    if (!open() || owner.signal.aborted || blocked)
       return;
     const ticket = ++generation, kind = memory.tab;
     busy = true;
@@ -159,14 +172,14 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     status.textContent = '正在加载' + tabs.find(t => t[0] === kind)![1];
     const active = document.activeElement as HTMLElement | null, focused = active?.dataset.focusId ?? shell.navigation.current.anchor.focusId;
     try {
-      const result = await reader.read({ kind }, target, fresh && kind === 'updates');
+      const result = kind === 'hot' ? await hotReader!.read(target, fresh) : await reader.read({ kind }, target, fresh && kind === 'updates');
       if (owner.signal.aborted || ticket !== generation)
         return;
       page = result.page;
       memory.pages[kind] = page;
       noMore = result.noMore;
       const rendered=result.items.map(card => {
-        const item = libraryCard({ ...card, id: 'following-card-' + card.id }, owner.signal, () => details(card));
+        const item = libraryCard({ ...card, id: 'following-card-' + card.id }, owner.signal, () => details(card), art);
         item.setAttribute('aria-label', `${card.badge}，${card.title}，${card.subtitle}`);
         return item;
       });
@@ -199,7 +212,7 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     }
   }
   node.append(lead, toolbar, categories, source, status, login, grid, paging);
-  if (privateContent)
+  if (open())
     void read(page);
   else {
     status.textContent = route === 'catalog' ? '登录查看已追列表，也可直接搜索番剧影视' : '登录后查看关注更新，也可先搜索UP主';

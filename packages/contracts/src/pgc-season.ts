@@ -1,4 +1,4 @@
-import { DomainError, record, text } from './index.ts';
+import { DomainError, record, text, parseCoverReference, type CoverReference } from './index.ts';
 import { parseVodItem, vodInteger, vodKeys, type VodItem } from './vod-catalog.ts';
 export type PgcRestriction = 'none' | 'member' | 'purchase' | 'region' | 'unavailable' | 'drm' | 'unknown';
 export interface PgcEpisode { key: string; title: string; badge: string; restriction: PgcRestriction; item?: VodItem; }
@@ -7,6 +7,8 @@ export interface PgcGroup { title: string; episodes: string[]; }
 export interface PgcSeason {
   seasonId: string; title: string; description: string; status: string;
   followed: 'yes' | 'no' | 'unknown'; episodes: PgcEpisode[]; groups: PgcGroup[];
+  /** Optional season artwork (0.49.0); an invalid reference is dropped by the parser. */
+  cover?: CoverReference;
 }
 export function pgcId(value: unknown): string {
   if (typeof value !== 'string' || !/^[1-9][0-9]{0,15}$/.test(value) || BigInt(value) > 9007199254740991n) throw new DomainError('invalid');
@@ -19,7 +21,7 @@ export function pgcEpisodeKey(value: unknown): string {
   if (!key.startsWith('e')) throw new DomainError('invalid'); pgcId(key.slice(1)); return key;
 }
 export function parsePgcSeason(value: unknown): PgcSeason {
-  const v = record(value); vodKeys(v, ['seasonId', 'title', 'description', 'status', 'followed', 'episodes', 'groups']);
+  const v = record(value); vodKeys(v, ['seasonId', 'title', 'description', 'status', 'followed', 'episodes', 'groups', ...(v.cover === undefined ? [] : ['cover'])]);
   if (!['yes', 'no', 'unknown'].includes(String(v.followed)) || !Array.isArray(v.episodes) || v.episodes.length > 10000 || !Array.isArray(v.groups) || !v.groups.length || v.groups.length > 128) throw new DomainError('invalid');
   const episodes: PgcEpisode[] = v.episodes.map(raw => {
     const e = record(raw); vodKeys(e, ['key', 'title', 'badge', 'restriction', ...(e.item === undefined ? [] : ['item'])]);
@@ -40,6 +42,6 @@ export function parsePgcSeason(value: unknown): PgcSeason {
   // Available episode-to-BV mappings must be unambiguous within this season.
   const bvs = episodes.flatMap(e => e.item ? [e.item.bvid] : []);
   if (new Set(bvs).size !== bvs.length) throw new DomainError('invalid');
-  return { seasonId: pgcId(v.seasonId), title: text(v.title, 120), description: v.description === '' ? '' : text(v.description, 2000), status: v.status === '' ? '' : text(v.status, 96), followed: v.followed as PgcSeason['followed'], episodes, groups };
+  return { seasonId: pgcId(v.seasonId), title: text(v.title, 120), description: v.description === '' ? '' : text(v.description, 2000), status: v.status === '' ? '' : text(v.status, 96), followed: v.followed as PgcSeason['followed'], episodes, groups, ...(v.cover === undefined ? {} : { cover: parseCoverReference(v.cover) }) };
 }
 export function pgcRawId(value: unknown): string { return String(vodInteger(value, 1, Number.MAX_SAFE_INTEGER)); }

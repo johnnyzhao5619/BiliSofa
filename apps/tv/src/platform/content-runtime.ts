@@ -49,6 +49,7 @@ export class PublicContentRuntime implements ContentRuntime {
       if(result.operation==='guest-popular' && result.kind!=='ok')throw new PopularReadError(result);
       if(result.kind!=='ok') throw new DomainError(result.kind==='cancelled'?'cancelled':result.kind==='invalid_response'?'invalid':result.code.endsWith('.native_unavailable')?'unsupported':'network');
       if(result.operation==='public-ranking'||result.operation==='public-category-ranking'){this.rankingSnapshot=result.items;return this.rankingPage(1);}
+      if(result.operation==='public-pgc-ranking')throw new DomainError('invalid'); // served by PgcRankingWorker, never this lane
       return {items:result.items,noMore:result.noMore};
     } finally { signal.removeEventListener('abort',abort);task.finish(); }
   }

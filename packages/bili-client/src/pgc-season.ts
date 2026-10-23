@@ -2,6 +2,7 @@ import { DomainError, record } from '../../contracts/src/index.ts';
 import { pgcId, pgcRawId, parsePgcSeason, type PgcEpisode, type PgcRestriction, type PgcSeason } from '../../contracts/src/pgc-season.ts';
 import { vodBvid, vodInteger, type VodItem } from '../../contracts/src/vod-catalog.ts';
 import { parseVodPlayback, type PrivateVodCatalog, type PrivateVodDetail } from './vod-catalog.ts';
+import { publicArtwork } from './public-artwork.ts';
 export interface PrivatePgcEpisode { key: string; episodeId: string; cid: string; item: VodItem; allowed: boolean; }
 export interface PrivatePgcSeason { summary: PgcSeason; episodes: PrivatePgcEpisode[]; }
 export class PgcApiError extends DomainError { constructor(readonly apiCode: number) { super([-101, -102].includes(apiCode) ? 'login' : [-10403, 10015001, 10015002].includes(apiCode) ? 'permission' : 'network'); } }
@@ -73,7 +74,7 @@ export function parsePgcSeasonBody(raw: string, seasonId: string, authenticated:
   for (const b of bindings.values()) collisions.set(b.item.bvid, (collisions.get(b.item.bvid) ?? 0) + 1);
   for (const b of bindings.values()) if (collisions.get(b.item.bvid)! > 1) { b.allowed = false; const summary = summaries.get(b.key)!; delete summary.item; summary.restriction = 'unavailable'; }
   const latest = d.new_ep === undefined ? undefined : record(d.new_ep);
-  const summary = parsePgcSeason({ seasonId, title: caption(d.title, 120), description: caption(d.evaluate, 2000, true), status: caption(latest?.desc, 96, true), followed, episodes: [...summaries.values()], groups });
+  const summary = parsePgcSeason({ seasonId, title: caption(d.title, 120), description: caption(d.evaluate, 2000, true), status: caption(latest?.desc, 96, true), followed, episodes: [...summaries.values()], groups, ...(() => { const cover = publicArtwork(d.cover); return cover ? { cover } : {}; })() });
   return { summary, episodes: [...bindings.values()] };
 }
 export function resolvePgcEpisode(season: PrivatePgcSeason, key: string): PrivatePgcEpisode {

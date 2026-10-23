@@ -32,7 +32,8 @@ static int follow_route(int operation, char *input, char *url, size_t capacity) 
   int n;
   if (operation == 4) {
     if (!guest_cid_valid(input)) return 0;
-    n = snprintf(url, capacity, "https://api.bilibili.com/pgc/view/web/season?season_id=%s", input);
+    /* 0.49.1 (ADR-096): the dedicated per-user status, not the cached season view. */
+    n = snprintf(url, capacity, "https://api.bilibili.com/pgc/view/web/season/user/status?season_id=%s", input);
   } else if (operation == 6) {
     return follow_list(input,url,capacity);
   } else if (operation == 7 || operation == 8) {

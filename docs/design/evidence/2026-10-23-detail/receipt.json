@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.48.0",
+  "basedOn": "0.47.2",
+  "uiSourceHash": "7b72b83634338419c0289e038592372606afc8a5500afcf5490ff903bcef8a77",
+  "uiManifestSha256": "540d47cd9142956fe4b71065564a3f82d557fb450d8c4fac216ba78596d3f5eb",
+  "unsignedSha256": "739b088f5fc21d8077c46ef94f7ca1083fafec48e7337eaf05c19f2f41f0e1ea",
+  "signedSha256": "223813c40f99f3cb9f1e0e718769cb91295851575bf7cb208ac39f55d8849efc",
+  "signedAt": "2026-10-23T14:11:19.061816+00:00",
+  "sourceArchiveSha256": "8d1a535a7ef141c173f56bd1739de39d0bacaeacfc4cde1d479d2c1c53130193",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.48.0",
+        "signedSha256": "223813c40f99f3cb9f1e0e718769cb91295851575bf7cb208ac39f55d8849efc",
+        "uiSourceHash": "7b72b83634338419c0289e038592372606afc8a5500afcf5490ff903bcef8a77",
+        "startedAt": "2026-10-23T14:11:53.464799+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.48.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.48.0",
+      "signedSha256": "223813c40f99f3cb9f1e0e718769cb91295851575bf7cb208ac39f55d8849efc",
+      "uiSourceHash": "7b72b83634338419c0289e038592372606afc8a5500afcf5490ff903bcef8a77",
+      "startedAt": "2026-10-23T14:11:53.464799+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs0472": [
+    "apps/tv/public/product-ui.css",
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/detail-policy.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/product-home.ts",
+    "apps/tv/src/app/product-page.ts",
+    "apps/tv/src/app/product-settings.ts",
+    "apps/tv/src/app/rate-probe.ts",
+    "apps/tv/src/platform/element-video.ts",
+    "package.json",
+    "packages/bili-client/src/vod-catalog.ts",
+    "packages/contracts/src/playback-rate.ts",
+    "packages/contracts/src/vod-catalog.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.48.0",
+    "modules": 303,
+    "unitContractPassed": 707,
+    "detailUiPassed": 3,
+    "baseline0472DetailSpecsFailed": 3,
+    "retainedReadingUiPassed": 17,
+    "retainedPolishUiPassed": 18,
+    "retainedCastWakeOnlyPassed": 1,
+    "retainedCastClockSeekPassed": 10,
+    "packageNegativePassed": 8,
+    "ciSequenceLocalSteps": 27,
+    "unsignedSha256": "739b088f5fc21d8077c46ef94f7ca1083fafec48e7337eaf05c19f2f41f0e1ea",
+    "uiSourceInputs": 261,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModules": 17,
+    "nativeFilesChangedVs0472": [],
+    "nativeResourcesUnchangedVs0472": 68,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.48.0 (ADR-095): detail page shows description, publish date, like/danmaku counts and UP avatar from the existing view response (TS only); on-demand R07 rate probe in settings help (production rates unchanged)",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_Z1_Z3",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs0472": true
+}

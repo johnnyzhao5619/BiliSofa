@@ -4,6 +4,9 @@
 
 | 工件 | 当前结论 |
 | --- | --- |
+| 0.49.1追番状态与写入结果 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`e76c619c…0e79`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`56cc3f29…fbaa4`；ADR-096文末；原生仅`pgc-follow/`重链接（`build/pgc-follow-status`）；Q3复验USER PASS；[hash/源码/验证](design/evidence/2026-10-23-season-fix/README.md) |
+| 0.49.0番剧详情、一键追番与热门番剧 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`cd08619b…e6ef`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`6438d7db…3e1a`；ADR-096；原生仅`catalog/`重链接（`build/catalog-pgc`）；用户Q1/Q2 PASS、Q3 FAIL（见0.49.1）、Q4倍速结果见ADR-096；[hash/源码/验证](design/evidence/2026-10-23-season/README.md) |
+| 0.48.0详情补全与倍速探查 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`223813c4…49efc`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`8d1a535a…0193`；ADR-095；原生与0.47.2逐字节一致；用户Z1 PASS、Z2部分通过、Z3 FAIL（见ADR-096）；[hash/源码/验证](design/evidence/2026-10-23-detail/README.md) |
 | 0.47.2搜索课程行与AI字幕修正 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`c602062d…1efc`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`2199303c…fbae`；用户复验S1/S3 USER PASS；ADR-094；含原生`overlay-read`重链接（`build/overlay-read-subtitle`）；未签名WGT `5487c146dad89d4c60d487e6bc9defd02fb03b87364fbdddffb05cfdf76dd4d6`；[验证](design/evidence/2026-10-23-reading-fix2/README.md) |
 | 0.47.1第三批真机反馈修正 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`b9786074…5284`（证书预检PASS，权限与0.47.0相同）；首次SDB能力确认超时、重连未连上；用户确认电视开机并处于开发者模式后，重启本机SDB服务再连接，**第二次升级安装/启动platformSuccess（不清数据）**；源码归档`345e5979…dda1`；用户复验S5 PASS，S1/S3 FAIL（见ADR-094）；仅前端（app.js/style.css/config.xml/build.json变化，原生/许可78个文件与0.47.0一致）；未签名WGT `1fa9162e3c60ae008c55154f7c3c623f8c389212a9b600f9ce8d7dc8e1eaa5d6`；[验证](design/evidence/2026-10-23-reading-fix/README.md) |
 | 0.47.0第三批 | **已签名并升级安装/启动（平台确认，一次成功，不清数据）**；ADR-092/093；用户S2/S4/S6 USER PASS；S5连播记忆PASS但⚙“循环”上移FAIL；S1、S3 FAIL；[hash/源码/验证](design/evidence/2026-10-23-reading/README.md) |
@@ -18,6 +21,6 @@
 | 0.38.0冻结 | 倍速USER PASS；关注invalid/点赞-403/互动慢/跳动缺图未通过；[用户事实](design/evidence/2026-10-22-direct/USER_ACCEPTANCE.md) |
 | 0.37.0及以前冻结 | 原最小通过组与失败保持；不覆盖原工件或把旧UI通过扩展为新设备通过 |
 
-当前安装为0.47.2，升级安装/启动获平台确认。R07候选未集成/打包/签名/部署，不将旧WGT重标为新候选。各版本均未卸载或清数据，未执行代理账号POST。已签名包与冻结dist/build不覆盖；0.47.2起`overlay-read`从新目录`build/overlay-read-subtitle`打包，其余原生沿用。签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。
+当前安装为0.49.1，升级安装/启动获平台确认。R07候选未集成/打包/签名/部署，不将旧WGT重标为新候选。各版本均未卸载或清数据，未执行代理账号POST。已签名包与冻结dist/build不覆盖；0.47.2起`overlay-read`从新目录`build/overlay-read-subtitle`打包，其余原生沿用。签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。
 
 [当前验收](CURRENT_DEVICE_TEST.md) · [0.38.0原记录](archive/2026-10-22-direct-038/SIGNING_DEVICE_RECORD.md)
