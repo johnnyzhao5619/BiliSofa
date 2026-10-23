@@ -30,6 +30,7 @@ import {videoInteractions} from './video-interactions.ts';
 import { vodComments } from './vod-comments.ts';
 import { VodControls } from './vod-controls.ts';
 import { playbackFailureText } from './user-messages.ts';
+import { MEDIA_RECONNECT, RECONNECT_LIMIT, reconnectPlan } from './reconnect-policy.ts';
 import { clockTime } from '../ui/content-card.ts';
 declare const BILISOFA_W06:boolean;
 declare const BILISOFA_W05: boolean;
@@ -50,7 +51,7 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   timeline.setAttribute('role', 'timer'); status.setAttribute('role', 'status'); status.textContent = '正在读取视频详情和可用轨道'; title.textContent = '视频播放';
   let access: VodAccess | undefined, catalog: VodReadResult | undefined, choice: VodChoice | undefined, player: VodPlayback | undefined;
   let defaultFocusPending=PRODUCT_STREAM;
-  let playlist: VodItem[] = [], sequence = 'parts', busy = true, started = false, epoch = 0, continuous = queueNavigation?.continuous??(PRODUCT_READING ? profile.readContinuous?.() ?? true : PRODUCT_POLISH), repeat: RepeatMode = 'off', terminal = '', advice = '';
+  let playlist: VodItem[] = [], sequence = 'parts', busy = true, started = false, epoch = 0, continuous = queueNavigation?.continuous??(PRODUCT_READING ? profile.readContinuous?.() ?? true : PRODUCT_POLISH), repeat: RepeatMode = 'off', terminal = '', advice = '', reconnects = 0, reconnectAt = -Infinity, observedMs = 0;
   const settings = profile.read(), jump = settings.kind === 'ok' ? settings.value.preferences.jumpSeconds : 10;
   const preview = new SeekPreview(() => player?.snapshot().media?.durationMs ?? 0, () => player?.snapshot().media?.timeMs ?? 0);
   const opening = Promise.resolve().then(open).then(value => { access = value; return value; }); void opening.catch(() => {});
@@ -219,20 +220,32 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     busy = true; preview.cancel(); const ticket = ++epoch;
     if (player && !(await player.close()).closed) { terminal = failure(new DomainError('unknown')); busy = false; update(); return; }
     if (owner.signal.aborted || ticket !== epoch) return;
-    playlist = items; sequence = kind; terminal = advice = ''; started = true; resume.replaceChildren();
+    playlist = items; sequence = kind; terminal = advice = ''; started = true; resume.replaceChildren(); observedMs = position;
     player = new VodPlayback(playlist, index, (item, selected, finished) => {
       const recorder = new LocalPlayback(profile, item.bvid, diagnostics, () => { feedback.textContent = '本地续播保存未确认，可在设置中核查'; }, undefined, item.part);
       return new VodCatalogMedia(access!, item, selected, caps, () => catalog, (result, value, fallback) => {
         if (owner.signal.aborted || ticket !== epoch) throw new DomainError('cancelled');
         recorder.label({title:result.detail.title,partTitle:result.catalog.item.title});
         catalog = result; choice = value;if(!fallback&&(selected||!profile.readTracks?.()))profile.rememberTracks?.(vodPreference(result.catalog,value));advice=fallback?'已自动选择相近的可用画质 / 音轨':''; update();
-      }, backend, finished, value => recorder.observe(value),()=>profile.readTracks?.());
+      }, backend, finished, value => { if (value.timeMs > 0) observedMs = value.timeMs; recorder.observe(value); },()=>profile.readTracks?.());
     }, (outcome, closure, fault) => {
       diagnostics.add('media', closure.closed ? outcome === 'ended' ? 'ended' : 'failed' : 'close_unknown'); if (fault) diagnostics.mediaFailure(fault);
       if (!owner.signal.aborted && ticket === epoch) { if(outcome==='ended'&&closure.closed&&queueNavigation&&continuous&&queueNavigation.next){queueNavigation.next(continuous);return;}
-        if(outcome==='ended'&&closure.closed&&PRODUCT_POLISH&&!queueNavigation){const ended=player?.snapshot(),at=ended?nextUpIndex(ended.index,ended.length,continuous,repeat):undefined;terminal='播放结束';update();if(at!==undefined)startNextUp(at);return;}terminal = !closure.closed ? failure(new DomainError('unknown')) : outcome === 'ended' ? '播放结束' : failure(new DomainError(fault?.reason ?? 'network')); update(); }
+        if(outcome==='ended'&&closure.closed&&PRODUCT_POLISH&&!queueNavigation){const ended=player?.snapshot(),at=ended?nextUpIndex(ended.index,ended.length,continuous,repeat):undefined;terminal='播放结束';update();if(at!==undefined)startNextUp(at);return;}terminal = !closure.closed ? failure(new DomainError('unknown')) : outcome === 'ended' ? '播放结束' : failure(new DomainError(fault?.reason ?? 'network')); if (outcome !== 'ended' && reconnect(closure.closed, fault?.reason)) return; update(); }
     });
     player.mode(sequenceMode(), repeat); player.start(position); diagnostics.add('media', 'started'); busy = false;if(PRODUCT_STREAM)defaultFocusPending=true;update();if(!PRODUCT_STREAM)back.focus();
+  }
+  /** ADR-100: a transient network/timeout failure reopens the same item with a fresh source read (B站 may
+   * hand out another node) a little before the last position, at most twice in two minutes. */
+  function reconnect(closed: boolean, reason: string | undefined): boolean {
+    const s = MEDIA_RECONNECT ? player?.snapshot() : undefined; if (!s || owner.signal.aborted) return false;
+    // The failed media may already have reset its clock; the last observed position is where the viewer was.
+    const now = performance.now(), plan = reconnectPlan(reason, closed, reconnects, reconnectAt, now, Math.max(observedMs, s.media?.timeMs ?? 0)); if (!plan) return false;
+    reconnects = plan.attempt; reconnectAt = now; catalog = undefined;
+    const items = playlist, index = s.index, kind = sequence, ticket = epoch;
+    terminal = ''; advice = `网络波动，正在重新连接…（${plan.attempt}/${RECONNECT_LIMIT}）`; update(); diagnostics.add('media', 'reconnect_scheduled');
+    setTimeout(() => { if (!owner.signal.aborted && ticket === epoch) void restart(items, index, kind, plan.resumeMs); }, plan.delayMs);
+    return true;
   }
   function itemPicker(label: string, entries: VodCollectionEntry[], picked: (index: number, item: VodItem) => Promise<void>, current = -1): void {
     shell.openModal('vod-items', child => {

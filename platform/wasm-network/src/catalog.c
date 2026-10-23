@@ -9,10 +9,20 @@ static void catalog_ranking(void) {
   guest_reset(); guest_limit = BILISOFA_GUEST_MAX;
   guest_get("https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all", "https://www.bilibili.com/", 0);
 }
-/* 0.49.0 (ADR-096): fixed public 番剧 ranking (season_type=1, three-day window). No caller input. */
-static void catalog_pgc_ranking(void) {
+/* 0.49.0 (ADR-096): public 番剧/国创 ranking. 0.50.0 (ADR-098) allows only season_type 1 (番剧) or
+   4 (国创) and a 3- or 7-day window; the index lane sorts all time by followers, pages 1-5. */
+static int catalog_pgc_type(const char *s) { return s && (!strcmp(s, "1") || !strcmp(s, "4")) ? s[0] - '0' : 0; }
+static void catalog_pgc_ranking(int type, int day) {
+  char url[128];
+  snprintf(url, sizeof(url), "https://api.bilibili.com/pgc/web/rank/list?day=%d&season_type=%d", day, type);
   guest_reset(); guest_limit = BILISOFA_GUEST_MAX;
-  guest_get("https://api.bilibili.com/pgc/web/rank/list?day=3&season_type=1", "https://www.bilibili.com/", 0);
+  guest_get(url, "https://www.bilibili.com/", 0);
+}
+static void catalog_pgc_index(int type, int page) {
+  char url[192];
+  snprintf(url, sizeof(url), "https://api.bilibili.com/pgc/season/index/result?season_type=%d&type=1&order=3&sort=0&page=%d&pagesize=20", type, page);
+  guest_reset(); guest_limit = BILISOFA_GUEST_MAX;
+  guest_get(url, "https://www.bilibili.com/", 0);
 }
 static void catalog_category(int id) {
   char url[128];
@@ -26,7 +36,9 @@ int main(int argc, char **argv) {
      The optimized production WASM drops these uncalled static functions. */
   (void)guest_popular; (void)guest_video;
   if (argc == 2 && !strcmp(argv[1], "ranking")) { catalog_ranking(); return 0; }
-  if (argc == 2 && !strcmp(argv[1], "pgc-ranking")) { catalog_pgc_ranking(); return 0; }
+  if (argc == 2 && !strcmp(argv[1], "pgc-ranking")) { catalog_pgc_ranking(1, 3); return 0; }
+  if (argc == 4 && !strcmp(argv[1], "pgc-ranking") && catalog_pgc_type(argv[2]) && (!strcmp(argv[3], "3") || !strcmp(argv[3], "7"))) { catalog_pgc_ranking(catalog_pgc_type(argv[2]), argv[3][0] - '0'); return 0; }
+  if (argc == 4 && !strcmp(argv[1], "pgc-index") && catalog_pgc_type(argv[2]) && strlen(argv[3]) == 1 && argv[3][0] >= '1' && argv[3][0] <= '5') { catalog_pgc_index(catalog_pgc_type(argv[2]), argv[3][0] - '0'); return 0; }
   if (argc == 3 && !strcmp(argv[1], "category-ranking")) {
     int id = catalog_category_id(argv[2]);
     if (id) { catalog_category(id); return 0; }

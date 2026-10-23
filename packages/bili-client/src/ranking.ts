@@ -23,13 +23,14 @@ export function parseRankingBody(raw: string): { apiCode: number; items: Popular
   return { apiCode, items };
 }
 /** Public 番剧 ranking (ADR-096). Rows with an unusable id or title are skipped; order is kept. */
-export function parsePgcRankingBody(raw: string): { apiCode: number; seasons: PgcRankCard[] } {
+export function parsePgcRankingBody(raw: string): { apiCode: number; seasons: PgcRankCard[]; more: boolean } {
   if (new TextEncoder().encode(raw).length > 524288) throw new DomainError('invalid');
   let parsed: unknown;
   try { parsed = JSON.parse(raw); } catch { throw new DomainError('invalid'); }
   const root = record(parsed), apiCode = finite(root.code, -2147483648, 2147483647);
   if (!Number.isInteger(apiCode)) throw new DomainError('invalid');
-  if (apiCode !== 0) return { apiCode, seasons: [] };
+  if (apiCode !== 0) return { apiCode, seasons: [], more: false };
+  // Ranking replies use `result`; the all-time index (0.50.0) uses `data` with has_next and score.
   const data = record(root.result ?? root.data);
   if (!Array.isArray(data.list) || data.list.length > 100) throw new DomainError('invalid');
   const seen = new Set<string>(), seasons: PgcRankCard[] = [];
@@ -40,7 +41,8 @@ export function parsePgcRankingBody(raw: string): { apiCode: number; seasons: Pg
     if (!Number.isSafeInteger(id) || (id as number) < 1 || !title || seen.has(String(id))) continue;
     seen.add(String(id));
     const ep = v.new_ep !== null && typeof v.new_ep === 'object' ? v.new_ep as Record<string, unknown> : {}, cover = publicArtwork(v.cover);
-    seasons.push({ seasonId: String(id), title, subtitle: short(ep.index_show, 48), rating: short(v.rating, 16), badge: short(v.badge, 16), ...(cover ? { cover } : {}) });
+    const score = short(v.score, 8), rating = short(v.rating, 16) || (score ? score + '分' : '');
+    seasons.push({ seasonId: String(id), title, subtitle: short(ep.index_show ?? v.index_show, 48), rating, badge: short(v.badge, 16), ...(cover ? { cover } : {}) });
   }
-  return { apiCode, seasons };
+  return { apiCode, seasons, more: data.has_next === 1 || data.has_next === true };
 }

@@ -13,10 +13,12 @@ export async function setup(page: Page, start = true, device: 'package'|'denied'
   await page.route('**/search/manifest.json',route=>route.fulfill({contentType:'application/json',body:'{}'}));
   await page.route('**/search/probe.js',route=>route.fulfill({contentType:'text/javascript',body:search}));
   const productInfoDeclared=/<tizen:privilege\s+name="http:\/\/developer\.samsung\.com\/privilege\/productinfo"\s*\/>/.test(readFileSync((process.env.BILISOFA_TEST_ROOT??'dist/w04-app')+'/config.xml','utf8'));
+  // 0.50.0 (ADR-099): suites start as a guest who already dismissed the first-run welcome; chooser specs clear this.
+  await page.addInitScript(()=>{try{if(localStorage.getItem('bilisofa.launch-guest.v1')===null&&!sessionStorage.getItem('fixture.welcome'))localStorage.setItem('bilisofa.launch-guest.v1','1');}catch{}});
   await page.addInitScript(({productInfoDeclared,device,tickCadenceMs})=>{
     let state='NONE', time=0,duration=8000, opened=0,closed=0,rate=1;
     let fails=0;
-    let listener:{oncurrentplaytime?:(n:number)=>void;onstreamcompleted?:()=>void}={}, old=listener;
+    let listener:{oncurrentplaytime?:(n:number)=>void;onstreamcompleted?:()=>void;onerror?:(value?:unknown)=>void}={}, old=listener;
     const operations:string[]=[];
     setInterval(()=>{if(state==='PLAYING'){time+=tickCadenceMs*rate;listener.oncurrentplaytime?.(time);}},tickCadenceMs);
     Object.assign(globalThis,{webapis:{productinfo:{getModel:()=>{if(!productInfoDeclared||device==='denied')throw Object.assign(new Error('synthetic permission denied'),{name:'SecurityError'});return device==='other-model'?'UNVERIFIED_MODEL':'U800FD';}},avplay:{
@@ -27,7 +29,7 @@ export async function setup(page: Page, start = true, device: 'package'|'denied'
       seekTo(ms:number,done:()=>void){operations.push('seek');setTimeout(()=>{time=ms;listener.oncurrentplaytime?.(ms);done();},10);},
       setSpeed(n:number){rate=n;operations.push('speed'+n);},stop(){state='IDLE';operations.push('stop');},close(){state='NONE';closed++;operations.push('close');},
     },appcommon:{AppCommonScreenSaverState:{SCREEN_SAVER_ON:1,SCREEN_SAVER_OFF:0},setScreenSaver(_value:number,done:()=>void){done();}}},
-    mediaFixture:{failPrepare(n:number){fails=n;},snapshot:()=>({state,time,duration,opened,closed,rate,operations:[...operations]}),tick(ms:number){time=ms;listener.oncurrentplaytime?.(ms);},end(){listener.onstreamcompleted?.();},duration(ms:number){duration=ms;},late(){old.oncurrentplaytime?.(999999);}}});
+    mediaFixture:{failPrepare(n:number){fails=n;},snapshot:()=>({state,time,duration,opened,closed,rate,operations:[...operations]}),tick(ms:number){time=ms;listener.oncurrentplaytime?.(ms);},end(){listener.onstreamcompleted?.();},fail(){listener.onerror?.('PLAYER_ERROR_CONNECTION_FAILED');},duration(ms:number){duration=ms;},late(){old.oncurrentplaytime?.(999999);}}});
     if(device==='no-player')delete (globalThis as unknown as {webapis:{avplay?:unknown}}).webapis.avplay;
   },{productInfoDeclared,device,tickCadenceMs});
   await page.goto('/');if(!start)return errors;if(await page.locator('[data-focus-id=nav-home]').count()){if(await page.locator('.tv-stream-grid').count())await expect(page.locator('.tv-grid .tv-card').first()).toBeVisible();else await expect(page.locator('.tv-grid .tv-card')).toHaveCount(4);await page.locator('.tv-grid .tv-card').first().click();await page.getByRole('button',{name:'播放',exact:true}).click();await expect(page.getByRole('button',{name:'暂停 / 继续',exact:true})).toBeEnabled();return errors;}await page.getByRole('button',{name:'读取游客热门'}).click();await expect(page.locator('.popular-grid button')).toHaveCount(4);

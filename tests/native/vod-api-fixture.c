@@ -7,7 +7,11 @@ static CURLMcode fixture_remove(CURLM *multi, CURL *easy) {
 }
 #define curl_multi_remove_handle fixture_remove
 #define VOD_API_NO_MAIN
-#ifdef BILISOFA_PGC_FIXTURE
+#if defined(BILISOFA_SOURCE_FAILOVER_FIXTURE) && defined(BILISOFA_PGC_FIXTURE)
+#include "pgc-read-failover.c"
+#elif defined(BILISOFA_SOURCE_FAILOVER_FIXTURE)
+#include "vod-api-failover.c"
+#elif defined(BILISOFA_PGC_FIXTURE)
 #include "pgc-read.c"
 #else
 #include "vod-api.c"
@@ -35,6 +39,25 @@ int main(int argc, char **argv) {
     vod_finish(); curl_slist_free_all(mapping); return clean() ? 0 : 23;
   }
 #endif
+  /* ADR-102: only the failover entries admit Bilibili's Akamai backup family for the source check. */
+  if (!strcmp(mode, "akamai")) {
+    char url[256]; long long deadline = (long long)time(NULL) + 3600;
+    snprintf(url, sizeof(url), "https://upos-hz-mirrorakam.akamaized.net/a.m4s?deadline=%lld", deadline); strcpy(vod_input, url);
+    int accepted = vod_begin(3); vod_finish();
+#ifdef BILISOFA_SOURCE_FAILOVER_FIXTURE
+    if (!accepted) return 24;
+#else
+    if (accepted) return 25;
+#endif
+    const char *hosts[] = { "evil-mirrorakam.akamaized.net", "upos-hz-mirrorakam.akamaized.net.example.com", "upos-HZ-mirrorakam.akamaized.net", "a248.e.akamai.net" };
+    for (unsigned i = 0; i < sizeof(hosts) / sizeof(hosts[0]); i++) {
+      if (!vod_start()) return 26;
+      snprintf(url, sizeof(url), "https://%s/a.m4s?deadline=%lld", hosts[i], deadline); strcpy(vod_input, url);
+      if (vod_begin(3)) return 27;
+      vod_finish();
+    }
+    curl_slist_free_all(mapping); return clean() ? 0 : 28;
+  }
   if (!strcmp(mode, "bounds")) {
     vod_limit = VOD_BODY_CAP;
     if (vod_body_cb("x", 1, VOD_BODY_CAP + 1, NULL) || vod_header_cb("x", 1, 16385, NULL)) return 2;

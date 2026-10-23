@@ -79,3 +79,21 @@ body.product-instant #overlays>section.vod-rate-picker{inset:160px 64px auto aut
 .product-season .tv-season-page .tv-season-episodes{display:flex;gap:16px;overflow:hidden;padding:12px 8px 20px;flex-wrap:nowrap}
 .product-season .tv-season-page .tv-season-episodes>button{flex:0 0 auto;max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;scroll-margin:0 96px}
 .product-season .tv-season-page [data-focus-id=season-follow][aria-pressed=true]{color:var(--tv-accent)}
+/* 0.50.0 launch chooser and 热门番剧 filters (ADR-098/099). The chooser is a full page in the product
+   palette (no dialog border or dimmed backdrop); cards follow the content cards' focus treatment. */
+.product-profiles #overlays>section.tv-launch{inset:0;padding:72px 96px;border:0;border-radius:0;box-shadow:none;background:var(--tv-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;overflow:hidden}
+.product-profiles .tv-launch-brand{position:absolute;top:48px;left:64px;height:auto;padding:0}
+.product-profiles .tv-launch .tv-eyebrow{margin:0 0 8px}
+.product-profiles .tv-launch h1{margin:0 0 16px;font-size:48px;line-height:1.35;letter-spacing:1px}
+.product-profiles .tv-launch>p:not(.tv-eyebrow){margin:0;color:var(--tv-muted);font-size:26px}
+.product-profiles .tv-launch-row{display:flex;gap:40px;margin:56px 0 24px;flex-wrap:nowrap}
+.product-profiles .tv-launch-card{display:flex;flex-direction:column;align-items:center;gap:14px;width:248px;padding:32px 16px 28px;border:0;border-radius:16px;background:var(--tv-card);color:var(--tv-text);transition:transform .15s ease,box-shadow .15s ease}
+.product-profiles .tv-launch-card:focus{transform:scale(1.05);box-shadow:0 18px 40px #000a;outline:4px solid var(--tv-accent);outline-offset:6px;background:var(--tv-card)}
+.product-profiles .tv-launch-avatar{display:flex;align-items:center;justify-content:center;width:128px;height:128px;border-radius:50%;background:var(--tv-accent);color:#1b1020;font-size:58px;font-weight:700}
+.product-profiles .tv-launch-icon{background:var(--tv-panel);color:var(--tv-text)}
+.product-profiles .tv-launch-icon svg{width:64px;height:64px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.product-profiles .tv-launch-name{font-size:30px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.product-profiles .tv-launch-hint{font-size:22px;color:var(--tv-muted);min-height:28px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.product-profiles .tv-launch-status{min-height:36px;font-size:24px}
+@media (prefers-reduced-motion:reduce){.product-profiles .tv-launch-card{transition:none}.product-profiles .tv-launch-card:focus{transform:none;box-shadow:none}}
+.product-profiles .tv-hot-filters{margin:12px 0 4px}

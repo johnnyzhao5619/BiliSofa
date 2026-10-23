@@ -40,6 +40,13 @@ int main(int argc,char **argv){
  }
  if(!strcmp(argv[1],"category")){char *good[]={"catalog","category-ranking","1005",NULL};if(catalog_main(3,good))return 13;}
  else if(!strcmp(argv[1],"pgc")){char *good[]={"catalog","pgc-ranking",NULL};if(catalog_main(2,good))return 15;}
+ else if(!strcmp(argv[1],"pgc_guoman")){char *good[]={"catalog","pgc-ranking","4","7",NULL};if(catalog_main(4,good))return 17;}
+ else if(!strcmp(argv[1],"pgc_index")){char *good[]={"catalog","pgc-index","4","2",NULL};if(catalog_main(4,good))return 18;}
+ else if(!strcmp(argv[1],"pgc_invalid")){
+  const char *bad[][3]={{"pgc-ranking","2","3"},{"pgc-ranking","1","30"},{"pgc-ranking","1","1"},{"pgc-ranking","01","3"},{"pgc-index","4","6"},{"pgc-index","4","0"},{"pgc-index","4","12"},{"pgc-index","1&x","1"}};
+  for(size_t i=0;i<sizeof(bad)/sizeof(bad[0]);i++){char *args[]={"catalog",(char*)bad[i][0],(char*)bad[i][1],(char*)bad[i][2],NULL};if(catalog_main(4,args)!=1 || performed)return 19;}
+  return 0;
+ }
  else if(!strcmp(argv[1],"category_invalid")){
   const char *ids[]={"0","1","1005&type=all","01005","1005.0","","9999"};
   for(size_t i=0;i<sizeof(ids)/sizeof(ids[0]);i++){char *bad[]={"catalog","category-ranking",(char*)ids[i],NULL};if(catalog_main(3,bad)!=1 || performed)return 14;}
@@ -68,7 +75,7 @@ int main(int argc,char **argv){
    def log_message(self,*args):pass
    def do_GET(self):
     received.append(self.path)
-    if self.path!=('/x/web-interface/ranking/v2?rid=1005&type=all' if mode=='category' else '/pgc/web/rank/list?day=3&season_type=1' if mode=='pgc' else '/x/web-interface/ranking/v2?rid=0&type=all') or self.headers.get('Host')!='api.bilibili.com' or self.headers.get('Cookie') or self.headers.get('Authorization') or self.headers.get('Range'):violations.append('scope')
+    if self.path!=('/x/web-interface/ranking/v2?rid=1005&type=all' if mode=='category' else '/pgc/web/rank/list?day=3&season_type=1' if mode=='pgc' else '/pgc/web/rank/list?day=7&season_type=4' if mode=='pgc_guoman' else '/pgc/season/index/result?season_type=4&type=1&order=3&sort=0&page=2&pagesize=20' if mode=='pgc_index' else '/x/web-interface/ranking/v2?rid=0&type=all') or self.headers.get('Host')!='api.bilibili.com' or self.headers.get('Cookie') or self.headers.get('Authorization') or self.headers.get('Range'):violations.append('scope')
     body=b'{"code":0,"data":{"list":[]}}' if mode!='body' else b'x'*524289
     try:
      self.send_response(302 if mode=='redirect' else 200)
@@ -83,9 +90,12 @@ int main(int argc,char **argv){
   server=Server(('127.0.0.1',0),Handler);server.socket=self.context.wrap_socket(server.socket,server_side=True);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
   try:r=subprocess.run([str(self.exe),mode,str(self.wrong if mode=='tls' else self.cert),str(server.server_port)],capture_output=True,timeout=12)
   finally:server.shutdown();server.server_close();thread.join()
-  self.assertEqual(r.returncode,0);self.assertEqual(violations,[]);self.assertEqual(r.stdout,b'' if mode=='bounds' else b'GUEST:closed\n'*(7 if mode=='category_invalid' else 1));self.assertEqual(len(received),0 if mode in ['invalid','bounds','tls','category_invalid'] else 1)
+  self.assertEqual(r.returncode,0);self.assertEqual(violations,[]);self.assertEqual(r.stdout,b'' if mode=='bounds' else b'GUEST:closed\n'*(7 if mode=='category_invalid' else 8 if mode=='pgc_invalid' else 1));self.assertEqual(len(received),0 if mode in ['invalid','bounds','tls','category_invalid','pgc_invalid'] else 1)
  def test_category_fixed_get_without_credentials(self):self.run_case('category')
  def test_pgc_ranking_fixed_get_without_credentials(self):self.run_case('pgc')
+ def test_pgc_guoman_week_ranking_route(self):self.run_case('pgc_guoman')
+ def test_pgc_index_route_and_page(self):self.run_case('pgc_index')
+ def test_pgc_invalid_type_window_or_page_never_enters_curl(self):self.run_case('pgc_invalid')
  def test_category_invalid_ids_never_enter_curl(self):self.run_case('category_invalid')
  def test_fixed_get_without_credentials(self):self.run_case('good')
  def test_no_redirect_follow(self):self.run_case('redirect')

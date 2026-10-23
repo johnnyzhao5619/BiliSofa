@@ -8,6 +8,8 @@ export async function setup(page:Page,variant='normal',decoder='normal',initialO
  await page.route('**/cast-product/probe.js',r=>r.fulfill({contentType:'text/javascript',body:variant==='new-sender-on-reset'?native.replace('__VARIANT__','normal').replaceAll('peer=0x0a000009',loads++===0?'peer=0x0a000009':'peer=0x0a000008'):native.replace('__VARIANT__',variant==='fail-first'?(loads++===0?'source-fail':'normal'):variant)}));
  await page.route('**/cast-fixture/result',async r=>{replies.push(r.request().postDataJSON());await r.fulfill({body:'{}'});});
  await page.route('**/cast-fixture/next',r=>r.fulfill({contentType:'application/json',body:JSON.stringify(queue.shift()??null)}));
+ // 0.50.0 (ADR-099): start as a guest who already dismissed the first-run welcome.
+ await page.addInitScript(()=>{try{if(localStorage.getItem('bilisofa.launch-guest.v1')===null)localStorage.setItem('bilisofa.launch-guest.v1','1');}catch{}});
  await page.addInitScript(({decoder,initialOffset})=>{
   let state='NONE',listener:{oncurrentplaytime?:(ms:number)=>void}={},time=0,offset=0,prebuffer=false,busy=false,opened=0,played=0,closed=0;
   const urls:string[]=[],calls:string[]=[];

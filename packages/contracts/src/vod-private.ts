@@ -2,6 +2,8 @@ import type { VodItem } from './vod-catalog.ts';
 /** Worker-internal source plan. Never a page, diagnostic or ordinary-store DTO. */
 export interface PrivateVodTrack {
   url: string;
+  /** 0.50.3 (ADR-101): Bilibili's own backup on another host; the bridge fails over to it per track. */
+  alternate?: string;
   expiresAt: number;
   codec: string;
   bandwidth: number;

@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.50.3",
+  "basedOn": "0.50.2",
+  "uiSourceHash": "a50f866b7ae3a57eb30d69af49ac06792a8f106a86b2ac2739a29e0cb168ba01",
+  "uiManifestSha256": "ba78bdb90dfd42f89dbd39cd1387f77fd3b228779b924cdf756446a227e8bb09",
+  "unsignedSha256": "53a64651552ae8d1215a66f308b5ce3907bfc068c661d930a262b738d90db482",
+  "signedSha256": "16fe51fe85ad5ef5ba481aae58f626a6732d6f0b87afe6defc96a39f8bd2660c",
+  "signedAt": "2026-10-23T17:43:09.512120+00:00",
+  "sourceArchiveSha256": "9ccf64aa76988cb00f8a8005cca52bf9f69b4cd5b8bbd37f67481cbc25800646",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.50.3",
+        "signedSha256": "16fe51fe85ad5ef5ba481aae58f626a6732d6f0b87afe6defc96a39f8bd2660c",
+        "uiSourceHash": "a50f866b7ae3a57eb30d69af49ac06792a8f106a86b2ac2739a29e0cb168ba01",
+        "startedAt": "2026-10-23T17:43:43.243101+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.50.3",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.50.3",
+      "signedSha256": "16fe51fe85ad5ef5ba481aae58f626a6732d6f0b87afe6defc96a39f8bd2660c",
+      "uiSourceHash": "a50f866b7ae3a57eb30d69af49ac06792a8f106a86b2ac2739a29e0cb168ba01",
+      "startedAt": "2026-10-23T17:43:43.243101+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs0502": [
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/platform/bridge-evidence.ts",
+    "apps/tv/src/platform/vod-runtime.ts",
+    "packages/bili-client/src/vod-catalog.ts",
+    "packages/bili-client/src/vod-cdn.ts",
+    "packages/contracts/src/cdn-failover.ts",
+    "platform/wasm-network/src/vod-bridge-worker.ts",
+    "platform/wasm-network/src/vod-source-owner.ts",
+    "platform/wasm-network/src/vod-source-worker.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.50.3",
+    "unitContractPassed": 721,
+    "nativeFailoverBridgePassed": 6,
+    "nativeBridgeRetainedPassed": 10,
+    "cdnFailoverUiPassed": 1,
+    "cdnFailoverUiFailedOnFrozen0502": 1,
+    "cdnFailoverUiFailedOnNoExclusionMutation": 1,
+    "retainedReconnectUiPassed": 2,
+    "retainedProfilesUiPassed": 9,
+    "retainedSeasonUiPassed": 6,
+    "retainedDetailUiPassed": 3,
+    "retainedReadingUiPassed": 17,
+    "retainedPolishUiPassed": 18,
+    "retainedCastWakeOnlyPassed": 1,
+    "retainedCastClockConfigPassed": 30,
+    "packageNegativePassed": 9,
+    "unsignedSha256": "53a64651552ae8d1215a66f308b5ce3907bfc068c661d930a262b738d90db482",
+    "uiSourceInputs": 271,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModules": 17,
+    "nativeFilesChangedVs0502": [
+      "vod/manifest.json",
+      "vod/probe.js",
+      "vod/probe.wasm"
+    ],
+    "nativeResourcesUnchangedVs0502": 65,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.50.3 (ADR-101): per-track failover to the Bilibili playurl backup (Akamai family) on no headers within 6 s, timeout or non-206; per-page host exclusion; upstream code and failover count in help",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_P4R3",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs0502": true
+}

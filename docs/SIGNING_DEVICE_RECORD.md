@@ -4,6 +4,11 @@
 
 | 工件 | 当前结论 |
 | --- | --- |
+| 0.50.4来源检查主备切换与运行内避开 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`36fa9440…7467`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`9f5b0437…5873`；ADR-102；原生仅`vod-api/`与`pgc-read/`重链接（`build/vod-api-failover`、`build/pgc-read-failover`），其余62个原生资源与0.50.3逐字节一致；P4⁗ USER PASS（伍六七之玄武国篇前三集）；[hash/源码/验证](design/evidence/2026-10-23-source-failover/README.md) |
+| 0.50.3播放源切换到B站备用线路 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`16fe51fe…660c`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`9ccf64aa…0646`；ADR-101；原生仅`vod/`桥接重链接（`build/vod-failover`），其余65个原生资源与0.50.2逐字节一致；P4‴第1集PASS、第2/3集读取播放源阶段FAIL（见ADR-102）；[hash/源码/验证](design/evidence/2026-10-23-cdn-failover/README.md) |
+| 0.50.2播放网络中断有界重连 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`0bd1c8c3…0ff5`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`b2d06956…57ac`；ADR-100；原生与0.50.1逐字节一致，仅6个UI输入变化；真机P4″ FAIL（位置一致，见ADR-101）；[hash/源码/验证](design/evidence/2026-10-23-reconnect/README.md) |
+| 0.50.1选择页界面统一与失败摘要 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`743bbc13…7c8d`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`85e6d973…d7439`；ADR-099文末；原生与0.50.0逐字节一致；用户P1′ PASS，P4′失败摘要network（见ADR-100）；[hash/源码/验证](design/evidence/2026-10-23-profiles-fix/README.md) |
+| 0.50.0启动账号选择与热门番剧筛选 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`22ec2901…b5d2`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`87fd5a2c…12fb4f`；ADR-098/099；原生仅`catalog/`重链接（`build/catalog-pgc2`）；用户P1/P3 PASS、P2暂缓、P4部分通过（见ADR-099）；[hash/源码/验证](design/evidence/2026-10-23-profiles/README.md) |
 | 0.49.1追番状态与写入结果 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`e76c619c…0e79`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`56cc3f29…fbaa4`；ADR-096文末；原生仅`pgc-follow/`重链接（`build/pgc-follow-status`）；Q3复验USER PASS；[hash/源码/验证](design/evidence/2026-10-23-season-fix/README.md) |
 | 0.49.0番剧详情、一键追番与热门番剧 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`cd08619b…e6ef`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`6438d7db…3e1a`；ADR-096；原生仅`catalog/`重链接（`build/catalog-pgc`）；用户Q1/Q2 PASS、Q3 FAIL（见0.49.1）、Q4倍速结果见ADR-096；[hash/源码/验证](design/evidence/2026-10-23-season/README.md) |
 | 0.48.0详情补全与倍速探查 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`223813c4…49efc`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`8d1a535a…0193`；ADR-095；原生与0.47.2逐字节一致；用户Z1 PASS、Z2部分通过、Z3 FAIL（见ADR-096）；[hash/源码/验证](design/evidence/2026-10-23-detail/README.md) |
@@ -21,6 +26,6 @@
 | 0.38.0冻结 | 倍速USER PASS；关注invalid/点赞-403/互动慢/跳动缺图未通过；[用户事实](design/evidence/2026-10-22-direct/USER_ACCEPTANCE.md) |
 | 0.37.0及以前冻结 | 原最小通过组与失败保持；不覆盖原工件或把旧UI通过扩展为新设备通过 |
 
-当前安装为0.49.1，升级安装/启动获平台确认。R07候选未集成/打包/签名/部署，不将旧WGT重标为新候选。各版本均未卸载或清数据，未执行代理账号POST。已签名包与冻结dist/build不覆盖；0.47.2起`overlay-read`从新目录`build/overlay-read-subtitle`打包，其余原生沿用。签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。
+当前安装为0.50.4，升级安装/启动获平台确认。R07候选未集成/打包/签名/部署，不将旧WGT重标为新候选。各版本均未卸载或清数据，未执行代理账号POST。已签名包与冻结dist/build不覆盖；0.47.2起`overlay-read`从新目录`build/overlay-read-subtitle`打包，0.50.3起`vod/`桥接从`build/vod-failover`打包，0.50.4起`vod-api/`、`pgc-read/`从各自的`-failover`目录打包，其余原生沿用。签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。
 
 [当前验收](CURRENT_DEVICE_TEST.md) · [0.38.0原记录](archive/2026-10-22-direct-038/SIGNING_DEVICE_RECORD.md)

@@ -6,6 +6,8 @@ import { parsePrivateAccount } from '../../../packages/contracts/src/private-acc
 import { parseVodNav } from '../../../packages/bili-client/src/vod-nav.ts';
 import { guestCdnUrl, GuestVideoError } from '../../../packages/bili-client/src/guest-video.ts';
 import { parseVodDetail, parseVodPlayback, resolveVodPart, type PrivateVodCatalog, type PrivateVodDetail } from '../../../packages/bili-client/src/vod-catalog.ts';
+import { vodCdnUrl } from '../../../packages/bili-client/src/vod-cdn.ts';
+import { SOURCE_FAILOVER } from '../../../packages/contracts/src/cdn-failover.ts';
 
 export interface VodApiNative {
   HEAPU8: Uint8Array;
@@ -36,6 +38,12 @@ function deferred<T>(): Deferred<T> {
 export class VodResponseError extends DomainError {
  constructor(readonly http:number,readonly transport:number){super('network');}
 }
+/** ADR-102: a failed 512-byte source check, naming the track (0 video, 1 audio) so its backup can be tried. */
+export class VodCheckError extends DomainError {
+ constructor(code:ErrorCode,readonly track:0|1,readonly http:number,readonly transport:number){super(code);}
+}
+/** The last failed native request of this module: operation and HTTP/cURL integers, or a timeout. Fixed integers only. */
+export interface VodRequestFailure { operation: number; http: number; transport: number; timeout: boolean; }
 /** One C module per Worker. Each batch closes its two native handles before
  * returning a private parsed result. The surrounding source owner retains it. */
 export class VodNativeApi {
@@ -49,6 +57,9 @@ export class VodNativeApi {
   private closing: Promise<void> | undefined;
   private pendingEvent = false;
   private events: string[] = [];
+  private failed: VodRequestFailure | undefined;
+  /** ADR-102 diagnostics: what the last failed request was; cleared when a batch starts. */
+  failure(): VodRequestFailure | undefined { return this.failed ? { ...this.failed } : undefined; }
   constructor(protected readonly native: VodApiNative, private readonly closeMs = 12000) {
     if (!Number.isSafeInteger(closeMs) || closeMs < 10 || closeMs > 60000) throw new DomainError('invalid');
   }
@@ -99,10 +110,11 @@ export class VodNativeApi {
     if (this.native._vod_begin(operation) !== 1) { this.expected = undefined; this.response = undefined; throw new DomainError('invalid'); }
     let timer: ReturnType<typeof setTimeout> | undefined;
     try { await Promise.race([response.promise, new Promise<never>((_yes, no) => { timer = setTimeout(() => no(new DomainError('timeout')), Math.min(this.closeMs, 10000)); })]); }
+    catch (error) { if (error instanceof DomainError && (error.code === 'timeout' || error.code === 'network')) this.failed = { operation, http: 0, transport: 0, timeout: error.code === 'timeout' }; throw error; }
     finally { clearTimeout(timer); }
     if (signal.aborted) throw new DomainError('cancelled');
     const rc = vodInteger(this.native._vod_curl_status(), 0, 999), status = vodInteger(this.native._vod_http_status(), 0, 599);
-    if (rc !== 0 || status !== (operation === 3 ? 206 : 200)) throw new VodResponseError(status,rc);
+    if (rc !== 0 || status !== (operation === 3 ? 206 : 200)) { this.failed = { operation, http: status, transport: rc, timeout: false }; throw new VodResponseError(status,rc); }
   }
   protected json(): string {
     const n = this.native, at = n._vod_body_ptr(), length = n._vod_body_length();
@@ -113,7 +125,7 @@ export class VodNativeApi {
   }
   protected async batch<T>(signal: AbortSignal, work: () => Promise<T>): Promise<T> {
     if (this.busy || this.poisoned || this.running || signal.aborted) throw new DomainError(this.poisoned ? 'unknown' : 'cancelled');
-    this.busy = this.running = true; this.closing = undefined;
+    this.busy = this.running = true; this.closing = undefined; this.failed = undefined;
     const ready = deferred<void>(); this.ready = ready; this.closed = deferred<void>();
     const abort = () => { this.ready?.reject(new DomainError('cancelled')); this.response?.reject(new DomainError('cancelled')); void this.close().catch(() => {}); };
     signal.addEventListener('abort', abort, { once: true });
@@ -159,9 +171,15 @@ export class VodNativeApi {
   async inspect(plan: PrivateVodPlan, signal: AbortSignal): Promise<VodSourceTotals> {
     return this.batch(signal, async () => {
       const totals: number[] = [];
-      for (const track of [plan.video, plan.audio]) {
-        const url = guestCdnUrl(track.url, Date.now()).url;
-        await this.request(3, url, signal);
+      for (const [index, track] of [plan.video, plan.audio].entries()) {
+        const url = SOURCE_FAILOVER ? vodCdnUrl(track.url, Date.now()).url : guestCdnUrl(track.url, Date.now()).url;
+        // ADR-102: a network/timeout check names its track, so the owner can try that track's backup.
+        try { await this.request(3, url, signal); }
+        catch (error) {
+          const f = this.failed;
+          if (SOURCE_FAILOVER && error instanceof DomainError && (error.code === 'network' || error.code === 'timeout')) throw new VodCheckError(error.code, index === 0 ? 0 : 1, f?.http ?? 0, f?.transport ?? 0);
+          throw error;
+        }
         try {
           if (this.native._vod_source_valid() !== 1) throw new DomainError('invalid');
           totals.push(vodInteger(this.native._vod_source_total(), 512, 1099511627776));

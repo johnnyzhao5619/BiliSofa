@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.50.2",
+  "basedOn": "0.50.1",
+  "uiSourceHash": "184b99242adf577ae5f8ab32097e62e4d55d486556a835e29f124eeb7090d2f5",
+  "uiManifestSha256": "06c5e099c7b3e35deedc385c6fd02b1d62d912b674ccbed4e2dc69216b755239",
+  "unsignedSha256": "c7e06daf46493ded76854bb7988c60d82fdb80f212fca1b43302e36a4112a3c1",
+  "signedSha256": "0bd1c8c3fa070b714f68678ab79cceaee69177c9b82a44f496c6f31d930c0ff5",
+  "signedAt": "2026-10-23T16:58:23.862668+00:00",
+  "sourceArchiveSha256": "b2d06956aab269c2fdebc4f7a1554d3796539101db2d7ad264f56ba5601a57ac",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.50.2",
+        "signedSha256": "0bd1c8c3fa070b714f68678ab79cceaee69177c9b82a44f496c6f31d930c0ff5",
+        "uiSourceHash": "184b99242adf577ae5f8ab32097e62e4d55d486556a835e29f124eeb7090d2f5",
+        "startedAt": "2026-10-23T16:58:57.652814+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.50.2",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.50.2",
+      "signedSha256": "0bd1c8c3fa070b714f68678ab79cceaee69177c9b82a44f496c6f31d930c0ff5",
+      "uiSourceHash": "184b99242adf577ae5f8ab32097e62e4d55d486556a835e29f124eeb7090d2f5",
+      "startedAt": "2026-10-23T16:58:57.652814+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs0501": [
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/reconnect-policy.ts",
+    "apps/tv/src/app/vod-workspace.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.50.2",
+    "unitContractPassed": 716,
+    "reconnectUiPassed": 2,
+    "reconnectUiFailedOnFrozen0501": 2,
+    "retainedProfilesUiPassed": 9,
+    "retainedSeasonUiPassed": 6,
+    "retainedDetailUiPassed": 3,
+    "retainedReadingUiPassed": 17,
+    "retainedPolishUiPassed": 18,
+    "retainedCastWakeOnlyPassed": 1,
+    "retainedCastClockSeekPassed": 10,
+    "packageNegativePassed": 8,
+    "unsignedSha256": "c7e06daf46493ded76854bb7988c60d82fdb80f212fca1b43302e36a4112a3c1",
+    "uiSourceInputs": 268,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModules": 17,
+    "nativeFilesChangedVs0501": [],
+    "nativeResourcesUnchangedVs0501": 68,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.50.2 (ADR-100): bounded playback reconnect (network/timeout only, at most 2 within 120 s, fresh source read, resume 2 s earlier)",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_P4R2",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs0501": true
+}

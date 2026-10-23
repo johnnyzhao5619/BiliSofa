@@ -1,6 +1,8 @@
 import { DomainError, record, text } from '../../contracts/src/index.ts';
 import { parseVodCatalog, parseVodChoice, vodBvid, vodChoiceSupported, vodInteger, type AudioCodec, type VideoCodec, type VodCapabilities, type VodCatalog, type VodDetail, type VodAbout, type VodItem } from '../../contracts/src/vod-catalog.ts';
 import { GuestVideoError, guestCdnUrl } from './guest-video.ts';
+import { vodCdnPair } from './vod-cdn.ts';
+import { CDN_FAILOVER, SOURCE_FAILOVER } from '../../contracts/src/cdn-failover.ts';
 import { publicArtwork } from './public-artwork.ts';
 import type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-private.ts';
 export type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-private.ts';
@@ -105,15 +107,16 @@ function frameRate(value: unknown): number {
   if (!Number.isFinite(rate) || rate <= 0 || rate > 240) throw new DomainError('invalid');
   return rate;
 }
-function source(raw: unknown, kind: 'video' | 'audio', now: number): PrivateVodTrack {
+function source(raw: unknown, kind: 'video' | 'audio', now: number, failover: boolean, ordered: boolean): PrivateVodTrack {
   const t = record(raw), codec = text(t.codecs, 64);
   if (t.mimeType !== `${kind}/mp4` && t.mime_type !== `${kind}/mp4`) throw new GuestVideoError('unsupported');
   if (t.drm_tech_type || t.drm || t.content_protection) throw new GuestVideoError('unsupported');
   if (kind === 'video') codecKind(codec, 'video'); else codecKind(codec, 'audio');
   const backup = t.backupUrl ?? t.backup_url ?? [];
   if (!Array.isArray(backup) || backup.length > 4) throw new DomainError('invalid');
-  let cdn: ReturnType<typeof guestCdnUrl> | undefined, expired = false;
-  for (const value of [t.baseUrl ?? t.base_url, ...backup]) {
+  let cdn: { url: string; expiresAt: number; alternate?: string } | undefined, expired = false;
+  if (failover) cdn = vodCdnPair([t.baseUrl ?? t.base_url, ...backup], now, ordered);
+  else for (const value of [t.baseUrl ?? t.base_url, ...backup]) {
     try { cdn = guestCdnUrl(value, now); break; }
     catch (error) { expired ||= error instanceof GuestVideoError && error.reason === 'expired_source'; }
   }
@@ -122,10 +125,10 @@ function source(raw: unknown, kind: 'video' | 'audio', now: number): PrivateVodT
   const initialization = text(s.Initialization ?? s.initialization, 32), indexRange = text(s.indexRange ?? s.index_range, 32);
   const init = /^0-([0-9]{1,8})$/.exec(initialization), index = /^([0-9]{1,8})-([0-9]{1,8})$/.exec(indexRange);
   if (!init || !index || Number(init[1]) < 8 || Number(index[1]) !== Number(init[1]) + 1 || Number(index[2]) < Number(index[1]) || Number(index[2]) > 16777216) throw new DomainError('invalid');
-  return { url: cdn.url, expiresAt: cdn.expiresAt, codec, bandwidth: vodInteger(t.bandwidth, 1, kind === 'video' ? 200000000 : 16000000), initialization, indexRange,
+  return { url: cdn.url, ...(cdn.alternate ? { alternate: cdn.alternate } : {}), expiresAt: cdn.expiresAt, codec, bandwidth: vodInteger(t.bandwidth, 1, kind === 'video' ? 200000000 : 16000000), initialization, indexRange,
     ...(kind === 'video' ? { width: vodInteger(t.width, 1, 16384), height: vodInteger(t.height, 1, 8640) } : {}) };
 }
-export function parseVodPlayback(raw: string, part: PrivateVodPart, catalogId: string, now = Date.now()): PrivateVodCatalog {
+export function parseVodPlayback(raw: string, part: PrivateVodPart, catalogId: string, now = Date.now(), failover = CDN_FAILOVER, ordered = SOURCE_FAILOVER): PrivateVodCatalog {
   if (!/^[a-f0-9]{32}$/.test(catalogId) || !Number.isSafeInteger(now) || now < 1) throw new DomainError('invalid');
   const d = data(raw), dash = record(d.dash);
   if (d.is_preview || d.drm_tech_type || d.durl) throw new GuestVideoError('unsupported');
@@ -138,7 +141,7 @@ export function parseVodPlayback(raw: string, part: PrivateVodPart, catalogId: s
   for (const rawTrack of dash.video) {
     const t = record(rawTrack);
     try {
-      const parsed = source(t, 'video', now), codec = codecKind(parsed.codec, 'video'), quality = vodInteger(t.id, 1, 127);
+      const parsed = source(t, 'video', now, failover, ordered), codec = codecKind(parsed.codec, 'video'), quality = vodInteger(t.id, 1, 127);
       const format = (formats as unknown[] | undefined)?.map(record).find(f => f.quality === quality);
       const label = format?.new_description ?? format?.description;
       videos.push({ key: `v${video.length}`, quality, label: label === undefined ? `画质 ${quality}` : caption(label, 64), codec,
@@ -164,7 +167,7 @@ export function parseVodPlayback(raw: string, part: PrivateVodPart, catalogId: s
   const audio: PrivateVodTrack[] = [], audios: VodCatalog['audios'] = [];
   for (const rawTrack of rawAudios) {
     try {
-      const parsed = source(rawTrack, 'audio', now), codec = codecKind(parsed.codec, 'audio');
+      const parsed = source(rawTrack, 'audio', now, failover, ordered), codec = codecKind(parsed.codec, 'audio');
       audios.push({ key: `a${audio.length}`, label: `${codec.toUpperCase()} · ${Math.round(parsed.bandwidth / 1000)} kbps`, codec, bandwidth: parsed.bandwidth });
       audio.push(parsed);
     } catch (error) {

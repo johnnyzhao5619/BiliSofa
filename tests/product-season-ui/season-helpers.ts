@@ -6,6 +6,8 @@ const follow=readFileSync('tests/w04-media-ui/pgc-follow-fixture.js','utf8'),cat
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64');
 /** Modes: 'offline' fails state reads; 'reject' answers writes with -111; 'stale' accepts writes without changing the state;
  * 'status' answers state reads in the per-user status shape (0.49.1) instead of the season view. */
+/** True for every build from 0.50.0 on; only the 0.49.x season builds predate the launch chooser and 国创 default. */
+export const launchChooser=()=>!/product-season(-fix)?-app$/.test(process.env.BILISOFA_TEST_ROOT??'dist/product-season-app');
 export async function setup(page:Page,signedIn:boolean){
  let followed=true,writes=0,reads=0,mode='normal';
  await page.route('**/identity/manifest.json',r=>r.fulfill({body:'{}'}));await page.route('**/identity/probe.js',r=>r.fulfill({contentType:'text/javascript',body:identity}));
@@ -28,7 +30,9 @@ export async function setup(page:Page,signedIn:boolean){
  let season=readFileSync('tests/w04-media-ui/vod-api-fixture.js','utf8').replace('__PGC__','1');
  if(signedIn)season=season.replace("_vod_import_cookies(){throw Error('guest fixture must remain anonymous');}","_vod_import_cookies(){return 1;}").replace("code:-101,data:{isLogin:false","code:0,data:{isLogin:true,mid:101").replace('login:0,area_limit:0,follow:0','login:1,area_limit:0,follow:1');
  await page.route('**/pgc-read/probe.js',r=>r.fulfill({contentType:'text/javascript',body:season}));
- if(signedIn){await page.getByRole('button',{name:'账号',exact:true}).click();await page.getByRole('button',{name:'使用 合成账号',exact:true}).click();await expect(page.locator('[data-focus-id=nav-home]')).toHaveAttribute('aria-current','page');}
+ // From 0.50.0 builds ask who is watching at launch; the 0.49.x builds select the account on the account page.
+ if(signedIn&&launchChooser()){await page.locator('[data-focus-id=launch-account-bili_101]').click();await expect(page.locator('.tv-launch')).toHaveCount(0);await expect(page.locator('[data-focus-id=nav-home]')).toHaveAttribute('aria-current','page');}
+ else if(signedIn){await page.getByRole('button',{name:'账号',exact:true}).click();await page.getByRole('button',{name:'使用 合成账号',exact:true}).click();await expect(page.locator('[data-focus-id=nav-home]')).toHaveAttribute('aria-current','page');}
  return {errors,writes:()=>writes,reads:()=>reads,mode:(v:string)=>{mode=v;}};
 }
 export const cards=(page:Page)=>page.locator('.tv-following .tv-library-grid button');

@@ -4,7 +4,7 @@ import type {ResourceOwner} from './resource-owner.ts';
 import type {TvShell} from './tv-shell.ts';
 import {productButton} from './product-frame.ts';
 /** Rehomes existing settings controls; storage, confirmation and error owners stay intact. */
-export function productSettings(owner:ResourceOwner,shell:TvShell,legacy:HTMLElement,overlays:OverlayPreferenceAccess,diagnosticTool?:HTMLButtonElement):HTMLElement {
+export function productSettings(owner:ResourceOwner,shell:TvShell,legacy:HTMLElement,overlays:OverlayPreferenceAccess,diagnosticTool?:HTMLButtonElement,diagnosticNote?:HTMLElement):HTMLElement {
   legacy.className='tv-settings';legacy.dataset.initialFocusId='settings-section-playback';
   const heading=legacy.querySelector('h1')!;heading.textContent='设置';
   const layout=document.createElement('div');layout.className='tv-settings-layout';
@@ -21,7 +21,7 @@ export function productSettings(owner:ResourceOwner,shell:TvShell,legacy:HTMLEle
     if(id==='history'){const note=legacy.querySelector('[data-history-status]');if(note)panel.append(note);}
     if(id==='data')panel.append(...notes);
     if(id==='account')panel.append(productButton('settings-account','查看账号与登录',()=>{if(!owner.signal.aborted)void shell.navigateTop({page:'account'});}));
-    if(id==='help'){const note=document.createElement('p');note.textContent='诊断不包含登录凭据、二维码或私人播放地址。';const writes=legacy.querySelector('[data-write-summary]');panel.append(note,...(writes?[writes]:[]),...(diagnosticTool?[diagnosticTool]:[]));}
+    if(id==='help'){const note=document.createElement('p');note.textContent='诊断不包含登录凭据、二维码或私人播放地址。';const writes=legacy.querySelector('[data-write-summary]');panel.append(note,...(diagnosticNote?[diagnosticNote]:[]),...(writes?[writes]:[]),...(diagnosticTool?[diagnosticTool]:[]));}
     content.append(panel);panes.set(id,panel);
     return productButton('settings-section-'+id,label,()=>{selected=id;render();});
   });

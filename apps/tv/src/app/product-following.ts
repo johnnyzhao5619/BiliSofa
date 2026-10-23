@@ -7,7 +7,14 @@ import { ProductLibraryRead, type LibraryEntry } from './product-library-read.ts
 import { libraryCard } from '../ui/library-card.ts';
 import { productButton } from './product-frame.ts';
 import { PRODUCT_SEASON } from './season-policy.ts';
-import { PgcHotRead } from './pgc-hot-read.ts';
+import { PgcHotRead, type PgcHotFilter } from './pgc-hot-read.ts';
+import { PRODUCT_PROFILES } from './profile-policy.ts';
+const HOT_FILTER_KEY = 'bilisofa.hot-filter.v1';
+/** Remembered 热门番剧 filter (0.50.0, ADR-098); 国创 first because overseas 番剧 are often region-locked. */
+function savedHotFilter(): PgcHotFilter {
+  try { const v = JSON.parse(localStorage.getItem(HOT_FILTER_KEY) ?? 'null') as Partial<PgcHotFilter> | null; if (v && (v.seasonType === 1 || v.seasonType === 4) && (v.span === 'day3' || v.span === 'week' || v.span === 'all')) return { seasonType: v.seasonType, span: v.span }; } catch { /* default below */ }
+  return { seasonType: 4, span: 'day3' };
+}
 import { CoverArt } from '../platform/cover-art.ts';
 export type FollowingTab = 'updates' | 'bangumi' | 'drama' | 'hot';
 export interface FollowingMemory {
@@ -36,6 +43,22 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
   const open = () => privateContent || memory.tab === 'hot';
   const hotReader = hot ? new PgcHotRead(owner) : undefined, art = hot ? new CoverArt() : undefined;
   if (art) owner.add('following-art', () => art.close());
+  // 0.49.x read 番剧 · 三日 only; 0.50.0 adds the type and time-span filter row.
+  const hotFilter: PgcHotFilter = PRODUCT_PROFILES ? savedHotFilter() : { seasonType: 1, span: 'day3' };
+  const filters = document.createElement('div'); filters.className = 'tv-filters tv-hot-filters'; filters.setAttribute('role', 'group'); filters.setAttribute('aria-label', '热门番剧筛选');
+  const filterButtons = PRODUCT_PROFILES && hot ? ([['type', 4, '国创'], ['type', 1, '番剧'], ['span', 'day3', '近三日'], ['span', 'week', '近一周'], ['span', 'all', '累计热门']] as const).map(([group, value, label]) => {
+    const b = productButton(`hot-${group}-${value}`, label, () => {
+      // A newer filter supersedes a load in progress (generation tickets drop the stale reply).
+      if (owner.signal.aborted || blocked) return;
+      if (group === 'type') hotFilter.seasonType = value as PgcHotFilter['seasonType']; else hotFilter.span = value as PgcHotFilter['span'];
+      try { localStorage.setItem(HOT_FILTER_KEY, JSON.stringify(hotFilter)); } catch { /* still applies for this visit */ }
+      memory.pages.hot = 1; delete memory.anchors.hot; void read(1, true);
+    });
+    b.dataset.group = group; b.dataset.value = String(value); return b;
+  }) : [];
+  filters.append(...filterButtons);
+  const filterOn = () => filterButtons.length > 0 && memory.tab === 'hot';
+  const activeFilter = () => filterButtons.find(b => b.dataset.group === 'type' && b.dataset.value === String(hotFilter.seasonType))?.dataset.focusId;
   const node = document.createElement('section');
   node.className = 'tv-following';
   // Guests start on the sign-in action, the page's only way to its content.
@@ -87,7 +110,7 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     void read(1, true, true); });
   const login = button('following-login', route === 'following' ? '登录查看关注更新' : '登录查看追番与追剧', () => { void shell.navigateTop({ page: 'account' }); });
   paging.append(previous, next, refresh);
-  const feed=PRODUCT_BROWSE?new ContinuousGrid(owner,grid,{load:page=>read(page),restored:value=>{page=value;memory.pages[memory.tab]=value;},top:()=> 'following-tab-'+memory.tab,left:()=> 'nav-'+route,bottom:()=> 'following-refresh'}):undefined;
+  const feed=PRODUCT_BROWSE?new ContinuousGrid(owner,grid,{load:page=>read(page),restored:value=>{page=value;memory.pages[memory.tab]=value;},top:()=> filterOn() ? activeFilter()! : 'following-tab-'+memory.tab,left:()=> 'nav-'+route,bottom:()=> 'following-refresh'}):undefined;
   if(feed)previous.hidden=next.hidden=true;
   login.hidden = privateContent;
   const maxPage = () => memory.tab === 'updates' ? 25 : 25000;
@@ -141,14 +164,16 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     login.dataset.right = login.dataset.focusId;
     login.dataset.up = 'following-search';
     login.dataset.down = login.dataset.focusId;
-    tabButtons.forEach((b, i) => { b.disabled = (!privateContent && b.dataset.focusId !== 'following-tab-hot') || blocked; b.setAttribute('aria-pressed', String(b.dataset.focusId === tab)); b.dataset.left = tabButtons[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = tabButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = 'following-search'; b.dataset.down = cards[0]?.dataset.focusId ?? (!refresh.disabled ? 'following-refresh' : 'following-search'); });
+    tabButtons.forEach((b, i) => { b.disabled = (!privateContent && b.dataset.focusId !== 'following-tab-hot') || blocked; b.setAttribute('aria-pressed', String(b.dataset.focusId === tab)); b.dataset.left = tabButtons[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = tabButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = 'following-search'; b.dataset.down = filterOn() ? activeFilter()! : cards[0]?.dataset.focusId ?? (!refresh.disabled ? 'following-refresh' : 'following-search'); });
+    filters.hidden = !filterOn();
+    filterButtons.forEach((b, i) => { b.setAttribute('aria-pressed', String(b.dataset.value === String(b.dataset.group === 'type' ? hotFilter.seasonType : hotFilter.span))); b.disabled = blocked; b.dataset.left = filterButtons[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = filterButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = 'following-tab-hot'; b.dataset.down = cards[0]?.dataset.focusId ?? b.dataset.focusId; });
     const enabled = [previous, next, refresh].filter(b => !b.disabled && !b.hidden);
-    cards.forEach((b, i) => { b.dataset.left = cards[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = cards[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = tab; b.dataset.down = enabled[0]?.dataset.focusId ?? tab; });
+    cards.forEach((b, i) => { b.dataset.left = cards[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = cards[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = filterOn() ? activeFilter()! : tab; b.dataset.down = enabled[0]?.dataset.focusId ?? tab; });
     enabled.forEach((b, i) => { b.dataset.left = enabled[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = enabled[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = cards[0]?.dataset.focusId ?? tab; b.dataset.down = b.dataset.focusId; });
     feed?.wire();
   }
   function controls(): void {
-    source.textContent = memory.tab === 'hot' ? '公开番剧排行（近三日），不是个性化推荐' : memory.tab === 'updates' ? '网页关注更新摘要 · 完整动态暂不可用' : memory.tab === 'bangumi' ? '当前账号的追番列表' : '当前账号的追剧列表';
+    source.textContent = memory.tab === 'hot' ? (filterButtons.length ? `${hotFilter.seasonType === 4 ? '国创' : '番剧'} · ${hotFilter.span === 'all' ? '按追番人数累计' : hotFilter.span === 'week' ? '公开排行近一周' : '公开排行近三日'}，不是个性化推荐` : '公开番剧排行（近三日），不是个性化推荐') : memory.tab === 'updates' ? '网页关注更新摘要 · 完整动态暂不可用' : memory.tab === 'bangumi' ? '当前账号的追番列表' : '当前账号的追剧列表';
     source.hidden = !open();
     search.disabled = blocked;
     previous.disabled = !open() || busy || blocked || page === 1;
@@ -172,7 +197,7 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     status.textContent = '正在加载' + tabs.find(t => t[0] === kind)![1];
     const active = document.activeElement as HTMLElement | null, focused = active?.dataset.focusId ?? shell.navigation.current.anchor.focusId;
     try {
-      const result = kind === 'hot' ? await hotReader!.read(target, fresh) : await reader.read({ kind }, target, fresh && kind === 'updates');
+      const result = kind === 'hot' ? await hotReader!.read({ ...hotFilter }, target, fresh) : await reader.read({ kind }, target, fresh && kind === 'updates');
       if (owner.signal.aborted || ticket !== generation)
         return;
       page = result.page;
@@ -211,7 +236,7 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
       }
     }
   }
-  node.append(lead, toolbar, categories, source, status, login, grid, paging);
+  node.append(lead, toolbar, categories, filters, source, status, login, grid, paging);
   if (open())
     void read(page);
   else {

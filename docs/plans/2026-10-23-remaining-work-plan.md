@@ -115,6 +115,14 @@
 
 倍速探查v2后，用户决定保持1×/2×，小数倍速按本机设备限制记录，探查保留为诊断（[ADR-097](../adr/097-fractional-rates-device-limited.md)）。P1-A至此结束，不实施混合方案。
 
+### 0.49.1之后的用户优化（2026-10-23）
+
+Q3复验USER PASS。用户新增两项优化：热门番剧的国创/时间筛选（[ADR-098](../adr/098-hot-bangumi-type-and-time-filters.md)）与启动时选择账号（[ADR-099](../adr/099-launch-account-chooser.md)），合入0.50.0。
+
+### P4 国创播放中断（2026-10-23）
+
+0.50.1的失败摘要原因为`network`；0.50.2加入有界重连（[ADR-100](../adr/100-bounded-playback-reconnect.md)），P4″仍失败且位置一致。匿名核对确认主节点回源失败、B站备用可读，0.50.3改为按轨道切换到备用线路（[ADR-101](../adr/101-cdn-failover-to-bilibili-backup.md)）。P4‴第1集通过、第2/3集在开播前的来源检查阶段失败，0.50.4把来源检查也纳入主备切换，并加入运行内避开与分步骤诊断（[ADR-102](../adr/102-source-check-failover-and-run-level-avoidance.md)）。P4⁗ USER PASS，P4收口。
+
 ## 3. 不做或等待条件
 
 | 项目 | 处理 | 理由 |

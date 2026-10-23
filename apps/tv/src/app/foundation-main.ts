@@ -32,6 +32,11 @@ import {PRODUCT_DETAIL} from './detail-policy.ts';
 import {PRODUCT_SEASON,SEASON_STATUS_READ} from './season-policy.ts';
 import {productButton} from './product-frame.ts';
 import {rateProbe} from './rate-probe.ts';
+import {PRODUCT_PROFILES,PROFILES_FIX} from './profile-policy.ts';
+import {MEDIA_RECONNECT} from './reconnect-policy.ts';
+import {CDN_FAILOVER,SOURCE_FAILOVER} from '../../../../packages/contracts/src/cdn-failover.ts';
+import {bridgeEvidence,type SourceStep} from '../platform/bridge-evidence.ts';
+import {openLaunchChooser,rememberProfile,forgetProfile} from './launch-chooser.ts';
 import { drawQr, clearQr } from '../ui/qr-code.ts';
 import { TvShell } from './tv-shell.ts';
 import { castEntry } from './cast-entry.ts';
@@ -81,6 +86,7 @@ if(PRODUCT_POLISH)document.body.classList.add('product-polish');
 if(PRODUCT_READING)document.body.classList.add('product-reading');
 if(PRODUCT_DETAIL)document.body.classList.add('product-detail');
 if(PRODUCT_SEASON)document.body.classList.add('product-season');
+if(PRODUCT_PROFILES)document.body.classList.add('product-profiles');
 const castClock=typeof BILISOFA_PRODUCT_CAST_CLOCK!=='undefined'&&BILISOFA_PRODUCT_CAST_CLOCK;
 const castSeek=typeof BILISOFA_PRODUCT_CAST_SEEK!=='undefined'&&BILISOFA_PRODUCT_CAST_SEEK;
 const castStart=typeof BILISOFA_PRODUCT_CAST_START!=='undefined'&&BILISOFA_PRODUCT_CAST_START;
@@ -95,7 +101,7 @@ const root = document.querySelector<HTMLElement>('#pages')!, overlays = document
 if(productUi){let notice:ReturnType<typeof setTimeout>|undefined;new MutationObserver(()=>{clearTimeout(notice);const text=feedback.textContent??'';if(text&&!/正在|未确认|扫码|登录|失效|重新打开|权限/.test(text))notice=setTimeout(()=>{if(feedback.textContent===text)feedback.textContent='';},4000);}).observe(feedback,{childList:true,characterData:true,subtree:true});}
 const repository = protectedAccountStore(), login = new LoginCoordinator(repository, () => new IdentityWorkerClient());
 const queues=localQueues();
-const profiles = localProfiles(), diagnostics = new AppDiagnostics(SEASON_STATUS_READ?'U5-season-0.49.1':PRODUCT_SEASON?'U5-season-0.49.0':PRODUCT_DETAIL?'U5-detail-0.48.0':READING_FIX2?'U5-reading-0.47.2':READING_FIX?'U5-reading-0.47.1':PRODUCT_READING?'U5-reading-0.47.0':PRODUCT_POLISH?'U5-polish-0.46.0':remote?'U5-remote-0.45.0':castClock?'U4-cast-clock-0.43.0':castSeek?'U4-cast-seek-0.42.0':castStart?'U4-cast-start-0.41.0':PRODUCT_RECOVERY?'U4-recovery-0.40.0':PRODUCT_STREAM?'U4-stream-0.39.0':PRODUCT_INSTANT?'U4-instant-0.38.0':PRODUCT_ACTIONS?'U4-actions-0.37.0':PRODUCT_INTERACTIONS?'U4-interactions-0.36.0':PRODUCT_BROWSE?'U3-browse-0.35.0':productPlayerEnabled?'U3-player-0.34.0':productCollectionsEnabled?'U2-following-0.33.0':productDiscoveryEnabled?'U2-search-0.32.0':productLibraryEnabled?'U2-library-0.31.0':productUi?'U1-shell-0.30.0':typeof BILISOFA_U1!=='undefined'&&BILISOFA_U1?'U1-content-0.29.0':typeof BILISOFA_RECOMMEND!=='undefined'&&BILISOFA_RECOMMEND?'W05-local-data-0.28.0':typeof BILISOFA_W06!=='undefined'&&BILISOFA_W06?'W06-cast-0.25.0':typeof BILISOFA_W05!=='undefined'&&BILISOFA_W05?'W05-interactions-0.24.1':w04?'W04-development-0.21.0':'W03-account-details-0.20.0'); diagnostics.add('app','started');if(PRODUCT_INSTANT)document.body.classList.add('product-instant');if(PRODUCT_STREAM)document.body.classList.add('product-stream');
+const profiles = localProfiles(), diagnostics = new AppDiagnostics(SOURCE_FAILOVER?'U5-source-failover-0.50.4':CDN_FAILOVER?'U5-cdn-failover-0.50.3':MEDIA_RECONNECT?'U5-reconnect-0.50.2':PROFILES_FIX?'U5-profiles-0.50.1':PRODUCT_PROFILES?'U5-profiles-0.50.0':SEASON_STATUS_READ?'U5-season-0.49.1':PRODUCT_SEASON?'U5-season-0.49.0':PRODUCT_DETAIL?'U5-detail-0.48.0':READING_FIX2?'U5-reading-0.47.2':READING_FIX?'U5-reading-0.47.1':PRODUCT_READING?'U5-reading-0.47.0':PRODUCT_POLISH?'U5-polish-0.46.0':remote?'U5-remote-0.45.0':castClock?'U4-cast-clock-0.43.0':castSeek?'U4-cast-seek-0.42.0':castStart?'U4-cast-start-0.41.0':PRODUCT_RECOVERY?'U4-recovery-0.40.0':PRODUCT_STREAM?'U4-stream-0.39.0':PRODUCT_INSTANT?'U4-instant-0.38.0':PRODUCT_ACTIONS?'U4-actions-0.37.0':PRODUCT_INTERACTIONS?'U4-interactions-0.36.0':PRODUCT_BROWSE?'U3-browse-0.35.0':productPlayerEnabled?'U3-player-0.34.0':productCollectionsEnabled?'U2-following-0.33.0':productDiscoveryEnabled?'U2-search-0.32.0':productLibraryEnabled?'U2-library-0.31.0':productUi?'U1-shell-0.30.0':typeof BILISOFA_U1!=='undefined'&&BILISOFA_U1?'U1-content-0.29.0':typeof BILISOFA_RECOMMEND!=='undefined'&&BILISOFA_RECOMMEND?'W05-local-data-0.28.0':typeof BILISOFA_W06!=='undefined'&&BILISOFA_W06?'W06-cast-0.25.0':typeof BILISOFA_W05!=='undefined'&&BILISOFA_W05?'W05-interactions-0.24.1':w04?'W04-development-0.21.0':'W03-account-details-0.20.0'); diagnostics.add('app','started');if(PRODUCT_INSTANT)document.body.classList.add('product-instant');if(PRODUCT_STREAM)document.body.classList.add('product-stream');
 const histories=searchHistories();
 const writes = new RetainedWrites(writeJournal());
 function writeSummary(id:string){const old=writes.summary(id),video=typeof BILISOFA_W05!=='undefined'&&BILISOFA_W05?interactionWrites().summary(id):{total:0,unknown:0};return old&&video?{total:old.total+video.total,unknown:old.unknown+video.unknown}:undefined;}
@@ -115,7 +121,25 @@ async function selection(action: () => Promise<void>, success: () => string): Pr
   catch (e) { outcome = e instanceof DomainError && e.code === 'cancelled' ? 'cancelled' : 'failed'; if (epoch === selectionEpoch) feedback.textContent = message(e); }
   finally { if (epoch === selectionEpoch) { selecting = false; diagnostics.add('account', outcome); } }
 }
-function use(id?: string): Promise<void> { return selection(() => workspace.select(id), () => id ? '账号身份已确认' : '已切换游客'); }
+/** ADR-102: which step of the media source failed, in fixed words; hosts appear only as a class. */
+function stepNote(s:SourceStep|undefined):string{
+  if(!s)return '';
+  const upstream=s.timeout?' · 上游超时':` · 上游 HTTP ${s.http||'无响应'} / cURL ${s.curl}`;
+  const reads:Record<number,string>={0:'登录状态',1:'视频信息',2:'播放地址',4:'番剧信息',5:'播放地址'},hosts={upos:'B站镜像',akamai:'B站Akamai',edge:'国内边缘节点'} as const;
+  if(s.kind==='read')return ` · 读取播放信息（${reads[s.operation]??'请求'}）${upstream}`;
+  if(s.kind==='check')return ` · 来源检查（${s.track==='video'?'视频':'音频'}·${s.position==='primary'?'主线路':'备用线路'}·${hosts[s.host]}）${upstream}`;
+  return ` · 播放桥接${upstream}`;
+}
+/** One line in 帮助与诊断 naming the latest playback failure (0.50.1), so a device report needs no JSON paging. */
+function lastFailureNote(f:ReturnType<AppDiagnostics['lastMediaFailure']>):HTMLElement{
+  const p=document.createElement('p');p.className='tv-diagnostic-note';p.setAttribute('role','status');
+  const phase={source:'读取播放源时',prepare:'准备播放时',playback:'播放过程中',seek:'跳转时',control:'控制播放时',protocol:'播放协议处理时'} as const;
+  const reason:Record<string,string>={network:'网络中断',timeout:'超时',permission:'无权限或地区限制',login:'登录失效',unsupported:'格式或设备不支持',invalid:'返回内容无效',unknown:'资源释放未确认',cancelled:'已取消'};
+  // ADR-101: the bridge's last upstream answer and how often it moved to Bilibili's backup line, as fixed numbers.
+  const e=CDN_FAILOVER?bridgeEvidence():undefined,line=e?`${SOURCE_FAILOVER?stepNote(e.step):e.issue?` · 上游 HTTP ${e.issue.status||'无响应'} / cURL ${e.issue.curl}`:''}${e.failovers?` · 已切换备用线路 ${e.failovers} 次`:''}`:'';
+  p.textContent=f?`最近一次播放失败：${phase[f.phase]} · ${reason[f.reason]??f.reason}${f.sourceCode?` · 代码 ${f.sourceCode}`:''}${line}`:`本次运行没有播放失败记录${e?.failovers?`（已切换备用线路 ${e.failovers} 次）`:''}`;return p;
+}
+function use(id?: string): Promise<void> { return selection(() => workspace.select(id), () => id ? '账号身份已确认' : '已切换游客').then(() => { if (PRODUCT_PROFILES && id && workspace.state.kind === 'active' && workspace.state.account.id === id) rememberProfile(id); }); }
 async function openPgcMedia(seasonId:string,caps:VodCapabilities):Promise<PgcAccess>{
  if(workspace.state.kind!=='active')return createPgcAccess(caps,seasonId);
  return workspace.read((runtime,scope,signal)=>{if(!runtime.openPgc)throw new DomainError('unsupported');return runtime.openPgc(seasonId,scope,signal);},value=>{
@@ -139,7 +163,7 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
   if (route.page === 'settings') {const view=localSettings(owner, shell, profile, diagnostics, () => state?.kind === 'active' ? writeSummary(state.account.id) : 'guest',history,state?.kind==='active'?()=>{shell.openModal('read-cache-clear',child=>readCacheClear(child,shell,workspace),'cache-keep');}:undefined,queue,productUi?()=>{void shell.navigateTop({page:'home'});}:undefined);const probeDevice=PRODUCT_DETAIL&&w04?vodRuntimeStatus():undefined,probeCaps=probeDevice?.kind==='available'?probeDevice.capabilities:undefined;
     // R07 rate probe (ADR-095) lives in 帮助与诊断 and only runs when the viewer starts it.
     const probe=probeCaps?productButton('settings-rate-probe','倍速探查（诊断）',()=>{if(!owner.signal.aborted)shell.openModal('rate-probe',child=>rateProbe(child,shell,probeCaps,()=>openVodAccess(probeCaps),profile),'rate-probe-start');}):undefined;
-    return wrap(productPlayerEnabled?productSettings(owner,shell,view,localOverlayPreferences(state?.kind==='active'?state.account.id:'guest'),probe):view);}
+    return wrap(productPlayerEnabled?productSettings(owner,shell,view,localOverlayPreferences(state?.kind==='active'?state.account.id:'guest'),probe,PRODUCT_PROFILES?lastFailureNote(diagnostics.lastMediaFailure()):undefined):view);}
   const section = document.createElement('section'), title = document.createElement('h1'); title.textContent = route.page === 'account' ? '账号管理' : 'BiliSofa'; section.append(title);
   if (route.page !== 'account') {
     const device=w04?vodRuntimeStatus():undefined,caps=device?.kind==='available'?device.capabilities:undefined;
@@ -209,7 +233,7 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
           const retained = document.createElement('p'); retained.textContent = '搜索历史和本机队列也会清除；防重复写操作记录会保留'; modal.append(retained);
           modal.append(button('keep-account', '保留账号', () => { void shell.back(); }), button('confirm-remove', '确认移除', () => {
             void (async () => {
-              await shell.back(); await workspace.select();
+              await shell.back(); await workspace.select(); if (PRODUCT_PROFILES) forgetProfile(account.id);
               const removed = profiles.profile(account.id).clear(); diagnostics.add('local',removed === 'deleted' ? 'deleted' : 'delete_unconfirmed');
               const searchRemoved=histories.profile(account.id).clear(),queueRemoved=queues.profile(account.id).clear();
               if (removed !== 'deleted'||searchRemoved!=='deleted'||queueRemoved!=='deleted') { feedback.textContent = '本地记录清除未确认，账号已保留，可重试移除'; await shell.navigate({ page: 'account' }); return; }
@@ -239,4 +263,8 @@ const visibility = () => {
 };
 document.addEventListener('visibilitychange', visibility);
 globalThis.addEventListener('pagehide', () => { disposed = true; document.removeEventListener('visibilitychange', visibility); void workspace.dispose(); }, { once: true });
-void shell.start();
+// 0.50.0 (ADR-099): a cold start asks who is watching before any private content is read.
+void shell.start().then(() => {
+  if (!PRODUCT_PROFILES || !productUi || disposed) return;
+  void openLaunchChooser(shell, { accounts: () => repository.list(), use: async id => { await use(id); return id === undefined ? workspace.state.kind !== 'active' : workspace.state.kind === 'active' && workspace.state.account.id === id; }, addAccount: () => { void shell.navigateTop({ page: 'account' }); } });
+});

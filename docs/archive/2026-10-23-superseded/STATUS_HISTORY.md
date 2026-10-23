@@ -437,3 +437,108 @@ Candidate probe commands now exist: `npm ci --ignore-scripts`, `npm run check`, 
 | 用户 | Q1/Q2 USER PASS；Q3 FAIL → 0.49.1；Q4：0.25×与紧随其后的0.5×斜率0、1.25/1.5/2×为1.09/1.17/0.85，均无等待且缓冲充足 |
 
 [证据](design/evidence/2026-10-23-season/README.md)
+
+## R09关闭前的行（0.49.1 Q3 USER PASS）
+
+`docs/PRODUCT_CLOSURE.md`：
+
+| R09 / F17写入 | 追番只读与候选有实现，真实增删未授权验收 | 具体番剧与增/删方向的授权、取消、提交一次、回读；不借用F11授权。无授权先完成可审阅实现与合成验证 |
+
+`docs/IMPLEMENTATION_STATUS.md`：
+
+| F17 番剧/影视 | 0.21.1 C详情/选集/播放、私人只读USER PASS；追番增删/持久回查候选 | 真实追番写入/回读未授权验收；完整权益/失效恢复 |
+
+## `docs/TEST_REPORT.md`（0.50.0安装后移出）
+
+## 已安装0.49.1（ADR-096文末）
+
+| 层次 | 实际结果 |
+| --- | --- |
+| 单元/合同 | 713/713；原生pgc-follow通过 |
+| 合成UI | 0.49.1季页6/6，新3条对冻结0.49.0全部失败；详情3/3、阅读17/17、0.46.0全套18/18、投屏1/1与10/10 |
+| 包 | 负例8/8；未签名WGT `eb8a2fdc…eaf3`；原生仅`pgc-follow/`变化；权限不变 |
+| 签名/部署 | 签名`e76c619c…0e79`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`56cc3f29…fbaa4`；[回执](design/evidence/2026-10-23-season-fix/receipt.json) |
+| 用户 | Q3复验USER PASS |
+
+[证据](design/evidence/2026-10-23-season-fix/README.md)
+
+## `docs/TEST_REPORT.md`（0.50.1安装后移出）
+
+## 已安装0.50.0（ADR-098/099）
+
+| 层次 | 实际结果 |
+| --- | --- |
+| 单元/合同 | 715/715；原生catalog 13/13 |
+| 合成UI | 新8条通过、对冻结0.49.1全部失败；番剧6/6、详情3/3、阅读17/17、0.46.0全套18/18、投屏1/1与10/10 |
+| 包 | 负例8/8；未签名WGT `3db7d810…a664a`；原生仅`catalog/`变化；权限不变 |
+| 签名/部署 | 签名`22ec2901…b5d2`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`87fd5a2c…12fb4f`；[回执](design/evidence/2026-10-23-profiles/receipt.json) |
+| 用户 | P1/P3 USER PASS；P2暂缓（待多账号）；P4部分国创提示网络中断，凡人修仙传（限免/会员）可播 |
+
+[证据](design/evidence/2026-10-23-profiles/README.md)
+
+## `docs/IMPLEMENTATION_STATUS.md`（0.45–0.50.0 USER证据行，逐版本结论见签名与部署记录）
+
+| 0.50.0（USER证据来源） | [ADR-099](adr/099-launch-account-chooser.md)启动时“谁在观看？”（已保存账号列卡、游客浏览、添加账号；无账号时一次欢迎页；只记上次账号id）；[ADR-098](adr/098-hot-bangumi-type-and-time-filters.md)热门番剧筛选国创/番剧与近三日/近一周/累计热门（原生`catalog`参数化白名单路由，新目录链接）。本地715单元/原生13/新8条合成UI（对冻结0.49.1全部失败）/回归55条/8包负例通过；签名`22ec2901…b5d2`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`87fd5a2c…12fb4f`，**用户P1/P3 USER PASS；P2暂缓（待多账号）；P4部分国创提示网络中断，原因待0.50.1失败摘要定位** | [证据](design/evidence/2026-10-23-profiles/README.md) |
+| 0.49.1（USER证据来源） | ADR-096文末：追番状态改读B站本人状态接口（原生`pgc-follow`只改一条只读路由，新目录链接），打开详情先读一次；写入被拒显示代码，受理但回读未变不报成功、下一次只查询；修正“已取消追番”误报。本地713单元/新3条合成UI（对冻结0.49.0全部失败）/回归49条/8包负例通过；签名`e76c619c…0e79`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`56cc3f29…fbaa4`，**Q3复验USER PASS** | [证据](design/evidence/2026-10-23-season-fix/README.md) |
+| 0.49.0（USER证据来源） | [ADR-096](adr/096-product-season-page-follow-toggle-and-hot-ranking.md)：番剧详情产品页（封面、简介、主播放、分组与横排剧集，卡片直达）；追番改为一键切换并显示失败原因；番剧影视新增公开“热门番剧”（原生`catalog`新增一条固定只读路由，新目录链接）；倍速探查v2（加0.25×/2×，统计等待与缓冲）。本地307模块/711单元/原生10/新3条合成UI（对冻结0.48.0全部失败）/回归49条/8包负例通过；签名`cd08619b…e6ef`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`6438d7db…3e1a`，**用户Q1/Q2 USER PASS；Q3 FAIL（见0.49.1）；Q4倍速：本机video仅0.5×/0.75×可用，0.25×停住，快档约1.1–1.2×封顶** | [证据](design/evidence/2026-10-23-season/README.md) |
+| 0.48.0（USER证据来源） | [ADR-095](adr/095-detail-facts-and-rate-probe.md)：详情页补简介、发布日期、点赞/弹幕数与UP头像（仅TS，来自已读的视频详情响应）；“设置 → 帮助与诊断”加按需运行的倍速探查（R07电视判定用，生产仍1×/2×）。本地303模块/707单元/新3条合成UI（对冻结0.47.2全部失败）/回归46条/8包负例通过；签名`223813c4…49efc`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`8d1a535a…0193`，**用户Z1 USER PASS；Z2倍速0.5/0.75×通过、≥1×均off；Z3 FAIL（见ADR-096）** | [证据](design/evidence/2026-10-23-detail/README.md) |
+| 0.47.2（USER证据来源） | 前端第一至三批（[ADR-088](adr/088-remote-media-keys-and-direct-controls.md)、ADR-090–094）累积在此包：遥控媒体键与隐藏态直达、播放器主行/⚙侧栏/连播倒计时、首页货架与整页详情、一页式搜索、单列评论、设置左右调值、Home返回续看、连播偏好，以及真机反馈修正（搜索左边缘与“搜索”键、课程行跳过、选词后焦点；字幕/弹幕分面板、AI字幕地址、⚙列表上移）。仅`overlay-read`原生模块重链接，其余原生不变。已签名并升级安装/启动（平台确认，不清数据）。**所请求R1–R6、P1–P7、S1–S6全部USER PASS**（S5于0.47.1、S1/S3于0.47.2复验通过）。 | [证据](design/evidence/2026-10-23-reading-fix2/README.md) · [ADR-094](adr/094-search-course-rows-and-ai-subtitle-files.md) |
+
+## `docs/TEST_REPORT.md`（0.50.2安装后移出）
+
+## 已安装0.50.1（ADR-099文末）
+
+| 层次 | 实际结果 |
+| --- | --- |
+| 单元/合同 | 715/715 |
+| 合成UI | 选择与筛选9/9；番剧6/6、详情3/3、阅读17/17、0.46.0全套18/18、投屏1/1与10/10 |
+| 包 | 负例8/8；未签名WGT `8240269f…0f16`；原生与权限同0.50.0 |
+| 签名/部署 | 签名`743bbc13…7c8d`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`85e6d973…d7439`；[回执](design/evidence/2026-10-23-profiles-fix/receipt.json) |
+| 用户 | P1′ USER PASS；P4′失败摘要为network，时好时坏 → ADR-100 |
+
+[证据](design/evidence/2026-10-23-profiles-fix/README.md)
+
+## `docs/IMPLEMENTATION_STATUS.md`（0.50.2安装后替换的行）
+
+| 已安装0.50.1 | ADR-099文末：启动选择页改为与产品页一致的整页样式；“设置 → 帮助与诊断”顶部显示最近一次播放失败（阶段 · 原因 · 代码）。本地715单元/9条选择与筛选合成UI/回归55条/8包负例通过；签名`743bbc13…7c8d`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`85e6d973…d7439`，**用户P1′ USER PASS；P4′失败摘要原因network、时好时坏（伍六七之玄武国篇前三集）→ ADR-100** | [证据](design/evidence/2026-10-23-profiles-fix/README.md) |
+| 0.50.2候选（未签名/未部署） | [ADR-100](adr/100-bounded-playback-reconnect.md)：画质回退用尽后，网络/超时失败自动重连同一集（重新取播放地址，从原位置前2秒继续，两分钟内最多2次，显示“正在重新连接”）。仅前端；本地716单元/新2条合成UI（对冻结0.50.1全部失败）/回归64条/8包负例通过，**待签名部署授权与真机P4″** | [证据](design/evidence/2026-10-23-reconnect/README.md) |
+
+## `docs/TEST_REPORT.md`（0.50.3安装后移出）
+
+## 已安装0.50.2（ADR-100）
+
+| 层次 | 实际结果 |
+| --- | --- |
+| 单元/合同 | 716/716 |
+| 合成UI | 重连2/2（对冻结0.50.1全部失败）；选择与筛选9/9、番剧6/6、详情3/3、阅读17/17、0.46.0全套18/18、投屏1/1与10/10 |
+| 包 | 负例8/8；未签名WGT `c7e06daf…a3c1`；原生与权限同0.50.1 |
+| 签名/部署 | 签名`0bd1c8c3…0ff5`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`b2d06956…57ac`；[回执](design/evidence/2026-10-23-reconnect/receipt.json) |
+| 用户 | P4″ FAIL：伍六七之玄武国篇前三集两次“正在重新连接”后仍中断，位置一致；其他视频可播 → ADR-101 |
+
+[证据](design/evidence/2026-10-23-reconnect/README.md)
+
+## `docs/IMPLEMENTATION_STATUS.md`（0.50.3安装后替换的行）
+
+| 已安装0.50.2 | [ADR-100](adr/100-bounded-playback-reconnect.md)：画质回退用尽后，网络/超时失败自动重连同一集（重新取播放地址，从原位置前2秒继续，两分钟内最多2次，显示“正在重新连接”）。仅前端；本地716单元/新2条合成UI（对冻结0.50.1全部失败）/回归64条/8包负例通过；签名`0bd1c8c3…0ff5`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`b2d06956…57ac`，**真机P4″ FAIL：两次“正在重新连接”后仍中断，位置一致 → ADR-101** | [证据](design/evidence/2026-10-23-reconnect/README.md) |
+| 0.50.3候选（未签名/未部署） | [ADR-101](adr/101-cdn-failover-to-bilibili-backup.md)：播放地址保留B站给出的备用线路（Akamai）；某段6秒无响应、超时或返回错误时，该轨道切到备用并从同一段继续，同页之后从备用开始；失败摘要显示上游代码与切换次数。原生仅桥接重链接到`build/vod-failover`；本地721单元/原生6+10/新1条合成UI（对冻结0.50.2与去掉排除表的变异版本均失败）/回归86条/9包负例通过，**待签名部署授权与真机P4‴** | [证据](design/evidence/2026-10-23-cdn-failover/README.md) |
+
+## `docs/TEST_REPORT.md`（0.50.4安装后移出）
+
+## 已安装0.50.3（ADR-101）
+
+| 层次 | 实际结果 |
+| --- | --- |
+| 单元/合同 | 721/721 |
+| 原生主机 | 备用切换桥接6/6；原桥接10/10 |
+| 合成UI | 备用切换1/1（对冻结0.50.2、去掉排除表的变异版本均失败）；重连2/2、选择与筛选9/9、番剧6/6、详情3/3、阅读17/17、0.46.0全套18/18、投屏1/1与时钟30/30 |
+| 包 | 负例9/9；未签名WGT `53a64651…b482`；原生仅`vod/`桥接变化，权限不变 |
+| 签名/部署 | 签名`16fe51fe…660c`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`9ccf64aa…0646`；[回执](design/evidence/2026-10-23-cdn-failover/receipt.json) |
+| 用户 | P4‴：第1集PASS；第2、3集在读取播放源阶段失败（source·network），自动重连后仍失败 → ADR-102 |
+
+[证据](design/evidence/2026-10-23-cdn-failover/README.md)
+
+## `docs/IMPLEMENTATION_STATUS.md`（0.50.4安装后替换或移出的行）
+
+| 已安装0.50.3 | [ADR-101](adr/101-cdn-failover-to-bilibili-backup.md)：播放地址保留B站给出的备用线路（Akamai）；某段6秒无响应、超时或返回错误时，该轨道切到备用并从同一段继续，同页之后从备用开始；失败摘要显示上游代码与切换次数。原生仅桥接重链接到`build/vod-failover`；本地721单元/原生6+10/新1条合成UI（对冻结0.50.2与去掉排除表的变异版本均失败）/回归86条/9包负例通过；签名`16fe51fe…660c`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`9ccf64aa…0646`，**P4‴：第1集PASS；第2、3集在读取播放源阶段失败（source·network）→ ADR-102** | [证据](design/evidence/2026-10-23-cdn-failover/README.md) |
+| 0.50.2（USER证据来源） | ADR-100有界重连；**P4″ FAIL**：两次“正在重新连接”后仍中断，位置一致 → ADR-101 | [证据](design/evidence/2026-10-23-reconnect/README.md) |
+| 0.50.4候选（未签名/未部署） | [ADR-102](adr/102-source-check-failover-and-run-level-avoidance.md)：开播前的来源检查也按轨道切到B站备用线路；按B站地址顺序（国内边缘节点后移）；本次运行内失败过的节点类别排到后面；失败摘要写明步骤、线路、节点类别与上游代码。原生仅`vod-api`/`pgc-read`重链接到新目录；本地727单元/原生37+6/新3条合成UI（对冻结0.50.3全部失败，去掉避开的变异版本失败）/回归87条/10包负例通过，**待签名部署授权与真机P4⁗** | [证据](design/evidence/2026-10-23-source-failover/README.md) |

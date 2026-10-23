@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.50.4",
+  "basedOn": "0.50.3",
+  "uiSourceHash": "c1d4af9a6066320f256a09ff51f54cea6a84adccc28c6bf4aa84922b83afa5bf",
+  "uiManifestSha256": "365d2c10a64f9f8ae5208636da1b5b95ac942c5e40c6c6d489f0ccd8e85292f8",
+  "unsignedSha256": "e9cb3739118264dda2eb3276967a19dd26567d07a41af8dca05bbb657a751778",
+  "signedSha256": "36fa9440f994d459c48ac2508a834e74d8cc3f746be802feb8cf55e03a8b7467",
+  "signedAt": "2026-10-23T18:34:59.913064+00:00",
+  "sourceArchiveSha256": "9f5b04376dc2a164e4944c539dc87f736e59c0e98f760270bbd2638ecb1a5873",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.50.4",
+        "signedSha256": "36fa9440f994d459c48ac2508a834e74d8cc3f746be802feb8cf55e03a8b7467",
+        "uiSourceHash": "c1d4af9a6066320f256a09ff51f54cea6a84adccc28c6bf4aa84922b83afa5bf",
+        "startedAt": "2026-10-23T18:35:33.419249+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.50.4",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.50.4",
+      "signedSha256": "36fa9440f994d459c48ac2508a834e74d8cc3f746be802feb8cf55e03a8b7467",
+      "uiSourceHash": "c1d4af9a6066320f256a09ff51f54cea6a84adccc28c6bf4aa84922b83afa5bf",
+      "startedAt": "2026-10-23T18:35:33.419249+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs0503": [
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/platform/bridge-evidence.ts",
+    "apps/tv/src/platform/vod-runtime.ts",
+    "packages/bili-client/src/vod-catalog.ts",
+    "packages/bili-client/src/vod-cdn.ts",
+    "packages/contracts/src/cdn-failover.ts",
+    "platform/wasm-network/src/vod-bridge-worker.ts",
+    "platform/wasm-network/src/vod-native-api.ts",
+    "platform/wasm-network/src/vod-source-owner.ts",
+    "platform/wasm-network/src/vod-source-worker.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.50.4",
+    "unitContractPassed": 727,
+    "nativeSourceFailoverPassed": 37,
+    "nativeFailoverBridgeRetainedPassed": 6,
+    "sourceFailoverUiPassed": 3,
+    "sourceFailoverUiFailedOnFrozen0503": 3,
+    "sourceFailoverUiFailedOnNoAvoidMutation": 1,
+    "retainedCdnFailoverUiPassed": 1,
+    "retainedReconnectUiPassed": 2,
+    "retainedProfilesUiPassed": 9,
+    "retainedSeasonUiPassed": 6,
+    "retainedDetailUiPassed": 3,
+    "retainedReadingUiPassed": 17,
+    "retainedPolishUiPassed": 18,
+    "retainedCastWakeOnlyPassed": 1,
+    "retainedCastClockConfigPassed": 30,
+    "packageNegativePassed": 10,
+    "unsignedSha256": "e9cb3739118264dda2eb3276967a19dd26567d07a41af8dca05bbb657a751778",
+    "uiSourceInputs": 271,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModules": 17,
+    "nativeFilesChangedVs0503": [
+      "pgc-read/manifest.json",
+      "pgc-read/probe.js",
+      "pgc-read/probe.wasm",
+      "vod-api/manifest.json",
+      "vod-api/probe.js",
+      "vod-api/probe.wasm"
+    ],
+    "nativeResourcesUnchangedVs0503": 62,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.50.4 (ADR-102): source-check failover per track to the Bilibili backup, Bilibili candidate order with edge nodes last, run-level host-class avoidance, step-level failure diagnostics",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_P4R4",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs0503": true
+}

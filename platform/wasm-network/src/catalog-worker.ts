@@ -12,7 +12,7 @@ let active: RankingRequest | undefined, cancelled = false, completed = false;
 function finish(data: Pick<RankingResult, 'kind' | 'status' | 'code'> & Partial<Pick<RankingResult, 'items' | 'apiCode' | 'seasons'>>): void {
   if (!active || completed) return;
   completed = true;
-  worker.postMessage(parseRankingResult({ version: 1, scope: active.scope, operation: active.operation, ...(active.operation==='public-category-ranking'?{categoryId:active.categoryId}:{}), closed: true, items: [], ...(active.operation==='public-pgc-ranking'?{seasons:[]}:{}), ...data }));
+  worker.postMessage(parseRankingResult({ version: 1, scope: active.scope, operation: active.operation, ...(active.operation==='public-category-ranking'?{categoryId:active.categoryId}:{}), closed: true, items: [], ...(active.operation==='public-pgc-ranking'?{seasonType:active.seasonType,span:active.span,page:active.page,seasons:[]}:{}), ...data }));
 }
 worker.onmessage = async event => {
   if (active) {
@@ -30,7 +30,7 @@ worker.onmessage = async event => {
   } catch { finish({ kind: 'transport_error', status: 0, code: 'ranking.native_unavailable' }); return; }
   if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'ranking.cancelled' }); return; }
   worker.Module = {
-    arguments: active.operation==='public-category-ranking'?['category-ranking',String(active.categoryId)]:active.operation==='public-pgc-ranking'?['pgc-ranking']:['ranking'], noInitialRun: true,
+    arguments: active.operation==='public-category-ranking'?['category-ranking',String(active.categoryId)]:active.operation==='public-pgc-ranking'?(active.span==='all'?['pgc-index',String(active.seasonType),String(active.page)]:['pgc-ranking',String(active.seasonType),active.span==='week'?'7':'3']):['ranking'], noInitialRun: true,
     onRuntimeInitialized() {
       if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'ranking.cancelled' }); return; }
       try { worker.Module!.callMain!(worker.Module!.arguments); }
@@ -54,7 +54,8 @@ worker.onmessage = async event => {
         // The raw public response never crosses postMessage or stdout. No headers,
         // Set-Cookie values, URLs, raw JSON or outside markup enter diagnostics.
         const body = new TextDecoder('utf-8', { fatal: true }).decode(heap.subarray(start, start + length));
-        const parsed = active!.operation === 'public-pgc-ranking' ? parsePgcRankingBody(body) : parseRankingBody(body);
+        if (active!.operation === 'public-pgc-ranking') { const parsed = parsePgcRankingBody(body); finish({ kind: parsed.apiCode === 0 ? 'ok' : 'api_error', status, code: parsed.apiCode === 0 ? 'ranking.ok' : 'ranking.api_error', apiCode: parsed.apiCode, seasons: parsed.seasons, ...(active!.span === 'all' ? { seasonsMore: parsed.more } : {}) }); return; }
+        const parsed = parseRankingBody(body);
         finish({ kind: parsed.apiCode === 0 ? 'ok' : 'api_error', status, code: parsed.apiCode === 0 ? 'ranking.ok' : 'ranking.api_error', ...parsed });
       } catch { finish({ kind: 'invalid_response', status: status >= 100 && status <= 599 ? status : 0, code: 'ranking.invalid_response' }); }
       }, 0);

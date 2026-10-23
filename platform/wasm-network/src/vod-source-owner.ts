@@ -6,6 +6,9 @@ import { parseVodCapabilities, parseVodReadResult, vodNonce, vodReadQuery, type 
 import type { PrivateVodPlan, VodSourceTotals } from '../../../packages/contracts/src/vod-private.ts';
 import { resolveVodTracks, type PrivateVodCatalog, type PrivateVodDetail } from '../../../packages/bili-client/src/vod-catalog.ts';
 import { vodBridgeMetadata } from '../../../packages/media/src/vod-mpd.ts';
+import { vodCdnClass, vodCdnHost } from '../../../packages/bili-client/src/vod-cdn.ts';
+import { CDN_FAILOVER, SOURCE_FAILOVER, cdnClassBit } from '../../../packages/contracts/src/cdn-failover.ts';
+import { VodCheckError } from './vod-native-api.ts';
 import type { PrivateOverlayBinding } from '../../../packages/contracts/src/overlay-binding.ts';
 
 export interface VodReadApi {
@@ -13,9 +16,16 @@ export interface VodReadApi {
   inspect(plan: PrivateVodPlan, signal: AbortSignal): Promise<VodSourceTotals>;
   close(): Promise<void>;
 }
-/** This DTO is legal only on the source-to-bridge private MessagePort. */
-export interface PrivateVodOffer { bvid: string; video: string; audio: string; metadata: string; expiresAt: number; }
-interface Lease { id: string; choice: VodChoice; plan: PrivateVodPlan; metadata?: string; }
+/** This DTO is legal only on the source-to-bridge private MessagePort. With ADR-101 it also names each
+ * track's Bilibili backup ('' when none) and which tracks start on it (bit 1 video, bit 2 audio). */
+export interface PrivateVodOffer { bvid: string; video: string; audio: string; metadata: string; expiresAt: number; videoAlternate?: string; audioAlternate?: string; start?: number; }
+interface Lease { id: string; choice: VodChoice; plan: PrivateVodPlan; metadata?: string; hosts?: [string, string]; }
+type Track = PrivateVodPlan['video'];
+/** ADR-102: put a track's backup first (the source check and the bridge then start there). */
+function swapped(t: Track): Track { return t.alternate ? { ...t, url: t.alternate, alternate: t.url } : t; }
+function checkCode(track: 0 | 1, position: 'primary' | 'backup', url: string, error: VodCheckError): string {
+  return `check_${track ? 'audio' : 'video'}_${position}_${vodCdnClass(url)}_${error.code === 'timeout' ? 'timeout' : `${error.http}_${error.transport}`}`;
+}
 function identityVideo(c: PrivateVodCatalog, i: number): string {
   const v = c.summary.videos[i]!, t = c.video[i]!;
   return JSON.stringify([v.quality, v.codec, v.width, v.height, v.fps, t.codec, t.bandwidth, t.initialization, t.indexRange]);
@@ -36,8 +46,11 @@ export class VodSourceOwner {
   private generation = 0;
   private poisoned = false;
   private closing: Promise<void> | undefined;
+  /** Hosts a bridge failed over from during this playback page (ADR-101), like a DASH BaseURL exclusion list. */
+  private readonly excluded = new Set<string>();
   constructor(private readonly api: VodReadApi, capabilities: VodCapabilities, account: PrivateAccount | undefined,
-    private readonly nonce: () => string, private readonly now: () => number = Date.now) {
+    private readonly nonce: () => string, private readonly now: () => number = Date.now, private readonly failover = CDN_FAILOVER,
+    private readonly ordered = SOURCE_FAILOVER, private readonly report: (code: string) => void = () => {}) {
     this.capabilities = parseVodCapabilities(capabilities);
     this.account = account === undefined ? undefined : parsePrivateAccount(account);
   }
@@ -106,16 +119,57 @@ export class VodSourceOwner {
   }
   private offer(plan: PrivateVodPlan, metadata: string): PrivateVodOffer {
     if (plan.expiresAt < this.now() + 60000) throw new DomainError('timeout');
-    return { bvid: plan.item.bvid, video: plan.video.url, audio: plan.audio.url, metadata, expiresAt: plan.expiresAt };
+    const base = { bvid: plan.item.bvid, video: plan.video.url, audio: plan.audio.url, metadata, expiresAt: plan.expiresAt };
+    if (!this.failover) return base;
+    if (this.ordered) return { ...base, videoAlternate: plan.video.alternate ?? '', audioAlternate: plan.audio.alternate ?? '', start: 0 };
+    // A track whose primary host already failed starts on its backup; the source check stays on the primary.
+    const starts = (t: PrivateVodPlan['video']) => !!t.alternate && this.excluded.has(vodCdnHost(t.url)) && !this.excluded.has(vodCdnHost(t.alternate));
+    return { ...base, videoAlternate: plan.video.alternate ?? '', audioAlternate: plan.audio.alternate ?? '', start: (starts(plan.video) ? 1 : 0) | (starts(plan.audio) ? 2 : 0) };
   }
-  attach(id: string, value: unknown): Promise<PrivateVodOffer> {
+  /** The current lease's bridge left a track's primary host (1 video, 2 audio). Private, per page, never persisted. */
+  exclude(id: string, track: number): void {
+    const lease = this.lease;
+    if (!this.failover || !lease || id !== lease.id || (track !== 1 && track !== 2)) throw new DomainError('invalid');
+    const t = track === 1 ? lease.plan.video : lease.plan.audio;
+    if (t.alternate) this.excluded.add(vodCdnHost(t.url));
+  }
+  /** ADR-102: order each track by this run's avoided host classes and this page's excluded hosts. */
+  private arrange(plan: PrivateVodPlan, avoid: number): PrivateVodPlan {
+    const avoided = (url: string) => (avoid & cdnClassBit(vodCdnClass(url))) !== 0 || this.excluded.has(vodCdnHost(url));
+    const one = (t: Track) => t.alternate && avoided(t.url) && !avoided(t.alternate) ? swapped(t) : t;
+    return { ...plan, video: one(plan.video), audio: one(plan.audio) };
+  }
+  /** Source check with per-track failover: a network/timeout on a track's first line retries once on its backup. */
+  private async inspectOrdered(plan: PrivateVodPlan, signal: AbortSignal, generation: number): Promise<{ plan: PrivateVodPlan; totals: VodSourceTotals }> {
+    const flipped = [false, false];
+    for (;;) {
+      try { return { plan, totals: await this.api.inspect(plan, signal) }; }
+      catch (error) {
+        if (!(error instanceof VodCheckError)) throw error;
+        const index = error.track, track = index ? plan.audio : plan.video;
+        this.report(checkCode(index, flipped[index] ? 'backup' : 'primary', track.url, error));
+        if (!track.alternate || flipped[index]) throw error;
+        this.check(signal, generation);
+        flipped[index] = true; this.report(`check_${index ? 'audio' : 'video'}_moved_${vodCdnClass(track.url)}`);
+        plan = index ? { ...plan, audio: swapped(plan.audio) } : { ...plan, video: swapped(plan.video) };
+      }
+    }
+  }
+  attach(id: string, value: unknown, avoid = 0): Promise<PrivateVodOffer> {
     vodNonce(id); const choice = parseVodChoice(value);
+    if (!Number.isSafeInteger(avoid) || avoid < 0 || avoid > 7) return Promise.reject(new DomainError('invalid'));
     if (this.lease || this.work || !this.cache || choice.catalogId !== this.cache.catalog.summary.id) return Promise.reject(new DomainError('invalid'));
     const plan = resolveVodTracks(this.cache.catalog, choice, this.capabilities), lease: Lease = { id, choice, plan };
     this.lease = lease;
     return this.serial(async (signal, generation) => {
       this.check(signal, generation);
       if (lease.plan.expiresAt < this.now() + 90000) lease.plan = await this.refresh(lease.plan, choice, signal, generation);
+      if (this.ordered) {
+        const checked = await this.inspectOrdered(this.arrange(lease.plan, avoid), signal, generation);
+        this.check(signal, generation); lease.plan = checked.plan; lease.hosts = [vodCdnHost(checked.plan.video.url), vodCdnHost(checked.plan.audio.url)];
+        lease.metadata = vodBridgeMetadata(lease.plan, checked.totals);
+        return this.offer(lease.plan, lease.metadata);
+      }
       const totals = await this.api.inspect(lease.plan, signal);
       this.check(signal, generation); lease.metadata = vodBridgeMetadata(lease.plan, totals);
       return this.offer(lease.plan, lease.metadata);
@@ -126,7 +180,13 @@ export class VodSourceOwner {
     if (!lease || id !== lease.id || !lease.metadata) return Promise.reject(new DomainError('invalid'));
     return this.serial(async (signal, generation) => {
       this.check(signal, generation);
-      const plan = await this.refresh(lease.plan, lease.choice, signal, generation), totals = await this.api.inspect(plan, signal);
+      let plan = await this.refresh(lease.plan, lease.choice, signal, generation);
+      // A renewal keeps each track on the host its bridge already uses, whatever order the fresh read returned.
+      if (this.ordered && lease.hosts) {
+        const keep = (t: Track, host: string) => vodCdnHost(t.url) !== host && t.alternate && vodCdnHost(t.alternate) === host ? swapped(t) : t;
+        plan = { ...plan, video: keep(plan.video, lease.hosts[0]), audio: keep(plan.audio, lease.hosts[1]) };
+      }
+      const totals = await this.api.inspect(plan, signal);
       this.check(signal, generation);
       const metadata = vodBridgeMetadata(plan, totals);
       if (metadata !== lease.metadata) throw new DomainError('invalid');
@@ -146,7 +206,7 @@ export class VodSourceOwner {
   close(): Promise<void> {
     if (!this.closing) {
       if (this.lease) return Promise.reject(new DomainError('invalid'));
-      this.generation++; this.controller?.abort(); this.cache = undefined; this.account = undefined;
+      this.generation++; this.controller?.abort(); this.cache = undefined; this.account = undefined; this.excluded.clear();
       this.closing = (async () => {
         try { await this.work; } catch (error) { if (error instanceof DomainError && error.code === 'unknown') this.poisoned = true; }
         try { await this.api.close(); } catch { this.poisoned = true; }
