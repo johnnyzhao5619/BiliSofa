@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.47.2",
+  "basedOn": "0.47.1",
+  "uiSourceHash": "c81584f2919eb2287d256a2ebebc7f2cac4df150bc9b8d7de5dce0137b42d63f",
+  "uiManifestSha256": "746cef136368487c5b68efdebca6f2a5d9046769351f5c37ed9f9ce7d5fbdd72",
+  "unsignedSha256": "5487c146dad89d4c60d487e6bc9defd02fb03b87364fbdddffb05cfdf76dd4d6",
+  "signedSha256": "c602062dde8d9b7e0475bd705a613c284e5db71cd647c8bc910d7bf4c5c21efc",
+  "signedAt": "2026-10-23T12:41:10.675364+00:00",
+  "sourceArchiveSha256": "2199303c8c9c955d06279018b6240a0454aaca51d1beaf5f8cfec461b5c7fbae",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.47.2",
+        "signedSha256": "c602062dde8d9b7e0475bd705a613c284e5db71cd647c8bc910d7bf4c5c21efc",
+        "uiSourceHash": "c81584f2919eb2287d256a2ebebc7f2cac4df150bc9b8d7de5dce0137b42d63f",
+        "startedAt": "2026-10-23T12:41:44.826308+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.47.2",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.47.2",
+      "signedSha256": "c602062dde8d9b7e0475bd705a613c284e5db71cd647c8bc910d7bf4c5c21efc",
+      "uiSourceHash": "c81584f2919eb2287d256a2ebebc7f2cac4df150bc9b8d7de5dce0137b42d63f",
+      "startedAt": "2026-10-23T12:41:44.826308+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs0471": [
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/keyword-pad.ts",
+    "apps/tv/src/app/product-search.ts",
+    "apps/tv/src/app/reading-policy.ts",
+    "apps/tv/src/app/vod-overlays.ts",
+    "packages/bili-client/src/overlay-data.ts",
+    "packages/bili-client/src/search.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.47.2",
+    "modules": 301,
+    "unitContractPassed": 703,
+    "nativeOverlayPassed": 8,
+    "readingUiPassed": 17,
+    "newFixSpecs": 5,
+    "baseline0471FixSpecsFailed": 5,
+    "retainedPolishUiPassed": 18,
+    "retainedCastWakeOnlyPassed": 1,
+    "retainedCastClockSeekPassed": 10,
+    "legacySearchUi": "30/31 pre-existing account-removal text mismatch on frozen dist/foundation-app",
+    "packageNegativePassed": 8,
+    "unsignedSha256": "5487c146dad89d4c60d487e6bc9defd02fb03b87364fbdddffb05cfdf76dd4d6",
+    "frozenDistFilesVerifiedUnchanged": 952,
+    "uiSourceInputs": 257,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModules": 17,
+    "nativeFilesChangedVs0471": [
+      "overlay-read/manifest.json",
+      "overlay-read/probe.wasm"
+    ],
+    "nativeResourcesUnchangedVs0471": 68,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.47.2 (ADR-094): video search skips mixed-in course rows; focus stays on 搜索 until results arrive; AI subtitle files without .json accepted in TS and native overlay-read (relinked into build/overlay-read-subtitle); one out-of-scope track no longer fails the list",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_RETEST_S1_S3",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs0471": true
+}

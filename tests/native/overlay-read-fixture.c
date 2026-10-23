@@ -10,10 +10,12 @@ int main(int argc, char **argv) {
   if (argc != 4 || !vod_start()) return 1;
   const char *mode = argv[1];
   if (!strcmp(mode, "bounds")) {
-    const char *bad[] = { "http://aisubtitle.hdslb.com/bfs/subtitle/a.json", "https://127.0.0.1/bfs/subtitle/a.json", "https://aisubtitle.hdslb.com.outside.invalid/bfs/subtitle/a.json", "https://a@aisubtitle.hdslb.com/bfs/subtitle/a.json", "https://aisubtitle.hdslb.com:443/bfs/subtitle/a.json", "https://aisubtitle.hdslb.com/bfs/subtitle/../subtitle/a.json", "https://aisubtitle.hdslb.com/bfs/subtitle/%2e/a.json", "https://aisubtitle.hdslb.com/bfs/subtitle/a.json#x" };
+    const char *bad[] = { "http://aisubtitle.hdslb.com/bfs/subtitle/a.json", "https://127.0.0.1/bfs/subtitle/a.json", "https://aisubtitle.hdslb.com.outside.invalid/bfs/subtitle/a.json", "https://a@aisubtitle.hdslb.com/bfs/subtitle/a.json", "https://aisubtitle.hdslb.com:443/bfs/subtitle/a.json", "https://aisubtitle.hdslb.com/bfs/subtitle/../subtitle/a.json", "https://aisubtitle.hdslb.com/bfs/subtitle/%2e/a.json", "https://aisubtitle.hdslb.com/bfs/subtitle/a.json#x", "https://aisubtitle.hdslb.com/bfs/subtitle/a", "https://aisubtitle.hdslb.com/bfs/ai_subtitle/", "https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/", "https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/a%2e", "https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/../a" };
     for (unsigned i = 0; i < sizeof(bad) / sizeof(bad[0]); i++) { strcpy(vod_input, bad[i]); if (vod_begin(5)) return 2; }
     const char *pairs[] = { "1|1|0|a|b|1", "1|1|241|a|b|1", "1|1|01|a|b|1", "1|1|2|a|b|1", "https://outside.invalid|1|2|a|b|1" };
     for (unsigned i = 0; i < sizeof(pairs) / sizeof(pairs[0]); i++) { strcpy(vod_input, pairs[i]); if (vod_begin(6)) return 3; }
+    const char *good[] = { "https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/11337264110548526470449592b2aa?auth_key=1-synthetic-0-synthetic", "https://aisubtitle.hdslb.com/bfs/subtitle/a.json?auth_key=synthetic" };
+    for (unsigned i = 0; i < sizeof(good) / sizeof(good[0]); i++) if (!overlay_subtitle_url(good[i])) return 6;
     if (vod_begin(2) || vod_begin(3) || vod_begin(8)) return 4;
     vod_finish(); return clean() ? 0 : 5;
   }

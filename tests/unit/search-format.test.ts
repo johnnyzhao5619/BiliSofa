@@ -14,7 +14,7 @@ test('W03 search parses official unpadded seconds without relaxing bounds or unr
  for(const duration of ['5:60','5:99','5:008','5:','5:-1','5:1.5','5:1x','5: 8','5:8 ','1:2:3','1440:1','99999:1',308])assert.throws(()=>parseSearchBody(body({duration}),1),e=>e instanceof SearchBodyError&&e.issue==='duration');
 });
 test('W03 search malformed fields retain fixed categories without leaking outside values',()=>{
- const cases:[string,string][]=[['{','json'],['{}','envelope'],[JSON.stringify({code:0,data:{...data,page:2}}),'pagination'],[JSON.stringify({code:0,data:{...data,result:'outside'}}),'rows'],[body({type:'live'}),'type'],[body({bvid:'outside'}),'identity'],[body({duration:'outside'}),'duration'],[body({play:'outside'}),'views'],[body({title:null}),'text'],['x'.repeat(524289),'body']];
+ const cases:[string,string][]=[['{','json'],['{}','envelope'],[JSON.stringify({code:0,data:{...data,page:2}}),'pagination'],[JSON.stringify({code:0,data:{...data,result:'outside'}}),'rows'],[body({type:1}),'type'],[body({type:'Video Ad'}),'type'],[body({bvid:'outside'}),'identity'],[body({duration:'outside'}),'duration'],[body({play:'outside'}),'views'],[body({title:null}),'text'],['x'.repeat(524289),'body']];
  for(const [raw,issue]of cases)assert.throws(()=>parseSearchBody(raw,1),e=>e instanceof SearchBodyError&&e.issue===issue&&!JSON.stringify(e).includes('outside'));
 });
 test('W03 field error IPC allows only the closed fixed vocabulary; raw suffixes and mismatched outcomes reject',()=>{
@@ -22,4 +22,11 @@ test('W03 field error IPC allows only the closed fixed vocabulary; raw suffixes 
  for(const issue of SEARCH_RESPONSE_ISSUES)assert.equal(parseSearchResult({...value,code:'search.invalid_response_'+issue}).kind,'invalid_response');
  for(const code of ['search.invalid_response_raw_payload','search.invalid_response_duration_cookie=secret','search.invalid_response_http_412'])assert.throws(()=>parseSearchResult({...value,code}));
  assert.throws(()=>parseSearchResult({...value,code:'search.invalid_response_duration',apiCode:0}));assert.throws(()=>parseSearchResult({...value,kind:'http_error',status:412,code:'search.invalid_response_duration'}));
+});
+test('S1 (0.47.2) mixed-in course rows (type ketang, no BV id) are skipped instead of failing the page',()=>{
+ const course={type:'ketang',id:1,title:'合成课程',author:'合成UP',duration:'',play:3};
+ const r=parseSearchBody(JSON.stringify({code:0,data:{page:1,pagesize:4,numPages:250,numResults:1000,result:[row,{...row,bvid:'BV0000000001'},course,{...row,bvid:'BV0000000002'}]}}),1);
+ assert.deepEqual(r.items.map(v=>v.bvid),['BV0000000000','BV0000000001','BV0000000002']);assert.equal(r.noMore,false);
+ const only=parseSearchBody(JSON.stringify({code:0,data:{page:1,pagesize:4,numPages:250,numResults:1000,result:[course]}}),1);
+ assert.deepEqual(only.items,[]);assert.equal(only.noMore,false);
 });

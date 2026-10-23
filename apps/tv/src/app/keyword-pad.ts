@@ -45,7 +45,9 @@ export function keywordPad(owner: ResourceOwner, search: (keyword: string) => vo
     wire(candidateButtons, 4, 'keyword-candidate-0', [literal, more, erase, clear].find(b => !b.disabled)?.dataset.focusId ?? 'keyword-key-a');
     wire([literal, more, erase, clear], 4, firstCandidate ?? 'keyword-key-a', 'keyword-key-a');
     wire(keyButtons, 6, [literal, more, erase, clear].find(b => !b.disabled)?.dataset.focusId ?? firstCandidate ?? 'keyword-key-a', 'keyword-key-a');
-    const active = document.activeElement as HTMLButtonElement | null; if (active && node.contains(active) && active.disabled) node.querySelector<HTMLElement>('[data-focus-id=keyword-key-a]')?.focus();
+    // A chosen candidate disables its own button; keep focus next to it on “搜索” (the retry
+    // point while results load or if they fail) rather than sending it back to A.
+    const active = document.activeElement as HTMLButtonElement | null; if (active && node.contains(active) && active.disabled) (literal.disabled ? node.querySelector<HTMLElement>('[data-focus-id=keyword-key-a]') : literal)?.focus();
   }
   function refresh(): void {
     const epoch = ++generation; page = 0; words = []; busy = !!letters; render();

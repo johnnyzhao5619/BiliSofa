@@ -1,7 +1,10 @@
 """Build W05 fixed read-only overlay TV WASM from pinned local libraries. No deployment."""
 from pathlib import Path
 import hashlib,json,os,re,subprocess
-ROOT=Path(__file__).resolve().parents[1];BASE=ROOT/'.local/network-upgrade';SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk';PREFIX=BASE/'stage/bilisofa/network';OUT=ROOT/'build/overlay-read'
+ROOT=Path(__file__).resolve().parents[1];BASE=ROOT/'.local/network-upgrade';SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk';PREFIX=BASE/'stage/bilisofa/network';import sys
+# --out keeps an earlier frozen module intact (0.47.2 links into build/overlay-read-subtitle).
+OUT=ROOT/(sys.argv[sys.argv.index('--out')+1] if '--out' in sys.argv else 'build/overlay-read')
+if OUT.parent!=ROOT/'build' or not OUT.name.startswith('overlay-read'):raise SystemExit('Overlay read output must stay under build/overlay-read*')
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 subprocess.run(['python3',str(ROOT/'tools/build-network-candidate.py'),'check'],check=True)
 ca=ROOT/'.local/cacert.pem';expected='a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505'

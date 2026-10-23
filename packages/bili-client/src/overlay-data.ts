@@ -6,7 +6,7 @@ export interface PrivateSubtitleTrack { summary: SubtitleTrack; url: string; }
 export function subtitleSource(value: unknown): string {
   let raw = text(value, 2048); if (raw.startsWith('//')) raw = 'https:' + raw;
   let url: URL; try { url = new URL(raw); } catch { throw new DomainError('invalid'); }
-  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.hash || !raw.startsWith(`https://${url.hostname}/`) || !['aisubtitle.hdslb.com', 'i0.hdslb.com', 'i1.hdslb.com', 'i2.hdslb.com'].includes(url.hostname) || !/^\/bfs\/(?:ai_subtitle|subtitle)\/[A-Za-z0-9_./-]+\.json$/.test(url.pathname) || /(?:^|\/)\.\.?\/|%/.test(raw.split('?')[0]!) || /[\\\s\u0000-\u001f]/.test(raw)) throw new DomainError('permission');
+  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.hash || !raw.startsWith(`https://${url.hostname}/`) || !['aisubtitle.hdslb.com', 'i0.hdslb.com', 'i1.hdslb.com', 'i2.hdslb.com'].includes(url.hostname) || !/^\/bfs\/(?:subtitle\/[A-Za-z0-9_./-]+\.json|ai_subtitle\/[A-Za-z0-9_./-]*[A-Za-z0-9_.-])$/.test(url.pathname) || /(?:^|\/)\.\.?\/|%/.test(raw.split('?')[0]!) || /[\\\s\u0000-\u001f]/.test(raw)) throw new DomainError('permission');
   return raw;
 }
 export function parsePlayerMetadata(raw: string, binding: { bvid: string; cid: string; aid: string }): { tracks: PrivateSubtitleTrack[]; loginRequired: boolean } {
@@ -16,10 +16,14 @@ export function parsePlayerMetadata(raw: string, binding: { bvid: string; cid: s
   if (String(d.cid) !== binding.cid || String(d.aid) !== binding.aid || d.bvid !== undefined && d.bvid !== binding.bvid) throw new DomainError('invalid');
   const subtitles = record(d.subtitle), rows = subtitles.subtitles;
   if (!Array.isArray(rows) || rows.length > 64) throw new DomainError('invalid');
-  const tracks = rows.map((raw, i) => {
+  // A track whose file address is outside the scoped hosts/paths is skipped, not fatal for the
+  // other tracks (0.47.2). Keys keep the row index so a later re-read maps to the same track.
+  const tracks = rows.flatMap((raw, i) => {
     const r = record(raw), language = text(r.lan, 32); if (!/^[A-Za-z0-9_-]+$/.test(language)) throw new DomainError('invalid');
-    return { summary: { key: `s${i}`, language, label: text(r.lan_doc, 80), automatic: Number(r.ai_type ?? 0) > 0 || language.startsWith('ai-') }, url: subtitleSource(r.subtitle_url) };
+    let url: string; try { url = subtitleSource(r.subtitle_url); } catch (error) { if (error instanceof DomainError && error.code === 'permission') return []; throw error; }
+    return [{ summary: { key: `s${i}`, language, label: text(r.lan_doc, 80), automatic: Number(r.ai_type ?? 0) > 0 || language.startsWith('ai-') }, url }];
   });
+  if (rows.length && !tracks.length) throw new DomainError('unsupported');
   return { tracks, loginRequired: d.need_login_subtitle === true || d.need_login_subtitle === 1 || subtitles.need_login === true };
 }
 export function parseSubtitleBody(raw: string): SubtitleCue[] {

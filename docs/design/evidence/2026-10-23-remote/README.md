@@ -1,6 +1,6 @@
 # 0.45.0 第一批遥控快改：工件与部署证据
 
-2026-10-23；[ADR-088](../../../adr/088-remote-media-keys-and-direct-controls.md) · [回执](receipt.json) · [实施计划](../../../plans/2026-10-23-batch1-remote-quickfix.md)。**已签名并升级安装/启动（平台确认，不清数据）；用户所请求R1–R6 USER PASS，R7按[ADR-089](../../../adr/089-voice-guide-not-required.md)移除。**
+2026-10-23；[ADR-088](../../../adr/088-remote-media-keys-and-direct-controls.md) · [回执](receipt.json) · [实施计划](../../../archive/2026-10-23-superseded/plans/2026-10-23-batch1-remote-quickfix.md)。**已签名并升级安装/启动（平台确认，不清数据）；用户所请求R1–R6 USER PASS，R7按[ADR-089](../../../adr/089-voice-guide-not-required.md)移除。**
 
 | 项 | 值 |
 | --- | --- |

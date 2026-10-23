@@ -11,7 +11,7 @@
 | ProductInfo历史元数据 | model `U800FD`，firmware `T-KSU2EFAKUC-0090-1300.9`；本轮未重新测固件 |
 | Web引擎 | Chrome major尚未可靠提取，不把官方年度基线当实测 |
 | 路线 | 单WGT、Web UI＋电视内Worker/WASM/cURL＋AVPlay，见ADR-027 |
-| 当前应用 | BiliSofa / BiliSofa01.TV / 0.43.0；原安装启动与所请求投屏/F11组有证据；后续结束进程已确认、重开超时，当前前台未知；用户要求先不部署 |
+| 当前应用 | BiliSofa / BiliSofa01.TV / 0.47.2；升级安装/启动获平台确认，所请求S1/S3复验USER PASS |
 
 ## 能力矩阵
 

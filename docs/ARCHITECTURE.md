@@ -41,4 +41,4 @@
 
 账号失效/同身份重新登录按[ADR-082](adr/082-single-account-session-recovery.md)：返回媒体能力共享代次/到期保护；恢复仅保存安全页面意图，保护存储双bank更新，不恢复旧DTO/游标/播放/POST。
 
-小数倍速候选按[ADR-086](adr/086-fractional-rate-element-candidate.md)独立开发，尚未接入上述生产架构；原生video的生产DASH、跨后端排他切换与电视证据未完成，不能用当前0.43.0通过替代。当前用户要求先不部署。
+小数倍速候选按[ADR-086](adr/086-fractional-rate-element-candidate.md)独立开发，尚未接入上述生产架构；原生video的生产DASH、跨后端排他切换与电视证据未完成，不能用已安装包的通过替代。

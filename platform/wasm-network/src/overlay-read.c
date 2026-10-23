@@ -15,7 +15,9 @@ static int overlay_subtitle_url(const char *s) {
   for (unsigned i = 0; i < sizeof(hosts) / sizeof(hosts[0]); i++) if (!strncmp(s, hosts[i], strlen(hosts[i]))) path = s + strlen(hosts[i]) - 1;
   if (!path || (strncmp(path, "/bfs/subtitle/", 14) && strncmp(path, "/bfs/ai_subtitle/", 17)) || strstr(path, "/../") || strstr(path, "/./")) return 0;
   const char *query = strchr(path, '?'), *end = query ? query : path + strlen(path);
-  if (end - path < 6 || strncmp(end - 5, ".json", 5)) return 0;
+  /* CC files end in .json; AI subtitle files are a bare id under /bfs/ai_subtitle/ (0.47.2). */
+  int ai = !strncmp(path, "/bfs/ai_subtitle/", 17);
+  if (ai ? end - path <= 17 || end[-1] == '/' : end - path < 6 || strncmp(end - 5, ".json", 5)) return 0;
   for (const char *p = path; p < end; p++) if (!((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9') || strchr("/_.-", *p))) return 0;
   for (const char *p = s; *p; p++) if ((unsigned char)*p < 33 || (unsigned char)*p > 126 || strchr("\\#<>\"", *p)) return 0;
   return 1;

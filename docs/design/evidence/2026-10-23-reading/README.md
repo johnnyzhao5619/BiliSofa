@@ -1,6 +1,6 @@
 # 0.47.0 第三批：工件与部署证据
 
-2026-10-23；[ADR-092](../../../adr/092-one-page-search-and-single-column-comments.md) · [ADR-093](../../../adr/093-overlay-stepping-resume-after-home-and-continuous-preference.md) · [回执](receipt.json) · [计划](../../../plans/2026-10-23-batch3-search-reading-resume.md)。**已签名并升级安装/启动（平台确认，一次成功，不清数据）；设备验收待用户S1–S6。**
+2026-10-23；[ADR-092](../../../adr/092-one-page-search-and-single-column-comments.md) · [ADR-093](../../../adr/093-overlay-stepping-resume-after-home-and-continuous-preference.md) · [回执](receipt.json) · [计划](../../../archive/2026-10-23-superseded/plans/2026-10-23-batch3-search-reading-resume.md)。**已签名并升级安装/启动（平台确认，一次成功，不清数据）；设备验收待用户S1–S6。**
 
 | 项 | 值 |
 | --- | --- |

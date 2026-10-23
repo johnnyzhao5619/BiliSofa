@@ -8,7 +8,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "tsc --noEmit && node tools/check-boundaries.mjs",
+    "check": "tsc --noEmit && node tools/check-boundaries.mjs && node tools/check-docs.mjs --self-test && node tools/check-docs.mjs",
     "test": "node --import ./tools/register-ts.mjs --test tests/unit/*.test.ts tests/contracts/*.test.ts",
     "test:ui": "playwright test",
     "build": "node tools/build.mjs",

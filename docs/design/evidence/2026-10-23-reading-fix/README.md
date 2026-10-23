@@ -1,6 +1,6 @@
 # 0.47.1 第三批真机反馈修正（本地证据）
 
-2026-10-23；ADR-092/093文末“0.47.1 真机反馈修正”。构建`node tools/build-foundation-app.mjs --product-reading-fix` → `dist/product-reading-fix-app`，打包`python3 tools/package-foundation-app.py --product-reading-fix`。**已签名（`b97860742681a032b74c91c0ebe4874a4f904fda5179240d8400cff42c125284`，证书预检PASS，权限与0.47.0相同），已升级安装/启动（平台确认，不清数据），未经真机复验。** 部署：首次SDB能力确认超时、重连未连上；用户确认电视开机并处于开发者模式后，重启本机SDB服务再连接，第二次安装/启动成功。源码归档`345e59794aa9421c49cb04d1f2d691d0dcc40f368427f2e8a79d5d8293c1dda1`，见[receipt.json](receipt.json)。
+2026-10-23；ADR-092/093文末“0.47.1 真机反馈修正”。构建`node tools/build-foundation-app.mjs --product-reading-fix` → `dist/product-reading-fix-app`，打包`python3 tools/package-foundation-app.py --product-reading-fix`。**已签名（`b97860742681a032b74c91c0ebe4874a4f904fda5179240d8400cff42c125284`，证书预检PASS，权限与0.47.0相同），已升级安装/启动（平台确认，不清数据）。用户复验：S5 PASS；S1、S3 FAIL，见[0.47.2](../2026-10-23-reading-fix2/README.md)。** 部署：首次SDB能力确认超时、重连未连上；用户确认电视开机并处于开发者模式后，重启本机SDB服务再连接，第二次安装/启动成功。源码归档`345e59794aa9421c49cb04d1f2d691d0dcc40f368427f2e8a79d5d8293c1dda1`，见[receipt.json](receipt.json)。
 
 ## 起因（用户0.47.0真机结果）
 

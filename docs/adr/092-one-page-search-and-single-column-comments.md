@@ -1,6 +1,6 @@
 # ADR-092：一页式搜索与单列评论
 
-2026-10-23；F03/F10/F15、R15/T2/T4、U5。用户确认第三批F1（一页式搜索）与F3（单列评论）。仅在`--product-reading`（0.47.0）构建生效（0.47.1真机反馈修正见文末，`--product-reading-fix`）。状态：**0.47.0已签名并升级安装/启动（平台确认，[证据](../design/evidence/2026-10-23-reading/README.md)）；用户S2/S4/S6 USER PASS；S5连播记忆PASS但⚙“循环”上移FAIL；S1、S3 FAIL。0.47.1修正已签名并升级安装/启动（平台确认，[证据](../design/evidence/2026-10-23-reading-fix/README.md)），设备复验待用户S1/S3/S5**。
+2026-10-23；F03/F10/F15、R15/T2/T4、U5。用户确认第三批F1（一页式搜索）与F3（单列评论）。仅在`--product-reading`（0.47.0）构建生效（0.47.1真机反馈修正见文末，`--product-reading-fix`）。状态：**0.47.0已签名并升级安装/启动（平台确认，[证据](../design/evidence/2026-10-23-reading/README.md)）；用户S2/S4/S6 USER PASS；S5连播记忆PASS但⚙“循环”上移FAIL；S1、S3 FAIL。0.47.1修正已签名并升级安装/启动（平台确认，[证据](../design/evidence/2026-10-23-reading-fix/README.md)），0.47.1复验S5 PASS，S1/S3于0.47.2复验USER PASS（[ADR-094](094-search-course-rows-and-ai-subtitle-files.md)）；S1–S6全部通过**。
 
 ## 决定
 

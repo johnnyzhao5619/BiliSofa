@@ -4,11 +4,11 @@
 
 ## 当前状态
 
-**用户当前要求先不部署，先更新文档并交第三方验收。** 已安装工件为0.43.0：所请求Android/iPhone投屏组与F11关注/收藏组USER PASS，既有点赞/稍后再看和其他已通过组保持；不等于完整产品通过。旧进程结束已确认，后续重新启动超时，当前前台未知。
+已安装工件为0.47.2：前端三批（遥控、播放器、首页、搜索、阅读）所请求组USER PASS，此前投屏/F11等所请求组保持；不等于完整产品通过。
 
-当前工作区另有R07小数倍速HTML video候选，尚未集成生产、打包、签名或部署。桌面MP4只有前四档通过，1.25×窗口不足中止，其余档位/DASH/电视未验；不能借用0.43.0的设备结果。大屏UI已有实现与分组USER证据，最终整合/性能/恢复及内容来源缺口仍开放。
+当前工作区另有R07小数倍速HTML video候选，尚未集成生产、打包、签名或部署。桌面MP4只有前四档通过，1.25×窗口不足中止，其余档位/DASH/电视未验；不能借用已安装包的设备结果。大屏UI已有实现与分组USER证据，最终整合/性能/恢复及内容来源缺口仍开放。
 
-[当前状态](docs/IMPLEMENTATION_STATUS.md) · [第三方验收提示词](docs/THIRD_PARTY_ACCEPTANCE_PROMPT.md) · [验收安排](docs/CURRENT_DEVICE_TEST.md) · [分层测试](docs/TEST_REPORT.md) · [签名工件](docs/SIGNING_DEVICE_RECORD.md)
+[当前状态](docs/IMPLEMENTATION_STATUS.md) · [第三方验收报告](docs/acceptance/third-party/2026-10-22T213335-0400/REPORT.md) · [验收安排](docs/CURRENT_DEVICE_TEST.md) · [分层测试](docs/TEST_REPORT.md) · [签名工件](docs/SIGNING_DEVICE_RECORD.md)
 
 [唯一收口台账](docs/PRODUCT_CLOSURE.md) · [大屏产品设计](docs/TV_PRODUCT_DESIGN.md)。直播及真实双账号排除；F14暂停，云进度用户跳过且旧unknown不重发；完整v1.0.0尚未完成，不提交/推送/发布。
 

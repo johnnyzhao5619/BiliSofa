@@ -1,6 +1,6 @@
 # ADR-088：遥控媒体键与隐藏态直达操作
 
-2026-10-23；F05/F06/F07/F10/F15/F20、R07/R11/R15、U5。依据[0.44.0前端评审](../plans/2026-10-23-batch1-remote-quickfix.md)，用户确认：D1停手1.2秒自动提交，D2停止键退出播放回原卡，D3默认步长10秒。状态：**0.45.0已签名并升级安装/启动（平台确认，[证据](../design/evidence/2026-10-23-remote/README.md)）；R1–R6 USER PASS，R7按ADR-089移除**。
+2026-10-23；F05/F06/F07/F10/F15/F20、R07/R11/R15、U5。依据[0.44.0前端评审](../archive/2026-10-23-superseded/plans/2026-10-23-batch1-remote-quickfix.md)，用户确认：D1停手1.2秒自动提交，D2停止键退出播放回原卡，D3默认步长10秒。状态：**0.45.0已签名并升级安装/启动（平台确认，[证据](../design/evidence/2026-10-23-remote/README.md)）；R1–R6 USER PASS，R7按ADR-089移除**。
 
 ## 决定
 

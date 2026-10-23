@@ -4,3 +4,5 @@ export const PRODUCT_READING=typeof BILISOFA_PRODUCT_READING!=='undefined'&&BILI
 declare const BILISOFA_READING_FIX:boolean;
 /** 0.47.1 device-feedback fixes ride on PRODUCT_READING; this flag only labels the build. */
 export const READING_FIX=typeof BILISOFA_READING_FIX!=='undefined'&&BILISOFA_READING_FIX;
+declare const BILISOFA_READING_FIX2:boolean;
+export const READING_FIX2=typeof BILISOFA_READING_FIX2!=='undefined'&&BILISOFA_READING_FIX2;

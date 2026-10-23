@@ -230,7 +230,7 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
       feed?.failure();
       if (owner.signal.aborted || ticket !== epoch)
         return;
-      blocked = error instanceof DomainError && error.code === 'unknown';
+      blocked = error instanceof DomainError && error.code === 'unknown'; focusResults = false;
       const code = error instanceof ProductSearchError ? error.detail : error instanceof DomainError ? error.code : 'invalid';
       status.textContent = blocked ? '资源关闭未确认，请退出并重新打开应用' : `搜索暂时无法完成，可重试或更换关键词${grid.childElementCount ? '；下方保留上次同类结果' : ''}`; status.title = String(code);
     }

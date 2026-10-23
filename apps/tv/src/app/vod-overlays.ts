@@ -86,7 +86,7 @@ export class VodOverlays {
     if (!this.preferences.subtitles.enabled) return `字幕已关闭（有${this.tracks.length}条可用）`;
     return this.metadataStatus;
   }
-  private error(label: string, error: unknown): string { return `${label}读取失败（overlay.${error instanceof DomainError ? error.code : 'invalid'}），可手动重读，不影响播放`; }
+  private error(label: string, error: unknown): string { const code = error instanceof DomainError ? error.code : 'invalid'; return code === 'unsupported' ? `${label}读取失败：字幕文件地址格式暂不支持（overlay.unsupported），不影响播放` : `${label}读取失败（overlay.${code}），可手动重读，不影响播放`; }
   private ensureSegment(time: number, duration: number): void {
     if (!this.source || this.reading || this.owner.signal.aborted || !this.preferences.danmaku.enabled) return;
     const segment = Math.min(240, Math.floor(time / 360000) + 1), last = Math.min(240, Math.ceil(duration / 360000));

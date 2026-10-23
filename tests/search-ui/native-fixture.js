@@ -13,6 +13,8 @@
   }
   if(stage!==1||args.length!==6||!['video-search-wbi','user-search-wbi','pgc-search-wbi','live-search-wbi'].includes(args[0])||args[1].length>64||!/^([1-9]|10)$/.test(args[2])||args[3]!=='a'.repeat(32)||args[4]!=='b'.repeat(32)||!/^\d{10}$/.test(args[5])||variant.startsWith('nav-'))throw Error('fixture.unapproved_query');stage=2;
   const page=Number(args[2]),empty=variant==='empty',data={page:variant==='wrong-page'?99:page,pagesize:4,numPages:empty?0:2,numResults:empty?0:8,result:Array.from({length:empty?0:4},(_,i)=>({type:'video',bvid:'BV'+(page===1?'S':'T')+String(i).padStart(9,'0'),title:i===0?'<em class="keyword">你好</em>合成视频':'搜索合成视频'+i,author:'合成UP',duration:'1:20',play:100}))};
+  // 0.47.2: the public service mixes paid-course rows (no BV id) into video results.
+  if(variant==='course'&&args[0]==='video-search-wbi')data.result[2]={type:'ketang',id:5,title:'合成课程',author:'合成UP',duration:'',play:3};
   if(args[0]==='user-search-wbi'){
    data.result=Array.from({length:empty?0:4},(_,i)=>({type:variant==='up-type'&&i===0?'video':'bili_user',mid:variant==='up-id'&&i===0?9007199254740992:page*100+i+1,uname:i<2?'合成UP':i===2?'<img src=x onerror=outside()>UP':'合成UP'+i,fans:variant==='up-counts'&&i===0?'outside':1000+i,videos:10+i,upic:'https://outside.invalid/icon.png',usign:'ignored',res:i===0?[]:Array.from({length:3},(_,j)=>({bvid:'BVU'+String(page*10+i+j).padStart(9,'0'),title:j===0?'<em class="keyword">你好</em>附带投稿':'其余预览'+j,duration:variant==='up-preview'?'1:99':'2:6',play:'123',arcurl:'https://outside.invalid/'}))}));
   }

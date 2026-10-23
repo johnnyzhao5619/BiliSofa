@@ -1,116 +1,28 @@
 # 开发与部署
 
-> 用户当前要求先不部署，见[第三方验收任务](THIRD_PARTY_ACCEPTANCE_PROMPT.md)。下文构建/签名/安装命令仅作开发参考，不是当前授权。0.28–0.43目录/工件冻结，不直接重建覆盖；R07候选未接生产/打包/部署，不能借用0.43.0的设备结果。
+> 下文构建/签名/安装命令仅作开发参考；签名/部署须按版本取得用户授权。冻结的0.28–0.47.1目录/工件不重建覆盖，新变体使用新输出目录；R07候选未接生产/打包/部署，不能借用已安装包的设备结果。
 
-更新：2026-10-21。当前为WGT/Web＋电视内Worker/WASM/AVPlay路线；开发机仅用于构建、签名和安装。build/package不隐式连接设备或发布。
+更新：2026-10-23。当前为WGT/Web＋电视内Worker/WASM/AVPlay路线；开发机仅用于构建、签名和安装。build/package不隐式连接设备或发布。
 
-## 产品界面独立开发构建
+## 当前候选0.47.2（已安装）
 
-`npm run build:app:u1`生成`dist/u1-app`（0.29.0开发构建），不覆盖已冻结的`dist/recommend-app`/0.28.0，不生成WGT、不签名/安装。该冻结候选仅含名称/范围与呈现合同，见[ADR-071](adr/071-content-display-foundation.md)。不能用旧`package:app:local-data`命令把此目录说成新包。
-
-`npm run build:app:product-ui`生成独立`dist/product-ui-app`（0.30.0开发候选），新增大屏壳层、首页/视频搜索卡片、详情播放返回及受限公开封面，见[ADR-072](adr/072-product-shell-and-public-artwork.md)。无原生依赖变更、WGT、签名或部署；不能用旧打包命令为此目录套用历史设备通过。`BILISOFA_TEST_ROOT=dist/product-ui-app npm run test:ui:product`只作合成UI证据。`node tools/build-foundation-app.mjs --u1 --verification`输出`dist/u1-regression-app`供共享逻辑回归，不覆盖0.29.0冻结工件。
-
-前一候选使用`npm run build:app:product-library`输出独立`dist/product-library-app`（0.31.0），见[ADR-073](adr/073-continuation-and-product-library.md)。`npm run test:ui:product-library`仅运行合成检查。旧0.28/0.29/0.30目录是冻结工件，不以重建旧命令覆盖；共享逻辑回归用`--u1 --verification`的独立输出，UI配置可由`BILISOFA_PROBE_ROOT`选择。当前无新WGT/签名/安装。
-
-0.32.0源码使用`npm run build:app:product-discovery`输出独立`dist/product-discovery-app`（0.32.0统一搜索），见[ADR-074](adr/074-unified-product-search.md)。`npm run test:ui:product-discovery`检查新模块；`BILISOFA_PROBE_ROOT=dist/product-discovery-app npm run test:ui:product-library`复用片库回归。0.28–0.31工件冻结，后续修改需选择新的独立输出；未集成全部产品页面前不为此构建单独部署。
-
-前一冻结候选使用`npm run build:app:product-collections`输出独立`dist/product-collections-app`（0.33.0），见[ADR-075](adr/075-following-and-pgc-product-browse.md)。`npm run test:ui:product-collections`检查关注/已追番剧；统一搜索与片库配置均可用`BILISOFA_PROBE_ROOT=dist/product-collections-app`选择本轮目录。0.28–0.32工件冻结，不重建覆盖；未生成新WGT，不单独部署此内部候选。
-
-本轮必要检查：`npm run check`、`npm test`；相关UI使用`BILISOFA_PROBE_ROOT=dist/u1-regression-app`运行`playwright.local-data.config.ts`、`playwright.queue-parts.config.ts`；媒体UI另加`BILISOFA_TEST_ROOT=dist/u1-regression-app`，运行`playwright.w04-media.config.ts`中的`playback.spec.ts pgc.spec.ts`。仅为合成检查，完整模块就绪后集中给设备清单。
-
-## 当前稳定浏览/目标控制候选0.39.0
+前端第一至三批累积在`--product-reading-fix2`变体；更早的变体参数仍保留在工具里，但其冻结输出不重建覆盖。
 
 ```sh
-npm run check
+npm run check        # tsc、依赖边界、文档门禁（tools/check-docs.mjs）
 npm test
-npm run build:app:product-stream
-npm run test:ui:product-stream
-python3 tests/native/product-stream-packaging.test.py
-python3 tools/sign-foundation-app.py --product-stream
-python3 tools/deploy-foundation-app.py --product-stream
+python3 tests/native/overlay-read.test.py
+python3 tools/link-overlay-read.py --out build/overlay-read-subtitle   # 仅在overlay-read.c改动时
+node tools/build-foundation-app.mjs --product-reading-fix2
+BILISOFA_PROBE_ROOT=dist/product-reading-fix2-app npx playwright test --config playwright.product-reading.config.ts
+BILISOFA_PROBE_ROOT=dist/product-reading-fix2-app npx playwright test --config playwright.product-polish.config.ts
+python3 tests/native/product-reading-fix2-packaging.test.py
+python3 tools/package-foundation-app.py --product-reading-fix2
 ```
 
-独立dist/product-stream-app/0.39.0及product-stream私有指针；新UI套件包含适配遥控退出的保留播放器/设置/浏览回归，旧冻结套件不改。UI与会修改stage的包负例串行。封存后不重建旧目录；自动检查无真实账号POST。浏览/资源合同见ADR-081。
+签名与部署须用户逐版本授权（升级安装，不清数据）：`python3 tools/sign-foundation-app.py --product-reading-fix2`、`python3 tools/deploy-foundation-app.py --product-reading-fix2`。SDB连不上而电视可达时，先`sdb kill-server`/`start-server`再`connect`，只重连一次，不循环重试。新一轮修正使用新的变体参数、输出目录和包名，避免覆盖已签名包对应的冻结目录。
 
-## 冻结单击互动/缓存0.38.0（历史命令仅供参考）
-
-```sh
-npm run check
-npm test
-npm run build:app:product-instant
-npm run test:ui:product-instant
-BILISOFA_PROBE_ROOT=dist/product-instant-app npm run test:ui:product-player
-BILISOFA_PROBE_ROOT=dist/product-instant-app npm run test:ui:product-browse
-python3 tests/native/product-instant-packaging.test.py
-python3 tools/sign-foundation-app.py --product-instant
-python3 tools/deploy-foundation-app.py --product-instant
-```
-
-独立dist/product-instant-app/0.38.0及product-instant私有指针。UI与修改stage的包负例串行；自动检查无真实账号POST。封存后下轮新目录，不覆盖0.28–0.38。界面单击授权合同见ADR-080，小数后端待实施。
-
-## 冻结控制栏0.37.0（历史命令仅供参考）
-
-```sh
-npm run check
-npm test
-npm run build:app:product-actions
-npm run test:ui:product-actions
-BILISOFA_PROBE_ROOT=dist/product-actions-app npm run test:ui:product-interactions
-BILISOFA_PROBE_ROOT=dist/product-actions-app npm run test:ui:product-player
-BILISOFA_PROBE_ROOT=dist/product-actions-app npm run test:ui:product-browse
-python3 tests/native/product-actions-packaging.test.py
-python3 tools/sign-foundation-app.py --product-actions
-python3 tools/deploy-foundation-app.py --product-actions
-```
-
-输出独立`dist/product-actions-app`/0.37.0及product-actions私有指针。UI与会修改stage的包负例串行；不执行真实账号POST。配对工件冻结后，下轮使用新版本/目录，不覆盖0.28–0.37。小数倍速后端未实现，见ADR-079。
-
-## 冻结U4互动0.36.0（历史命令仅供参考）
-
-```sh
-npm run check
-npm test
-npm run build:app:product-interactions
-npm run test:ui:product-interactions
-BILISOFA_PROBE_ROOT=dist/product-interactions-app npm run test:ui:product-player
-BILISOFA_PROBE_ROOT=dist/product-interactions-app npm run test:ui:product-browse
-python3 tests/native/product-interactions-packaging.test.py
-python3 tools/sign-foundation-app.py --product-interactions
-python3 tools/deploy-foundation-app.py --product-interactions
-```
-
-4173 UI套件与会修改stage的包负例串行运行。0.36.0使用独立`dist/product-interactions-app`、unsigned WGT及`*-product-interactions-manifest.json`指针；真实写入不作为自动检查。原生固定GET/POST/CA未重建，F14默认暂停。已配对工件冻结后，下一轮另选版本/目录，不能用旧构建命令覆盖0.28–0.36的工件。实际部署结论以[签名记录](SIGNING_DEVICE_RECORD.md)为准。
-
-## 冻结体验组合0.35.0（历史命令仅供参考）
-
-```sh
-npm run check
-npm test
-npm run build:app:product-browse
-npm run test:ui:product-browse
-BILISOFA_PROBE_ROOT=dist/product-browse-app npm run test:ui:product-player
-python3 tests/native/product-browse-packaging.test.py
-python3 tools/sign-foundation-app.py --product-browse
-python3 tools/deploy-foundation-app.py --product-browse
-```
-
-所有4173 UI服务及修改stage的包负例串行；输出独立`dist/product-browse-app`与`dist/BiliSofa-0.35.0-unsigned.wgt`，使用独立product-browse签名/部署指针。0.28–0.34冻结工件不重建覆盖。原生依赖/权限不变，关注视频目标只改变生产Worker/DTO解析。新签名工件与源码快照在仓库外保护目录，升级不卸载/清数据。[ADR-077](adr/077-continuous-browse-and-cast-refinement.md)及[验收](CURRENT_DEVICE_TEST.md)记录边界。
-
-## 历史U3组合候选0.34.0
-
-本轮用户授权U3完成后部署。使用独立目录，保留0.28–0.33冻结工件：
-
-```sh
-npm run check
-npm test
-npm run build:app:product-player
-npm run test:ui:product-player
-python3 tests/native/product-player-packaging.test.py
-python3 tools/sign-foundation-app.py --product-player
-python3 tools/deploy-foundation-app.py --product-player
-```
-
-负例会短暂修改并恢复新stage，必须与UI/签名串行。签名工具重验来源后生成`dist/BiliSofa-U3-0.34.0-unsigned.wgt`，自有BiliSofa profile的签名工件和设备记录在仓库外保护目录，独立`*-product-player-manifest.json`指针；不暴露证书/地址。应用ID/Author保持，不卸载、不清数据。当前包配对见[签名记录](SIGNING_DEVICE_RECORD.md)，state/capability/install/launch成功仍不代表用户声画验收。回退先按旧签名包及其源码hash核对身份，平台可能拒绝低版本升级；不要为回退擅自卸载或清数据，需保留失败并另行确定数据安全方案。无自动回退操作。
+提交前自检：`npm run check`、`npm test`。文档门禁限制状态页的体积与形状（单一已安装行、无前一安装版历史行、开头段落≤400字、不写带日期的“用户要求先不…”边界、仓库内相对链接可达），**本条由机器门禁强制**：状态页每次只多写一点历史，单次看不出问题，纯文档约定没有任何东西会因此变红；历史记入[签名与部署记录](SIGNING_DEVICE_RECORD.md)、证据README或`docs/archive`。
 
 ## 已配置工具
 

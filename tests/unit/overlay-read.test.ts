@@ -1,3 +1,4 @@
+import { DomainError } from '../../packages/contracts/src/index.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeDanmakuSegment, parsePlayerMetadata, parseSubtitleBody, subtitleSource } from '../../packages/bili-client/src/overlay-data.ts';
@@ -67,4 +68,13 @@ test('W05 refreshed metadata must match the private CID of active playback befor
 });
 test('W05 PGC overlay resolves the selected season episode again and checks its actual playback CID', async () => {
   const f = fixture(); const result = await f.api.read({ bvid, part: 1, seasonId: '123' }, { kind: 'subtitles', track }, new AbortController().signal, '111'); assert.equal(result.kind, 'subtitles'); assert.deepEqual(f.calls, [0, 7, 1, 4, 5]); assert.match(f.inputs[3]!, /^BV0000000001\|111\|/);
+});
+test('S3 (0.47.2) AI subtitle files are bare ids under /bfs/ai_subtitle/; one unsupported track no longer fails the list', () => {
+  const ai = '//aisubtitle.hdslb.com/bfs/ai_subtitle/prod/11337264110548526470449592b2aa?auth_key=1-synthetic-0-synthetic';
+  assert.equal(subtitleSource(ai), 'https:' + ai);
+  for (const value of ['https://aisubtitle.hdslb.com/bfs/subtitle/a', 'https://aisubtitle.hdslb.com/bfs/ai_subtitle/', 'https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/', 'https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/../a', 'https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/a%2e', 'https://outside.invalid/bfs/ai_subtitle/prod/a']) assert.throws(() => subtitleSource(value));
+  const rows = [{ lan: 'ai-zh', lan_doc: '中文（自动生成）', subtitle_url: ai, ai_type: 1 }, { lan: 'en', lan_doc: 'English', subtitle_url: 'https://outside.invalid/bfs/subtitle/a.json' }, { lan: 'zh-CN', lan_doc: '中文', subtitle_url: url }];
+  const value = parsePlayerMetadata(JSON.stringify({ code: 0, data: { bvid, aid: 123, cid: 222, subtitle: { subtitles: rows } } }), { bvid, cid: '222', aid: '123' });
+  assert.deepEqual(value.tracks.map(t => [t.summary.key, t.summary.language]), [['s0', 'ai-zh'], ['s2', 'zh-CN']]);
+  assert.throws(() => parsePlayerMetadata(JSON.stringify({ code: 0, data: { bvid, aid: 123, cid: 222, subtitle: { subtitles: [rows[1]] } } }), { bvid, cid: '222', aid: '123' }), (e: unknown) => e instanceof DomainError && e.code === 'unsupported');
 });

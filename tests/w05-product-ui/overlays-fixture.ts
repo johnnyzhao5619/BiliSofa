@@ -6,7 +6,7 @@ function uint(n: number): number[] { const result: number[] = []; do { const b =
 function number(k: number, n: number) { return [...uint(k * 8), ...uint(n)]; }
 function string(k: number, s: string) { const bytes = [...new TextEncoder().encode(s)]; return [...uint(k * 8 + 2), ...uint(bytes.length), ...bytes]; }
 function segment(index = 1) { const body = [...number(2, (index - 1) * 360000 + 1000), ...number(3, 1), ...number(5, 0xffffff), ...string(7, `真实链路合成弹幕${index}`), ...string(12, String(index))]; return Buffer.from([10, ...uint(body.length), ...body]); }
-export async function overlay(page: Page, variant: 'normal' | 'empty' | 'fail' | 'slow' | 'sparse' = 'normal', start = true) {
+export async function overlay(page: Page, variant: 'normal' | 'empty' | 'fail' | 'slow' | 'sparse' | 'ai' | 'foreign' = 'normal', start = true) {
   const calls: number[] = [], parts: number[] = [];
   await page.route('**/overlay-read/probe.js', route => route.fulfill({ contentType: 'text/javascript', body: native.replace('__CLOSE_DELAY__', variant === 'slow' ? '1000' : '0') }));
   await page.route('**/synthetic-overlay-api', async route => {
@@ -17,7 +17,7 @@ export async function overlay(page: Page, variant: 'normal' | 'empty' | 'fail' |
     const lang = value.includes('english') ? 'EN' : '中文';
     const body = operation === 0 ? { code: -101, data: { isLogin: false, wbi_img: { img_url: 'https://i0.hdslb.com/bfs/wbi/' + 'a'.repeat(32) + '.png', sub_url: 'https://i0.hdslb.com/bfs/wbi/' + 'b'.repeat(32) + '.png' } } } :
       operation === 1 ? { code: 0, data: { bvid: value, aid: 123, cid: 111, state: 0, title: '合成', owner: { name: '合成' }, rights: { pay: 0, ugc_pay: 0, is_stein_gate: 0 }, pages: [{ cid: 111, page: 1, from: 'vupload', part: 'P1', duration: 800 }, { cid: 222, page: 2, from: 'vupload', part: 'P2', duration: 800 }] } } :
-      operation === 4 ? { code: 0, data: { bvid: value.split('|')[0], aid: 123, cid: Number(value.split('|')[1]), subtitle: { subtitles: variant === 'empty' ? [] : [{ lan: 'zh-CN', lan_doc: '简体中文', subtitle_url: 'https://aisubtitle.hdslb.com/bfs/subtitle/chinese.json' }, { lan: 'en', lan_doc: 'English', subtitle_url: 'https://aisubtitle.hdslb.com/bfs/subtitle/english.json' }] } } } :
+      operation === 4 ? { code: 0, data: { bvid: value.split('|')[0], aid: 123, cid: Number(value.split('|')[1]), subtitle: { subtitles: variant === 'empty' ? [] : variant === 'ai' ? [{ lan: 'ai-zh', lan_doc: '中文（自动生成）', ai_type: 1, subtitle_url: '//aisubtitle.hdslb.com/bfs/ai_subtitle/prod/11337264110548526470449592b2aa?auth_key=1-synthetic-0-synthetic' }, { lan: 'en', lan_doc: 'English', subtitle_url: 'https://outside.invalid/bfs/subtitle/english.json' }] : variant === 'foreign' ? [{ lan: 'en', lan_doc: 'English', subtitle_url: 'https://outside.invalid/bfs/subtitle/english.json' }] : [{ lan: 'zh-CN', lan_doc: '简体中文', subtitle_url: 'https://aisubtitle.hdslb.com/bfs/subtitle/chinese.json' }, { lan: 'en', lan_doc: 'English', subtitle_url: 'https://aisubtitle.hdslb.com/bfs/subtitle/english.json' }] } } } :
       { body: [{ from: 0, to: 800, content: lang + ' <script>纯文本</script>\n第二行' }] };
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
   });

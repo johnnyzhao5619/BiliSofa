@@ -26,9 +26,10 @@ export function parseSearchBody(raw:string,page:number):{apiCode:number;items:Po
   issue='rows';
   if(!Array.isArray(rows)||rows.length>4||total===0&&rows.length)throw new DomainError('invalid');
   const seen=new Set<string>();
-  const items=rows.map(item=>{
-    issue='rows';const v=record(item);issue='type';
-    if(v.type!=='video')throw new DomainError('invalid');
+  // Video search mixes in other row kinds (e.g. paid courses, type "ketang", without a BV id).
+  // They are skipped, not fatal: failing the page made common short keywords look empty.
+  const items=rows.filter(item=>{issue='rows';const v=record(item);issue='type';if(typeof v.type!=='string'||!/^[a-z_]{1,32}$/.test(v.type))throw new DomainError('invalid');return v.type==='video';}).map(item=>{
+    issue='rows';const v=record(item);
     issue='identity';const bvid=text(v.bvid,12);
     if(!/^BV[A-Za-z0-9]{10}$/.test(bvid)||seen.has(bvid))throw new DomainError('invalid');seen.add(bvid);
     issue='duration';const duration=text(v.duration,10);
@@ -42,6 +43,6 @@ export function parseSearchBody(raw:string,page:number):{apiCode:number;items:Po
     const title=searchTitle(v.title);if(!title.length)throw new DomainError('invalid');
     const cover=publicArtwork(v.pic);return {bvid,title,owner:text(v.author,128).slice(0,48),durationSec,views,...(cover?{cover}:{})};
   });
-  return {apiCode,items,noMore:page>=Math.min(pages,10)||items.length===0};
+  return {apiCode,items,noMore:page>=Math.min(pages,10)||rows.length===0};
   } catch { throw new SearchBodyError(issue); }
 }

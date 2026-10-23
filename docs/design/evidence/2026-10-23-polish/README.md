@@ -1,6 +1,6 @@
 # 0.46.0 第二批2A：工件与部署证据
 
-2026-10-23；[ADR-090](../../../adr/090-player-main-row-settings-and-next-up.md) · [ADR-091](../../../adr/091-home-shelves-and-full-page-detail.md) · [回执](receipt.json) · [计划](../../../plans/2026-10-23-batch2-player-home.md)。**已签名并升级安装/启动（平台确认，不清数据）；用户所请求P1–P7 USER PASS。**
+2026-10-23；[ADR-090](../../../adr/090-player-main-row-settings-and-next-up.md) · [ADR-091](../../../adr/091-home-shelves-and-full-page-detail.md) · [回执](receipt.json) · [计划](../../../archive/2026-10-23-superseded/plans/2026-10-23-batch2-player-home.md)。**已签名并升级安装/启动（平台确认，不清数据）；用户所请求P1–P7 USER PASS。**
 
 | 项 | 值 |
 | --- | --- |
