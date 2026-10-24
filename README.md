@@ -29,7 +29,7 @@ npm run build:app
 npm run package:app
 ```
 
-当前构建配置绑定内部版本，重建开发中源码不等于冻结包；签名/安装是独立步骤，按[开发说明](docs/DEVELOPMENT.md)操作。W04按[固定收尾表](docs/W04_DEVICE_ACCEPTANCE.md)核对，不再追加直播测试；其他批次至少以完整F模块为单位集中实现和验证。
+当前构建配置绑定内部版本，重建开发中源码不等于冻结包；签名/安装是独立步骤，按[开发说明](docs/DEVELOPMENT.md)操作。W04按[固定收尾表](docs/archive/2026-10-24-phase-records/W04_DEVICE_ACCEPTANCE.md)核对，不再追加直播测试；其他批次至少以完整F模块为单位集中实现和验证。
 
 ## 文档与许可
 

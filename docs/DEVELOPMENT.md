@@ -60,7 +60,7 @@ npm run package:app:w04
 npm run test:package:w04
 ```
 
-新原生模块先按下一节链接；打包核对所有当前源码/运行产物hash、CA、固定路由、CSP/权限、写操作隔离及许可证。不以修改manifest代替重建。W04输出`dist/BiliSofa-W04-media-unsigned.wgt`；整体状态/阻塞见[W04门槛](W04_MEDIA_DELIVERY.md)。Playwright为Chromium合成流程，SDK链接不证明真机；所有使用4173端口的UI套件，以及会修改stage/manifest的打包负例应串行运行。原生共享同一loopback端口的套件也须串行。
+新原生模块先按下一节链接；打包核对所有当前源码/运行产物hash、CA、固定路由、CSP/权限、写操作隔离及许可证。不以修改manifest代替重建。W04输出`dist/BiliSofa-W04-media-unsigned.wgt`；整体状态/阻塞见[W04门槛](archive/2026-10-24-phase-records/W04_MEDIA_DELIVERY.md)。Playwright为Chromium合成流程，SDK链接不证明真机；所有使用4173端口的UI套件，以及会修改stage/manifest的打包负例应串行运行。原生共享同一loopback端口的套件也须串行。
 
 W05旧账号互动候选0.24.1单独生成`dist/w05-app`与`dist/BiliSofa-W05-interactions-unsigned.wgt`，不覆盖W04冻结目录/签名指针：
 
@@ -94,7 +94,7 @@ npm run sign:app:w06
 npm run deploy:app:w06
 ```
 
-`cast-product-source.py`先校验原三头文件hash，精确生成产品配方，不覆盖原探针。输出`dist/w06-app`、`dist/BiliSofa-W06-cast-unsigned.wgt`与独立`*-w06-manifest.json`。`playwright.w06-regression.config.ts`默认验证14项保留评论/叠加；设`BILISOFA_W06_LEGACY=1`验证33项保留媒体合成流程。UI与包负例串行；HOST仅本机TLS，无真实账号写入。整组真机见[W06交付](W06_CAST_DELIVERY.md)。
+`cast-product-source.py`先校验原三头文件hash，精确生成产品配方，不覆盖原探针。输出`dist/w06-app`、`dist/BiliSofa-W06-cast-unsigned.wgt`与独立`*-w06-manifest.json`。`playwright.w06-regression.config.ts`默认验证14项保留评论/叠加；设`BILISOFA_W06_LEGACY=1`验证33项保留媒体合成流程。UI与包负例串行；HOST仅本机TLS，无真实账号写入。整组真机见[W06交付](archive/2026-10-24-phase-records/W06_CAST_DELIVERY.md)。
 
 W03当前0.27.0分P队列整合沿用原推荐整包配方，保留F02模块；使用`dist/recommend-app`和`dist/BiliSofa-W03-recommend-unsigned.wgt`；独立recommend-native及签名/部署指针保留旧W06工件：
 
@@ -144,7 +144,7 @@ npm run deploy:app:w04
 
 私密文件默认在`~/.local/share/BiliSofa/`；SDK、缓存、构建和诊断生成物在ignored目录。证书/会话/地址不进入源码、CI、公开日志或包。当前包身份/hash见[签名部署](SIGNING_DEVICE_RECORD.md)，证书建立见[指南](SAMSUNG_CERTIFICATE_GUIDE.md)。
 
-旧W01探针使用`build/package/package:native`等独立命令；仅复现历史证据时查[探针指南](W01_PROBE_GUIDE.md)和[环境归档](archive/2026-10-19-process-records/DEVELOPMENT.md)，不把它们当作当前产品包入口。CI仅有workflow配置，未运行hosted CI或发布。
+旧W01探针使用`build/package/package:native`等独立命令；仅复现历史证据时查[探针指南](archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md)和[环境归档](archive/2026-10-19-process-records/DEVELOPMENT.md)，不把它们当作当前产品包入口。CI仅有workflow配置，未运行hosted CI或发布。
 
 F05队列整合的明确命令为`npm run build:app:queue-parts`、`test:ui:queue-parts`、`package:app:queue-parts`、`sign:app:queue-parts`、`deploy:app:queue-parts`。它们复用`--recommend`全模块装配与私密签名指针，包版本必须为0.27.0，不代表重建旧0.26.1。`playwright.queue-parts-retained.config.ts`在同一新包上验证私人列表/媒体组合；当前仅TS/UI/普通KV变化，原生模块按冻结字节核对后复用，无需SDK重链。
 

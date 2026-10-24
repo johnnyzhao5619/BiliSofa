@@ -40,4 +40,4 @@ Certificate Manager 3.0.0 主程序安装 exit 0，包管理器已更新到 0.5.
 
 ## 创建后继续 W01
 
-开发代理核查 profile 的非敏感元数据和设备适用性，执行 `python3 tools/sign-probe.py basic` 或 `native`，输出签名包到仓库外，记录包 SHA-256，然后按已获内部探针侧载授权安装/启动。工具拒绝 SDK 默认 Distributor、过期/尚未生效的证书和不匹配资源；它不替代电视的证书链信任验证。具体独立命令与 W01-P01–P10 见 [探针指南](W01_PROBE_GUIDE.md)。新 Author 与旧第三方应用不互相替换；只部署 BiliProbe1.Probe。当前签名/安装/启动通过，用户反馈两项 Worker/native 最终 PASS；媒体/官方投屏等完整 W01 仍开放。
+开发代理核查 profile 的非敏感元数据和设备适用性，执行 `python3 tools/sign-probe.py basic` 或 `native`，输出签名包到仓库外，记录包 SHA-256，然后按已获内部探针侧载授权安装/启动。工具拒绝 SDK 默认 Distributor、过期/尚未生效的证书和不匹配资源；它不替代电视的证书链信任验证。具体独立命令与 W01-P01–P10 见 [探针指南](archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md)。新 Author 与旧第三方应用不互相替换；只部署 BiliProbe1.Probe。当前签名/安装/启动通过，用户反馈两项 Worker/native 最终 PASS；媒体/官方投屏等完整 W01 仍开放。

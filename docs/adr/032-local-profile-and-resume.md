@@ -20,4 +20,4 @@ AppDiagnostics只收录固定area/code和单调序号，内存最多32条，进�
 
 同一BiliSofa01.TV/BiliSofa01内部版本0.4.0，新增LocalProfiles、LocalPlayback、设置/诊断页。WASM/CA/原生协议、权限与40324 loopback配置不变；未触碰电视或真实账号，未增加云写入入口。两个已用完授权的云进度未知意图不重发，普通本地保存不代表云端成功。
 
-本地合同/真实JS Worker与合成SDK/KeyManager检查、构建和包验证见[W02本地交付](../W02_LOCAL_APP.md)。本地ordinary storage仅在浏览器夹具验证，电视进程退出/重启/升级、真实存储配额/性能及A/B隔离仍需新包门槛；旧W01 marker不转记为本布局已验证。
+本地合同/真实JS Worker与合成SDK/KeyManager检查、构建和包验证见[W02本地交付](../archive/2026-10-24-phase-records/W02_LOCAL_APP.md)。本地ordinary storage仅在浏览器夹具验证，电视进程退出/重启/升级、真实存储配额/性能及A/B隔离仍需新包门槛；旧W01 marker不转记为本布局已验证。

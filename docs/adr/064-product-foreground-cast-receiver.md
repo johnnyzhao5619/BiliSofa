@@ -22,4 +22,4 @@
 
 单元/合同核查长会话、宽代次/帧/RPC、重放与失效；浏览器使用生产UI/Worker及合成native/decoder验证连续媒体、控制、接管/取消、恢复、Home和未知关闭。HOST运行生成产品头及固定真实TLS库，检验旧阈值之后的实际匿名Range、源到期/逐源关闭、TLS及解析边界。Samsung SDK链接/整包负例/签名/安装分别取证，不等于零售电视声画通过。
 
-集中真机清单及剩余矩阵见[W06交付](../W06_CAST_DELIVERY.md)与[当前验收](../CURRENT_DEVICE_TEST.md)。旧官方三端、UGC/分P/PGC和关电脑运行证据保留，但不自动升级为本产品包通过。
+集中真机清单及剩余矩阵见[W06交付](../archive/2026-10-24-phase-records/W06_CAST_DELIVERY.md)与[当前验收](../CURRENT_DEVICE_TEST.md)。旧官方三端、UGC/分P/PGC和关电脑运行证据保留，但不自动升级为本产品包通过。

@@ -2,7 +2,7 @@
 
 Build/type/test/unsigned packaging tools are executable. `build.mjs` bundles only original local probe resources and records source hashes; `package.py` creates a deterministic unsigned WGT; `verify-package.py` checks package identity/entry/hash and private-file boundaries. `native-probe.py` separately checks C syntax or invokes an explicit Samsung compiler with a CA bundle. No command implicitly signs, installs, connects a TV or publishes.
 
-These tools run on the development computer. Shipped local probe resources need no dev server; actual installation/independent cold-start acceptance is still unverified. See docs/DEVELOPMENT.md and docs/W01_PROBE_GUIDE.md.
+These tools run on the development computer. Shipped local probe resources need no dev server; actual installation/independent cold-start acceptance is still unverified. See docs/DEVELOPMENT.md and docs/archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md.
 
 `python3 tools/sign-probe.py basic` (or `native`) explicitly uses the user's BiliSofa profile and writes signed packages/logs outside the repository. It rejects the SDK default Distributor, expired/not-yet-valid embedded certificates, non-Samsung leaf issuers and altered packaged resources. It does not change profiles, accept passwords, install or run a package. Certificate date/issuer checks do not establish chain trust; the TV must accept the signature separately.
 

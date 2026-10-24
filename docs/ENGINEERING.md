@@ -21,7 +21,7 @@
 - 主线程不做同步 AVPlay prepare、XHR、socket 或大包解码。本地按需加载，独立读取并行，账户依赖保留顺序。
 - 虚拟化长列表，图片按尺寸/可见性加载，弹幕对象/队列有上限；动画用 requestAnimationFrame/播放器时间，不以 time tick 刷新整个界面。
 - 不给所有节点强制 GPU layer；图片、canvas、WASM 堆、video buffer 纳入峰值预算。操作可响应优先于弹幕密度。
-- W01按[固定退出清单](W01_EXIT_CHECKLIST.md)核对功能所需的运行能力；W02建立冷启动→可操作、键→焦点、首帧、seek、掉帧、内存基线；两小时混合播放/增长与完整恢复矩阵归W07。注明固件/样本/网络/缓存；预算是项目目标，不是三星硬标准。
+- W01按[固定退出清单](archive/2026-10-24-phase-records/W01_EXIT_CHECKLIST.md)核对功能所需的运行能力；W02建立冷启动→可操作、键→焦点、首帧、seek、掉帧、内存基线；两小时混合播放/增长与完整恢复矩阵归W07。注明固件/样本/网络/缓存；预算是项目目标，不是三星硬标准。
 - 生产日志有界脱敏、默认低频，无 frame/payload 洪流。官方旧例子的 jQuery/global cache/全局 translateZ 不是现代框架选择依据。
 
 ## 安全与发布代码

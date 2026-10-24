@@ -68,4 +68,4 @@ R07候选（ADR-086）本地：strict/边界293模块通过；DOM关闭修正前
 - 旧全局联网故障已恢复，但根因未确认；不将诊断补丁说成根因修复。
 - W04历史出口保留，直播当前范围由ADR-068排除；其余门槛不自动关闭。后续按ADR-070完整模块统一实施，不逐入口/控件部署，不重复已通过的无影响项目。真实账号写入仍须具体授权。
 
-过程记录见[历史归档](archive/2026-10-19-process-records/README.md)与[2026-10-23归档](archive/2026-10-23-superseded/README.md)；本页只维护当前结论，不追加逐轮日志，逐版本记录在[签名与部署记录](SIGNING_DEVICE_RECORD.md)。本页形状由`tools/check-docs.mjs`机器门禁强制（见[开发与部署](DEVELOPMENT.md)）。
+过程记录见[历史归档](archive/2026-10-19-process-records/README.md)、[2026-10-23归档](archive/2026-10-23-superseded/README.md)与[W01–W06阶段记录](archive/2026-10-24-phase-records/README.md)；本页只维护当前结论，不追加逐轮日志，逐版本记录在[签名与部署记录](SIGNING_DEVICE_RECORD.md)。本页形状由`tools/check-docs.mjs`机器门禁强制（见[开发与部署](DEVELOPMENT.md)）。

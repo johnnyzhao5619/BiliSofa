@@ -22,4 +22,4 @@ BiliSofa01.TV/BiliSofa01内部0.3.0追加cast-worker.js，使用与0.2.0相同�
 
 复用接收器仍限五分钟媒体/授权窗口、四个媒体源和累计连接/传输/命令预算，发现名称仍BiliSofa W01 Discovery；界面明确标内部检查。不是产品长会话/连续切P/断连恢复/后台接收承诺，不绕过发送端画质限制。完整CastSession政策、产品租期与恢复矩阵继续W06；F20不能据此判完成。
 
-本轮只跑本地合同、真实JS Worker/生产协议与合成C/SDK夹具，以及打包门禁。新WGT尚未签名、安装或以真实官方Android/iPhone/iPad发送端验证。此前W01三端证据仍按原source/signed配对。详细结果见[W02投屏交付](../W02_CAST_APP.md)。
+本轮只跑本地合同、真实JS Worker/生产协议与合成C/SDK夹具，以及打包门禁。新WGT尚未签名、安装或以真实官方Android/iPhone/iPad发送端验证。此前W01三端证据仍按原source/signed配对。详细结果见[W02投屏交付](../archive/2026-10-24-phase-records/W02_CAST_APP.md)。
