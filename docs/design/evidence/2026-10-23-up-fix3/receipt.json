@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.51.3",
+  "basedOn": "0.51.2",
+  "uiSourceHash": "9aa559b601fa2f337ec2630c3915443929132f0511c6959d11d777dc7b97b175",
+  "uiManifestSha256": "781246dc6d270889b969bcccf2da59ef61ab362dac5c867ed2b898d355a10fd2",
+  "unsignedSha256": "830f9708eb42308523cd64ed92a617c0962bf09508bfcec4ed8728a6dec4e8e6",
+  "signedSha256": "19ac5ad3829004ee465d8c7687e9527272278ad27ba14ae146ba957d60a63c5f",
+  "signedAt": "2026-10-24T02:43:46.969005+00:00",
+  "sourceArchiveSha256": "aaddfb3d486253182cfdba347bbf181ec37ad8490460b7b924d980aa0b99759a",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.51.3",
+        "signedSha256": "19ac5ad3829004ee465d8c7687e9527272278ad27ba14ae146ba957d60a63c5f",
+        "uiSourceHash": "9aa559b601fa2f337ec2630c3915443929132f0511c6959d11d777dc7b97b175",
+        "startedAt": "2026-10-24T02:46:04.402141+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.51.3",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.51.3",
+      "signedSha256": "19ac5ad3829004ee465d8c7687e9527272278ad27ba14ae146ba957d60a63c5f",
+      "uiSourceHash": "9aa559b601fa2f337ec2630c3915443929132f0511c6959d11d777dc7b97b175",
+      "startedAt": "2026-10-24T02:46:04.402141+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs0512": [
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/product-settings.ts",
+    "apps/tv/src/app/up-archive-read.ts",
+    "apps/tv/src/app/visitor-settings.ts",
+    "apps/tv/src/platform/content-runtime.ts",
+    "apps/tv/src/platform/public-lists.ts",
+    "apps/tv/src/platform/ranking-worker.ts",
+    "apps/tv/src/platform/visitor-id.ts",
+    "packages/bili-client/src/ranking.ts",
+    "packages/contracts/src/ranking.ts",
+    "packages/contracts/src/visitor.ts",
+    "platform/wasm-network/src/catalog-worker.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.51.3",
+    "unitContractPassed": 737,
+    "nativeCatalogVisitorPassed": 20,
+    "upFix3UiPassed": 5,
+    "upFix3UiFailedOnFrozen0512": 4,
+    "mutationFailed": 3,
+    "retainedUiPassed": 102,
+    "packageNegativePassed": 11,
+    "unsignedSha256": "830f9708eb42308523cd64ed92a617c0962bf09508bfcec4ed8728a6dec4e8e6",
+    "uiSourceInputs": 283,
+    "uiOutputFiles": 28,
+    "signedEntries": 113,
+    "nativeModules": 18,
+    "nativeFilesChangedVs0512": [
+      "catalog/manifest.json",
+      "catalog/probe.js",
+      "catalog/probe.wasm"
+    ],
+    "nativeFilesAddedVs0512": [],
+    "nativeResourcesUnchangedVs0512": 69,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.51.3 (ADR-106): anonymous category/UP reads carry the B站 visitor identity from x/frontend/finger/spi (catalog-visitor module), kept on this TV for 30 days and clearable in settings; a refused guest read suggests signing in",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_V1G_CLEAR_SIGNED_REGRESSION",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs0512": true
+}

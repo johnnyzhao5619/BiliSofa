@@ -1,5 +1,6 @@
 // ADR-103 UP-archives route spliced into the shared synthetic catalog fixture (see up.spec.ts).
 // Newest first; one row without a BV and one duplicate must be skipped by the parser. 'limited' answers HTTP 412.
+if(typeof args[0]==='string'&&args[0].startsWith('--visitor='))args=args.slice(1);
 if(typeof args[0]==='string'&&args[0].startsWith('--ua='))args=args.slice(1);
 if(args[0]==='up-archives'){
  if(args.length!==3||!/^[1-9][0-9]{0,15}$/.test(args[1])||!/^([1-9]|[1-4][0-9]|50)$/.test(args[2]))throw Error('fixture.unapproved_catalog_route');

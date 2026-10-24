@@ -612,3 +612,45 @@ Candidate probe commands now exist: `npm ci --ignore-scripts`, `npm run check`, 
 当前工作区另有R07小数倍速HTML video候选，尚未集成生产、打包、签名或部署。桌面MP4只有前四档通过，1.25×窗口不足中止，其余档位/DASH/电视未验；不能借用已安装包的设备结果。大屏UI已有实现与分组USER证据，最终整合/性能/恢复及内容来源缺口仍开放。
 
 2026-10-23；**当前没有待执行的设备测试组。** 已安装0.47.2，前端三批所请求R1–R6、P1–P7、S1–S6全部USER PASS（[证据](design/evidence/2026-10-23-reading-fix2/README.md)）。
+
+## `IMPLEMENTATION_STATUS.md`（0.51.3安装后替换的行）
+
+更新：2026-10-23。完整v1.0.0仍未完成。已安装0.51.2。[唯一收口台账](PRODUCT_CLOSURE.md) · [签名与部署记录](SIGNING_DEVICE_RECORD.md)（逐版本历史） · [测试报告](TEST_REPORT.md)。本页只记当前结论。
+| 已安装0.51.2 | [ADR-105](adr/105-signed-public-reads-pacing-and-local-detail.md)：登录时分区排行与UP投稿用本人会话只读读取（新原生`public-read`，仅nav/分区/UP三个固定GET）；10分钟复用、风控拒绝后暂停60秒并显示代码，“帮助与诊断”记录通道与结果；继续观看与本机播放队列打开完整详情页；读取后焦点不丢。本地733单元/原生10/新4条合成UI（对冻结0.51.1全部失败）/回归98条/10包负例通过；签名`33eec812…dfba`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`edf20427…57d2`，**V1 USER PASS（登录状态，分区逐个打开）；V2②补 USER PASS（继续观看、本机播放队列）；导航与UP主页回归 USER PASS** | [证据](design/evidence/2026-10-23-up-fix2/README.md) |
+| F02 推荐/榜单 | 游客热门、全站榜/14项分区入口；本人视频推荐所请求组USER PASS，首次cURL28保留；0.26.1首读补验USER PASS；0.46.0首页货架（ADR-091）P5 USER PASS；0.51.0/0.51.1真机分区-352；0.51.2登录时用本人会话读取并节制请求（ADR-105），**登录状态V1 USER PASS** | 游客（匿名通道）分区仍可能-352，访客标识/WBI对照实验待做 |
+- 分区/UP读取：-352随同一出口的风控状态变化，单靠User-Agent不足（ADR-104结论作废）；0.51.2登录时用本人会话读取并节制请求（ADR-105），登录状态V1 USER PASS；游客匿名通道未改，访客标识/WBI对照实验待做；UP投稿改用官方网页接口`x/series/recArchivesByKeywords`（ADR-103，限频）；WBI空间投稿与图文/关注动态仍HTTP 412，图文/关注动态BLOCKED（K2），见[当前协议核查](W03_UP_POSTS_CURRENT_PROTOCOL.md)。
+
+## `TEST_REPORT.md`（0.51.3安装后替换的段）
+
+## 已安装0.51.2（ADR-105）
+
+| 层次 | 实际结果 |
+| --- | --- |
+| 单元/合同 | 733/733 |
+| 原生主机 | public-read 10/10 |
+| 合成UI | 修正4/4（对冻结0.51.1全部失败）；回归98条全部通过 |
+| 包 | 负例10/10；未签名WGT `0e972abd…d22f`；新增`public-read/`，其他原生不变，权限不变 |
+| 签名/部署 | 签名`33eec812…dfba`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`edf20427…57d2`；[回执](design/evidence/2026-10-23-up-fix2/receipt.json) |
+| 用户 | V1 USER PASS（登录状态，分区逐个打开）；V2②补 USER PASS；导航与UP主页回归 USER PASS |
+
+[证据](design/evidence/2026-10-23-up-fix2/README.md)
+
+## `README.md`与`docs/CURRENT_DEVICE_TEST.md`（0.51.3安装后替换的行）
+
+已安装工件为0.51.2：0.45.0–0.51.2各批所请求组USER PASS（前端三批、详情与番剧页、追番、热门番剧筛选、启动账号选择、播放中断重连与CDN/来源主备切换、UP主页投稿、登录状态下的分区），此前投屏/F11等所请求组保持；不等于完整产品通过。
+
+2026-10-23；**当前没有待执行的设备测试组。** 已安装0.51.2，V1（登录状态分区）、V2②补、导航与UP主页回归USER PASS（[证据](design/evidence/2026-10-23-up-fix2/README.md)）。下一组按[收口计划](plans/2026-10-23-remaining-work-plan.md)第6.3节V3–V6，经用户安排后执行。
+
+## 0.51.3验收后替换的行（`IMPLEMENTATION_STATUS.md`、`TEST_REPORT.md`、`README.md`、`docs/CURRENT_DEVICE_TEST.md`）
+
+| 已安装0.51.3 | [ADR-106](adr/106-guest-visitor-identity-and-sign-in-hint.md)：游客读取分区与UP投稿时带B站官方访客标识（spi取得的buvid3/buvid4，本机保存30天，设置 → 本机数据可一键清除；新原生`catalog-visitor`，其余原生不变）；游客被风控拒绝时提示“登录后通常更稳定”，“帮助与诊断”写明是否带标识。本地737单元/原生20/新5条合成UI（前4条对冻结0.51.2失败）/回归102条/11包负例通过；签名`19ac5ad3…3c5f`（证书预检PASS，权限不变）；升级安装/启动platformSuccess（一次，不清数据）；源码归档`aaddfb3d…759a`；**待真机：游客V1g、清除访客标识、登录状态回归** | [证据](design/evidence/2026-10-23-up-fix3/README.md) |
+
+| F02 推荐/榜单 | 游客热门、全站榜/14项分区入口；本人视频推荐所请求组USER PASS，首次cURL28保留；0.26.1首读补验USER PASS；0.46.0首页货架（ADR-091）P5 USER PASS；0.51.0/0.51.1真机分区-352；0.51.2登录时用本人会话读取并节制请求（ADR-105），**登录状态V1 USER PASS**；0.51.3游客带B站访客标识（ADR-106） | 游客分区与UP投稿待真机V1g；WBI暂不加 |
+
+- 分区/UP读取：-352随同一出口的风控状态变化，单靠User-Agent不足（ADR-104结论作废）；0.51.2登录时用本人会话读取并节制请求（ADR-105），登录状态V1 USER PASS；对照实验无法区分后，0.51.3游客改带B站官方访客标识、WBI暂不加（ADR-106），待真机V1g；UP投稿改用官方网页接口`x/series/recArchivesByKeywords`（ADR-103，限频）；WBI空间投稿与图文/关注动态仍HTTP 412，图文/关注动态BLOCKED（K2），见[当前协议核查](W03_UP_POSTS_CURRENT_PROTOCOL.md)。
+
+| 用户 | 待真机：游客V1g、清除访客标识、登录状态回归 |
+
+已安装工件为0.51.3（游客读取带B站官方访客标识、设置中可清除、被拦时提示登录，待真机验收）：0.45.0–0.51.2各批所请求组USER PASS（前端三批、详情与番剧页、追番、热门番剧筛选、启动账号选择、播放中断重连与CDN/来源主备切换、UP主页投稿、登录状态下的分区），此前投屏/F11等所请求组保持；不等于完整产品通过。
+
+2026-10-23；**当前待执行：0.51.3游客V1g、清除访客标识、登录状态回归**（[步骤与期望](design/evidence/2026-10-23-up-fix3/README.md#真机复验签名部署后)，[ADR-106](adr/106-guest-visitor-identity-and-sign-in-hint.md)）。已安装0.51.3；0.51.2的V1（登录状态分区）、V2②补、导航与UP主页回归USER PASS（[证据](design/evidence/2026-10-23-up-fix2/README.md)）。之后按[收口计划](plans/2026-10-23-remaining-work-plan.md)第6.3节V3–V6，经用户安排后执行。

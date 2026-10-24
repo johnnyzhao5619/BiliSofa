@@ -1,6 +1,6 @@
 # 当前交付收口与剩余门槛
 
-更新：2026-10-23。已安装0.51.2；0.45.0–0.51.2各批所请求组（含P4播放源、V1分区与V2 UP主页）USER PASS，P2多账号选择暂缓；更早的USER结果见[签名与部署记录](SIGNING_DEVICE_RECORD.md)与[当前实施状态](IMPLEMENTATION_STATUS.md)。R15整体与U5最终候选仍OPEN；下表R01–R15为唯一剩余清单。
+更新：2026-10-23。已安装0.51.3；0.45.0–0.51.3各批所请求组（含P4播放源、V1登录与游客分区、V2 UP主页）USER PASS，P2多账号选择暂缓；更早的USER结果见[签名与部署记录](SIGNING_DEVICE_RECORD.md)与[当前实施状态](IMPLEMENTATION_STATUS.md)。R15整体与U5最终候选仍OPEN；下表R01–R15为唯一剩余清单。
 
 **当前执行边界：** 签名/部署按版本逐次授权（升级安装，不清数据）；真实账号写入须具体授权；GitHub Release/公开发布另待授权。R07候选未集成/打包/部署。
 
@@ -27,7 +27,7 @@
 | R02 / F18范围 | 0.29.0代码候选门控首页/搜索入口，本地通过；0.34.0所请求功能组通过，0.35.0保持入口门控 | 新完整候选部署后核对范围一致，保留旧源码/数据，不误伤普通关注动态与番剧；不单发微测试包 |
 | R03 / F11 | **所请求模块验收CLOSED / USER PASS**：0.43.0关注切换及恢复、指定收藏夹预览取消/增删恢复、Back/Home全部通过；点赞与稍后再看继承已有USER结果。[验收证据](design/evidence/2026-10-22-cast-clock/F11_ACCEPTANCE_READY.md)。旧-403等失败及unknown日志保留。第三方验收P1-02（日志满256条后互动永久失败）0.44.0已含修正（ADR-087，单元层），不重复真实写入 | 本轮正常路径完成，不重复真实写入；最终身份失效、弱网unknown/防重放集成随R06/R13验证，不因模块通过而删除旧未知意图 |
 | R04 / F04 | 0.35.0导航更新可按有效BV播放，0.36.0所请求关注播放USER PASS，完整覆盖仍不全；UP主页投稿改用官方网页接口，登录时用本人会话（ADR-103/105），**V2与回归USER PASS**；图文/关注动态匿名HTTP 412，按K2记BLOCKED，旧HTTP412/API-352保留 | 取得当前可用来源，安全解析图文/视频与分页、UP详情/投稿、原卡恢复。无新来源时BLOCKED，记录协议/日期/阶段，不反复要求电视重试 |
-| R05 / F02 | 动画/舞蹈等分区曾API-352；0.51.0/0.51.1真机V1 FAIL：电视端-352，随同一出口的风控状态变化，单靠User-Agent不足；0.51.2登录时用本人会话读取并节制请求、显示代码（ADR-105），**登录状态逐个打开USER PASS**；游客匿名通道未验证，访客标识/WBI对照实验待做；分区选择以`packages/contracts/data/categories.json`为准 | 明确各分区数据来源与对应分类；支持项有真实读取证据，错误/无内容正确展示。不可用来源仍BLOCKED，不能用全站热门冒充分区 |
+| R05 / F02 | 动画/舞蹈等分区曾API-352；0.51.0/0.51.1真机V1 FAIL：电视端-352，随同一出口的风控状态变化，单靠User-Agent不足；0.51.2登录时用本人会话读取并节制请求、显示代码（ADR-105），**登录状态逐个打开USER PASS**；对照实验无法区分后，0.51.3游客改带B站官方访客标识（本机保存、可清除，被拦时提示登录；WBI暂不加，ADR-106），**游客逐个打开USER PASS**；分区选择以`packages/contracts/data/categories.json`为准 | 明确各分区数据来源与对应分类；支持项有真实读取证据，错误/无内容正确展示。不可用来源仍BLOCKED，不能用全站热门冒充分区 |
 | R06 / F01、W02 | 0.40.0按ADR-082整合列表/播放器能力失效、同身份保护bank更新、扫码取消及安全栏目返回，本地通过/已升级启动，所请求A/B/C USER PASS；自然服务端过期仍条件未验证 | 失效能取消私人读、提示重新扫码、恢复原目的页；新会话不接收旧请求。保护存储/游客隔离保持；不要求第二账号 |
 | R07 / F05、F06、F17 | 基本队列、分P、番剧、缺轨回退通过，完整类型/权益与自然结束仍不全；小数倍速仅有未集成候选（ADR-086）；[候选证据](design/evidence/2026-10-22-element-candidate/README.md)为桌面MP4前四档通过、1.25窗口不足中止，真实DASH/电视未验；倍速判定已收紧为相邻档可区分（ADR-087），1.25×及以上旧观测不沿用；**小数倍速按本机设备限制关闭（[ADR-097](adr/097-fractional-rates-device-limited.md)，用户决定2026-10-23）**：两轮真机探查显示本机video只有0.5×/0.75×可用、0.25×停住、快档约1.1–1.2×封顶，生产保持1×/2×，探查保留为诊断 | 有效/失效/无权限条目、选集/分P、自然下一项/停止策略形成有限用例；所有入口共用正确播放与返回合同。完成小数倍速后端选择/实播验证；只补缺口，既有基本声画不重测 |
 | R08 / F14、W05 | 投币/三连实现存在，用户先前要求暂停；未有真实通过 | 保持PAUSED与具体授权边界；恢复时分项确认/回读/部分成功/防重放完成。恢复或明确范围调整之前，不能记完整F14通过 |
@@ -73,4 +73,4 @@ R04/R05外部拒绝、R08暂停、R09真实授权、R10条件样本均不能阻�
 
 ## 最近交付
 
-已安装0.51.0（[证据](design/evidence/2026-10-23-up/README.md)，[ADR-103](adr/103-up-page-shared-detail-and-following-shortcut.md)），V1 FAIL、V2部分；已安装0.51.1（[ADR-104](adr/104-runtime-user-agent-shared-detail-everywhere.md)），V1 FAIL、导航与关注页直达卡 PASS、V2②部分；已安装0.51.2（[ADR-105](adr/105-signed-public-reads-pacing-and-local-detail.md)），V1（登录状态）、V2②补与回归 USER PASS；所请求组见页首，逐版本结论见[签名与部署记录](SIGNING_DEVICE_RECORD.md)。R07小数倍速按ADR-097关闭为本机设备限制。其余R项不自动关闭。
+已安装0.51.0（[证据](design/evidence/2026-10-23-up/README.md)，[ADR-103](adr/103-up-page-shared-detail-and-following-shortcut.md)），V1 FAIL、V2部分；已安装0.51.1（[ADR-104](adr/104-runtime-user-agent-shared-detail-everywhere.md)），V1 FAIL、导航与关注页直达卡 PASS、V2②部分；已安装0.51.2（[ADR-105](adr/105-signed-public-reads-pacing-and-local-detail.md)），V1（登录状态）、V2②补与回归 USER PASS；已安装0.51.3（[ADR-106](adr/106-guest-visitor-identity-and-sign-in-hint.md)），游客V1g、清除访客标识、登录状态回归 USER PASS；所请求组见页首，逐版本结论见[签名与部署记录](SIGNING_DEVICE_RECORD.md)。R07小数倍速按ADR-097关闭为本机设备限制。其余R项不自动关闭。

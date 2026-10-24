@@ -4,7 +4,7 @@ import type {ResourceOwner} from './resource-owner.ts';
 import type {TvShell} from './tv-shell.ts';
 import {productButton} from './product-frame.ts';
 /** Rehomes existing settings controls; storage, confirmation and error owners stay intact. */
-export function productSettings(owner:ResourceOwner,shell:TvShell,legacy:HTMLElement,overlays:OverlayPreferenceAccess,diagnosticTool?:HTMLButtonElement,diagnosticNote?:HTMLElement):HTMLElement {
+export function productSettings(owner:ResourceOwner,shell:TvShell,legacy:HTMLElement,overlays:OverlayPreferenceAccess,diagnosticTool?:HTMLButtonElement,diagnosticNote?:HTMLElement,dataExtras:HTMLElement[]=[]):HTMLElement {
   legacy.className='tv-settings';legacy.dataset.initialFocusId='settings-section-playback';
   const heading=legacy.querySelector('h1')!;heading.textContent='设置';
   const layout=document.createElement('div');layout.className='tv-settings-layout';
@@ -19,7 +19,7 @@ export function productSettings(owner:ResourceOwner,shell:TvShell,legacy:HTMLEle
     if(id==='playback'){const note=document.createElement('p');note.textContent='仅保存当前身份的播放偏好，不写入云端。字幕与弹幕可在播放时调整，并保留到下次观看。';panel.append(note,...(status?[status]:[]));}
     if(id==='overlays'){const settings=productOverlaySettings(owner,shell,overlays);panel.append(settings);panel.dataset.columns='2';title.hidden=true;}
     if(id==='history'){const note=legacy.querySelector('[data-history-status]');if(note)panel.append(note);}
-    if(id==='data')panel.append(...notes);
+    if(id==='data')panel.append(...notes,...dataExtras);
     if(id==='account')panel.append(productButton('settings-account','查看账号与登录',()=>{if(!owner.signal.aborted)void shell.navigateTop({page:'account'});}));
     if(id==='help'){const note=document.createElement('p');note.textContent='诊断不包含登录凭据、二维码或私人播放地址。';const writes=legacy.querySelector('[data-write-summary]');panel.append(note,...(diagnosticNote?[diagnosticNote]:[]),...(writes?[writes]:[]),...(diagnosticTool?[diagnosticTool]:[]));}
     content.append(panel);panes.set(id,panel);

@@ -1,6 +1,7 @@
 import { DomainError, finite, record, text, type PopularCard } from '../../contracts/src/index.ts';
 import type { PgcRankCard } from '../../contracts/src/ranking.ts';
 import type { UpArchiveCard } from '../../contracts/src/up-archives.ts';
+import { parseVisitorId, type VisitorId } from '../../contracts/src/visitor.ts';
 import {publicArtwork} from './public-artwork.ts';
 /** Public response stays inside the catalog Worker; preserve service order. */
 export function parseRankingBody(raw: string): { apiCode: number; items: PopularCard[] } {
@@ -72,3 +73,15 @@ export function parseUpArchivesBody(raw: string): { apiCode: number; archives: U
   return { apiCode, archives, total: total as number };
 }
 
+/** 0.51.3 (ADR-106): x/frontend/finger/spi — B站's anonymous visitor identity. Only b_3/b_4 survive; b_4 is URL-encoded here. */
+export function parseVisitorBody(raw: string): { apiCode: number; visitor?: VisitorId } {
+  if (new TextEncoder().encode(raw).length > 8192) throw new DomainError('invalid');
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw); } catch { throw new DomainError('invalid'); }
+  const root = record(parsed), apiCode = finite(root.code, -2147483648, 2147483647);
+  if (!Number.isInteger(apiCode)) throw new DomainError('invalid');
+  if (apiCode !== 0) return { apiCode };
+  const data = record(root.data), b4 = data.b_4;
+  if (typeof b4 !== 'string' || !/^[A-Za-z0-9+/=_-]{16,100}$/.test(b4)) throw new DomainError('invalid');
+  return { apiCode, visitor: parseVisitorId({ b3: data.b_3, b4: encodeURIComponent(b4) }) };
+}

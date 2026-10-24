@@ -16,3 +16,7 @@ export class PgcRankingWorker extends ScopedGuestWorker<RankingRequest & {operat
 export class UpArchivesWorker extends ScopedGuestWorker<RankingRequest & {operation:'public-up-archives'}, RankingResult> {
   constructor() { super('catalog-worker.js', 'public-up-archives', value=>{const q=parseRankingRequest(value);if(q.operation!=='public-up-archives')throw new Error('invalid');return q;}, parseRankingResult, 20000, 12000, (q,r)=>r.operation===q.operation&&r.mid===(q as {mid:string}).mid&&r.page===q.page); }
 }
+/** B站 visitor identity (ADR-106); its own parent operation, never carrying a visitor itself. */
+export class VisitorIdWorker extends ScopedGuestWorker<RankingRequest & {operation:'public-visitor'}, RankingResult> {
+  constructor() { super('catalog-worker.js', 'public-visitor', value=>{const q=parseRankingRequest(value);if(q.operation!=='public-visitor')throw new Error('invalid');return q;}, parseRankingResult, 20000, 12000, (q,r)=>r.operation===q.operation); }
+}

@@ -9,8 +9,8 @@ const shared=readFileSync('tests/catalog-ui/native-fixture.js','utf8');
 /** Like B站 on the device: category rankings answer -352 unless the runtime User-Agent comes first. */
 function catalog(mode:'agent-required'|'api'){
  const out=shared.replace("const m=self.Module,variant='__VARIANT__',heap=new Uint8Array(600000);let size=0,printing=false;","const m=self.Module,heap=new Uint8Array(600000);let size=0,printing=false,variant='normal';")
-  .replace('callMain(args){outside();',`callMain(args){outside();variant='${mode}'==='api'?'api':typeof args[0]==='string'&&args[0].startsWith('--ua=')?'normal':'api';`);
- for(const marker of ["variant='normal'","startsWith('--ua=')?'normal':'api'"])expect(out).toContain(marker);
+  .replace('callMain(args){outside();',`callMain(args){outside();variant='${mode}'==='api'?'api':args.some(a=>typeof a==='string'&&a.startsWith('--ua='))?'normal':'api';`);
+ for(const marker of ["variant='normal'","startsWith('--ua='))?'normal':'api'"])expect(out).toContain(marker);
  return out;
 }
 const api=readFileSync('tests/w04-media-ui/vod-api-fixture.js','utf8').replace('__PGC__','0').replace('__FALLBACK__','off').replace("owner:{name:'合成UP'}","owner:{name:'合成UP',mid:777}");

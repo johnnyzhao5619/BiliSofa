@@ -54,6 +54,13 @@ int main(int argc,char **argv){
   for(size_t i=0;i<sizeof(bad)/sizeof(bad[0]);i++){char *args[]={"catalog",(char*)bad[i],"category-ranking","1005",NULL};if(catalog_main(4,args)!=1 || performed)return 23;}
   return 0;
  }
+ else if(!strcmp(argv[1],"visitor")){char *good[]={"catalog","--visitor=AB12CD34-EF56-7890-ABCD-EF1234567890infoc|0F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F012345-102300000-abc%3D%3D|1761200000","--ua=Mozilla/5.0 (SMART-TV; LINUX; Tizen 8.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/8.0 TV Safari/537.36","category-ranking","1005",NULL};if(catalog_main(5,good))return 24;}
+ else if(!strcmp(argv[1],"visitor_id")){char *good[]={"catalog","--ua=Mozilla/5.0 (SMART-TV; LINUX; Tizen 8.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/8.0 TV Safari/537.36","visitor-id",NULL};if(catalog_main(3,good))return 25;}
+ else if(!strcmp(argv[1],"visitor_invalid")){
+  const char *bad[][3]={{"--visitor=","category-ranking","1005"},{"--visitor=short|0F1E2D3C-4B5A-6978-8796|1761200000","category-ranking","1005"},{"--visitor=AB12CD34-EF56-7890-ABCD|0F1E2D3C-4B5A-6978-8796|176120000","category-ranking","1005"},{"--visitor=AB12CD34-EF56-7890-ABCD;x=1|0F1E2D3C-4B5A-6978-8796|1761200000","category-ranking","1005"},{"--visitor=AB12CD34-EF56-7890-ABCD|0F1E2D3C 4B5A-6978-8796|1761200000","category-ranking","1005"},{"--visitor=AB12CD34-EF56-7890-ABCD|0F1E2D3C-4B5A-6978-8796|1761200000|x","category-ranking","1005"},{"--visitor=AB12CD34-EF56-7890-ABCD|0F1E2D3C-4B5A-6978-8796\r\nX: 1|1761200000","category-ranking","1005"},{"--visitor=AB12CD34-EF56-7890-ABCD|0F1E2D3C-4B5A-6978-8796|1761200000","visitor-id",NULL}};
+  for(size_t i=0;i<sizeof(bad)/sizeof(bad[0]);i++){char *args[]={"catalog",(char*)bad[i][0],(char*)bad[i][1],(char*)bad[i][2],NULL};if(catalog_main(bad[i][2]?4:3,args)!=1 || performed)return 26;}
+  return 0;
+ }
  else if(!strcmp(argv[1],"up")){char *good[]={"catalog","up-archives","12345","2",NULL};if(catalog_main(4,good))return 20;}
  else if(!strcmp(argv[1],"up_invalid")){
   const char *bad[][2]={{"0","1"},{"012","1"},{"12345678901234567","1"},{"9007199254740992","1"},{"12&x=1","1"},{"123","0"},{"123","51"},{"123","01"},{"123","2&ps=100"}};
@@ -82,13 +89,13 @@ int main(int argc,char **argv){
  @classmethod
  def tearDownClass(cls):cls.tmp.cleanup()
  def run_case(self,mode):
-  received=[];violations=[];agents=[]
+  received=[];violations=[];agents=[];cookies=[]
   class Handler(http.server.BaseHTTPRequestHandler):
    protocol_version='HTTP/1.1'
    def log_message(self,*args):pass
    def do_GET(self):
-    received.append(self.path);agents.append(self.headers.get('User-Agent'))
-    if self.path!=('/x/series/recArchivesByKeywords?mid=12345&keywords=&ps=30&pn=2' if mode=='up' else '/x/web-interface/ranking/v2?rid=1005&type=all' if mode in ('category','ua') else '/pgc/web/rank/list?day=3&season_type=1' if mode=='pgc' else '/pgc/web/rank/list?day=7&season_type=4' if mode=='pgc_guoman' else '/pgc/season/index/result?season_type=4&type=1&order=3&sort=0&page=2&pagesize=20' if mode=='pgc_index' else '/x/web-interface/ranking/v2?rid=0&type=all') or self.headers.get('Host')!='api.bilibili.com' or self.headers.get('Cookie') or self.headers.get('Authorization') or self.headers.get('Range'):violations.append('scope')
+    received.append(self.path);agents.append(self.headers.get('User-Agent'));cookies.append(self.headers.get('Cookie'))
+    if self.path!=('/x/frontend/finger/spi' if mode=='visitor_id' else '/x/series/recArchivesByKeywords?mid=12345&keywords=&ps=30&pn=2' if mode=='up' else '/x/web-interface/ranking/v2?rid=1005&type=all' if mode in ('category','ua','visitor') else '/pgc/web/rank/list?day=3&season_type=1' if mode=='pgc' else '/pgc/web/rank/list?day=7&season_type=4' if mode=='pgc_guoman' else '/pgc/season/index/result?season_type=4&type=1&order=3&sort=0&page=2&pagesize=20' if mode=='pgc_index' else '/x/web-interface/ranking/v2?rid=0&type=all') or self.headers.get('Host')!='api.bilibili.com' or (mode!='visitor' and self.headers.get('Cookie')) or self.headers.get('Authorization') or self.headers.get('Range'):violations.append('scope')
     body=b'{"code":0,"data":{"list":[]}}' if mode!='body' else b'x'*524289
     try:
      self.send_response(302 if mode=='redirect' else 200)
@@ -103,9 +110,11 @@ int main(int argc,char **argv){
   server=Server(('127.0.0.1',0),Handler);server.socket=self.context.wrap_socket(server.socket,server_side=True);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
   try:r=subprocess.run([str(self.exe),mode,str(self.wrong if mode=='tls' else self.cert),str(server.server_port)],capture_output=True,timeout=12)
   finally:server.shutdown();server.server_close();thread.join()
-  self.assertEqual(r.returncode,0);self.assertEqual(violations,[]);self.assertEqual(r.stdout,b'' if mode=='bounds' else b'GUEST:closed\n'*(7 if mode=='category_invalid' else 8 if mode=='pgc_invalid' else 9 if mode=='up_invalid' else 4 if mode=='ua_invalid' else 1));self.assertEqual(len(received),0 if mode in ['invalid','bounds','tls','category_invalid','pgc_invalid','up_invalid','ua_invalid'] else 1)
+  self.assertEqual(r.returncode,0);self.assertEqual(violations,[]);self.assertEqual(r.stdout,b'' if mode=='bounds' else b'GUEST:closed\n'*(7 if mode=='category_invalid' else 8 if mode=='pgc_invalid' else 9 if mode=='up_invalid' else 4 if mode=='ua_invalid' else 8 if mode=='visitor_invalid' else 1));self.assertEqual(len(received),0 if mode in ['invalid','bounds','tls','category_invalid','pgc_invalid','up_invalid','ua_invalid','visitor_invalid'] else 1)
   # ADR-104: the TV runtime string replaces the probe identifier only when passed; otherwise it is unchanged.
-  self.assertEqual(agents,['Mozilla/5.0 (SMART-TV; LINUX; Tizen 8.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/8.0 TV Safari/537.36'] if mode=='ua' else ['BiliSofa-W01-Probe/0.0.15']*len(agents))
+  self.assertEqual(agents,['Mozilla/5.0 (SMART-TV; LINUX; Tizen 8.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/8.0 TV Safari/537.36'] if mode in ('ua','visitor','visitor_id') else ['BiliSofa-W01-Probe/0.0.15']*len(agents))
+  # ADR-106: the B站 visitor identity is the only Cookie, and only when passed; visitor-id itself carries none.
+  self.assertEqual(cookies,['buvid3=AB12CD34-EF56-7890-ABCD-EF1234567890infoc; buvid4=0F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F012345-102300000-abc%3D%3D; b_nut=1761200000'] if mode=='visitor' else [None]*len(cookies))
  def test_category_fixed_get_without_credentials(self):self.run_case('category')
  def test_pgc_ranking_fixed_get_without_credentials(self):self.run_case('pgc')
  def test_pgc_guoman_week_ranking_route(self):self.run_case('pgc_guoman')

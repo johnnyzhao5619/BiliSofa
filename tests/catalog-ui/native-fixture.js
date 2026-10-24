@@ -5,7 +5,11 @@
  const outside=()=>{if(printing)throw Error('fixture.native_reentry');};
  Object.assign(m,{HEAPU8:heap,_guest_response_ptr:()=>{outside();return 0;},_guest_response_length:()=>{outside();return size;},_guest_http_status:()=>{outside();return variant==='http'?403:200;},_guest_curl_status:()=>{outside();return 0;},callMain(args){outside();
   // ADR-104 (0.51.1+): an optional leading runtime User-Agent, which must look like the browser's own.
+  // ADR-106 (0.51.3+): an optional leading B站 visitor identity, buvid3|buvid4|b_nut, before the User-Agent.
+  let visited=false;if(typeof args[0]==='string'&&args[0].startsWith('--visitor=')){if(!/^--visitor=[A-Za-z0-9-]{16,64}\|[A-Za-z0-9%-]{16,128}\|[0-9]{10}$/.test(args[0]))throw Error('fixture.bad_visitor');visited=true;args=args.slice(1);}
   if(typeof args[0]==='string'&&args[0].startsWith('--ua=')){if(!/^--ua=Mozilla\/5\.0 [\x20-\x7e]{1,380}$/.test(args[0]))throw Error('fixture.bad_agent');args=args.slice(1);}
+  // ADR-106: x/frontend/finger/spi, itself never carrying a visitor.
+  if(args.length===1&&args[0]==='visitor-id'){if(visited)throw Error('fixture.visitor_on_spi');const raw=new TextEncoder().encode(JSON.stringify({code:0,data:{b_3:'AB12CD34-EF56-7890-ABCD-EF1234567890infoc',b_4:'0F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F012345-102300000-abc+/=='},message:'0'}));heap.fill(0);heap.set(raw);size=raw.length;setTimeout(()=>{printing=true;try{m.print('GUEST:closed');}finally{printing=false;}},0);return;}
   const pgc=(args.length===1&&args[0]==='pgc-ranking')||(args.length===3&&args[0]==='pgc-ranking'&&/^[14]$/.test(args[1])&&/^[37]$/.test(args[2])),index=args.length===3&&args[0]==='pgc-index'&&/^[14]$/.test(args[1])&&/^[1-5]$/.test(args[2]);if(!(pgc||index||(args.length===1&&args[0]==='ranking')||(args.length===2&&args[0]==='category-ranking'&&/^(100[1-578]|101[02348]|102[04])$/.test(args[1]))))throw Error('fixture.unapproved_catalog_route');
  // 0.49.0: public 番剧 ranking, result envelope; one row without a season id must be skipped.
  const seasons=[{title:'无编号行'},...Array.from({length:variant==='empty'?0:30},(_,i)=>({season_id:900+i,title:'合成热门番剧 '+(i+1),cover:'http://i0.hdslb.com/bfs/bangumi/image/synthetic'+i+'.png',rating:'9.'+(i%10)+'分',badge:i%3?'':'独家',new_ep:{index_show:'更新至第'+(i+1)+'话'}}))];

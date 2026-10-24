@@ -38,6 +38,8 @@ import {CDN_FAILOVER,SOURCE_FAILOVER} from '../../../../packages/contracts/src/c
 import {PRODUCT_UP,UP_FIX} from '../../../../packages/contracts/src/up-archives.ts';
 import {UP_FIX2} from '../../../../packages/contracts/src/public-read.ts';
 import {publicListNote} from '../platform/public-lists.ts';
+import {UP_FIX3} from '../../../../packages/contracts/src/visitor.ts';
+import {visitorSettings} from './visitor-settings.ts';
 import {bridgeEvidence,type SourceStep} from '../platform/bridge-evidence.ts';
 import {openLaunchChooser,rememberProfile,forgetProfile} from './launch-chooser.ts';
 import { drawQr, clearQr } from '../ui/qr-code.ts';
@@ -170,7 +172,7 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
   if (route.page === 'settings') {const view=localSettings(owner, shell, profile, diagnostics, () => state?.kind === 'active' ? writeSummary(state.account.id) : 'guest',history,state?.kind==='active'?()=>{shell.openModal('read-cache-clear',child=>readCacheClear(child,shell,workspace),'cache-keep');}:undefined,queue,productUi?()=>{void shell.navigateTop({page:'home'});}:undefined);const probeDevice=PRODUCT_DETAIL&&w04?vodRuntimeStatus():undefined,probeCaps=probeDevice?.kind==='available'?probeDevice.capabilities:undefined;
     // R07 rate probe (ADR-095) lives in 帮助与诊断 and only runs when the viewer starts it.
     const probe=probeCaps?productButton('settings-rate-probe','倍速探查（诊断）',()=>{if(!owner.signal.aborted)shell.openModal('rate-probe',child=>rateProbe(child,shell,probeCaps,()=>openVodAccess(probeCaps),profile),'rate-probe-start');}):undefined;
-    return wrap(productPlayerEnabled?productSettings(owner,shell,view,localOverlayPreferences(state?.kind==='active'?state.account.id:'guest'),probe,PRODUCT_PROFILES?lastFailureNote(diagnostics.lastMediaFailure()):undefined):view);}
+    return wrap(productPlayerEnabled?productSettings(owner,shell,view,localOverlayPreferences(state?.kind==='active'?state.account.id:'guest'),probe,PRODUCT_PROFILES?lastFailureNote(diagnostics.lastMediaFailure()):undefined,UP_FIX3?visitorSettings(owner):[]):view);}
   const section = document.createElement('section'), title = document.createElement('h1'); title.textContent = route.page === 'account' ? '账号管理' : 'BiliSofa'; section.append(title);
   if (route.page !== 'account') {
     const device=w04?vodRuntimeStatus():undefined,caps=device?.kind==='available'?device.capabilities:undefined;

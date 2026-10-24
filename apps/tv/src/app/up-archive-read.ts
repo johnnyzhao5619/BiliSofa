@@ -5,7 +5,9 @@ import { UpArchivesWorker } from '../platform/ranking-worker.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import { UP_FIX2 } from '../../../../packages/contracts/src/public-read.ts';
 import type { UpArchiveCard } from '../../../../packages/contracts/src/up-archives.ts';
-import { PublicLimitedError, pacedRead } from '../platform/public-lists.ts';
+import { PublicLimitedError, pacedRead, usedVisitor } from '../platform/public-lists.ts';
+import { UP_FIX3 } from '../../../../packages/contracts/src/visitor.ts';
+import { visitorIds } from '../platform/visitor-id.ts';
 /** Why a page of uploads could not be shown; fixed words only. */
 export class UpArchiveError extends Error { constructor(readonly reason: 'limited' | 'network' | 'invalid' | 'cancelled') { super(reason); } }
 /** B站 risk control answers this lane with HTTP 412 or these API codes; the page says “限制访问” and does not retry. */
@@ -22,7 +24,11 @@ export class UpArchiveRead {
       const task = this.sessions.begin('up-archives');
       try {
         if (signed) { const value = await signed(mid, page, task.signal); if (!this.sessions.accepts(task.scope)) throw new UpArchiveError('cancelled'); return value; }
-        const result = await this.worker.run({ version: 1, scope: task.scope, operation: 'public-up-archives', mid, page }, task.signal);
+        // ADR-106: anonymous reads carry B站's own visitor identity when one is (or can be) kept on this TV.
+        const visitor = UP_FIX3 ? await visitorIds().ensure(task.scope, task.signal) : undefined;
+        if (!this.sessions.accepts(task.scope)) throw new UpArchiveError('cancelled');
+        if (UP_FIX3) usedVisitor(!!visitor);
+        const result = await this.worker.run({ version: 1, scope: task.scope, operation: 'public-up-archives', mid, page, ...(visitor ? { visitor } : {}) }, task.signal);
         if (!this.sessions.accepts(task.scope) || result.kind === 'cancelled') throw new UpArchiveError('cancelled');
         if ((result.kind === 'http_error' && result.status === 412) || (result.kind === 'api_error' && LIMITED.has(result.apiCode ?? 0))) throw new PublicLimitedError(0, result.apiCode, result.kind === 'http_error' ? result.status : undefined);
         if (result.kind !== 'ok' || !result.archives) throw new UpArchiveError(result.kind === 'invalid_response' ? 'invalid' : 'network');

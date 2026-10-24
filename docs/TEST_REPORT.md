@@ -2,18 +2,18 @@
 
 2026-10-23；只保留已安装包与未部署候选的结果。历史版本的分层结果在各自证据README，逐版本结论见[签名与部署记录](SIGNING_DEVICE_RECORD.md)。
 
-## 已安装0.51.2（ADR-105）
+## 已安装0.51.3（ADR-106）
 
 | 层次 | 实际结果 |
 | --- | --- |
-| 单元/合同 | 733/733 |
-| 原生主机 | public-read 10/10 |
-| 合成UI | 修正4/4（对冻结0.51.1全部失败）；回归98条全部通过 |
-| 包 | 负例10/10；未签名WGT `0e972abd…d22f`；新增`public-read/`，其他原生不变，权限不变 |
-| 签名/部署 | 签名`33eec812…dfba`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`edf20427…57d2`；[回执](design/evidence/2026-10-23-up-fix2/receipt.json) |
-| 用户 | V1 USER PASS（登录状态，分区逐个打开）；V2②补 USER PASS；导航与UP主页回归 USER PASS |
+| 单元/合同 | 737/737 |
+| 原生主机 | catalog-visitor 20/20；catalog、catalog-up、catalog-ua、public-read、vod-api、pgc-read、source-failover均通过 |
+| 合成UI | 新5条通过（前4条对冻结0.51.2失败，第5条为回归保护；Worker不传访客标识的变异使第1–3条失败）；回归102条全部通过 |
+| 包 | 负例11/11；未签名WGT `830f9708…e8e6`；原生仅`catalog/`重链接（`build/catalog-visitor`），权限不变 |
+| 签名/部署 | 签名`19ac5ad3…3c5f`（证书预检PASS，权限不变）；本机`/tmp/sdb.log`归root所有、SDB无法写日志，后台服务启动后随即退出（推断与此有关），改为前台运行SDB服务后连接；升级安装/启动platformSuccess（一次，不清数据）；源码归档`aaddfb3d…759a`；[回执](design/evidence/2026-10-23-up-fix3/receipt.json) |
+| 用户 | **游客V1g、清除访客标识、登录状态回归 USER PASS** |
 
-[证据](design/evidence/2026-10-23-up-fix2/README.md)
+[证据](design/evidence/2026-10-23-up-fix3/README.md)；0.51.2的结果见[其证据](design/evidence/2026-10-23-up-fix2/README.md)。
 
 ## R07小数倍速候选（按ADR-097不接入生产）
 

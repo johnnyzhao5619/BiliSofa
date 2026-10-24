@@ -7,7 +7,9 @@ import { SearchWorker } from './search-worker.ts';
 import { SearchReadError } from '../../../../packages/contracts/src/search.ts';
 import type { CategoryId } from '../../../../packages/contracts/src/categories.ts';
 import { UP_FIX2 } from '../../../../packages/contracts/src/public-read.ts';
-import { pacedRead } from './public-lists.ts';
+import { pacedRead, usedVisitor } from './public-lists.ts';
+import { UP_FIX3 } from '../../../../packages/contracts/src/visitor.ts';
+import { visitorIds } from './visitor-id.ts';
 /** All URLs, credentials and native calls remain behind the existing Worker. */
 export class PublicContentRuntime implements ContentRuntime {
   private readonly sessions = new SessionManager();
@@ -46,7 +48,11 @@ export class PublicContentRuntime implements ContentRuntime {
         const categoryId=query.categoryId,signed=this.signedCategory;
         const items=await pacedRead(String(categoryId),signed?'account':'guest','category',async()=>{
           if(signed) return signed(categoryId,task.signal);
-          const r=await this.category.run({version:1,scope:task.scope,operation:'public-category-ranking',categoryId},task.signal);
+          // ADR-106: anonymous reads carry B站's own visitor identity when one is (or can be) kept on this TV.
+          const visitor=UP_FIX3?await visitorIds().ensure(task.scope,task.signal):undefined;
+          if(task.signal.aborted || !this.sessions.accepts(task.scope)) throw new DomainError('cancelled');
+          if(UP_FIX3) usedVisitor(!!visitor);
+          const r=await this.category.run({version:1,scope:task.scope,operation:'public-category-ranking',categoryId,...(visitor?{visitor}:{})},task.signal);
           if(r.kind==='api_error') throw new ContentApiError(r.apiCode!);
           if(r.kind!=='ok') throw new DomainError(r.kind==='cancelled'?'cancelled':r.kind==='invalid_response'?'invalid':'network');
           return r.items;
@@ -67,7 +73,7 @@ export class PublicContentRuntime implements ContentRuntime {
       if(result.operation==='guest-popular' && result.kind!=='ok')throw new PopularReadError(result);
       if(result.kind!=='ok') throw new DomainError(result.kind==='cancelled'?'cancelled':result.kind==='invalid_response'?'invalid':result.code.endsWith('.native_unavailable')?'unsupported':'network');
       if(result.operation==='public-ranking'||result.operation==='public-category-ranking'){this.rankingSnapshot=result.items;return this.rankingPage(1);}
-      if(result.operation==='public-pgc-ranking'||result.operation==='public-up-archives')throw new DomainError('invalid'); // served by their own workers, never this lane
+      if(result.operation==='public-pgc-ranking'||result.operation==='public-up-archives'||result.operation==='public-visitor')throw new DomainError('invalid'); // served by their own workers, never this lane
       return {items:result.items,noMore:result.noMore};
     } finally { signal.removeEventListener('abort',abort);task.finish(); }
   }
