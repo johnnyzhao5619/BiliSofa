@@ -11,7 +11,7 @@
 | 合成UI | 新5条通过（前4条对冻结0.51.2失败，第5条为回归保护；Worker不传访客标识的变异使第1–3条失败）；回归102条全部通过 |
 | 包 | 负例11/11；未签名WGT `830f9708…e8e6`；原生仅`catalog/`重链接（`build/catalog-visitor`），权限不变 |
 | 签名/部署 | 签名`19ac5ad3…3c5f`（证书预检PASS，权限不变）；本机`/tmp/sdb.log`归root所有、SDB无法写日志，后台服务启动后随即退出（推断与此有关），改为前台运行SDB服务后连接；升级安装/启动platformSuccess（一次，不清数据）；源码归档`aaddfb3d…759a`；[回执](design/evidence/2026-10-23-up-fix3/receipt.json) |
-| 用户 | **游客V1g、清除访客标识、登录状态回归 USER PASS** |
+| 用户 | **游客V1g、清除访客标识、登录状态回归 USER PASS；U5集中验收V3–V6 USER PASS**（[报告](acceptance/2026-10-23-u5-final/REPORT.md)） |
 
 [证据](design/evidence/2026-10-23-up-fix3/README.md)；0.51.2的结果见[其证据](design/evidence/2026-10-23-up-fix2/README.md)。
 

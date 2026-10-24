@@ -1,6 +1,6 @@
 # 当前验收安排
 
-2026-10-23；**当前没有待执行的设备测试组。** 已安装0.51.3，游客V1g、清除访客标识、登录状态回归USER PASS（[证据](design/evidence/2026-10-23-up-fix3/README.md)，[ADR-106](adr/106-guest-visitor-identity-and-sign-in-hint.md)）。下一组按[收口计划](plans/2026-10-23-remaining-work-plan.md)第6.3节V3–V6，经用户安排后执行。
+2026-10-23；**当前没有待执行的设备测试组。** 已安装0.51.3，游客V1g、清除访客标识、登录状态回归USER PASS（[证据](design/evidence/2026-10-23-up-fix3/README.md)，[ADR-106](adr/106-guest-visitor-identity-and-sign-in-hint.md)）。U5集中验收V1–V6已全部USER PASS（[报告](acceptance/2026-10-23-u5-final/REPORT.md)）；暂停项（R08、R12、R14）恢复前没有待执行组。
 
 - [当前实施状态](IMPLEMENTATION_STATUS.md)：已安装包与未部署候选分开记录。
 - [唯一收口台账](PRODUCT_CLOSURE.md)：R01–R15剩余项与U5最终T1–T8矩阵。

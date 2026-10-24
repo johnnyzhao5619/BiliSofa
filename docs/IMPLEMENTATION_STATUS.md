@@ -6,7 +6,7 @@
 
 | 对象 | 当前事实 | 证据 |
 | --- | --- | --- |
-| 已安装0.51.3 | [ADR-106](adr/106-guest-visitor-identity-and-sign-in-hint.md)：游客读取分区与UP投稿时带B站官方访客标识（spi取得的buvid3/buvid4，本机保存30天，设置 → 本机数据可一键清除；新原生`catalog-visitor`，其余原生不变）；游客被风控拒绝时提示“登录后通常更稳定”，“帮助与诊断”写明是否带标识。本地737单元/原生20/新5条合成UI（前4条对冻结0.51.2失败）/回归102条/11包负例通过；签名`19ac5ad3…3c5f`（证书预检PASS，权限不变）；升级安装/启动platformSuccess（一次，不清数据）；源码归档`aaddfb3d…759a`；**游客V1g、清除访客标识、登录状态回归 USER PASS** | [证据](design/evidence/2026-10-23-up-fix3/README.md) |
+| 已安装0.51.3 | [ADR-106](adr/106-guest-visitor-identity-and-sign-in-hint.md)：游客读取分区与UP投稿时带B站官方访客标识（spi取得的buvid3/buvid4，本机保存30天，设置 → 本机数据可一键清除；新原生`catalog-visitor`，其余原生不变）；游客被风控拒绝时提示“登录后通常更稳定”，“帮助与诊断”写明是否带标识。本地737单元/原生20/新5条合成UI（前4条对冻结0.51.2失败）/回归102条/11包负例通过；签名`19ac5ad3…3c5f`（证书预检PASS，权限不变）；升级安装/启动platformSuccess（一次，不清数据）；源码归档`aaddfb3d…759a`；**游客V1g、清除访客标识、登录状态回归 USER PASS；U5集中验收V3–V6 USER PASS（V1–V6全部通过，无FAIL，[报告](acceptance/2026-10-23-u5-final/REPORT.md)）** | [证据](design/evidence/2026-10-23-up-fix3/README.md) |
 | 0.51.2（USER证据来源） | ADR-105：登录时分区排行与UP投稿用本人会话读取并节制请求；**V1 USER PASS（登录状态）、V2②补 USER PASS、导航与UP主页回归 USER PASS** | [证据](design/evidence/2026-10-23-up-fix2/README.md) |
 | 0.51.0–0.51.1（USER证据来源） | ADR-103/104：**V2① PASS、V2③ PASS、搜索视频与首页详情一致 PASS、导航 PASS、关注页直达卡 PASS、稍后再看/云端历史/收藏完整详情 PASS**；V1与继续观看/队列详情转ADR-105 | [证据](design/evidence/2026-10-23-up-fix/README.md) |
 | 0.50.4（USER证据来源） | ADR-102来源检查主备切换与运行内避开；**P4⁗ USER PASS**（伍六七之玄武国篇前三集） | [证据](design/evidence/2026-10-23-source-failover/README.md) |
