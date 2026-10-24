@@ -5,6 +5,7 @@ import {parsePrivateAccount,type PrivateAccount,type AccountRuntime} from '../..
 import {parseWatchLaterRequest,parseWatchLaterResult,type WatchLaterRequest,type WatchLaterResult,type WatchLaterQuery,type WatchLaterPage} from '../../../../packages/contracts/src/watch-later.ts';
 import {parseHistoryQuery,parseHistoryRequest,parseHistoryResult,type HistoryRequest,type HistoryResult,type HistoryCursor,type HistoryCard,type HistoryPage} from '../../../../packages/contracts/src/history.ts';
 import {ScopedGuestWorker} from './scoped-guest-worker.ts';
+import {parsePublicReadCommand,parsePublicReadRequest,parsePublicReadResult,type PublicReadRequest,type PublicReadResult} from '../../../../packages/contracts/src/public-read.ts';
 import {identityRuntime} from './identity-worker.ts';
 import {createVodAccess,createPgcAccess} from './vod-runtime.ts';
 import {pgcId} from '../../../../packages/contracts/src/pgc-season.ts';
@@ -119,6 +120,11 @@ export function accountRuntime(account:PrivateAccount):AccountRuntime{
    const query=parseFavoriteItemsQuery(value),ticket=await acquire(scope,signal),match=/^f([1-9][0-9]*)_([0-9]+)$/.exec(query.folderKey);
    if(!match||Number(match[1])!==favoriteRevision||favoriteGeneration!==scope.generation||!favoriteFolders)throw new DomainError('invalid');const folder=favoriteFolders[Number(match[2])];if(!folder)throw new DomainError('invalid');
    const result=await run<FavoriteRequest,FavoriteResult>(favoriteWorker('favorite-items-read'),{version:1,operation:'favorite-items-read',scope,account:secret!,folderId:folder.id,query},signal,ticket);if(result.kind==='error')throw new DomainError(result.code);if(result.operation!=='favorite-items-read')throw new DomainError('invalid');return result.page;
+  },
+  /** ADR-105: one public list with this session (read-only); refusals return B站's code, never a retry. */
+  async readPublic(value,scope,signal):Promise<PublicReadResult>{
+   const command=parsePublicReadCommand(value),ticket=await acquire(scope,signal),worker=new ScopedGuestWorker<PublicReadRequest,PublicReadResult>('public-read-worker.js','public-read',parsePublicReadRequest,parsePublicReadResult,22000,12000);
+   const result=await run<PublicReadRequest,PublicReadResult>(worker,{version:1,operation:'public-read',scope,command,account:secret!},signal,ticket);if(result.kind==='error')throw new DomainError(result.code);return result;
   },
   async readWatchLater(query:WatchLaterQuery,scope:Scope,signal:AbortSignal):Promise<WatchLaterPage>{
    const ticket=await acquire(scope,signal),worker=new ScopedGuestWorker<WatchLaterRequest,WatchLaterResult>('library-worker.js','watch-later-read',parseWatchLaterRequest,parseWatchLaterResult,22000,12000,(q,r)=>r.kind!=='ok'||r.page.page===q.query.page);

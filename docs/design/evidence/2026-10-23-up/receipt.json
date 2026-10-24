@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.51.0",
+  "basedOn": "0.50.4",
+  "uiSourceHash": "7c8bc51554ffa00efb8b6e67a1ac6bfffc8374e734a32a1aecaa2aa6aeb19bc6",
+  "uiManifestSha256": "a672484e3f0895f18f01818903046484ae451a14a476193b21e8af1f04f5d33e",
+  "unsignedSha256": "ac93ec44ecf2efeeb550817d1b18e65ec5bb325ea3dabef2f7885d50af25730c",
+  "signedSha256": "c04139b480cd6cd5b78ea409294952a075112c3cd243b5107cc0900a503ed817",
+  "signedAt": "2026-10-23T22:04:48.853528+00:00",
+  "sourceArchiveSha256": "f42b8e5e32f4ab8baf14fe973963d42618a3a54a7608c96ffe8ec9ca8dd4cdb9",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.51.0",
+        "signedSha256": "c04139b480cd6cd5b78ea409294952a075112c3cd243b5107cc0900a503ed817",
+        "uiSourceHash": "7c8bc51554ffa00efb8b6e67a1ac6bfffc8374e734a32a1aecaa2aa6aeb19bc6",
+        "startedAt": "2026-10-23T22:05:22.382613+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.51.0",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.51.0",
+      "signedSha256": "c04139b480cd6cd5b78ea409294952a075112c3cd243b5107cc0900a503ed817",
+      "uiSourceHash": "7c8bc51554ffa00efb8b6e67a1ac6bfffc8374e734a32a1aecaa2aa6aeb19bc6",
+      "startedAt": "2026-10-23T22:05:22.382613+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs0504": [
+    "apps/tv/public/product-ui.css",
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/product-following.ts",
+    "apps/tv/src/app/product-home.ts",
+    "apps/tv/src/app/product-page.ts",
+    "apps/tv/src/app/product-search.ts",
+    "apps/tv/src/app/product-up.ts",
+    "apps/tv/src/app/product-video-detail.ts",
+    "apps/tv/src/app/up-archive-read.ts",
+    "apps/tv/src/platform/content-runtime.ts",
+    "apps/tv/src/platform/ranking-worker.ts",
+    "package.json",
+    "packages/bili-client/src/ranking.ts",
+    "packages/bili-client/src/vod-catalog.ts",
+    "packages/contracts/src/ranking.ts",
+    "packages/contracts/src/up-archives.ts",
+    "packages/contracts/src/vod-catalog.ts",
+    "platform/wasm-network/src/catalog-worker.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.51.0",
+    "unitContractPassed": 730,
+    "nativeCatalogUpPassed": 15,
+    "upUiPassed": 4,
+    "upUiFailedOnFrozen0504": 4,
+    "upUiFailedOnNestedMutation": 1,
+    "retainedSourceFailoverUiPassed": 3,
+    "retainedCdnFailoverUiPassed": 1,
+    "retainedReconnectUiPassed": 2,
+    "retainedProfilesUiPassed": 9,
+    "retainedSeasonUiPassed": 6,
+    "retainedDetailUiPassed": 3,
+    "retainedReadingUiPassed": 17,
+    "retainedPolishUiPassed": 18,
+    "retainedCastWakeOnlyPassed": 1,
+    "retainedCastClockConfigPassed": 30,
+    "packageNegativePassed": 10,
+    "unsignedSha256": "ac93ec44ecf2efeeb550817d1b18e65ec5bb325ea3dabef2f7885d50af25730c",
+    "uiSourceInputs": 275,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModules": 17,
+    "nativeFilesChangedVs0504": [
+      "catalog/manifest.json",
+      "catalog/probe.js",
+      "catalog/probe.wasm"
+    ],
+    "nativeResourcesUnchangedVs0504": 65,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.51.0 (ADR-103): UP page uploads (official web series search, newest first, 30 per page, no automatic retry when rate-limited), shared video detail for search and home, following page direct card to 番剧影视, legacy collections suite archived",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_V1_V2",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs0504": true
+}

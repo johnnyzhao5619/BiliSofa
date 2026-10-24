@@ -1,0 +1,114 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.51.1",
+  "basedOn": "0.51.0",
+  "uiSourceHash": "43504308b695dff90be82237211f8ce11a80b4f5b17cb092c4686e557734e080",
+  "uiManifestSha256": "7c2bb3b22ba4cd5f446556a6e79b8975466fb0dd77eacf4aa2692b925ecd0281",
+  "unsignedSha256": "9e9c3e83f68b84ca3d97abb3bc9d4ba6b4348d444741a1e8ef788e3328223110",
+  "signedSha256": "854d79042e3143afa8c7c78c615b18de33602d88743f1aee0f3a512f80e96209",
+  "signedAt": "2026-10-23T23:46:10.934868+00:00",
+  "sourceArchiveSha256": "20e2cc29606326ca80789c1cc01c2f6cf688968d5bed493ee8dc4143fc60e5ca",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.51.1",
+        "signedSha256": "854d79042e3143afa8c7c78c615b18de33602d88743f1aee0f3a512f80e96209",
+        "uiSourceHash": "43504308b695dff90be82237211f8ce11a80b4f5b17cb092c4686e557734e080",
+        "startedAt": "2026-10-23T23:46:46.750890+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.51.1",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.51.1",
+      "signedSha256": "854d79042e3143afa8c7c78c615b18de33602d88743f1aee0f3a512f80e96209",
+      "uiSourceHash": "43504308b695dff90be82237211f8ce11a80b4f5b17cb092c4686e557734e080",
+      "startedAt": "2026-10-23T23:46:46.750890+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs0510": [
+    "apps/tv/src/app/app-diagnostics.ts",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/product-following.ts",
+    "apps/tv/src/app/product-home.ts",
+    "apps/tv/src/app/product-library.ts",
+    "apps/tv/src/app/product-page.ts",
+    "apps/tv/src/app/product-up.ts",
+    "apps/tv/src/app/product-video-detail.ts",
+    "packages/contracts/src/up-archives.ts",
+    "platform/wasm-network/src/catalog-worker.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.51.1",
+    "unitContractPassed": 731,
+    "nativeCatalogUaPassed": 17,
+    "upFixUiPassed": 4,
+    "upFixUiFailedOnFrozen0510": 4,
+    "retainedUiPassed": 94,
+    "packageNegativePassed": 10,
+    "unsignedSha256": "9e9c3e83f68b84ca3d97abb3bc9d4ba6b4348d444741a1e8ef788e3328223110",
+    "uiSourceInputs": 275,
+    "uiOutputFiles": 27,
+    "signedEntries": 108,
+    "nativeModules": 17,
+    "nativeFilesChangedVs0510": [
+      "catalog/manifest.json",
+      "catalog/probe.wasm"
+    ],
+    "nativeResourcesUnchangedVs0510": 66,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.51.1 (ADR-104): catalog reads with the TV web runtime User-Agent, shared detail page for library, following updates and continue watching, focus kept after failed reads",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_V1_NAV_V2B_K3",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs0510": true
+}

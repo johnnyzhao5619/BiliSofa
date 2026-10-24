@@ -1,6 +1,6 @@
 # 当前验收安排
 
-2026-10-23；**当前没有待执行的设备测试组。** 已安装0.47.2，前端三批所请求R1–R6、P1–P7、S1–S6全部USER PASS（[证据](design/evidence/2026-10-23-reading-fix2/README.md)）。
+2026-10-23；**当前没有待执行的设备测试组。** 已安装0.51.2，V1（登录状态分区）、V2②补、导航与UP主页回归USER PASS（[证据](design/evidence/2026-10-23-up-fix2/README.md)）。下一组按[收口计划](plans/2026-10-23-remaining-work-plan.md)第6.3节V3–V6，经用户安排后执行。
 
 - [当前实施状态](IMPLEMENTATION_STATUS.md)：已安装包与未部署候选分开记录。
 - [唯一收口台账](PRODUCT_CLOSURE.md)：R01–R15剩余项与U5最终T1–T8矩阵。

@@ -11,6 +11,10 @@ import { productButton } from './product-frame.ts';
 import { CoverArt } from '../platform/cover-art.ts';
 import { libraryCard, type LibraryCardView } from '../ui/library-card.ts';
 import { clockTime } from '../ui/content-card.ts';
+import type { PopularCard } from '../../../../packages/contracts/src/index.ts';
+import { UP_FIX } from '../../../../packages/contracts/src/up-archives.ts';
+import { UP_FIX2 } from '../../../../packages/contracts/src/public-read.ts';
+import type { VideoDetailContext } from './product-video-detail.ts';
 export type LibraryTab = 'local' | 'queue' | 'watchlater' | 'history' | 'folders';
 export interface LibraryMemory {
   tab: LibraryTab;
@@ -27,6 +31,8 @@ export interface LibraryServices {
     part: number;
   }, position: number): void;
   playQueue(items: QueueItem[], index: number, continuous: boolean): void;
+  /** 0.51.1 (ADR-104): the shared video detail page, resuming this entry's part. */
+  openVideo?(card: PopularCard, part: number, context?: VideoDetailContext): void;
 }
 interface Entry extends LibraryEntry {
   ordinal?:number;
@@ -126,11 +132,47 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
       return modal;
     }, 'library-delete-keep');
   }
+  /** Queue order and local removal, shared by the old panel and (ADR-105) the full detail page. */
+  function contextActions(entry: Entry, child: ResourceOwner, closeThen: (action: () => void) => void): HTMLButtonElement[] {
+    const out: HTMLButtonElement[] = [];
+    if (entry.queued) {
+        const current = services.queue.read();
+        const index = current.kind === 'ok' ? current.value.items.findIndex(item => queueItemKey(item) === queueItemKey(entry.queued!)) : -1;
+        for (const [direction, label] of [[-1, '上移'], [1, '下移']] as const) {
+          const move = productButton('library-detail-move-' + (direction === -1 ? 'up' : 'down'), label, () => { if (child.signal.aborted)
+            return; const outcome = services.queue.move(entry.queued!.bvid, direction, queuePart(entry.queued!)); services.feedback.textContent = outcome === 'saved' ? '队列顺序已保存' : '顺序保存未确认'; closeThen(() => { const data = services.queue.read(), at = data.kind === 'ok' ? data.value.items.findIndex(item => queueItemKey(item) === queueItemKey(entry.queued!)) : -1; void read(at >= 0 ? Math.floor(at / 4) + 1 : currentPage, false, entry.id); }); });
+          move.disabled = index < 0 || direction === -1 && index === 0 || direction === 1 && (current.kind !== 'ok' || index >= current.value.items.length - 1);
+          out.push(move);
+        }
+      }
+    if (entry.local || entry.queued)
+      out.push(productButton('library-detail-remove', '删除本机此项', () => { if (!child.signal.aborted)
+        closeThen(() => confirmRemoval(entry)); }));
+    return out;
+  }
+  /** Play the local queue from this entry, as the old panel's 从本项开始播放. */
+  function queuePlay(entry: Entry): void {
+    const current = services.queue.read();
+    if (current.kind !== 'ok' || !entry.queued) return;
+    const index = current.value.items.findIndex(item => queueItemKey(item) === queueItemKey(entry.queued!));
+    if (index >= 0) services.playQueue(current.value.items, index, current.value.continuous);
+  }
   function details(entry: Entry): void {
     if (entry.folderKey) {
       const childMemory: LibraryMemory = { tab: 'folders', pages: {}, anchors: {} };
       shell.openModal('library-folder', child => productLibrary(child, shell, services, childMemory, { key: entry.folderKey!, title: entry.title }), 'folder-library-back');
       return;
+    }
+    // History, watch-later and favourites open the full detail page; queue and local records keep their own panels.
+    // ADR-105: 继续观看 and 本机播放队列 too, keeping their own actions on the full page.
+    if (UP_FIX2 && services.openVideo && entry.target && (entry.queued || entry.local)) {
+      services.openVideo({ bvid: entry.target.bvid, title: entry.title, owner: '', durationSec: 0, views: 0, ...(entry.cover ? { cover: entry.cover } : {}) }, entry.target.part, {
+        ...(entry.queued ? { primary: { label: '从本项开始播放队列', run: () => queuePlay(entry) }, enqueue: false } : {}),
+        extra: (child, closeThen) => contextActions(entry, child, closeThen) });
+      return;
+    }
+    if (UP_FIX && services.openVideo && entry.target && !entry.queued && !entry.local) {
+      services.openVideo({ bvid: entry.target.bvid, title: entry.title, owner: '', durationSec: 0, views: 0, ...(entry.cover ? { cover: entry.cover } : {}) }, entry.target.part); return;
     }
     shell.openModal('library-detail', child => {
       const modal = document.createElement('section');
@@ -172,19 +214,7 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
         unavailable.textContent = '此条目没有可用的普通视频/分P标识，当前只能查看；不会替换成其他视频播放。';
         modal.append(unavailable);
       }
-      if (entry.queued) {
-        const current = services.queue.read();
-        const index = current.kind === 'ok' ? current.value.items.findIndex(item => queueItemKey(item) === queueItemKey(entry.queued!)) : -1;
-        for (const [direction, label] of [[-1, '上移'], [1, '下移']] as const) {
-          const move = productButton('library-detail-move-' + (direction === -1 ? 'up' : 'down'), label, () => { if (child.signal.aborted)
-            return; const outcome = services.queue.move(entry.queued!.bvid, direction, queuePart(entry.queued!)); services.feedback.textContent = outcome === 'saved' ? '队列顺序已保存' : '顺序保存未确认'; closeThen(() => { const data = services.queue.read(), at = data.kind === 'ok' ? data.value.items.findIndex(item => queueItemKey(item) === queueItemKey(entry.queued!)) : -1; void read(at >= 0 ? Math.floor(at / 4) + 1 : currentPage, false, entry.id); }); });
-          move.disabled = index < 0 || direction === -1 && index === 0 || direction === 1 && (current.kind !== 'ok' || index >= current.value.items.length - 1);
-          actions.append(move);
-        }
-      }
-      if (entry.local || entry.queued)
-        actions.append(productButton('library-detail-remove', '删除本机此项', () => { if (!child.signal.aborted)
-          closeThen(() => confirmRemoval(entry)); }));
+      actions.append(...contextActions(entry, child, closeThen));
       const result = document.createElement('p');
       result.setAttribute('role', 'status');
       actions.append(productButton('library-detail-back', '返回原卡', () => { void shell.closeOwnedModal(child); }));

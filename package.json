@@ -136,7 +136,7 @@
     "build:app:product-discovery": "node tools/build-foundation-app.mjs --product-discovery",
     "test:ui:product-discovery": "playwright test --config playwright.product-discovery.config.ts",
     "build:app:product-collections": "node tools/build-foundation-app.mjs --product-collections",
-    "test:ui:product-collections": "playwright test --config playwright.product-collections.config.ts",
+    "test:ui:product-collections": "playwright test --config tests/archive/playwright.product-collections.config.ts",
     "build:app:product-player": "node tools/build-foundation-app.mjs --product-player",
     "test:ui:product-player": "playwright test --config playwright.product-player.config.ts",
     "build:app:product-actions": "node tools/build-foundation-app.mjs --product-actions",

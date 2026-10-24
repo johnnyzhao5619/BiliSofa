@@ -1,0 +1,5 @@
+// Archived 2026-10-23 (K4): targets the 0.33 product-collections layout; see tests/archive/README.md.
+import {defineConfig} from '@playwright/test';
+const root=process.env.BILISOFA_PROBE_ROOT??'dist/product-collections-app';
+process.env.BILISOFA_TEST_ROOT=root;
+export default defineConfig({testDir:'./product-collections-ui',workers:1,reporter:'list',outputDir:'../../.local/playwright-product-collections',timeout:25000,use:{baseURL:'http://127.0.0.1:4173',viewport:{width:1920,height:1080},browserName:'chromium'},webServer:{command:'node tools/serve.mjs',cwd:'../..',env:{BILISOFA_PROBE_ROOT:root},url:'http://127.0.0.1:4173',reuseExistingServer:false}});

@@ -4,9 +4,9 @@
 
 ## 当前状态
 
-已安装工件为0.47.2：前端三批（遥控、播放器、首页、搜索、阅读）所请求组USER PASS，此前投屏/F11等所请求组保持；不等于完整产品通过。
+已安装工件为0.51.2：0.45.0–0.51.2各批所请求组USER PASS（前端三批、详情与番剧页、追番、热门番剧筛选、启动账号选择、播放中断重连与CDN/来源主备切换、UP主页投稿、登录状态下的分区），此前投屏/F11等所请求组保持；不等于完整产品通过。
 
-当前工作区另有R07小数倍速HTML video候选，尚未集成生产、打包、签名或部署。桌面MP4只有前四档通过，1.25×窗口不足中止，其余档位/DASH/电视未验；不能借用已安装包的设备结果。大屏UI已有实现与分组USER证据，最终整合/性能/恢复及内容来源缺口仍开放。
+R07小数倍速按本机设备限制关闭（[ADR-097](docs/adr/097-fractional-rates-device-limited.md)），生产保持1×/2×。大屏UI已有实现与分组USER证据；最终整合（收口计划V3–V6）、恢复矩阵及内容来源缺口（图文/关注动态BLOCKED、游客分区待验证）仍开放。
 
 [当前状态](docs/IMPLEMENTATION_STATUS.md) · [第三方验收报告](docs/acceptance/third-party/2026-10-22T213335-0400/REPORT.md) · [验收安排](docs/CURRENT_DEVICE_TEST.md) · [分层测试](docs/TEST_REPORT.md) · [签名工件](docs/SIGNING_DEVICE_RECORD.md)
 

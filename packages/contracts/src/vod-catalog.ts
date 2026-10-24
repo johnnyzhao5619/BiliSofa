@@ -5,19 +5,20 @@ export type RepeatMode='off'|'one'|'all';
 export interface VodItem {bvid:string;part:number;title:string;durationMs:number;}
 export interface VodCollectionEntry {title:string;item?:VodItem;}
 /** Optional detail-page facts from the same view response (0.48.0). Missing facts are omitted, never guessed. */
-export interface VodAbout {description?:string;publishedAt?:number;views?:number;likes?:number;danmaku?:number;face?:CoverReference;}
+export interface VodAbout {description?:string;publishedAt?:number;views?:number;likes?:number;danmaku?:number;face?:CoverReference;/** 0.51.0 (ADR-103): the UP's id, for the UP page. */ownerMid?:string;}
 export interface VodDetail {title:string;owner:string;parts:VodItem[];collection?:{title:string;entries:VodCollectionEntry[]};about?:VodAbout;}
 const ABOUT_COUNT=Number.MAX_SAFE_INTEGER;
 /** Description text may keep line breaks; every other control character is rejected. */
 export function aboutText(value:unknown):string{if(typeof value!=='string'||!value.length||value.length>2000||/[\u0000-\u0009\u000b-\u001f\u007f]/.test(value))throw new DomainError('invalid');return value;}
 export function parseVodAbout(value:unknown):VodAbout{
- const v=record(value),allowed=['description','publishedAt','views','likes','danmaku','face'];if(!Object.keys(v).length||Object.keys(v).some(k=>!allowed.includes(k)))throw new DomainError('invalid');
+ const v=record(value),allowed=['description','publishedAt','views','likes','danmaku','face','ownerMid'];if(!Object.keys(v).length||Object.keys(v).some(k=>!allowed.includes(k)))throw new DomainError('invalid');
  const count=(n:unknown)=>{if(!Number.isSafeInteger(n)||(n as number)<0||(n as number)>ABOUT_COUNT)throw new DomainError('invalid');return n as number;};
  const about:VodAbout={};
  if(v.description!==undefined)about.description=aboutText(v.description);
  if(v.publishedAt!==undefined){if(!Number.isSafeInteger(v.publishedAt)||(v.publishedAt as number)<=0||(v.publishedAt as number)>=4102444800)throw new DomainError('invalid');about.publishedAt=v.publishedAt as number;}
  for(const k of ['views','likes','danmaku'] as const)if(v[k]!==undefined)about[k]=count(v[k]);
  if(v.face!==undefined)about.face=parseCoverReference(v.face);
+ if(v.ownerMid!==undefined){if(typeof v.ownerMid!=='string'||!/^[1-9][0-9]{0,15}$/.test(v.ownerMid)||BigInt(v.ownerMid)>9007199254740991n)throw new DomainError('invalid');about.ownerMid=v.ownerMid;}
  return about;
 }
 export type VideoCodec='avc'|'hevc'|'av1';

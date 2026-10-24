@@ -3,6 +3,7 @@ import { parseVodCatalog, parseVodChoice, vodBvid, vodChoiceSupported, vodIntege
 import { GuestVideoError, guestCdnUrl } from './guest-video.ts';
 import { vodCdnPair } from './vod-cdn.ts';
 import { CDN_FAILOVER, SOURCE_FAILOVER } from '../../contracts/src/cdn-failover.ts';
+import { PRODUCT_UP } from '../../contracts/src/up-archives.ts';
 import { publicArtwork } from './public-artwork.ts';
 import type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-private.ts';
 export type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-private.ts';
@@ -28,13 +29,14 @@ function data(raw: string): Record<string, unknown> {
 function caption(value: unknown, max: number): string { return text(value, 2048).slice(0, max); }
 function optionalFlag(value: unknown): boolean { return value !== undefined && value !== false && value !== 0; }
 /** Detail-page facts are optional: a missing or malformed field is dropped and never blocks playback. */
-function vodAbout(d: Record<string, unknown>): VodAbout | undefined {
+function vodAbout(d: Record<string, unknown>, withMid = PRODUCT_UP): VodAbout | undefined {
   const about: VodAbout = {};
   if (typeof d.desc === 'string') { const description = d.desc.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 2000); if (description && description !== '-') about.description = description; }
   if (Number.isSafeInteger(d.pubdate) && (d.pubdate as number) > 0 && (d.pubdate as number) < 4102444800) about.publishedAt = d.pubdate as number;
   const stat = d.stat !== null && typeof d.stat === 'object' ? d.stat as Record<string, unknown> : {};
   for (const [key, field] of [['views', 'view'], ['likes', 'like'], ['danmaku', 'danmaku']] as const) { const n = stat[field]; if (Number.isSafeInteger(n) && (n as number) >= 0) about[key] = n as number; }
   const owner = d.owner !== null && typeof d.owner === 'object' ? d.owner as Record<string, unknown> : {}, face = publicArtwork(owner.face); if (face) about.face = face;
+  if (withMid && Number.isSafeInteger(owner.mid) && (owner.mid as number) > 0) about.ownerMid = String(owner.mid);
   return Object.keys(about).length ? about : undefined;
 }
 export function parseVodDetail(raw: string, bvid: string): PrivateVodDetail {

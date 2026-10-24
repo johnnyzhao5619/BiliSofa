@@ -1,5 +1,6 @@
 import { DomainError, finite, record, text, type PopularCard } from '../../contracts/src/index.ts';
 import type { PgcRankCard } from '../../contracts/src/ranking.ts';
+import type { UpArchiveCard } from '../../contracts/src/up-archives.ts';
 import {publicArtwork} from './public-artwork.ts';
 /** Public response stays inside the catalog Worker; preserve service order. */
 export function parseRankingBody(raw: string): { apiCode: number; items: PopularCard[] } {
@@ -46,3 +47,28 @@ export function parsePgcRankingBody(raw: string): { apiCode: number; seasons: Pg
   }
   return { apiCode, seasons, more: data.has_next === 1 || data.has_next === true };
 }
+/** One page of an UP's public uploads (ADR-103). Rows without a usable BV or title are skipped; service order (newest first) is kept. */
+export function parseUpArchivesBody(raw: string): { apiCode: number; archives: UpArchiveCard[]; total: number } {
+  if (new TextEncoder().encode(raw).length > 524288) throw new DomainError('invalid');
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw); } catch { throw new DomainError('invalid'); }
+  const root = record(parsed), apiCode = finite(root.code, -2147483648, 2147483647);
+  if (!Number.isInteger(apiCode)) throw new DomainError('invalid');
+  if (apiCode !== 0) return { apiCode, archives: [], total: 0 };
+  const data = record(root.data), rows = data.archives ?? [], page = record(data.page ?? {}), total = page.total ?? 0;
+  if (!Array.isArray(rows) || rows.length > 50 || !Number.isSafeInteger(total) || (total as number) < 0 || (total as number) > 10000000) throw new DomainError('invalid');
+  const seen = new Set<string>(), archives: UpArchiveCard[] = [];
+  for (const row of rows) {
+    if (row === null || typeof row !== 'object') continue;
+    const v = row as Record<string, unknown>, stat = v.stat !== null && typeof v.stat === 'object' ? v.stat as Record<string, unknown> : {};
+    const bvid = v.bvid, title = typeof v.title === 'string' ? v.title.replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 120) : '';
+    if (typeof bvid !== 'string' || !/^BV[A-Za-z0-9]{10}$/.test(bvid) || seen.has(bvid) || !title) continue;
+    const durationSec = Number.isSafeInteger(v.duration) && (v.duration as number) >= 0 && (v.duration as number) <= 86400 ? v.duration as number : 0;
+    const views = Number.isSafeInteger(stat.view) && (stat.view as number) >= 0 ? stat.view as number : 0;
+    const publishedAt = Number.isSafeInteger(v.pubdate) && (v.pubdate as number) > 0 && (v.pubdate as number) < 4102444800 ? v.pubdate as number : undefined;
+    const cover = publicArtwork(v.pic);
+    seen.add(bvid); archives.push({ bvid, title, durationSec, views, ...(publishedAt ? { publishedAt } : {}), ...(cover ? { cover } : {}) });
+  }
+  return { apiCode, archives, total: total as number };
+}
+

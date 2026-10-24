@@ -35,6 +35,9 @@ import {rateProbe} from './rate-probe.ts';
 import {PRODUCT_PROFILES,PROFILES_FIX} from './profile-policy.ts';
 import {MEDIA_RECONNECT} from './reconnect-policy.ts';
 import {CDN_FAILOVER,SOURCE_FAILOVER} from '../../../../packages/contracts/src/cdn-failover.ts';
+import {PRODUCT_UP,UP_FIX} from '../../../../packages/contracts/src/up-archives.ts';
+import {UP_FIX2} from '../../../../packages/contracts/src/public-read.ts';
+import {publicListNote} from '../platform/public-lists.ts';
 import {bridgeEvidence,type SourceStep} from '../platform/bridge-evidence.ts';
 import {openLaunchChooser,rememberProfile,forgetProfile} from './launch-chooser.ts';
 import { drawQr, clearQr } from '../ui/qr-code.ts';
@@ -87,6 +90,7 @@ if(PRODUCT_READING)document.body.classList.add('product-reading');
 if(PRODUCT_DETAIL)document.body.classList.add('product-detail');
 if(PRODUCT_SEASON)document.body.classList.add('product-season');
 if(PRODUCT_PROFILES)document.body.classList.add('product-profiles');
+if(PRODUCT_UP)document.body.classList.add('product-up');
 const castClock=typeof BILISOFA_PRODUCT_CAST_CLOCK!=='undefined'&&BILISOFA_PRODUCT_CAST_CLOCK;
 const castSeek=typeof BILISOFA_PRODUCT_CAST_SEEK!=='undefined'&&BILISOFA_PRODUCT_CAST_SEEK;
 const castStart=typeof BILISOFA_PRODUCT_CAST_START!=='undefined'&&BILISOFA_PRODUCT_CAST_START;
@@ -101,7 +105,7 @@ const root = document.querySelector<HTMLElement>('#pages')!, overlays = document
 if(productUi){let notice:ReturnType<typeof setTimeout>|undefined;new MutationObserver(()=>{clearTimeout(notice);const text=feedback.textContent??'';if(text&&!/正在|未确认|扫码|登录|失效|重新打开|权限/.test(text))notice=setTimeout(()=>{if(feedback.textContent===text)feedback.textContent='';},4000);}).observe(feedback,{childList:true,characterData:true,subtree:true});}
 const repository = protectedAccountStore(), login = new LoginCoordinator(repository, () => new IdentityWorkerClient());
 const queues=localQueues();
-const profiles = localProfiles(), diagnostics = new AppDiagnostics(SOURCE_FAILOVER?'U5-source-failover-0.50.4':CDN_FAILOVER?'U5-cdn-failover-0.50.3':MEDIA_RECONNECT?'U5-reconnect-0.50.2':PROFILES_FIX?'U5-profiles-0.50.1':PRODUCT_PROFILES?'U5-profiles-0.50.0':SEASON_STATUS_READ?'U5-season-0.49.1':PRODUCT_SEASON?'U5-season-0.49.0':PRODUCT_DETAIL?'U5-detail-0.48.0':READING_FIX2?'U5-reading-0.47.2':READING_FIX?'U5-reading-0.47.1':PRODUCT_READING?'U5-reading-0.47.0':PRODUCT_POLISH?'U5-polish-0.46.0':remote?'U5-remote-0.45.0':castClock?'U4-cast-clock-0.43.0':castSeek?'U4-cast-seek-0.42.0':castStart?'U4-cast-start-0.41.0':PRODUCT_RECOVERY?'U4-recovery-0.40.0':PRODUCT_STREAM?'U4-stream-0.39.0':PRODUCT_INSTANT?'U4-instant-0.38.0':PRODUCT_ACTIONS?'U4-actions-0.37.0':PRODUCT_INTERACTIONS?'U4-interactions-0.36.0':PRODUCT_BROWSE?'U3-browse-0.35.0':productPlayerEnabled?'U3-player-0.34.0':productCollectionsEnabled?'U2-following-0.33.0':productDiscoveryEnabled?'U2-search-0.32.0':productLibraryEnabled?'U2-library-0.31.0':productUi?'U1-shell-0.30.0':typeof BILISOFA_U1!=='undefined'&&BILISOFA_U1?'U1-content-0.29.0':typeof BILISOFA_RECOMMEND!=='undefined'&&BILISOFA_RECOMMEND?'W05-local-data-0.28.0':typeof BILISOFA_W06!=='undefined'&&BILISOFA_W06?'W06-cast-0.25.0':typeof BILISOFA_W05!=='undefined'&&BILISOFA_W05?'W05-interactions-0.24.1':w04?'W04-development-0.21.0':'W03-account-details-0.20.0'); diagnostics.add('app','started');if(PRODUCT_INSTANT)document.body.classList.add('product-instant');if(PRODUCT_STREAM)document.body.classList.add('product-stream');
+const profiles = localProfiles(), diagnostics = new AppDiagnostics(UP_FIX?'U5-up-fix-0.51.1':PRODUCT_UP?'U5-up-0.51.0':SOURCE_FAILOVER?'U5-source-failover-0.50.4':CDN_FAILOVER?'U5-cdn-failover-0.50.3':MEDIA_RECONNECT?'U5-reconnect-0.50.2':PROFILES_FIX?'U5-profiles-0.50.1':PRODUCT_PROFILES?'U5-profiles-0.50.0':SEASON_STATUS_READ?'U5-season-0.49.1':PRODUCT_SEASON?'U5-season-0.49.0':PRODUCT_DETAIL?'U5-detail-0.48.0':READING_FIX2?'U5-reading-0.47.2':READING_FIX?'U5-reading-0.47.1':PRODUCT_READING?'U5-reading-0.47.0':PRODUCT_POLISH?'U5-polish-0.46.0':remote?'U5-remote-0.45.0':castClock?'U4-cast-clock-0.43.0':castSeek?'U4-cast-seek-0.42.0':castStart?'U4-cast-start-0.41.0':PRODUCT_RECOVERY?'U4-recovery-0.40.0':PRODUCT_STREAM?'U4-stream-0.39.0':PRODUCT_INSTANT?'U4-instant-0.38.0':PRODUCT_ACTIONS?'U4-actions-0.37.0':PRODUCT_INTERACTIONS?'U4-interactions-0.36.0':PRODUCT_BROWSE?'U3-browse-0.35.0':productPlayerEnabled?'U3-player-0.34.0':productCollectionsEnabled?'U2-following-0.33.0':productDiscoveryEnabled?'U2-search-0.32.0':productLibraryEnabled?'U2-library-0.31.0':productUi?'U1-shell-0.30.0':typeof BILISOFA_U1!=='undefined'&&BILISOFA_U1?'U1-content-0.29.0':typeof BILISOFA_RECOMMEND!=='undefined'&&BILISOFA_RECOMMEND?'W05-local-data-0.28.0':typeof BILISOFA_W06!=='undefined'&&BILISOFA_W06?'W06-cast-0.25.0':typeof BILISOFA_W05!=='undefined'&&BILISOFA_W05?'W05-interactions-0.24.1':w04?'W04-development-0.21.0':'W03-account-details-0.20.0'); diagnostics.add('app','started');if(PRODUCT_INSTANT)document.body.classList.add('product-instant');if(PRODUCT_STREAM)document.body.classList.add('product-stream');
 const histories=searchHistories();
 const writes = new RetainedWrites(writeJournal());
 function writeSummary(id:string){const old=writes.summary(id),video=typeof BILISOFA_W05!=='undefined'&&BILISOFA_W05?interactionWrites().summary(id):{total:0,unknown:0};return old&&video?{total:old.total+video.total,unknown:old.unknown+video.unknown}:undefined;}
@@ -137,7 +141,10 @@ function lastFailureNote(f:ReturnType<AppDiagnostics['lastMediaFailure']>):HTMLE
   const reason:Record<string,string>={network:'网络中断',timeout:'超时',permission:'无权限或地区限制',login:'登录失效',unsupported:'格式或设备不支持',invalid:'返回内容无效',unknown:'资源释放未确认',cancelled:'已取消'};
   // ADR-101: the bridge's last upstream answer and how often it moved to Bilibili's backup line, as fixed numbers.
   const e=CDN_FAILOVER?bridgeEvidence():undefined,line=e?`${SOURCE_FAILOVER?stepNote(e.step):e.issue?` · 上游 HTTP ${e.issue.status||'无响应'} / cURL ${e.issue.curl}`:''}${e.failovers?` · 已切换备用线路 ${e.failovers} 次`:''}`:'';
-  p.textContent=f?`最近一次播放失败：${phase[f.phase]} · ${reason[f.reason]??f.reason}${f.sourceCode?` · 代码 ${f.sourceCode}`:''}${line}`:`本次运行没有播放失败记录${e?.failovers?`（已切换备用线路 ${e.failovers} 次）`:''}`;return p;
+  p.textContent=f?`最近一次播放失败：${phase[f.phase]} · ${reason[f.reason]??f.reason}${f.sourceCode?` · 代码 ${f.sourceCode}`:''}${line}`:`本次运行没有播放失败记录${e?.failovers?`（已切换备用线路 ${e.failovers} 次）`:''}`;
+  // ADR-105: the latest category/UP read outcome (lane and B站 code), on its own line.
+  const lists=UP_FIX2?publicListNote():'';if(!lists)return p;
+  const box=document.createElement('div'),q=document.createElement('p');q.className='tv-public-note';q.textContent=lists;box.append(p,q);return box;
 }
 function use(id?: string): Promise<void> { return selection(() => workspace.select(id), () => id ? '账号身份已确认' : '已切换游客').then(() => { if (PRODUCT_PROFILES && id && workspace.state.kind === 'active' && workspace.state.account.id === id) rememberProfile(id); }); }
 async function openPgcMedia(seasonId:string,caps:VodCapabilities):Promise<PgcAccess>{

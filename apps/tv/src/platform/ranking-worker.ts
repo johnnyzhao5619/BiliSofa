@@ -12,3 +12,7 @@ export class CategoryRankingWorker extends ScopedGuestWorker<RankingRequest & {o
 export class PgcRankingWorker extends ScopedGuestWorker<RankingRequest & {operation:'public-pgc-ranking'}, RankingResult> {
   constructor() { super('catalog-worker.js', 'public-pgc-ranking', value=>{const q=parseRankingRequest(value);if(q.operation!=='public-pgc-ranking')throw new Error('invalid');return q;}, parseRankingResult, 20000, 12000, (q,r)=>r.operation===q.operation); }
 }
+/** An UP's public uploads (ADR-103); its own parent operation so cancellation cannot address another lane. */
+export class UpArchivesWorker extends ScopedGuestWorker<RankingRequest & {operation:'public-up-archives'}, RankingResult> {
+  constructor() { super('catalog-worker.js', 'public-up-archives', value=>{const q=parseRankingRequest(value);if(q.operation!=='public-up-archives')throw new Error('invalid');return q;}, parseRankingResult, 20000, 12000, (q,r)=>r.operation===q.operation&&r.mid===(q as {mid:string}).mid&&r.page===q.page); }
+}

@@ -7,7 +7,9 @@ static CURLMcode fixture_remove(CURLM *multi, CURL *easy) {
 }
 #define curl_multi_remove_handle fixture_remove
 #define VOD_API_NO_MAIN
-#if defined(BILISOFA_SOURCE_FAILOVER_FIXTURE) && defined(BILISOFA_PGC_FIXTURE)
+#if defined(BILISOFA_PUBLIC_FIXTURE)
+#include "public-read.c"
+#elif defined(BILISOFA_SOURCE_FAILOVER_FIXTURE) && defined(BILISOFA_PGC_FIXTURE)
 #include "pgc-read-failover.c"
 #elif defined(BILISOFA_SOURCE_FAILOVER_FIXTURE)
 #include "vod-api-failover.c"
@@ -58,6 +60,17 @@ int main(int argc, char **argv) {
     }
     curl_slist_free_all(mapping); return clean() ? 0 : 28;
   }
+#ifdef BILISOFA_PUBLIC_FIXTURE
+  if (!strcmp(mode, "public-bounds")) {
+    const char *categories[] = { "0", "1005&x=1", "01005", "9999", "" };
+    for (unsigned i = 0; i < sizeof(categories) / sizeof(categories[0]); i++) { strcpy(vod_input, categories[i]); if (vod_begin(4)) return 33; }
+    const char *pages[] = { "12345", "012|1", "12345|0", "12345|51", "12345|01", "1|2|3", "12&x|1", "9007199254740992|1" };
+    for (unsigned i = 0; i < sizeof(pages) / sizeof(pages[0]); i++) { strcpy(vod_input, pages[i]); if (vod_begin(5)) return 34; }
+    strcpy(vod_input, "BV0000000001"); if (vod_begin(1)) return 35;
+    snprintf(vod_input, sizeof(vod_input), "https://fixture.bilivideo.com/a.m4s?deadline=%lld", (long long)time(NULL) + 3600); if (vod_begin(3)) return 36;
+    vod_finish(); curl_slist_free_all(mapping); return clean() ? 0 : 37;
+  }
+#endif
   if (!strcmp(mode, "bounds")) {
     vod_limit = VOD_BODY_CAP;
     if (vod_body_cb("x", 1, VOD_BODY_CAP + 1, NULL) || vod_header_cb("x", 1, 16385, NULL)) return 2;
@@ -89,6 +102,12 @@ int main(int argc, char **argv) {
         if (repeats++) { vod_finish(); break; }
       }
       vod_response_clear();
+#ifdef BILISOFA_PUBLIC_FIXTURE
+      /* ADR-105: nav, then one category ranking, then one UP page; nothing else is allowed. */
+      if (operation == 5) { vod_finish(); break; }
+      if (operation == 0) { operation = 4; strcpy(vod_input, "1005"); if (!vod_begin(operation)) return 31; continue; }
+      if (operation == 4) { operation = 5; strcpy(vod_input, "12345|2"); if (!vod_begin(operation)) return 32; continue; }
+#endif
       if (operation == 0) {
 #ifdef BILISOFA_PGC_FIXTURE
         if (!strcmp(mode, "pgc")) { operation = 4; strcpy(vod_input, "123"); }

@@ -1,6 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
-import {setup as mediaSetup,snapshot} from '../w04-media-ui/fixture.ts';
+import {setup as mediaSetup,snapshot} from '../../w04-media-ui/fixture.ts';
 const updates=readFileSync('tests/follow-updates-ui/native-fixture.js','utf8');
 const identity=readFileSync('tests/identity-ui/native-fixture.js','utf8').replace('__VARIANT__','normal');
 const follow=readFileSync('tests/w04-media-ui/pgc-follow-fixture.js','utf8');

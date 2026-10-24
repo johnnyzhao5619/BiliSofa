@@ -9,6 +9,7 @@ import type { VodAccess, PgcAccess } from './vod-runtime.ts';
 import type {PgcFollowCommand,PgcFollowValue} from './pgc-follow-dto.ts';
 import type {LiveAccess} from './live-product.ts';
 import { DomainError, record, text } from './index.ts';
+import type { PublicReadCommand, PublicReadResult } from './public-read-types.ts';
 export const ACCOUNT_LIMIT = 8;
 export interface AccountSummary { id: string; uid: string; name: string; expiresAt: number; }
 /** Only the protected store and scoped network adapter may consume this DTO. */
@@ -35,6 +36,8 @@ export interface AccountRuntime {
   readFavoriteItems?(query: FavoriteItemsQuery, scope: Scope, signal: AbortSignal): Promise<FavoriteItemsPage>;
   readHistory?(query: HistoryQuery, scope: Scope, signal: AbortSignal): Promise<HistoryPage>;
   readWatchLater?(query: WatchLaterQuery, scope: Scope, signal: AbortSignal): Promise<WatchLaterPage>;
+  /** 0.51.2 (ADR-105): a public category ranking or UP upload page read with this session. */
+  readPublic?(command: PublicReadCommand, scope: Scope, signal: AbortSignal): Promise<PublicReadResult>;
   verify(signal: AbortSignal): Promise<AccountIdentity>;
   /** Resolves only after native/Worker close acknowledgement, not termination. */
   close(): Promise<{ closed: boolean }>;

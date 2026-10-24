@@ -3,6 +3,7 @@ from pathlib import Path
 import http.server,ssl,threading,tempfile,subprocess,json,unittest
 ROOT=Path(__file__).resolve().parents[2]
 class CatalogTest(unittest.TestCase):
+ entry='catalog.c'
  @classmethod
  def setUpClass(cls):
   cls.tmp=tempfile.TemporaryDirectory();folder=Path(cls.tmp.name);host=json.loads((ROOT/'.local/host-network/manifest.json').read_text());prefix=Path(host['opensslPrefix']);cls.cert=folder/'ca.pem';key=folder/'key.pem';cls.exe=folder/'catalog';cls.wrong=folder/'wrong.pem'
@@ -25,7 +26,7 @@ static CURLcode mapped_perform(CURL *easy){
 }
 #define curl_easy_perform mapped_perform
 #define main catalog_main
-#include "catalog.c"
+#include "__ENTRY__"
 #undef main
 #undef curl_easy_perform
 int main(int argc,char **argv){
@@ -47,6 +48,18 @@ int main(int argc,char **argv){
   for(size_t i=0;i<sizeof(bad)/sizeof(bad[0]);i++){char *args[]={"catalog",(char*)bad[i][0],(char*)bad[i][1],(char*)bad[i][2],NULL};if(catalog_main(4,args)!=1 || performed)return 19;}
   return 0;
  }
+ else if(!strcmp(argv[1],"ua")){char *good[]={"catalog","--ua=Mozilla/5.0 (SMART-TV; LINUX; Tizen 8.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/8.0 TV Safari/537.36","category-ranking","1005",NULL};if(catalog_main(4,good))return 22;}
+ else if(!strcmp(argv[1],"ua_invalid")){
+  const char *bad[]={"--ua=","--ua=short","--ua=Mozilla/5.0\r\nCookie: x=1","--ua=Mozilla/5.0 \x01 control"};
+  for(size_t i=0;i<sizeof(bad)/sizeof(bad[0]);i++){char *args[]={"catalog",(char*)bad[i],"category-ranking","1005",NULL};if(catalog_main(4,args)!=1 || performed)return 23;}
+  return 0;
+ }
+ else if(!strcmp(argv[1],"up")){char *good[]={"catalog","up-archives","12345","2",NULL};if(catalog_main(4,good))return 20;}
+ else if(!strcmp(argv[1],"up_invalid")){
+  const char *bad[][2]={{"0","1"},{"012","1"},{"12345678901234567","1"},{"9007199254740992","1"},{"12&x=1","1"},{"123","0"},{"123","51"},{"123","01"},{"123","2&ps=100"}};
+  for(size_t i=0;i<sizeof(bad)/sizeof(bad[0]);i++){char *args[]={"catalog","up-archives",(char*)bad[i][0],(char*)bad[i][1],NULL};if(catalog_main(4,args)!=1 || performed)return 21;}
+  return 0;
+ }
  else if(!strcmp(argv[1],"category_invalid")){
   const char *ids[]={"0","1","1005&type=all","01005","1005.0","","9999"};
   for(size_t i=0;i<sizeof(ids)/sizeof(ids[0]);i++){char *bad[]={"catalog","category-ranking",(char*)ids[i],NULL};if(catalog_main(3,bad)!=1 || performed)return 14;}
@@ -60,7 +73,7 @@ int main(int argc,char **argv){
  if(!strcmp(argv[1],"redirect"))return guest_status==302 && !guest_transport?0:11;
  return guest_status==200 && !guest_transport && guest_size>0?0:12;
 }
-''')
+'''.replace('__ENTRY__',cls.entry))
   args=['clang','-std=c11','-D_DARWIN_C_SOURCE','-D_POSIX_C_SOURCE=200809L','-Wall','-Wextra','-Werror','-Wno-deprecated-declarations','-I'+str(ROOT/'platform/wasm-network/src'),'-I'+str(ROOT/'.local/host-network/prefix/include'),'-I'+str(prefix/'include'),str(source),str(ROOT/'.local/host-network/prefix/lib/libcurl.a'),'-L'+str(prefix/'lib'),'-lssl','-lcrypto','-lldap','-llber','-framework','SystemConfiguration','-framework','CoreFoundation','-o',str(cls.exe)]
   r=subprocess.run(args,capture_output=True)
   if r.returncode:raise RuntimeError('HOST catalog compilation failed: '+r.stderr.decode())
@@ -69,13 +82,13 @@ int main(int argc,char **argv){
  @classmethod
  def tearDownClass(cls):cls.tmp.cleanup()
  def run_case(self,mode):
-  received=[];violations=[]
+  received=[];violations=[];agents=[]
   class Handler(http.server.BaseHTTPRequestHandler):
    protocol_version='HTTP/1.1'
    def log_message(self,*args):pass
    def do_GET(self):
-    received.append(self.path)
-    if self.path!=('/x/web-interface/ranking/v2?rid=1005&type=all' if mode=='category' else '/pgc/web/rank/list?day=3&season_type=1' if mode=='pgc' else '/pgc/web/rank/list?day=7&season_type=4' if mode=='pgc_guoman' else '/pgc/season/index/result?season_type=4&type=1&order=3&sort=0&page=2&pagesize=20' if mode=='pgc_index' else '/x/web-interface/ranking/v2?rid=0&type=all') or self.headers.get('Host')!='api.bilibili.com' or self.headers.get('Cookie') or self.headers.get('Authorization') or self.headers.get('Range'):violations.append('scope')
+    received.append(self.path);agents.append(self.headers.get('User-Agent'))
+    if self.path!=('/x/series/recArchivesByKeywords?mid=12345&keywords=&ps=30&pn=2' if mode=='up' else '/x/web-interface/ranking/v2?rid=1005&type=all' if mode in ('category','ua') else '/pgc/web/rank/list?day=3&season_type=1' if mode=='pgc' else '/pgc/web/rank/list?day=7&season_type=4' if mode=='pgc_guoman' else '/pgc/season/index/result?season_type=4&type=1&order=3&sort=0&page=2&pagesize=20' if mode=='pgc_index' else '/x/web-interface/ranking/v2?rid=0&type=all') or self.headers.get('Host')!='api.bilibili.com' or self.headers.get('Cookie') or self.headers.get('Authorization') or self.headers.get('Range'):violations.append('scope')
     body=b'{"code":0,"data":{"list":[]}}' if mode!='body' else b'x'*524289
     try:
      self.send_response(302 if mode=='redirect' else 200)
@@ -90,7 +103,9 @@ int main(int argc,char **argv){
   server=Server(('127.0.0.1',0),Handler);server.socket=self.context.wrap_socket(server.socket,server_side=True);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
   try:r=subprocess.run([str(self.exe),mode,str(self.wrong if mode=='tls' else self.cert),str(server.server_port)],capture_output=True,timeout=12)
   finally:server.shutdown();server.server_close();thread.join()
-  self.assertEqual(r.returncode,0);self.assertEqual(violations,[]);self.assertEqual(r.stdout,b'' if mode=='bounds' else b'GUEST:closed\n'*(7 if mode=='category_invalid' else 8 if mode=='pgc_invalid' else 1));self.assertEqual(len(received),0 if mode in ['invalid','bounds','tls','category_invalid','pgc_invalid'] else 1)
+  self.assertEqual(r.returncode,0);self.assertEqual(violations,[]);self.assertEqual(r.stdout,b'' if mode=='bounds' else b'GUEST:closed\n'*(7 if mode=='category_invalid' else 8 if mode=='pgc_invalid' else 9 if mode=='up_invalid' else 4 if mode=='ua_invalid' else 1));self.assertEqual(len(received),0 if mode in ['invalid','bounds','tls','category_invalid','pgc_invalid','up_invalid','ua_invalid'] else 1)
+  # ADR-104: the TV runtime string replaces the probe identifier only when passed; otherwise it is unchanged.
+  self.assertEqual(agents,['Mozilla/5.0 (SMART-TV; LINUX; Tizen 8.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/8.0 TV Safari/537.36'] if mode=='ua' else ['BiliSofa-W01-Probe/0.0.15']*len(agents))
  def test_category_fixed_get_without_credentials(self):self.run_case('category')
  def test_pgc_ranking_fixed_get_without_credentials(self):self.run_case('pgc')
  def test_pgc_guoman_week_ranking_route(self):self.run_case('pgc_guoman')

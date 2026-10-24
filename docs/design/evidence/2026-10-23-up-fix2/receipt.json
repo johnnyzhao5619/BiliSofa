@@ -1,0 +1,123 @@
+{
+  "schema": 1,
+  "name": "BiliSofa",
+  "version": "0.51.2",
+  "basedOn": "0.51.1",
+  "uiSourceHash": "96a7a04a7590940419af7bf5217eac6795f22d9edc6ccff63cf4fc2be3e6b8a2",
+  "uiManifestSha256": "30291c65ee013c1bbe6389eadfaa14b8fe4c293cc215c19320eb32c4a89c1600",
+  "unsignedSha256": "0e972abd16a0713df8365b744e03c25d290ca18f0c00b82642d880a53745d22f",
+  "signedSha256": "33eec81287097e47e5ac83d36e2df0ba564fdf05a5ac4d50db9b2894cd67dfba",
+  "signedAt": "2026-10-24T01:11:58.110218+00:00",
+  "sourceArchiveSha256": "edf20427cf703d5a86b4b08f6b1a0e463a3213c5e6f790e60bc07cfe2d8057d2",
+  "deployment": {
+    "state": "INSTALLED_AND_LAUNCHED",
+    "policy": "USER_AUTHORIZED_SIGN_AND_UPGRADE_INSTALL_NO_DATA_CLEAR",
+    "method": "tizen install over existing BiliSofa01.TV; no uninstall or data deletion",
+    "attempts": [
+      {
+        "schema": 1,
+        "applicationId": "BiliSofa01.TV",
+        "version": "0.51.2",
+        "signedSha256": "33eec81287097e47e5ac83d36e2df0ba564fdf05a5ac4d50db9b2894cd67dfba",
+        "uiSourceHash": "96a7a04a7590940419af7bf5217eac6795f22d9edc6ccff63cf4fc2be3e6b8a2",
+        "startedAt": "2026-10-24T01:12:34.745081+00:00",
+        "deviceAcceptance": "UNVERIFIED",
+        "state": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "capability": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "install": {
+          "exit": 0,
+          "platformSuccess": true
+        },
+        "launch": {
+          "exit": 0,
+          "platformSuccess": true
+        }
+      }
+    ],
+    "lastConfirmedDeviceVersion": "0.51.2",
+    "confirmed": {
+      "schema": 1,
+      "applicationId": "BiliSofa01.TV",
+      "version": "0.51.2",
+      "signedSha256": "33eec81287097e47e5ac83d36e2df0ba564fdf05a5ac4d50db9b2894cd67dfba",
+      "uiSourceHash": "96a7a04a7590940419af7bf5217eac6795f22d9edc6ccff63cf4fc2be3e6b8a2",
+      "startedAt": "2026-10-24T01:12:34.745081+00:00",
+      "deviceAcceptance": "UNVERIFIED",
+      "state": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "capability": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "install": {
+        "exit": 0,
+        "platformSuccess": true
+      },
+      "launch": {
+        "exit": 0,
+        "platformSuccess": true
+      }
+    }
+  },
+  "changedUiInputsVs0511": [
+    "apps/tv/public/product-ui.css",
+    "apps/tv/src/app/foundation-main.ts",
+    "apps/tv/src/app/product-home.ts",
+    "apps/tv/src/app/product-library.ts",
+    "apps/tv/src/app/product-page.ts",
+    "apps/tv/src/app/product-up.ts",
+    "apps/tv/src/app/product-video-detail.ts",
+    "apps/tv/src/app/public-signed.ts",
+    "apps/tv/src/app/up-archive-read.ts",
+    "apps/tv/src/platform/account-runtime.ts",
+    "apps/tv/src/platform/content-runtime.ts",
+    "apps/tv/src/platform/public-lists.ts",
+    "packages/contracts/src/private-account.ts",
+    "packages/contracts/src/public-read.ts",
+    "platform/wasm-network/src/public-native-api.ts",
+    "platform/wasm-network/src/public-read-worker.ts",
+    "tools/build-foundation-app.mjs",
+    "tools/package-foundation-app.py"
+  ],
+  "verification": {
+    "version": "0.51.2",
+    "unitContractPassed": 733,
+    "nativePublicReadPassed": 10,
+    "upFix2UiPassed": 4,
+    "upFix2UiFailedOnFrozen0511": 4,
+    "retainedUiPassed": 98,
+    "packageNegativePassed": 10,
+    "unsignedSha256": "0e972abd16a0713df8365b744e03c25d290ca18f0c00b82642d880a53745d22f",
+    "uiSourceInputs": 280,
+    "uiOutputFiles": 28,
+    "signedEntries": 113,
+    "nativeModules": 18,
+    "nativeFilesChangedVs0511": [],
+    "nativeFilesAddedVs0511": [
+      "public-read/manifest.json",
+      "public-read/probe.data",
+      "public-read/probe.js",
+      "public-read/probe.wasm"
+    ],
+    "nativeResourcesUnchangedVs0511": 68,
+    "certificatePreflight": "PASS"
+  },
+  "changes": "0.51.2 (ADR-105): signed-in public reads (new public-read module: nav, one category ranking, one UP page), 10 min reuse and 60 s pause after risk-control refusals with visible codes, full detail for local records and queue, focus kept after any read",
+  "deviceAcceptance": "UNVERIFIED_PENDING_USER_V1_V2B_REGRESSION",
+  "excluded": [
+    "LIVE",
+    "REAL_DUAL_ACCOUNT"
+  ],
+  "agentRealAccountPosts": 0,
+  "unknownAccountWrites": "RETAINED_NO_REPLAY",
+  "r07ElementBackendInPackage": false,
+  "privilegesUnchangedVs0511": true
+}

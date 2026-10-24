@@ -30,6 +30,9 @@ interface Services {
   openSeason(card: {
     seasonId: string;
   }): void;
+  /** 0.51.0 (ADR-103): the shared video detail page and the UP page; older variants keep the search detail. */
+  openVideo?(card: PopularCard): void;
+  openUp?(up: { mid: string; name: string; fans: number; videos: number }): void;
 }
 const types = [['video', '视频'], ['up', 'UP主'], ['pgc', '番剧影视']] as const;
 /** Shared query and type state; no SDK/network globals or page-level key owner. */
@@ -106,6 +109,8 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
   function detail(entry: SearchEntry): void {
     if (owner.signal.aborted || busy && !feed)
       return;
+    if (entry.kind === 'video' && services.openVideo) { services.openVideo(entry.card); return; }
+    if (entry.kind === 'up' && services.openUp) { services.openUp({ mid: entry.card.uid, name: entry.card.name, fans: entry.card.fans, videos: entry.card.videos }); return; }
     shell.openModal('search-detail', child => {
       const panel = document.createElement('section');
       panel.className = 'tv-detail';

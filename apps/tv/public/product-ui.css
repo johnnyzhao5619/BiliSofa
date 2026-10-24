@@ -97,3 +97,7 @@ body.product-instant #overlays>section.vod-rate-picker{inset:160px 64px auto aut
 .product-profiles .tv-launch-status{min-height:36px;font-size:24px}
 @media (prefers-reduced-motion:reduce){.product-profiles .tv-launch-card{transition:none}.product-profiles .tv-launch-card:focus{transform:none;box-shadow:none}}
 .product-profiles .tv-hot-filters{margin:12px 0 4px}
+/* 0.51.0 (ADR-103): UP主页·投稿 as a full page that scrolls with focus; 关注's direct card to 番剧影视. */
+.product-up #overlays>section.tv-up-page{overflow-y:auto}.tv-up-page h2{margin:8px 0 8px}.tv-up-page .tv-detail-meta{margin:0 0 8px;color:var(--tv-muted)}.tv-up-page .tv-up-grid{margin:24px 0 32px}
+.tv-following-tabs .tv-following-shortcut{margin-left:24px;padding:0 28px;border:2px solid var(--tv-card);background:var(--tv-panel);color:var(--tv-text)}
+.tv-public-note{margin:8px 0 0;color:var(--tv-muted)}

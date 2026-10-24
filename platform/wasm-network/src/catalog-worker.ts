@@ -1,5 +1,6 @@
 import { parseRankingRequest, parseRankingResult, type RankingRequest, type RankingResult } from '../../../packages/contracts/src/ranking.ts';
-import { parseRankingBody, parsePgcRankingBody } from '../../../packages/bili-client/src/ranking.ts';
+import { parseRankingBody, parsePgcRankingBody, parseUpArchivesBody } from '../../../packages/bili-client/src/ranking.ts';
+import { UP_FIX, runtimeUserAgent } from '../../../packages/contracts/src/up-archives.ts';
 interface NativeModule {
   arguments: string[]; noInitialRun: boolean; onRuntimeInitialized(): void;
   print(line: unknown): void; printErr(): void; onAbort(): void; locateFile(name: string): string;
@@ -9,10 +10,10 @@ interface NativeModule {
 }
 const worker = globalThis as unknown as { onmessage: ((event: MessageEvent) => void) | null; postMessage(value: RankingResult): void; importScripts(...paths: string[]): void; Module?: NativeModule };
 let active: RankingRequest | undefined, cancelled = false, completed = false;
-function finish(data: Pick<RankingResult, 'kind' | 'status' | 'code'> & Partial<Pick<RankingResult, 'items' | 'apiCode' | 'seasons'>>): void {
+function finish(data: Pick<RankingResult, 'kind' | 'status' | 'code'> & Partial<Pick<RankingResult, 'items' | 'apiCode' | 'seasons' | 'archives' | 'archivesTotal'>>): void {
   if (!active || completed) return;
   completed = true;
-  worker.postMessage(parseRankingResult({ version: 1, scope: active.scope, operation: active.operation, ...(active.operation==='public-category-ranking'?{categoryId:active.categoryId}:{}), closed: true, items: [], ...(active.operation==='public-pgc-ranking'?{seasonType:active.seasonType,span:active.span,page:active.page,seasons:[]}:{}), ...data }));
+  worker.postMessage(parseRankingResult({ version: 1, scope: active.scope, operation: active.operation, ...(active.operation==='public-category-ranking'?{categoryId:active.categoryId}:{}), closed: true, items: [], ...(active.operation==='public-pgc-ranking'?{seasonType:active.seasonType,span:active.span,page:active.page,seasons:[]}:{}), ...(active.operation==='public-up-archives'?{mid:active.mid,page:active.page,archives:[]}:{}), ...data }));
 }
 worker.onmessage = async event => {
   if (active) {
@@ -29,8 +30,10 @@ worker.onmessage = async event => {
     if (!response.ok) { finish({ kind: 'transport_error', status: 0, code: 'ranking.native_unavailable' }); return; }
   } catch { finish({ kind: 'transport_error', status: 0, code: 'ranking.native_unavailable' }); return; }
   if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'ranking.cancelled' }); return; }
+  // ADR-104: the TV web runtime's own User-Agent, unchanged; without one the module keeps its probe identifier.
+  const agent = UP_FIX ? runtimeUserAgent((globalThis as { navigator?: { userAgent?: unknown } }).navigator?.userAgent) : undefined;
   worker.Module = {
-    arguments: active.operation==='public-category-ranking'?['category-ranking',String(active.categoryId)]:active.operation==='public-pgc-ranking'?(active.span==='all'?['pgc-index',String(active.seasonType),String(active.page)]:['pgc-ranking',String(active.seasonType),active.span==='week'?'7':'3']):['ranking'], noInitialRun: true,
+    arguments: [...(agent?['--ua='+agent]:[]),...(active.operation==='public-up-archives'?['up-archives',active.mid,String(active.page)]:active.operation==='public-category-ranking'?['category-ranking',String(active.categoryId)]:active.operation==='public-pgc-ranking'?(active.span==='all'?['pgc-index',String(active.seasonType),String(active.page)]:['pgc-ranking',String(active.seasonType),active.span==='week'?'7':'3']):['ranking'])], noInitialRun: true,
     onRuntimeInitialized() {
       if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'ranking.cancelled' }); return; }
       try { worker.Module!.callMain!(worker.Module!.arguments); }
@@ -54,6 +57,8 @@ worker.onmessage = async event => {
         // The raw public response never crosses postMessage or stdout. No headers,
         // Set-Cookie values, URLs, raw JSON or outside markup enter diagnostics.
         const body = new TextDecoder('utf-8', { fatal: true }).decode(heap.subarray(start, start + length));
+        // ADR-103: an UP's uploads; an older catalog module has no such route and answers closed without a body.
+        if (active!.operation === 'public-up-archives') { const parsed = parseUpArchivesBody(body); finish({ kind: parsed.apiCode === 0 ? 'ok' : 'api_error', status, code: parsed.apiCode === 0 ? 'ranking.ok' : 'ranking.api_error', apiCode: parsed.apiCode, archives: parsed.archives, archivesTotal: parsed.total }); return; }
         if (active!.operation === 'public-pgc-ranking') { const parsed = parsePgcRankingBody(body); finish({ kind: parsed.apiCode === 0 ? 'ok' : 'api_error', status, code: parsed.apiCode === 0 ? 'ranking.ok' : 'ranking.api_error', apiCode: parsed.apiCode, seasons: parsed.seasons, ...(active!.span === 'all' ? { seasonsMore: parsed.more } : {}) }); return; }
         const parsed = parseRankingBody(body);
         finish({ kind: parsed.apiCode === 0 ? 'ok' : 'api_error', status, code: parsed.apiCode === 0 ? 'ranking.ok' : 'ranking.api_error', ...parsed });

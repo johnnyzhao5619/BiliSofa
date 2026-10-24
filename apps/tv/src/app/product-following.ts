@@ -16,6 +16,7 @@ function savedHotFilter(): PgcHotFilter {
   return { seasonType: 4, span: 'day3' };
 }
 import { CoverArt } from '../platform/cover-art.ts';
+import { PRODUCT_UP, UP_FIX } from '../../../../packages/contracts/src/up-archives.ts';
 export type FollowingTab = 'updates' | 'bangumi' | 'drama' | 'hot';
 export interface FollowingMemory {
   tab: FollowingTab;
@@ -29,6 +30,10 @@ interface Services {
   openSeason(card: {
     seasonId: string;
   }): void;
+  /** 0.51.0 (ADR-103): 关注 links to 番剧影视's own 追番/追剧 lists instead of repeating them. */
+  openCatalog?(tab: 'bangumi' | 'drama'): void;
+  /** 0.51.1 (ADR-104): the shared video detail page, resuming this update's part. */
+  openVideo?(card: { bvid: string; title: string; owner: string; durationSec: number; views: number; cover?: LibraryEntry['cover'] }, part: number): void;
 }
 const tabs = [['hot', '热门番剧'], ['updates', '关注更新'], ['bangumi', '我的追番'], ['drama', '我的追剧']] as const;
 /** Same product cards; source-bound summaries never invent playable IDs. */
@@ -39,7 +44,9 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
   if (route === 'catalog' && memory.tab === 'updates')
     memory.tab = hot ? 'hot' : 'bangumi';
   if (!hot && memory.tab === 'hot') memory.tab = route === 'following' ? 'updates' : 'bangumi';
-  const available = tabs.filter(([kind]) => kind === 'hot' ? hot : route === 'following' || kind !== 'updates');
+  const direct = PRODUCT_UP && route === 'following' && !!services.openCatalog;
+  if (direct) memory.tab = 'updates';
+  const available = tabs.filter(([kind]) => kind === 'hot' ? hot : route === 'following' ? !direct || kind === 'updates' : kind !== 'updates');
   const open = () => privateContent || memory.tab === 'hot';
   const hotReader = hot ? new PgcHotRead(owner) : undefined, art = hot ? new CoverArt() : undefined;
   if (art) owner.add('following-art', () => art.close());
@@ -102,6 +109,9 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     void read(page, true);
   }));
   categories.append(...tabButtons);
+  // One home for 追番/追剧 (番剧影视); here a direct card replaces the repeated lists.
+  const shortcut = direct ? button('following-to-catalog', '我的追番 · 我的追剧 → 番剧影视', () => { if (!blocked) services.openCatalog!('bangumi'); }) : undefined;
+  if (shortcut) { shortcut.classList.add('tv-following-shortcut'); categories.append(shortcut); }
   const previous = button('following-previous', '上一页', () => { if (!busy && page > 1)
     void read(page - 1); });
   const next = button('following-next', '下一页', () => { if (!busy && !noMore && page < maxPage())
@@ -128,6 +138,7 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
       return;
     // A season card opens the season page itself; the intermediate panel only repeated it.
     if (PRODUCT_SEASON && card.seasonId && !card.target) { services.openSeason({ seasonId: card.seasonId }); return; }
+    if (UP_FIX && services.openVideo && card.target) { services.openVideo({ bvid: card.target.bvid, title: card.title, owner: '', durationSec: 0, views: 0, ...(card.cover ? { cover: card.cover } : {}) }, card.target.part); return; }
     shell.openModal('following-detail', child => {
       const panel = document.createElement('section');
       panel.className = 'tv-library-detail';
@@ -165,6 +176,12 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     login.dataset.up = 'following-search';
     login.dataset.down = login.dataset.focusId;
     tabButtons.forEach((b, i) => { b.disabled = (!privateContent && b.dataset.focusId !== 'following-tab-hot') || blocked; b.setAttribute('aria-pressed', String(b.dataset.focusId === tab)); b.dataset.left = tabButtons[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = tabButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = 'following-search'; b.dataset.down = filterOn() ? activeFilter()! : cards[0]?.dataset.focusId ?? (!refresh.disabled ? 'following-refresh' : 'following-search'); });
+    if (shortcut) {
+      const last = tabButtons.at(-1)!;
+      last.dataset.right = shortcut.dataset.focusId; shortcut.disabled = blocked;
+      shortcut.dataset.left = last.dataset.focusId; shortcut.dataset.right = shortcut.dataset.focusId; shortcut.dataset.up = 'following-search';
+      shortcut.dataset.down = cards[0]?.dataset.focusId ?? shortcut.dataset.focusId;
+    }
     filters.hidden = !filterOn();
     filterButtons.forEach((b, i) => { b.setAttribute('aria-pressed', String(b.dataset.value === String(b.dataset.group === 'type' ? hotFilter.seasonType : hotFilter.span))); b.disabled = blocked; b.dataset.left = filterButtons[i - 1]?.dataset.focusId ?? 'nav-' + route; b.dataset.right = filterButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = 'following-tab-hot'; b.dataset.down = cards[0]?.dataset.focusId ?? b.dataset.focusId; });
     const enabled = [previous, next, refresh].filter(b => !b.disabled && !b.hidden);
