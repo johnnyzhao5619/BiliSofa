@@ -1,7 +1,7 @@
 name: TV candidate and foundation checks
+# Manual only: this project verifies locally (npm run check, npm test, native and UI suites); pushes and PRs never start it.
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

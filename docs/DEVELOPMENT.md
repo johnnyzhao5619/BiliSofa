@@ -22,7 +22,7 @@ python3 tools/package-foundation-app.py --product-reading-fix2
 
 签名与部署须用户逐版本授权（升级安装，不清数据）：`python3 tools/sign-foundation-app.py --product-reading-fix2`、`python3 tools/deploy-foundation-app.py --product-reading-fix2`。SDB连不上而电视可达时，先`sdb kill-server`/`start-server`再`connect`，只重连一次，不循环重试。新一轮修正使用新的变体参数、输出目录和包名，避免覆盖已签名包对应的冻结目录。
 
-提交前自检：`npm run check`、`npm test`。文档门禁限制状态页的体积与形状（单一已安装行、无前一安装版历史行、开头段落≤400字、不写带日期的“用户要求先不…”边界、仓库内相对链接可达），**本条由机器门禁强制**：状态页每次只多写一点历史，单次看不出问题，纯文档约定没有任何东西会因此变红；历史记入[签名与部署记录](SIGNING_DEVICE_RECORD.md)、证据README或`docs/archive`。
+提交前自检：`npm run check`、`npm test`，均在本地运行。GitHub Actions（`.github/workflows/ci.yml`）只保留手动触发，推送和PR不会启动它；推送的最新提交仍带`[skip ci]`。文档门禁限制状态页的体积与形状（单一已安装行、无前一安装版历史行、开头段落≤400字、不写带日期的“用户要求先不…”边界、仓库内相对链接可达），**本条由机器门禁强制**：状态页每次只多写一点历史，单次看不出问题，纯文档约定没有任何东西会因此变红；历史记入[签名与部署记录](SIGNING_DEVICE_RECORD.md)、证据README或`docs/archive`。
 
 ## 已配置工具
 
