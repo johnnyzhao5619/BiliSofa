@@ -15,7 +15,7 @@ class ProductPackage(unittest.TestCase):
  def test_csp_wildcard_is_rejected(self):self.rejected('index.html',lambda b:b.replace(b"connect-src 'self'",b"connect-src * 'self'"),'W04 CSP mismatch')
  def test_remote_script_is_rejected(self):self.rejected('index.html',lambda b:b.replace(b"script-src 'self'",b"script-src https: 'self'"),'W04 CSP mismatch')
  def test_unscoped_image_origin_is_rejected(self):self.rejected('config.xml',lambda b:b.replace(b'https://i0.hdslb.com',b'https://outside.invalid'),'Foundation network privilege mismatch')
- def test_wrong_version_is_rejected(self):self.rejected('config.xml',lambda b:b.replace(b'version="0.54.0"',b'version="0.53.0"'),'Foundation identity mismatch')
+ def test_wrong_version_is_rejected(self):self.rejected('config.xml',lambda b:b.replace(b'version="0.55.0"',b'version="0.54.0"'),'Foundation identity mismatch')
  def test_credential_like_payload_is_rejected(self):self.rejected('app.js',lambda b:b+b'\n/* SESSDATA=synthetic */','Foundation private or unsafe payload')
  def test_missing_input_privilege_is_rejected(self):self.rejected('config.xml',lambda b:b.replace(b'  <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>\n',b''),'Foundation network privilege mismatch')
  def test_extra_privilege_is_rejected(self):self.rejected('config.xml',lambda b:b.replace(b'privilege/tv.inputdevice"/>',b'privilege/tv.inputdevice"/>\n  <tizen:privilege name="http://tizen.org/privilege/mediastorage"/>'),'Foundation network privilege mismatch')
@@ -37,12 +37,13 @@ class ProductPackage(unittest.TestCase):
     result=subprocess.run(['python3','tools/package-foundation-app.py'],cwd=ROOT,capture_output=True,text=True,timeout=45)
     self.assertNotEqual(result.returncode,0);self.assertIn('0.50.4 source check failover missing',result.stdout+result.stderr)
    finally:manifest.write_bytes(old)
- def test_catalog_without_visitor_identity_is_rejected(self):
-  # ADR-106: the package must carry build/catalog-visitor (visitor-id route and --visitor), never the frozen build/catalog-ua.
-  manifest=ROOT/'build/catalog-visitor/manifest.json';old=manifest.read_bytes()
-  try:
-   value=json.loads(old);value['sourceInputs']={k:v for k,v in value['sourceInputs'].items() if not k.endswith('catalog-visitor.c')};manifest.write_text(json.dumps(value))
-   result=subprocess.run(['python3','tools/package-foundation-app.py'],cwd=ROOT,capture_output=True,text=True,timeout=45)
-   self.assertNotEqual(result.returncode,0);self.assertIn('0.51.3 catalog visitor identity missing',result.stdout+result.stderr)
-  finally:manifest.write_bytes(old)
+ def test_kernels_must_come_from_the_frozen_sources(self):
+  # ADR-108: the public kernel carries catalog-visitor (ADR-106 visitor identity), search and hot-search; the account kernel library/recommend-read.
+  for folder,source,reason in [('public-kernel','catalog-visitor.c','Public kernel source inputs incomplete'),('account-read-kernel','library.c','Account kernel source inputs incomplete')]:
+   manifest=ROOT/'build'/folder/'manifest.json';old=manifest.read_bytes()
+   try:
+    value=json.loads(old);value['sourceInputs']={k:v for k,v in value['sourceInputs'].items() if not k.endswith('/'+source)};manifest.write_text(json.dumps(value))
+    result=subprocess.run(['python3','tools/package-foundation-app.py'],cwd=ROOT,capture_output=True,text=True,timeout=45)
+    self.assertNotEqual(result.returncode,0);self.assertIn(reason,result.stdout+result.stderr)
+   finally:manifest.write_bytes(old)
 if __name__=='__main__':unittest.main()

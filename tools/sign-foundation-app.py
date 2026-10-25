@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 args_parser = argparse.ArgumentParser(description=__doc__)
 args_parser.add_argument('--profile', default='BiliSofa')
 args = args_parser.parse_args()
-version='0.54.0'
+version='0.55.0'
 label='App'
 # Private records are per version, so earlier signed manifests stay untouched.
 pointer='signed-app-'+version+'-manifest.json'

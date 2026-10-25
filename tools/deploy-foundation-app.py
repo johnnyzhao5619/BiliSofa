@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse, datetime, hashlib, ipaddress, json, os, re, subprocess, zipfile
 
 parser=argparse.ArgumentParser(description=__doc__);args=parser.parse_args()
-version='0.54.0'
+version='0.55.0'
 ROOT=Path(__file__).resolve().parents[1]
 private=Path(os.environ.get('BILISOFA_PRIVATE_DIR',str(Path.home()/'.local/share/BiliSofa'))).resolve()
 if private.is_relative_to(ROOT):raise SystemExit('Private deployment metadata must remain outside repository')

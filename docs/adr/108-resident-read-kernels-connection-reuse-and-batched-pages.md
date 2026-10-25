@@ -149,6 +149,18 @@
 - **与方案不同之处（有意为之）**：追番列表仍在`pgc-follow`模块。该模块同时承担追番切换（写入）与追番状态读取，拆出列表读取要复制它的签名构造器，而这个列表请求很少；本批不拆，`ps`仍为4。
 - **仍在包内**：`library`、`recommend`、`public-read`模块与对应Worker不再被产品调用，但还留在包里，等两步都通过设备验收后再一起移出。
 
+## 旧模块移出（0.55.0）
+
+0.54.0设备对比完成后，用户决定不补测1080P，并要求继续。按第4项决定，被两个内核取代的模块从产品包移出：
+
+- **移出的Worker（7个）**：`guest`、`catalog`、`search`、`hot-search`、`library`、`recommend`、`public-read`。产品包里已经没有任何代码引用它们（核对了`app.js`与各Worker的引用）。
+- **移出的原生模块（6个）**：`catalog`、`search`、`hot-search`、`library`、`recommend`、`public-read`。
+- **保留**：`native`（访客视频与投屏Worker仍在用）。C源码与链接脚本也保留：两个内核都靠`#include`复用它们。
+- **包大小**：解压后66.9 MB→47.9 MB，文件121→90个；WGT 19.5 MB。
+- **打包门禁**：两个内核的manifest必须列出冻结的来源文件（公共内核：`catalog-visitor.c`、`catalog-ua.c`、`search.c`、`hot-search.c`；账号内核：`library.c`、`recommend-read.c`），缺一个就拒绝打包；原来针对`catalog`模块的负例改为针对这一条。
+- **合成UI**：测试适配器转发用的旧lane Worker改为由`playwright.app.config.ts`从源码打包，经`tools/serve.mjs`的测试专用目录（`BILISOFA_TEST_OVERLAY`）在同源提供；产品包不受影响。
+- **版本**：内容变了，所以升为0.55.0；已签名安装的0.54.0不改。0.55.0未签名、未安装。
+
 ## 验收与证据
 
 - **上游`ps`上限核对（2026-10-25，主机，不带账号，每次间隔6 s，项目固定CA，TLS校验开启）**：热门`ps=20`返回20条（31 KB）；视频与UP主搜索`page_size=20`各返回20行（30 KB / 44 KB），回显`pagesize=20`、`numPages=50`；番剧搜索的测试词无结果，但同样回显`pagesize=20`。均低于512 KB上限。

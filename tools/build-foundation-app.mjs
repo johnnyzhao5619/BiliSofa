@@ -8,7 +8,8 @@ const out = 'dist/bilisofa-app';
 await mkdir(out, { recursive: true });
 execFileSync('python3',['tools/initials-data.py','--output',out]);
 const bundle = (entry, outfile, define) => build({ metafile: true, entryPoints: [entry], outfile: `${out}/${outfile}`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false, ...(define ? { define } : {}) });
-const workers = ['guest-worker','guest-video-worker','cast-worker','catalog-worker','search-worker','hot-search-worker','library-worker','vod-source-worker','vod-bridge-worker','pgc-follow-worker','live-product-worker','public-read-worker','overlay-worker','comments-worker','interaction-worker','recommend-worker','public-kernel-worker','account-read-kernel-worker'];
+// ADR-108: list reads go through the two resident kernels; the per-request catalog/search/hot-search/library/recommend/public-read Workers are no longer built.
+const workers = ['guest-video-worker','cast-worker','vod-source-worker','vod-bridge-worker','pgc-follow-worker','live-product-worker','overlay-worker','comments-worker','interaction-worker','public-kernel-worker','account-read-kernel-worker'];
 const outputs = await Promise.all([
   // One cast-worker source, built twice: the product receiver session and the original guest probe.
   bundle('platform/wasm-network/src/cast-worker.ts', 'cast-product-worker.js', { BILISOFA_CAST_PRODUCT: 'true' }),

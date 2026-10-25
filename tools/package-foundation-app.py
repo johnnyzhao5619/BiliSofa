@@ -3,7 +3,7 @@ from pathlib import Path
 from candidate_native import load_candidate
 import argparse,hashlib,json,re,zipfile,subprocess,xml.etree.ElementTree as ET
 parser=argparse.ArgumentParser(description=__doc__);args=parser.parse_args()
-version='0.54.0'
+version='0.55.0'
 ROOT=Path(__file__).resolve().parents[1];STAGE=ROOT/'dist/bilisofa-app';NATIVE=ROOT/'build/identity'
 subprocess.run(['python3',str(ROOT/'tools/category-data.py'),'--check'],check=True)
 def sha(data):return hashlib.sha256(data).hexdigest()
@@ -21,55 +21,13 @@ for name,h in native['files'].items():files['identity/'+name]=checked(NATIVE/nam
 if set(native['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Identity file mismatch')
 if sha(files['identity/probe.data'])!=native['caSha256']:raise SystemExit('Identity CA mismatch')
 files['identity/manifest.json']=(NATIVE/'manifest.json').read_bytes()
-library_dir=ROOT/'build/library';library=json.loads((library_dir/'manifest.json').read_text())
-if library['schema']!=1 or library['libraryBuild']!=native['libraryBuild'] or library['caSha256']!=native['caSha256'] or set(library['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Library provenance mismatch')
-for name,h in library['sourceInputs'].items():checked(ROOT/name,h)
-for name,h in library['files'].items():files['library/'+name]=checked(library_dir/name,h)
-if sha(files['library/probe.data'])!=library['caSha256']:raise SystemExit('Library CA mismatch')
-files['library/manifest.json']=(library_dir/'manifest.json').read_bytes()
-for marker in [b'https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/nav?update_baseline=&offset=%s',b'https://api.bilibili.com/x/v3/fav/folder/list4navigate',b'https://api.bilibili.com/x/v2/medialist/resource/list?mobi_app=web&type=3&biz_id=%s&ps=4&desc=true&sort_field=3&tid=0&otype=2&with_current=false&direction=false&preview=0&use_pn=true&pn=%d',b'https://api.bilibili.com/x/web-interface/history/cursor?max=%s&view_at=%s&business=%s',b'https://api.bilibili.com/x/web-interface/nav',b'https://api.bilibili.com/x/v2/medialist/toview/web?mobi_app=web&ps=4&desc=true&otype=2&with_current=false&direction=false&preview=0&use_pn=true&pn=%d']:
- if marker not in files['library/probe.wasm']:raise SystemExit('Library fixed route missing')
-for bad in [b'/x/passport',b'/qrcode',b'/heartbeat',b'/x/player/',b'/toview/add',b'/toview/del',b'/history/delete',b'/history/clear',b'/history/report',b'/history/shadow',b'/fav/resource/deal',b'/fav/resource/batch-del',b'/fav/folder/add',b'/fav/folder/del',b'/dynamic/create',b'/dynamic/rm',b'/dynamic/thumb']:
- if bad in files['library/probe.wasm']:raise SystemExit('Library unrelated route')
-# 0.49.0 adds the fixed 番剧 ranking route to a relinked catalog module; earlier variants keep the frozen one.
-catalog_dir=ROOT/('build/catalog-visitor');catalog=json.loads((catalog_dir/'manifest.json').read_text())
-if catalog['schema']!=1 or catalog['libraryBuild']!=native['libraryBuild'] or catalog['caSha256']!=native['caSha256'] or set(catalog['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Catalog provenance mismatch')
-for name,h in catalog['sourceInputs'].items():checked(ROOT/name,h)
-for name,h in catalog['files'].items():files['catalog/'+name]=checked(catalog_dir/name,h)
-if sha(files['catalog/probe.data'])!=catalog['caSha256']:raise SystemExit('Catalog CA mismatch')
-files['catalog/manifest.json']=(catalog_dir/'manifest.json').read_bytes()
-for bad in [b'/x/player/',b'/heartbeat',b'/x/web-interface/view',b'/popular?',b'/x/passport',b'/nav']:
- if bad in files['catalog/probe.wasm']:raise SystemExit('Catalog unrelated route')
-if b'https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all' not in files['catalog/probe.wasm']:raise SystemExit('Catalog fixed route missing')
-if b'https://api.bilibili.com/x/web-interface/ranking/v2?rid=%d&type=all' not in files['catalog/probe.wasm']:raise SystemExit('Catalog category route missing')
-if any(marker not in files['catalog/probe.wasm'] for marker in [b'https://api.bilibili.com/pgc/web/rank/list?day=%d&season_type=%d',b'https://api.bilibili.com/pgc/season/index/result?season_type=%d&type=1&order=3&sort=0&page=%d&pagesize=20']):raise SystemExit('Catalog PGC filter routes missing')
-if b'https://api.bilibili.com/x/series/recArchivesByKeywords?mid=%s&keywords=&ps=30&pn=%d' not in files['catalog/probe.wasm']:raise SystemExit('0.51.0 catalog UP route missing')
-if b'--ua=' not in files['catalog/probe.wasm'] or 'catalog-ua.c' not in ' '.join(catalog['sourceInputs']):raise SystemExit('0.51.1 catalog runtime User-Agent missing')
-if b'--visitor=' not in files['catalog/probe.wasm'] or b'https://api.bilibili.com/x/frontend/finger/spi' not in files['catalog/probe.wasm'] or 'catalog-visitor.c' not in ' '.join(catalog['sourceInputs']):raise SystemExit('0.51.3 catalog visitor identity missing')
-search_dir=ROOT/'build/search';search=json.loads((search_dir/'manifest.json').read_text())
-if search['schema']!=1 or search['libraryBuild']!=native['libraryBuild'] or search['caSha256']!=native['caSha256'] or set(search['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Search provenance mismatch')
-for name,h in search['sourceInputs'].items():checked(ROOT/name,h)
-for name,h in search['files'].items():files['search/'+name]=checked(search_dir/name,h)
-if sha(files['search/probe.data'])!=search['caSha256']:raise SystemExit('Search CA mismatch')
-files['search/manifest.json']=(search_dir/'manifest.json').read_bytes()
-for bad in [b'/x/player/',b'/heartbeat',b'/x/web-interface/view',b'/ranking/',b'/popular?',b'/x/passport']:
- if bad in files['search/probe.wasm']:raise SystemExit('Search unrelated route')
-if b'https://api.bilibili.com/x/web-interface/wbi/search/type?%s&w_rid=%s' not in files['search/probe.wasm'] or b'https://api.bilibili.com/x/web-interface/nav' not in files['search/probe.wasm']:raise SystemExit('Search fixed route missing')
-if any(marker not in files['search/probe.wasm'] for marker in [b'keyword=%s&page=%d&page_size=4&search_type=video&wts=%s',b'keyword=%s&page=%d&page_size=4&search_type=bili_user&wts=%s',b'keyword=%s&page=%d&page_size=4&search_type=media_bangumi&wts=%s',b'keyword=%s&page=%d&page_size=4&search_type=live_room&wts=%s']):raise SystemExit('Search fixed query missing')
-if b'https://api.bilibili.com/x/web-interface/search/type?' in files['search/probe.wasm']:raise SystemExit('Search unsigned fallback forbidden')
-hot_dir=ROOT/'build/hot-search';hot=json.loads((hot_dir/'manifest.json').read_text())
-if hot['schema']!=1 or hot['libraryBuild']!=native['libraryBuild'] or hot['caSha256']!=native['caSha256'] or set(hot['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Hot search provenance mismatch')
-for name,h in hot['sourceInputs'].items():checked(ROOT/name,h)
-for name,h in hot['files'].items():files['hot-search/'+name]=checked(hot_dir/name,h)
-if sha(files['hot-search/probe.data'])!=hot['caSha256']:raise SystemExit('Hot search CA mismatch')
-files['hot-search/manifest.json']=(hot_dir/'manifest.json').read_bytes()
-for bad in [b'/x/player/',b'/heartbeat',b'/x/web-interface/',b'/x/passport',b'/nav',b'/main/suggest']:
- if bad in files['hot-search/probe.wasm']:raise SystemExit('Hot search unrelated route')
-if b'https://s.search.bilibili.com/main/hotword' not in files['hot-search/probe.wasm']:raise SystemExit('Hot search fixed route missing')
+# ADR-108: the per-request library, catalog, search and hot-search modules are replaced by the resident kernels below and are no longer packaged.
 # ADR-108: the resident public read kernel (popular, rankings, PGC lists, UP uploads, visitor, WBI search, hot words).
 kernel_dir=ROOT/'build/public-kernel';kernel=json.loads((kernel_dir/'manifest.json').read_text())
 if kernel['schema']!=1 or kernel['libraryBuild']!=native['libraryBuild'] or kernel['caSha256']!=native['caSha256'] or set(kernel['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Public kernel provenance mismatch')
 for name,h in kernel['sourceInputs'].items():checked(ROOT/name,h)
+# The kernel must be built from the frozen catalog-visitor (ADR-106 visitor identity), search and hot-search sources.
+if not {'platform/wasm-network/src/'+n for n in ['public-kernel.c','catalog-visitor.c','catalog-ua.c','search.c','hot-search.c']}<=set(kernel['sourceInputs']):raise SystemExit('Public kernel source inputs incomplete')
 for name,h in kernel['files'].items():files['public-kernel/'+name]=checked(kernel_dir/name,h)
 if sha(files['public-kernel/probe.data'])!=kernel['caSha256']:raise SystemExit('Public kernel CA mismatch')
 files['public-kernel/manifest.json']=(kernel_dir/'manifest.json').read_bytes()
@@ -81,6 +39,7 @@ if b'https://api.bilibili.com/x/web-interface/search/type?' in files['public-ker
 account_dir=ROOT/'build/account-read-kernel';account_kernel=json.loads((account_dir/'manifest.json').read_text())
 if account_kernel['schema']!=1 or account_kernel['libraryBuild']!=native['libraryBuild'] or account_kernel['caSha256']!=native['caSha256'] or set(account_kernel['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('Account kernel provenance mismatch')
 for name,h in account_kernel['sourceInputs'].items():checked(ROOT/name,h)
+if not {'platform/wasm-network/src/'+n for n in ['account-read-kernel.c','library.c','recommend-read.c']}<=set(account_kernel['sourceInputs']):raise SystemExit('Account kernel source inputs incomplete')
 for name,h in account_kernel['files'].items():files['account-read-kernel/'+name]=checked(account_dir/name,h)
 if sha(files['account-read-kernel/probe.data'])!=account_kernel['caSha256']:raise SystemExit('Account kernel CA mismatch')
 files['account-read-kernel/manifest.json']=(account_dir/'manifest.json').read_bytes()
@@ -110,11 +69,9 @@ required={
  'pgc-follow':[(b'/pgc/view/web/season/user/status?season_id=%s'),b'/pgc/web/follow/%s',b'/x/space/bangumi/follow/list?%s&w_rid=%s',b'season_id=%s&csrf=%s'],
  'live-read':[b'/xlive/web-ucenter/user/following?page=%s&page_size=9&ignoreRecord=1&hit_ab=false',b'/xlive/web-room/v1/dM/gethistory?roomid=%s&room_type=0',b'/room/v1/area/getList',b'/xlive/web-interface/v1/second/getList?%s&w_rid=%s'],
  'live-product':[b'/xlive/web-room/v2/index/getRoomPlayInfo?room_id=%s&protocol=1&format=1&codec=0&qn=%s&platform=web&ptype=8',b'LIVE:relay_ready']}
-required['recommend']=[b'/x/web-interface/wbi/index/top/feed/rcmd?%s&w_rid=%s',b'brush=%s&feed_version=V8',b'&ps=12&web_location=1430650&wts=%s']
 required['cast-product']=[b'<friendlyName>BiliSofa</friendlyName>',b'TVReceiver/1',b'cast.mp4',b'CAST:transition:closed']
 required['overlay-read']=[b'/x/player/wbi/v2',b'/x/v2/dm/wbi/web/seg.so',b'oid=%s&pid=%s&segment_index=%s&type=1&wts=%s',b'https://aisubtitle.hdslb.com/',b'/bfs/subtitle/',b'/pgc/view/web/season?season_id=%s']
 required['video-interactions']=[b'/x/web-interface/archive/relation?aid=%s',b'/x/v3/fav/folder/created/list-all?type=2&rid=%s&up_mid=%s',b'/x/relation?fid=%s',b'/x/v2/history/toview',b'/x/web-interface/archive/like',b'/x/v3/fav/resource/deal',b'/x/v2/history/toview/%s',b'/x/relation/modify',b'/x/web-interface/coin/add',b'aid=%s&multiply=%s&select_like=0&csrf=%s',b'rid=%s&type=2&%s_media_ids=%s&csrf=%s',b'fid=%s&act=%d&re_src=14&csrf=%s']
-required['public-read']=[b'/x/web-interface/ranking/v2?rid=%d&type=all',b'/x/series/recArchivesByKeywords?mid=%s&keywords=&ps=30&pn=%s']
 required['comments-read']=[b'/x/v2/reply/wbi/main?%s&w_rid=%s',b'mode=%s&oid=%s&pagination_str=%s&plat=1&seek_rpid=0&type=1&web_location=1315875&wts=%s',b'/x/v2/reply/reply?oid=%s&pn=%s&ps=10&root=%s&type=1']
 for folder,markers in required.items():
  # 0.47.2 packages the relinked overlay module; earlier frozen folders stay untouched. 0.50.3 packages the failover bridge; 0.50.4 the failover source modules.
@@ -139,13 +96,13 @@ for folder,markers in required.items():
 xml=ET.fromstring(files['config.xml']);ns={'w':'http://www.w3.org/ns/widgets','t':'http://tizen.org/ns/widgets'};app=xml.find('t:application',ns)
 if app.attrib['id']!='BiliSofa01.TV' or app.attrib['package']!='BiliSofa01' or xml.attrib['version']!=version or xml.find('w:content',ns).attrib['src']!='index.html':raise SystemExit('Foundation identity mismatch')
 if {x.attrib['name'] for x in xml.findall('t:privilege',ns)}!=({'http://tizen.org/privilege/internet'}|({'http://developer.samsung.com/privilege/productinfo'})|({'http://tizen.org/privilege/tv.inputdevice'})) or [x.attrib for x in xml.findall('w:access',ns)]!=[{'origin':'http://127.0.0.1:40324','subdomains':'false'}]+([{'origin':'http://127.0.0.1:40325','subdomains':'false'}])+([{'origin':'https://i'+str(i)+'.hdslb.com','subdomains':'false'} for i in range(3)]):raise SystemExit('Foundation network privilege mismatch')
-if set(ui['files'])!=({'recommend-worker.js'})|({'cast-product-worker.js'})|({'overlay-worker.js','comments-worker.js','interaction-worker.js'})|({'vod-source-worker.js','vod-bridge-worker.js','pgc-follow-worker.js','live-product-worker.js'})|({'public-read-worker.js'})|({'public-kernel-worker.js','account-read-kernel-worker.js'})|{'app.js','library-worker.js','hot-search-worker.js','search-worker.js','initials-worker.js','search-words.json','search-NOTICE','catalog-worker.js','identity-worker.js','guest-worker.js','guest-video-worker.js','cast-worker.js','index.html','style.css','config.xml','icon.png','LICENSE','THIRD_PARTY_NOTICES.md'}:raise SystemExit('Foundation UI allowlist mismatch')
+if set(ui['files'])!=({'cast-product-worker.js'})|({'overlay-worker.js','comments-worker.js','interaction-worker.js'})|({'vod-source-worker.js','vod-bridge-worker.js','pgc-follow-worker.js','live-product-worker.js'})|({'public-kernel-worker.js','account-read-kernel-worker.js'})|{'app.js','initials-worker.js','search-words.json','search-NOTICE','identity-worker.js','guest-video-worker.js','cast-worker.js','index.html','style.css','config.xml','icon.png','LICENSE','THIRD_PARTY_NOTICES.md'}:raise SystemExit('Foundation UI allowlist mismatch')
 for name,data in files.items():
  if name.startswith('/') or '..' in Path(name).parts or any(p in data for p in [b'/Users/',b'-----BEGIN PRIVATE KEY-----',b'SESSDATA=',b'bili_jct=']):raise SystemExit('Foundation private or unsafe payload')
 for bad in [b'/x/player/',b'/heartbeat',b'BV14GHy6bE9n',b'/x/web-interface/view']:
  if bad in files['identity/probe.wasm'] or bad in files['identity-worker.js']:raise SystemExit('Foundation includes probe/progress routes')
-if any(b'new Function' in files[name] for name in ['identity/probe.js','native/probe.js','catalog/probe.js','search/probe.js','hot-search/probe.js','library/probe.js','public-kernel/probe.js','account-read-kernel/probe.js']) or b"connect-src 'self'" not in files['index.html']:raise SystemExit('Foundation runtime policy mismatch')
-files['build.json']=(json.dumps({'schema':1,'identity':'BiliSofa01.TV','version':version,'publicKernelManifest':kernel,'accountKernelManifest':account_kernel,'recommendNativeManifests':{k:v for k,v in w04_manifests.items() if k=='recommend'},'w06NativeManifests':{k:v for k,v in w04_manifests.items() if k=='cast-product'},'w04NativeManifests':{k:v for k,v in w04_manifests.items() if k not in ['overlay-read','comments-read','video-interactions','cast-product','recommend']},'w05NativeManifests':{k:v for k,v in w04_manifests.items() if k in ['overlay-read','comments-read','video-interactions']},'purpose':('U2 account/settings and U3 shared player/read layers; earlier capabilities retained; device acceptance OPEN; ')+'W03 local identity playback queue and verified-account read-only follow updates, favorites, history and watch-later lists with existing category/search/media/cast; unsigned; not product/device acceptance','uiSourceHash':ui['sourceHash'],'nativeManifestSha256':sha((NATIVE/'manifest.json').read_bytes()),'hotNativeManifestSha256':sha(files['hot-search/manifest.json']),'searchNativeManifestSha256':sha(files['search/manifest.json']),'libraryNativeManifestSha256':sha(files['library/manifest.json']),'catalogNativeManifestSha256':sha(files['catalog/manifest.json']),'mediaNativeManifestSha256':sha(files['native/manifest.json']),'qrDependency':qr,'files':{n:sha(v) for n,v in sorted(files.items())}},indent=2)+'\n').encode()
+if any(b'new Function' in files[name] for name in ['identity/probe.js','native/probe.js','public-kernel/probe.js','account-read-kernel/probe.js']) or b"connect-src 'self'" not in files['index.html']:raise SystemExit('Foundation runtime policy mismatch')
+files['build.json']=(json.dumps({'schema':1,'identity':'BiliSofa01.TV','version':version,'publicKernelManifest':kernel,'accountKernelManifest':account_kernel,'w06NativeManifests':{k:v for k,v in w04_manifests.items() if k=='cast-product'},'w04NativeManifests':{k:v for k,v in w04_manifests.items() if k not in ['overlay-read','comments-read','video-interactions','cast-product','recommend']},'w05NativeManifests':{k:v for k,v in w04_manifests.items() if k in ['overlay-read','comments-read','video-interactions']},'purpose':('U2 account/settings and U3 shared player/read layers; earlier capabilities retained; device acceptance OPEN; ')+'W03 local identity playback queue and verified-account read-only follow updates, favorites, history and watch-later lists with existing category/search/media/cast; unsigned; not product/device acceptance','uiSourceHash':ui['sourceHash'],'nativeManifestSha256':sha((NATIVE/'manifest.json').read_bytes()),'mediaNativeManifestSha256':sha(files['native/manifest.json']),'qrDependency':qr,'files':{n:sha(v) for n,v in sorted(files.items())}},indent=2)+'\n').encode()
 package=ROOT/('dist/BiliSofa-'+version+'-unsigned.wgt')
 with zipfile.ZipFile(package,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
  for name,data in sorted(files.items()):
