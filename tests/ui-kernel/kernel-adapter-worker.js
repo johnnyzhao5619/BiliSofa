@@ -13,12 +13,17 @@ onmessage = event => {
   if (v.type === 'close') { if (current) current.worker.terminate(); current = undefined; postMessage({ version: 1, type: 'closed', confirmed: true }); return; }
   if (v.type === 'stop') { if (current && current.id === v.requestId) { current.worker.terminate(); current = undefined; postMessage({ version: 1, type: 'stopped', requestId: v.requestId }); } return; }
   if (v.type !== 'request') return;
-  const id = v.requestId, worker = new Worker(files[v.request.operation] || 'catalog-worker.js');
+  const id = v.requestId, identity = v.request.operation === 'identity-verify';
+  // ADR-109: an identity check goes to the identity Worker (still packaged for QR login) in its own protocol.
+  const worker = new Worker(identity ? 'identity-worker.js' : files[v.request.operation] || 'catalog-worker.js');
   current = { id, worker };
   worker.onmessage = message => {
     if (!current || current.id !== id || (message.data && message.data.closed === false)) return;
-    worker.terminate(); current = undefined; postMessage({ version: 1, type: 'result', requestId: id, result: message.data });
+    worker.terminate(); current = undefined;
+    const d = message.data, base = { version: 1, operation: 'identity-verify', scope: v.request.scope, closed: true };
+    const result = !identity ? d : d && d.kind === 'verified' ? { ...base, kind: 'ok', identity: d.identity } : { ...base, kind: 'error', code: d && d.code || 'unknown' };
+    postMessage({ version: 1, type: 'result', requestId: id, result });
   };
   worker.onerror = () => { if (!current || current.id !== id) return; current = undefined; postMessage({ version: 1, type: 'failed' }); };
-  worker.postMessage(v.request);
+  worker.postMessage(identity ? { version: 1, operation: 'identity', scope: v.request.scope, mode: 'verify', account: v.request.account } : v.request);
 };

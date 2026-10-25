@@ -3,10 +3,11 @@ import {COVER_LIMITS} from '../../../../packages/contracts/src/content-presentat
 import {coverImage} from '../../../../packages/contracts/src/cover-image.ts';
 type Entry={key:string;controller:AbortController;refs:number;promise:Promise<string|undefined>;resolve:(url:string|undefined)=>void;url?:string;bytes:number;pixels:number;expires:number;running:boolean;};
 const entries=new Map<string,Entry>(),queue:Entry[]=[];let active=0;
-const TTL=300000,MAX_ENTRIES=48,MAX_IDLE=16,MAX_BYTES=8*1024*1024,MAX_PIXELS=48*480*270;
+// ADR-109: idle covers outlive the page that showed them (LRU: 160 idle, 24 MB, 10 min), so returning to a page shows them at once.
+const TTL=600000,MAX_ENTRIES=200,MAX_IDLE=160,MAX_BYTES=24*1024*1024,MAX_PIXELS=MAX_IDLE*480*270,PARALLEL=4;
 function remove(e:Entry){if(entries.get(e.key)===e)entries.delete(e.key);const at=queue.indexOf(e);if(at>=0)queue.splice(at,1);e.controller.abort();if(e.url)URL.revokeObjectURL(e.url);e.resolve(undefined);}
-function trim(){if(![...entries.values()].some(e=>e.refs>0)){for(const e of [...entries.values()])remove(e);return;}const idle=[...entries.values()].filter(e=>e.refs===0&&!e.running);let bytes=0,pixels=0;for(const e of entries.values()){bytes+=e.bytes;pixels+=e.pixels;}while(idle.length&&(idle.length>MAX_IDLE||entries.size>=MAX_ENTRIES||bytes>MAX_BYTES||pixels>MAX_PIXELS||idle[0]!.expires<performance.now())){const e=idle.shift()!;bytes-=e.bytes;pixels-=e.pixels;remove(e);}}
-function pump(){while(active<2&&queue.length){const e=queue.shift()!;if(!e.refs){remove(e);continue;}active++;e.running=true;void read(e).then(result=>{if(e.controller.signal.aborted){if(result)URL.revokeObjectURL(result.url);return;}if(result){e.url=result.url;e.bytes=result.bytes;e.pixels=result.pixels;e.expires=performance.now()+TTL;e.resolve(result.url);}else{entries.delete(e.key);e.resolve(undefined);}}).finally(()=>{e.running=false;active--;trim();pump();});}}
+function trim(){const idle=[...entries.values()].filter(e=>e.refs===0&&!e.running);let bytes=0,pixels=0;for(const e of entries.values()){bytes+=e.bytes;pixels+=e.pixels;}while(idle.length&&(idle.length>MAX_IDLE||entries.size>=MAX_ENTRIES||bytes>MAX_BYTES||pixels>MAX_PIXELS||idle[0]!.expires<performance.now())){const e=idle.shift()!;bytes-=e.bytes;pixels-=e.pixels;remove(e);}}
+function pump(){while(active<PARALLEL&&queue.length){const e=queue.shift()!;if(!e.refs){remove(e);continue;}active++;e.running=true;void read(e).then(result=>{if(e.controller.signal.aborted){if(result)URL.revokeObjectURL(result.url);return;}if(result){e.url=result.url;e.bytes=result.bytes;e.pixels=result.pixels;e.expires=performance.now()+TTL;e.resolve(result.url);}else{entries.delete(e.key);e.resolve(undefined);}}).finally(()=>{e.running=false;active--;trim();pump();});}}
 async function read(e:Entry):Promise<{url:string;bytes:number;pixels:number}|undefined>{
  const abort=e.controller.signal;
  for(let attempt=0;attempt<2&&!abort.aborted;attempt++){
@@ -28,6 +29,8 @@ async function read(e:Entry):Promise<{url:string;bytes:number;pixels:number}|und
  }
  return undefined;
 }
+/** Drops every idle cover (设置 → 清除读取缓存); covers on screen stay until their view closes. */
+export function clearCovers():void{for(const e of [...entries.values()])if(e.refs===0&&!e.running)remove(e);}
 /** Public-only deduplicated thumbnails. View leases pin URLs; unreferenced LRU
  * entries are bounded. Visible demand is queued, never dropped at 16 requests. */
 export class CoverArt{

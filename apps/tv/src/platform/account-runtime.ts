@@ -7,11 +7,10 @@ import {parseHistoryQuery,parseHistoryRequest,parseHistoryResult,type HistoryRes
 import {ScopedGuestWorker} from './scoped-guest-worker.ts';
 import {ResidentKernel} from './public-kernel.ts';
 import {BatchedPages} from './batched-pages.ts';
-import type {AccountKernelRequest} from '../../../../packages/contracts/src/account-kernel.ts';
+import {parseIdentityVerifyRequest,parseIdentityVerifyResult,type AccountKernelRequest} from '../../../../packages/contracts/src/account-kernel.ts';
 import type {WatchLaterCard} from '../../../../packages/contracts/src/watch-later-dto.ts';
 import type {FavoriteItem} from '../../../../packages/contracts/src/favorites-dto.ts';
 import {parsePublicReadCommand,parsePublicReadRequest,parsePublicReadResult,type PublicReadResult} from '../../../../packages/contracts/src/public-read.ts';
-import {identityRuntime} from './identity-worker.ts';
 import {createVodAccess,createPgcAccess} from './vod-runtime.ts';
 import {pgcId} from '../../../../packages/contracts/src/pgc-season.ts';
 import {createLiveAccess} from './live-runtime.ts';
@@ -23,7 +22,14 @@ import {parseFavoriteFoldersQuery,parseFavoriteItemsQuery,parseFavoriteRequest,p
  * ADR-108 P0b: every private list read goes through this account's resident read kernel (one verified
  * session and connection); watch later and favorite items read 20 rows per batch and serve four-card pages.
  * Page 1 always reads again, so a removal made elsewhere never shows a stale first page. */
-export function accountRuntime(account:PrivateAccount,kernel=new ResidentKernel<AccountKernelRequest>({file:'account-read-kernel-worker.js',signing:false})):AccountRuntime{
+const accountKernel=()=>new ResidentKernel<AccountKernelRequest>({file:'account-read-kernel-worker.js',signing:false});
+/** ADR-109: one account kernel booted ahead (WASM only: no jar, no request) while the profile chooser is shown;
+ * the account the viewer picks adopts it. Dropped when the app is hidden. */
+let warm:ResidentKernel<AccountKernelRequest>|undefined;
+export function prewarmAccountKernel():void{if(!warm){warm=accountKernel();warm.prewarm();}}
+export function dropWarmAccountKernel():void{const kernel=warm;warm=undefined;void kernel?.close();}
+function takeAccountKernel():ResidentKernel<AccountKernelRequest>{const kernel=warm??accountKernel();warm=undefined;return kernel;}
+export function accountRuntime(account:PrivateAccount,kernel=takeAccountKernel()):AccountRuntime{
  let secret:PrivateAccount|undefined=parsePrivateAccount(account),closing:Promise<{closed:boolean}>|undefined,current:{dispose():Promise<void>}|undefined,generation=0,poisoned=false;
  const recommendationLifetime=new AbortController();
  const recommendations=new RecommendationWindow();let recommendationIndex=-1,recommendationBrush=0,recommendationShown='',recommendationGeneration:number|undefined;
@@ -33,7 +39,7 @@ export function accountRuntime(account:PrivateAccount,kernel=new ResidentKernel<
    const abort=()=>finish(true);for(const s of signals)s.addEventListener('abort',abort,{once:true});timer=setTimeout(()=>finish(),350);if(signals.some(s=>s.aborted))abort();
   });
  }
- const identity=identityRuntime(secret),initial=()=>({max:'0',viewAtSec:0,business:''} as const);
+ const initial=()=>({max:'0',viewAtSec:0,business:''} as const);
  let historyCursor:HistoryCursor=initial(),historyPages:HistoryCard[][]=[],historyEnded=false,historyGeneration:number|undefined;
  const seen=new Set<string>();
  let followOffset='',followPages:FollowUpdate[][]=[],followEnded=false,followGeneration:number|undefined;
@@ -66,7 +72,13 @@ export function accountRuntime(account:PrivateAccount,kernel=new ResidentKernel<
   if(ticket!==generation||signal.aborted||closing)throw new DomainError('cancelled');return result;
  }
  return {
-  verify:signal=>identity.verify(signal),
+  /** ADR-109: identity is the session nav of this account's kernel; the verified session then serves every read. */
+  async verify(signal){
+   if(!secret||closing||signal.aborted)throw new DomainError('cancelled');
+   const request=parseIdentityVerifyRequest({version:1,operation:'identity-verify',scope:{accountId:secret.id,generation:generation+1,mediaSessionId:'identity',requestId:'verify'},account:secret});
+   const result=parseIdentityVerifyResult({...await kernel.run(request,signal),scope:request.scope});
+   if(result.kind==='error')throw new DomainError(result.code);return result.identity;
+  },
   async clearReadCaches(scope,signal){
    await acquire(scope,signal);recommendations.clear();recommendationIndex=-1;recommendationBrush=0;recommendationShown='';recommendationGeneration=undefined;
    resetHistory();historyGeneration=undefined;resetFavorites();resetFollow();watchPages.invalidate();favoritePages.invalidate();return {cleared:true};
@@ -172,6 +184,6 @@ export function accountRuntime(account:PrivateAccount,kernel=new ResidentKernel<
    if(ticket!==generation||signal.aborted||closing)throw new DomainError('cancelled');
    return {page:query.page,items:(historyPages[query.page-1]??[]).map(c=>({...c})),noMore:historyEnded&&query.page>=historyPages.length};
   },
-  close(){if(!closing){secret=undefined;generation++;recommendationLifetime.abort();recommendations.clear();recommendationShown='';resetHistory();resetFavorites();resetFollow();watchPages.invalidate();favoritePages.invalidate();closing=Promise.all([identity.close(),kernel.close().then(closed=>({closed})),current?.dispose().then(()=>({closed:true}),()=>({closed:false}))??Promise.resolve({closed:true})]).then(results=>({closed:!poisoned&&results.every(r=>r.closed)}));}return closing;}
+  close(){if(!closing){secret=undefined;generation++;recommendationLifetime.abort();recommendations.clear();recommendationShown='';resetHistory();resetFavorites();resetFollow();watchPages.invalidate();favoritePages.invalidate();closing=Promise.all([kernel.close().then(closed=>({closed})),current?.dispose().then(()=>({closed:true}),()=>({closed:false}))??Promise.resolve({closed:true})]).then(results=>({closed:!poisoned&&results.every(r=>r.closed)}));}return closing;}
  };
 }

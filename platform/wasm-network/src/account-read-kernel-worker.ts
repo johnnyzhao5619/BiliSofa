@@ -9,6 +9,8 @@ import { parseFollowUpdatesBody } from '../../../packages/bili-client/src/follow
 import { parseRecommendationBody } from '../../../packages/bili-client/src/recommendations.ts';
 import { parseRankingBody, parseUpArchivesBody } from '../../../packages/bili-client/src/ranking.ts';
 import { parsePublicWbiImages } from '../../../packages/bili-client/src/search-wbi.ts';
+import { navAccountProfile } from '../../../packages/bili-client/src/account-profile.ts';
+import { parseAccountIdentity } from '../../../packages/contracts/src/private-account.ts';
 /** ADR-108 P0b: the resident account read kernel. One verified session (jar and connection)
  * serves every private read of one account. nav is checked when the session opens, again
  * after ten minutes, and after any login refusal. The jar never leaves this Worker; only
@@ -59,6 +61,7 @@ function read(): void {
   case 'recommendations-read':
     if (!keys) { deliver(failure(r, 'invalid', 'recommend.invalid')); return; }
     begin(RECOMMEND, `${r.freshType}|${r.index}|${r.brush}|${r.shown}|${keys.img}|${keys.sub}|${Math.floor(Date.now() / 1000)}`); return;
+  case 'identity-verify': begin(NAV, ''); return;
   default: begin(r.command.kind === 'category' ? CATEGORY : UP, r.command.kind === 'category' ? String(r.command.categoryId) : `${r.command.mid}|${r.command.page}`);
   }
 }
@@ -80,7 +83,8 @@ function proceed(): void {
     if (imported !== 1) { closing = 'silent'; native!._auth_stop(); deliver(failure(active.request, 'invalid')); return; }
     session = { accountId: account.id, cookieLines: account.cookieLines, uid: account.uid, verifiedAt: 0 };
   }
-  if (Date.now() - session!.verifiedAt >= VERIFY_MS) begin(NAV, ''); else read();
+  // ADR-109: an identity request always runs nav itself; reads reuse it for ten minutes.
+  if (active.request.operation === 'identity-verify' || Date.now() - session!.verifiedAt >= VERIFY_MS) begin(NAV, ''); else read();
 }
 function body(): string {
   const n = native!, at = n._auth_body_ptr(), length = n._auth_body_length();
@@ -102,11 +106,14 @@ function responded(token: number): void {
     const raw = body();
     if (operation === NAV) {
       const root = record(JSON.parse(raw));
-      if (root.code !== 0) { deliver(failure(r, root.code === -101 ? 'login' : 'network')); return; }
+      // The identity Worker's classification: -101 signed out, -403 permission, any other refusal network.
+      if (root.code !== 0) { deliver(failure(r, root.code === -101 ? 'login' : root.code === -403 && r.operation === 'identity-verify' ? 'permission' : 'network')); return; }
       const data = record(root.data), mid = typeof data.mid === 'number' && Number.isSafeInteger(data.mid) ? String(data.mid) : data.mid;
       if (data.isLogin !== true || mid !== session!.uid) { deliver(failure(r, 'login')); return; }
       let keys: { img: string; sub: string } | undefined; try { keys = parsePublicWbiImages(data.wbi_img); } catch { keys = undefined; }
-      session!.verifiedAt = Date.now(); if (keys) session!.keys = keys; else delete session!.keys; read(); return;
+      session!.verifiedAt = Date.now(); if (keys) session!.keys = keys; else delete session!.keys;
+      if (r.operation === 'identity-verify') { deliver({ ...base(r), kind: 'ok', identity: parseAccountIdentity({ uid: mid, name: data.uname, profile: navAccountProfile(data) }) }); return; }
+      read(); return;
     }
     const ok = { ...base(r), kind: 'ok' };
     if (r.operation === 'watch-later-read') deliver({ ...ok, page: parseWatchLaterBody(raw, r.query.page, 20) });
@@ -115,6 +122,7 @@ function responded(token: number): void {
     else if (r.operation === 'favorite-items-read') deliver({ ...ok, page: parseFavoriteItemsBody(raw, r.query, 20) });
     else if (r.operation === 'follow-updates-read') deliver({ ...ok, batch: parseFollowUpdatesBody(raw, r.offset) });
     else if (r.operation === 'recommendations-read') deliver({ ...ok, batch: parseRecommendationBody(raw, r.account.uid) });
+    else if (r.operation === 'identity-verify') deliver(failure(r, 'invalid'));
     else if (r.command.kind === 'category') { const p = parseRankingBody(raw); deliver(p.apiCode !== 0 ? { ...base(r), kind: 'refused', apiCode: p.apiCode } : { ...base(r), kind: 'category', items: p.items }); }
     else { const p = parseUpArchivesBody(raw); deliver(p.apiCode !== 0 ? { ...base(r), kind: 'refused', apiCode: p.apiCode } : { ...base(r), kind: 'up', archives: p.archives, total: p.total }); }
   } catch (error) {

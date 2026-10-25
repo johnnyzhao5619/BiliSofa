@@ -37,3 +37,17 @@ test('ADR-108 watch later reads 20-row batches and serves four-card pages; page 
  await runtime.readWatchLater!({page:1},scope,signal);assert.equal(requests().length,3,'entering again re-reads the first batch');
  await runtime.close();
 });
+test('ADR-109 verify is the account kernel session nav; the read after it reuses that kernel, and a prewarmed kernel is adopted',async()=>{
+ const {kernel,workers}=accountKernel(r=>{const q=r as unknown as {operation:string;scope:unknown};return q.operation==='identity-verify'?{version:1,operation:'identity-verify',scope:q.scope,closed:true,kind:'ok',identity:{uid:'123',name:'合成账号'}}:{version:1,operation:'watch-later-read',scope:q.scope,closed:true,kind:'ok',page:parseWatchLaterBody(raw(),1,20)};});
+ const runtime=accountRuntime(account,kernel),signal=new AbortController().signal;
+ assert.deepEqual(await runtime.verify(signal),{uid:'123',name:'合成账号'});await runtime.readWatchLater!({page:1},scope,signal);
+ assert.equal(workers.length,1);assert.deepEqual(workers[0]!.requests.map(r=>r.request.operation),['identity-verify','watch-later-read']);await runtime.close();
+ const refused=accountKernel(r=>({version:1,operation:'identity-verify',scope:(r as unknown as {scope:unknown}).scope,closed:true,kind:'error',code:'login'}));
+ const refusedRuntime=accountRuntime(account,refused.kernel);await assert.rejects(refusedRuntime.verify(signal),{code:'login'});await refusedRuntime.close();
+ const {prewarmAccountKernel}=await import('../../apps/tv/src/platform/account-runtime.ts');const {FakeKernelWorker}=await import('./fake-public-kernel.ts');const {parseAccountKernelCommand}=await import('../../packages/contracts/src/account-kernel.ts');
+ const original=globalThis.Worker,made:InstanceType<typeof FakeKernelWorker>[]=[];
+ globalThis.Worker=class extends FakeKernelWorker{constructor(file:string){super(file,parseAccountKernelCommand,()=>undefined);made.push(this);}} as unknown as typeof Worker;
+ try{prewarmAccountKernel();await new Promise(r=>setImmediate(r));assert.equal(made.length,1);assert.equal(made[0]!.file,'account-read-kernel-worker.js');assert.equal(made[0]!.requests.length,0,'prewarm sends no request and no jar');
+  const adopted=accountRuntime(account);const pending=adopted.verify(signal).catch(()=>undefined);await new Promise(r=>setImmediate(r));assert.equal(made.length,1,'the chosen account adopts the booted kernel');assert.equal(made[0]!.requests[0]!.request.operation,'identity-verify');await adopted.close();await pending;
+ }finally{globalThis.Worker=original;}
+});

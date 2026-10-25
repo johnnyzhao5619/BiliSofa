@@ -7,7 +7,7 @@
 | 对象 | 当前事实 | 证据 |
 | --- | --- | --- |
 | 已安装0.54.0 | [ADR-108](adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)：公开列表与账号私人读取改走常驻只读内核（连接复用、nav/WBI缓存、每批20条）；与0.51.3同步骤对比，冷启动首卡4.5→2.2 s、热门向下10行42→2.7 s、搜索首屏2.7→1.1 s、稍后再看2.4→0.65 s；`terminate`门槛PASS；播放门槛只测到720P；-352一天计数OPEN | [设备证据](design/evidence/2026-10-25-network-kernel/README.md) |
-| 0.55.0候选（未签名/未部署） | [ADR-108](adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)“旧模块移出”：被两个内核取代的7个Worker与6个原生模块不再打包（解压后66.9→47.9 MB），行为同0.54.0 | [测试报告](TEST_REPORT.md) |
+| 0.55.0–0.56.0候选（未签名/未部署） | [ADR-108](adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)移出被取代的模块（解压后66.9→47.9 MB）；[ADR-109](adr/109-cover-cache-single-account-verification-and-lifecycle-measurement.md) P0-3a：封面跨页保留，身份核对并入账号内核并在选择页预热；单元750/750 | [测试报告](TEST_REPORT.md) |
 | 0.52.0候选（未签名/未部署） | [ADR-107](adr/107-single-product-build.md)：版本链收敛为单一产品构建（37个变体开关按当前值折叠、旧分支删除；构建/打包/签名/部署无变体参数；合成UI收敛为`playwright.app.config.ts`，旧套件归档）；行为等同0.51.3，原生模块逐字节一致。本地737单元/100条合成UI/11包负例通过；未签名WGT `f37077d0…c73e` | [证据](design/evidence/2026-10-24-single-build/README.md) |
 | 0.51.2（USER证据来源） | ADR-105：登录时分区排行与UP投稿用本人会话读取并节制请求；**V1 USER PASS（登录状态）、V2②补 USER PASS、导航与UP主页回归 USER PASS** | [证据](design/evidence/2026-10-23-up-fix2/README.md) |
 | 0.51.0–0.51.1（USER证据来源） | ADR-103/104：**V2① PASS、V2③ PASS、搜索视频与首页详情一致 PASS、导航 PASS、关注页直达卡 PASS、稍后再看/云端历史/收藏完整详情 PASS**；V1与继续观看/队列详情转ADR-105 | [证据](design/evidence/2026-10-23-up-fix/README.md) |

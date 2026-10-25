@@ -11,7 +11,7 @@ import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import { LoginCoordinator } from '../../../../packages/bili-client/src/login.ts';
 import { protectedAccountStore } from '../platform/private-account-store.ts';
 import { IdentityWorkerClient } from '../platform/identity-worker.ts';
-import { accountRuntime } from '../platform/account-runtime.ts';
+import { accountRuntime, prewarmAccountKernel, dropWarmAccountKernel } from '../platform/account-runtime.ts';
 import { followUpdates } from './follow-updates.ts';
 import { cloudHistory } from './cloud-history.ts';
 import { favorites } from './favorites.ts';
@@ -62,7 +62,7 @@ const root = document.querySelector<HTMLElement>('#pages')!, overlays = document
 {let notice:ReturnType<typeof setTimeout>|undefined;new MutationObserver(()=>{clearTimeout(notice);const text=feedback.textContent??'';if(text&&!/正在|未确认|扫码|登录|失效|重新打开|权限/.test(text))notice=setTimeout(()=>{if(feedback.textContent===text)feedback.textContent='';},4000);}).observe(feedback,{childList:true,characterData:true,subtree:true});}
 const repository = protectedAccountStore(), login = new LoginCoordinator(repository, () => new IdentityWorkerClient());
 const queues=localQueues();
-const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.55.0'); diagnostics.add('app','started');document.body.classList.add('product-instant');document.body.classList.add('product-stream');
+const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.56.0'); diagnostics.add('app','started');document.body.classList.add('product-instant');document.body.classList.add('product-stream');
 const histories=searchHistories();
 const writes = new RetainedWrites(writeJournal());
 function writeSummary(id:string){const old=writes.summary(id),video=interactionWrites().summary(id);return old&&video?{total:old.total+video.total,unknown:old.unknown+video.unknown}:undefined;}
@@ -215,7 +215,7 @@ workspace = new AccountWorkspace(shell, repository, accountRuntime, undefined, 1
 const visibility = () => {
   if (disposed) return;
   // ADR-108: the resident public kernel closes with the app and starts again on the next read.
-  if (document.hidden) { diagnostics.add('lifecycle','suspended'); selectionEpoch++; selecting = false; void publicKernel().close(); void workspace.setHidden(true).catch(e => { feedback.textContent = message(e); }); }
+  if (document.hidden) { diagnostics.add('lifecycle','suspended'); selectionEpoch++; selecting = false; void publicKernel().close(); dropWarmAccountKernel(); void workspace.setHidden(true).catch(e => { feedback.textContent = message(e); }); }
   else { diagnostics.add('lifecycle','resumed'); void selection(() => workspace.setHidden(false), () => workspace.state.kind === 'active' ? '账号身份已重新确认' : '已返回游客界面'); }
 };
 document.addEventListener('visibilitychange', visibility);
@@ -225,5 +225,6 @@ publicKernel().prewarm();
 // 0.50.0 (ADR-099): a cold start asks who is watching before any private content is read.
 void shell.start().then(() => {
   if (disposed) return;
-  void openLaunchChooser(shell, { accounts: () => repository.list(), use: async id => { await use(id); return id === undefined ? workspace.state.kind !== 'active' : workspace.state.kind === 'active' && workspace.state.account.id === id; }, addAccount: () => { void shell.navigateTop({ page: 'account' }); } });
+  // ADR-109: with saved accounts, the account kernel compiles while the viewer chooses (no jar, no request).
+  void openLaunchChooser(shell, { accounts: () => repository.list().then(list => { if (list.length) prewarmAccountKernel(); return list; }), use: async id => { await use(id); return id === undefined ? workspace.state.kind !== 'active' : workspace.state.kind === 'active' && workspace.state.account.id === id; }, addAccount: () => { void shell.navigateTop({ page: 'account' }); } });
 });

@@ -7,8 +7,9 @@ const accountB = { ...accountA, id: 'bili_456', uid: '456', name: '乙', cookieL
 const scope = (a: typeof accountA) => ({ accountId: a.id, generation: 1, mediaSessionId: 'kernel', requestId: 'r1' });
 const watch = (a: typeof accountA, page = 1) => ({ version: 1, operation: 'watch-later-read', scope: scope(a), query: { page }, account: a });
 const history = (a: typeof accountA) => ({ version: 1, operation: 'history-read', scope: scope(a), account: a, cursor: { max: '0', viewAtSec: 0, business: '' } });
-const nav = (mid: string) => JSON.stringify({ code: 0, data: { isLogin: true, mid: Number(mid), wbi_img: { img_url: `https://i0.hdslb.com/bfs/wbi/${hex('a')}.png`, sub_url: `https://i0.hdslb.com/bfs/wbi/${hex('b')}.png` } } });
+const nav = (mid: string, extra: Record<string, unknown> = {}) => JSON.stringify({ code: 0, data: { isLogin: true, mid: Number(mid), uname: '合成' + mid, ...extra, wbi_img: { img_url: `https://i0.hdslb.com/bfs/wbi/${hex('a')}.png`, sub_url: `https://i0.hdslb.com/bfs/wbi/${hex('b')}.png` } } });
 const list = JSON.stringify({ code: 0, data: { has_more: false, count: 1, list: [{ bvid: 'BV0000000001', is_pgc: false, arc_info: { title: '合成', state: 0, pages: [{}] } }] } });
+const identity = (a: typeof accountA) => ({ version: 1, operation: 'identity-verify', scope: scope(a), account: a });
 const empty = JSON.stringify({ code: 0, data: { list: [], cursor: { max: 0, view_at: 0, business: '' } } });
 
 test('ADR-108 account kernel Worker: nav once per session, again after ten minutes or a login refusal; another account closes the jar first', async () => {
@@ -56,6 +57,15 @@ test('ADR-108 account kernel Worker: nav once per session, again after ten minut
     uid = '456'; assert.equal((await ask(watch(accountB))).kind, 'ok');
     assert.deepEqual(log.splice(0), ['close', 'open', 'jar:b', 'op0', 'op7'], 'another account closes the old jar before its own session');
     uid = '999'; offset += 11 * 60000; assert.deepEqual(((await ask(watch(accountB))) as { code?: string }).code, 'login', 'nav naming another person refuses the read');
+    // ADR-109: identity is the session nav itself; the reads after it need no second nav.
+    uid = '456'; log.splice(0);
+    const verified = await ask(identity(accountB)); assert.equal(verified.kind, 'ok'); assert.deepEqual((verified.identity as { uid: string; name: string }).uid, '456'); assert.equal((verified.identity as { name: string }).name, '合成456');
+    assert.equal((await ask(watch(accountB))).kind, 'ok'); assert.deepEqual(log.splice(0), ['op0', 'op7'], 'one nav for identity, none for the read after it');
+    assert.equal((await ask(identity(accountB))).kind, 'ok'); assert.deepEqual(log.splice(0), ['op0'], 'an identity request always checks again');
+    reply = op => op === 0 ? JSON.stringify({ code: -403 }) : list; assert.equal((await ask(identity(accountB))).code, 'permission');
+    reply = op => op === 0 ? JSON.stringify({ code: -101 }) : list; assert.equal((await ask(identity(accountB))).code, 'login');
+    reply = op => op === 0 ? nav('456', { isLogin: false }) : list; assert.equal((await ask(identity(accountB))).code, 'login');
+    reply = op => op === 0 ? JSON.stringify({ code: -500 }) : list; assert.equal((await ask(identity(accountB))).code, 'network');
     uid = '456'; reply = () => undefined; send({ version: 1, type: 'request', requestId: 'k' + (++id), request: watch(accountB) }); await new Promise(r => setTimeout(r, 5));
     send({ version: 1, type: 'stop', requestId: 'k' + id }); assert.equal((await next('stopped')).requestId, 'k' + id);
     send({ version: 1, type: 'close' }); assert.deepEqual(await next('closed'), { version: 1, type: 'closed', confirmed: true }); assert.equal(live, false);
