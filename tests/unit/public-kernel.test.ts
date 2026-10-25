@@ -7,7 +7,7 @@ import { parsePopularBody } from '../../packages/bili-client/src/popular.ts';
 import { parseSearchBody } from '../../packages/bili-client/src/search.ts';
 import { BatchedPages, type BatchRead } from '../../apps/tv/src/platform/batched-pages.ts';
 import { WbiKeyStore } from '../../apps/tv/src/platform/wbi-keys.ts';
-import { PublicKernel } from '../../apps/tv/src/platform/public-kernel.ts';
+import { ResidentKernel } from '../../apps/tv/src/platform/public-kernel.ts';
 import { FakeKernelWorker, flush } from './fake-public-kernel.ts';
 const scope = { accountId: 'guest', generation: 1, mediaSessionId: 'kernel', requestId: 'r1' };
 const card = (i: number) => ({ bvid: 'BV' + String(i).padStart(10, '0'), title: '合成', owner: 'UP', durationSec: 60, views: 1 });
@@ -16,10 +16,10 @@ const search = (keyword = '你好'): KernelRequest => ({ version: 1, scope, oper
 const batch = (q: KernelRequest, items = [card(0)], extra: Record<string, unknown> = {}) => ({ version: 1, scope: q.scope, operation: q.operation, closed: true, kind: 'ok', status: 200, apiCode: 0, code: q.operation === 'guest-popular' ? 'guest.popular_ok' : 'search.ok', items, noMore: false, ...extra });
 const keys = { img: '7cd084941338484aae1ad9425b84077c', sub: '4932caff0ff746eab6f01bf08b70ac45' };
 function memoryStorage() { const map = new Map<string, string>(); return { getItem: (k: string) => map.get(k) ?? null, setItem: (k: string, v: string) => { map.set(k, v); }, removeItem: (k: string) => { map.delete(k); } }; }
-function kernel(responder: (q: KernelRequest, keys: boolean) => Record<string, unknown> | undefined, options: ConstructorParameters<typeof PublicKernel>[0] = {}) {
+function kernel(responder: (q: KernelRequest, keys: boolean) => Record<string, unknown> | undefined, options: ConstructorParameters<typeof ResidentKernel>[0] = {}) {
   const workers: FakeKernelWorker[] = []; FakeKernelWorker.responder = responder;
   const store = options?.keys ?? new WbiKeyStore(undefined);
-  return { workers, store, kernel: new PublicKernel({ create: () => { const w = new FakeKernelWorker('public-kernel-worker.js'); workers.push(w); return w; }, keys: store, ...options }) };
+  return { workers, store, kernel: new ResidentKernel<KernelRequest>({ create: () => { const w = new FakeKernelWorker('public-kernel-worker.js'); workers.push(w); return w; }, keys: store, ...options }) };
 }
 
 test('ADR-108 batches: four-card pages from 20-row batches, de-duplicated across batches, one fetch per batch', async () => {

@@ -2,6 +2,7 @@ import {test} from 'node:test';import assert from 'node:assert/strict';
 import {parseWatchLaterRequest,parseWatchLaterResult,parseWatchLaterPage} from '../../packages/contracts/src/watch-later.ts';
 import {parseWatchLaterBody} from '../../packages/bili-client/src/watch-later.ts';
 import {accountRuntime} from '../../apps/tv/src/platform/account-runtime.ts';
+import {accountKernel} from './fake-public-kernel.ts';
 const account={schema:1 as const,id:'bili_123',uid:'123',name:'合成账号',expiresAt:Date.now()+3600000,cookieLines:'.bilibili.com\tTRUE\t/\tTRUE\t0\tSESSDATA\tsynthetic\n.bilibili.com\tTRUE\t/\tTRUE\t0\tbili_jct\tsynthetic\n'};
 const scope={accountId:account.id,generation:1,mediaSessionId:'none',requestId:'r1'};
 const request={version:1,operation:'watch-later-read',scope,query:{page:1},account};
@@ -18,9 +19,21 @@ test('F05 current official watch-later fields distinguish invalid/deleted/unknow
  for(const input of ['x',' '.repeat(524289),raw(Array(5).fill({})),raw([{is_pgc:5}]),raw([{arc_info:{state:1.5}}]),JSON.stringify({code:0,data:{list:[],count:0,has_more:'false'}})])assert.throws(()=>parseWatchLaterBody(input,1));
  assert.throws(()=>parseWatchLaterBody('{"code":-101}',1),{code:'login'});assert.throws(()=>parseWatchLaterBody('{"code":-352}',1),{code:'network'});
 });
-test('F05 runtime owns private payload and waits native ACK on cancellation before another request/close',async()=>{
- const original=globalThis.Worker,workers:FakeWorker[]=[];
- class FakeWorker{onmessage:((e:{data:unknown})=>void)|undefined;onerror:(()=>void)|undefined;request:typeof request|undefined;terminated=false;constructor(file:string){assert.equal(file,'library-worker.js');workers.push(this);}postMessage(q:typeof request&{control?:string}){if(q.control==='stop')return;this.request=q;}reply(){this.onmessage?.({data:{version:1,operation:'watch-later-read',scope:this.request!.scope,closed:true,kind:'ok',page:parseWatchLaterBody(raw(),1)}});}terminate(){this.terminated=true;}}
- globalThis.Worker=FakeWorker as unknown as typeof Worker;
- try{const runtime=accountRuntime(account),controller=new AbortController(),pending=runtime.readWatchLater!({page:1},scope,controller.signal);let ended=false;const check=assert.rejects(pending,{code:'cancelled'}).then(()=>{ended=true;});await new Promise(r=>setImmediate(r));controller.abort();await new Promise(r=>setImmediate(r));assert.equal(ended,false);assert.equal(workers[0]!.terminated,false);workers[0]!.reply();await check;assert.equal(workers[0]!.terminated,true);assert.deepEqual(await runtime.close(),{closed:true});await assert.rejects(runtime.readWatchLater!({page:1},scope,new AbortController().signal),{code:'cancelled'});}finally{globalThis.Worker=original;}
+test('F05 runtime owns private payload; cancelling stops only that transfer on the account kernel, and close closes the kernel',async()=>{
+ const {kernel,workers}=accountKernel(()=>undefined);
+ const runtime=accountRuntime(account,kernel),controller=new AbortController(),pending=runtime.readWatchLater!({page:1},scope,controller.signal);await new Promise(r=>setImmediate(r));
+ assert.equal(workers[0]!.file,'account-read-kernel-worker.js');const sent=workers[0]!.held!.request as unknown as typeof request;assert.equal(sent.account.id,account.id);assert.deepEqual(sent.query,{page:1});
+ controller.abort();await assert.rejects(pending,{code:'cancelled'});await new Promise(r=>setImmediate(r));assert.equal(workers[0]!.stops,1);assert.equal(workers[0]!.terminated,false);
+ assert.deepEqual(await runtime.close(),{closed:true});assert.equal(workers[0]!.closes,1);await assert.rejects(runtime.readWatchLater!({page:1},scope,new AbortController().signal),{code:'cancelled'});
+});
+test('ADR-108 watch later reads 20-row batches and serves four-card pages; page 1 always reads again',async()=>{
+ const rows=(n:number,from:number)=>Array.from({length:n},(_,i)=>({bvid:'BV'+String(from+i).padStart(10,'0'),is_pgc:false,arc_info:{title:'合成'+(from+i),state:0,pages:[{}]}}));
+ const {kernel,requests}=accountKernel(q=>{const r=q as unknown as typeof request;const n=r.query.page===1?20:5;return {version:1,operation:'watch-later-read',scope:r.scope,closed:true,kind:'ok',page:parseWatchLaterBody(JSON.stringify({code:0,data:{has_more:r.query.page===1,count:25,list:rows(n,(r.query.page-1)*20)}}),r.query.page,20)};});
+ const runtime=accountRuntime(account,kernel),signal=new AbortController().signal;
+ const first=await runtime.readWatchLater!({page:1},scope,signal);assert.equal(first.items.length,4);assert.equal(first.total,25);assert.equal(first.noMore,false);
+ for(let page=2;page<=5;page++)assert.equal((await runtime.readWatchLater!({page},scope,signal)).items[0]!.bvid,'BV'+String((page-1)*4).padStart(10,'0'));
+ assert.equal(requests().length,1,'pages 2-5 come from the first batch');
+ const last=await runtime.readWatchLater!({page:7},scope,signal);assert.equal(last.items.length,1);assert.equal(last.noMore,true);assert.equal(requests().length,2);
+ await runtime.readWatchLater!({page:1},scope,signal);assert.equal(requests().length,3,'entering again re-reads the first batch');
+ await runtime.close();
 });

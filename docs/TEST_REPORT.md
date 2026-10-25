@@ -1,31 +1,19 @@
 # 当前测试报告
 
-2026-10-24；只保留已安装包与未部署候选的结果。历史版本的分层结果在各自证据README，逐版本结论见[签名与部署记录](SIGNING_DEVICE_RECORD.md)。
+2026-10-25；只保留已安装包与未部署候选的结果。历史版本的分层结果在各自证据README，逐版本结论见[签名与部署记录](SIGNING_DEVICE_RECORD.md)。
 
-## 0.52.0候选（单一产品构建，未签名/未部署，ADR-107）
-
-| 层次 | 实际结果 |
-| --- | --- |
-| 单元/合同 | 737/737 |
-| 原生主机 | catalog-visitor 20、public-read 10、vod-api 10、pgc-read 12、source-failover 37、candidate-packaging 6 |
-| 合成UI | 保留套件100/100；分类时与冻结0.51.3结果相同 |
-| 包 | 负例11/11；未签名WGT `f37077d0…c73e`；原生模块与0.51.3逐字节一致，权限不变 |
-| 用户 | 未签名、未安装 |
-
-[证据](design/evidence/2026-10-24-single-build/README.md)
-
-## 已安装0.51.3（ADR-106）
+## 已安装0.54.0（ADR-108）
 
 | 层次 | 实际结果 |
 | --- | --- |
-| 单元/合同 | 737/737 |
-| 原生主机 | catalog-visitor 20/20；catalog、catalog-up、catalog-ua、public-read、vod-api、pgc-read、source-failover均通过 |
-| 合成UI | 新5条通过（前4条对冻结0.51.2失败，第5条为回归保护；Worker不传访客标识的变异使第1–3条失败）；回归102条全部通过（更正：其中投屏时钟配置30条因配置写死目录实际跑在冻结0.43.0上，见ADR-107） |
-| 包 | 负例11/11；未签名WGT `830f9708…e8e6`；原生仅`catalog/`重链接（`build/catalog-visitor`），权限不变 |
-| 签名/部署 | 签名`19ac5ad3…3c5f`（证书预检PASS，权限不变）；本机`/tmp/sdb.log`归root所有、SDB无法写日志，后台服务启动后随即退出（推断与此有关），改为前台运行SDB服务后连接；升级安装/启动platformSuccess（一次，不清数据）；源码归档`aaddfb3d…759a`；[回执](design/evidence/2026-10-23-up-fix3/receipt.json) |
-| 用户 | **游客V1g、清除访客标识、登录状态回归 USER PASS；U5集中验收V3–V6 USER PASS**（[报告](acceptance/2026-10-23-u5-final/REPORT.md)） |
+| 单元/合同 | 749/749 |
+| 原生主机 | public-kernel 8/8、account-read-kernel 5/5 |
+| 合成UI | 保留套件100/100（经测试适配器转给旧lane Worker） |
+| 包 | 负例11/11；未签名WGT `114e9efe…b7f9` |
+| 签名/部署 | 签名`515a6229…29dd`（证书预检PASS，权限不变）；升级安装/启动platformSuccess（一次，不清数据） |
+| 设备 | 与0.51.3同步骤对比：冷启动首卡4477→2192 ms、热门向下10行42.1→2.7 s、搜索首屏2744→1111 ms、稍后再看2379→650 ms、选择账号到推荐4240→4203 ms；`terminate`门槛PASS；播放585 s流畅（用户确认）但为720P；-352一天计数OPEN |
 
-[证据](design/evidence/2026-10-23-up-fix3/README.md)；0.51.2的结果见[其证据](design/evidence/2026-10-23-up-fix2/README.md)。
+[证据](design/evidence/2026-10-25-network-kernel/README.md)；0.51.3及更早版本的结果见[签名与部署记录](SIGNING_DEVICE_RECORD.md)与各自证据。
 
 ## R07小数倍速候选（按ADR-097不接入生产）
 

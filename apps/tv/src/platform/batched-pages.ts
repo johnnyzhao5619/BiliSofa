@@ -11,13 +11,13 @@ interface Snapshot<T> { items: T[]; seen: Set<string>; fetched: number; done: bo
 const HARD_MS = 1800000;
 export class BatchedPages<T> {
   private readonly snapshots = new Map<string, Snapshot<T>>();
-  constructor(private readonly id: (item: T) => string, private readonly ttlMs: number, private readonly rows = 4, private readonly batches = 5, private readonly limit = 12, private readonly now = Date.now) {}
+  constructor(private readonly id: (item: T) => string, private readonly ttlMs: number, private readonly rows = 4, private readonly batches = 5, private readonly limit = 12, private readonly now = Date.now, private readonly hardMs = HARD_MS) {}
   invalidate(key?: string): void { if (key === undefined) this.snapshots.clear(); else this.snapshots.delete(key); }
   page(key: string, page: number, read: (batch: number) => Promise<BatchRead<T>>): Promise<BatchRead<T>> {
     if (!Number.isInteger(page) || page < 1 || page > this.batches * 5) return Promise.reject(new RangeError('page'));
     let snapshot = this.snapshots.get(key);
     const age = snapshot ? this.now() - snapshot.at : 0;
-    if (!snapshot || age >= HARD_MS || (page === 1 && age >= this.ttlMs)) {
+    if (!snapshot || age >= this.hardMs || (page === 1 && age >= this.ttlMs)) {
       snapshot = { items: [], seen: new Set(), fetched: 0, done: false, at: this.now(), lock: Promise.resolve() };
       this.snapshots.set(key, snapshot);
       while (this.snapshots.size > this.limit) this.snapshots.delete(this.snapshots.keys().next().value!);

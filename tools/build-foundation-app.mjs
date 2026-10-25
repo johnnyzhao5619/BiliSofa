@@ -8,7 +8,7 @@ const out = 'dist/bilisofa-app';
 await mkdir(out, { recursive: true });
 execFileSync('python3',['tools/initials-data.py','--output',out]);
 const bundle = (entry, outfile, define) => build({ metafile: true, entryPoints: [entry], outfile: `${out}/${outfile}`, bundle: true, platform: 'browser', format: 'iife', target: 'es2020', sourcemap: false, ...(define ? { define } : {}) });
-const workers = ['guest-worker','guest-video-worker','cast-worker','catalog-worker','search-worker','hot-search-worker','library-worker','vod-source-worker','vod-bridge-worker','pgc-follow-worker','live-product-worker','public-read-worker','overlay-worker','comments-worker','interaction-worker','recommend-worker','public-kernel-worker'];
+const workers = ['guest-worker','guest-video-worker','cast-worker','catalog-worker','search-worker','hot-search-worker','library-worker','vod-source-worker','vod-bridge-worker','pgc-follow-worker','live-product-worker','public-read-worker','overlay-worker','comments-worker','interaction-worker','recommend-worker','public-kernel-worker','account-read-kernel-worker'];
 const outputs = await Promise.all([
   // One cast-worker source, built twice: the product receiver session and the original guest probe.
   bundle('platform/wasm-network/src/cast-worker.ts', 'cast-product-worker.js', { BILISOFA_CAST_PRODUCT: 'true' }),
@@ -27,7 +27,7 @@ const names = new Set(outputs.flatMap(x => Object.keys(x.metafile.inputs)));
 for (const name of ['apps/tv/public/product-ui.css','apps/tv/public/app-base.css','apps/tv/public/app.html','tools/category-data.py','packages/contracts/data/categories.json','tools/initials-data.py','packages/search/data/rawdict_utf16_65105_freq.txt','packages/search/data/AOSP-NOTICE','apps/tv/foundation-config.xml','packages/contracts/src/receiver-link.ts','packages/contracts/src/local-profile.ts','packages/contracts/src/content-presentation.ts','apps/tv/public/icon.png','tools/build-foundation-app.mjs','tools/package-foundation-app.py','package.json','package-lock.json','LICENSE','THIRD_PARTY_NOTICES.md','platform/third-party/qrcode-generator.lock.json','platform/third-party/qrcode-generator-LICENSE.txt']) names.add(name);
 for (const name of [...names].sort()) inputs[name] = createHash('sha256').update(await readFile(name)).digest('hex');
 const version = /<widget[^>]*\sversion="([0-9.]+)"/.exec(await readFile('apps/tv/foundation-config.xml', 'utf8'))[1];
-const purpose = `U5 ${version} single product build with the resident public read kernel (ADR-108); TV acceptance OPEN`;
+const purpose = `U5 ${version} single product build with the resident public and account read kernels (ADR-108); TV acceptance OPEN`;
 const files = ['app.js','cast-product-worker.js',...workers.map(n => `${n}.js`),'initials-worker.js','identity-worker.js','search-words.json','search-NOTICE','index.html','style.css','config.xml','icon.png','LICENSE','THIRD_PARTY_NOTICES.md'];
 await writeFile(`${out}/ui-manifest.json`, JSON.stringify({ schema: 1, purpose, sourceHash: createHash('sha256').update(JSON.stringify(inputs)).digest('hex'), inputs, files: Object.fromEntries(await Promise.all(files.map(async name => [name, createHash('sha256').update(await readFile(`${out}/${name}`)).digest('hex')]))) }, null, 2) + '\n');
 console.log(purpose);

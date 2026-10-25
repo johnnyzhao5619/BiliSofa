@@ -1,6 +1,6 @@
 # P0 网络内核改动方案（常驻Worker、连接复用、nav/WBI缓存、上游分页）
 
-2026-10-25。对应[ADR-108](../adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)。状态：**用户确认5项决定（2026-10-25）；P0a已在0.53.0实现（未签名/未安装），实现细节与偏差见ADR-108“P0a实现”；P0b未开始**。分支`perf/p0-network-kernel`。
+2026-10-25。对应[ADR-108](../adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)。状态：**用户确认5项决定（2026-10-25）；P0a在0.53.0、P0b在0.54.0实现（均未签名/未安装；按用户选择，P0b在P0a设备验收前开发）。实现细节与偏差见ADR-108“P0a实现”“P0b实现”**。分支`perf/p0-network-kernel`。
 
 ## 目标与范围
 

@@ -1,0 +1,365 @@
+{
+ "startedWithin60s": true,
+ "samples": [
+  {
+   "atS": 0,
+   "state": "PLAYING",
+   "timeS": 0,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 15,
+   "state": "PLAYING",
+   "timeS": 15,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 30,
+   "state": "PLAYING",
+   "timeS": 30,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 45,
+   "state": "PLAYING",
+   "timeS": 45,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 60,
+   "state": "PLAYING",
+   "timeS": 60,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 75,
+   "state": "PLAYING",
+   "timeS": 75,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 90,
+   "state": "PLAYING",
+   "timeS": 91,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 105,
+   "state": "PLAYING",
+   "timeS": 106,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 120,
+   "state": "PLAYING",
+   "timeS": 121,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 135,
+   "state": "PLAYING",
+   "timeS": 136,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 150,
+   "state": "PLAYING",
+   "timeS": 151,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 165,
+   "state": "PLAYING",
+   "timeS": 166,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 180,
+   "state": "PLAYING",
+   "timeS": 181,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 195,
+   "state": "PLAYING",
+   "timeS": 196,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 210,
+   "state": "PLAYING",
+   "timeS": 209,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 225,
+   "state": "PLAYING",
+   "timeS": 219,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 240,
+   "state": "PLAYING",
+   "timeS": 226,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 255,
+   "state": "PLAYING",
+   "timeS": 241,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 270,
+   "state": "PLAYING",
+   "timeS": 251,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 285,
+   "state": "PLAYING",
+   "timeS": 254,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 300,
+   "state": "PLAYING",
+   "timeS": 269,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 315,
+   "state": "PLAYING",
+   "timeS": 284,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 330,
+   "state": "PLAYING",
+   "timeS": 299,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 345,
+   "state": "PLAYING",
+   "timeS": 314,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 360,
+   "state": "PLAYING",
+   "timeS": 329,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 375,
+   "state": "PLAYING",
+   "timeS": 344,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 390,
+   "state": "PLAYING",
+   "timeS": 359,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 405,
+   "state": "PLAYING",
+   "timeS": 374,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 420,
+   "state": "PLAYING",
+   "timeS": 389,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 435,
+   "state": "PLAYING",
+   "timeS": 404,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 450,
+   "state": "PLAYING",
+   "timeS": 419,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 465,
+   "state": "PLAYING",
+   "timeS": 434,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 480,
+   "state": "PLAYING",
+   "timeS": 449,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 495,
+   "state": "PLAYING",
+   "timeS": 464,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 510,
+   "state": "PLAYING",
+   "timeS": 479,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 525,
+   "state": "PLAYING",
+   "timeS": 494,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 540,
+   "state": "PLAYING",
+   "timeS": 509,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 555,
+   "state": "PLAYING",
+   "timeS": 524,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 570,
+   "state": "PLAYING",
+   "timeS": 539,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  },
+  {
+   "atS": 585,
+   "state": "PLAYING",
+   "timeS": 554,
+   "height": 720,
+   "width": 1280,
+   "heapMB": 10,
+   "errorShown": false
+  }
+ ]
+}

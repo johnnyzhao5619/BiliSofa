@@ -1,0 +1,67 @@
+{
+  "label": "v0.54.0",
+  "at": "2026-10-25T18:10:59.860Z",
+  "userAgentTizen": "Tizen 9.0",
+  "runs": {
+    "cold": [
+      {
+        "firstShelfCardMs": 2463,
+        "chooserMs": 513,
+        "workerStarts": 1
+      },
+      {
+        "firstShelfCardMs": 2171,
+        "chooserMs": 414,
+        "workerStarts": 1
+      },
+      {
+        "firstShelfCardMs": 2192,
+        "chooserMs": 404,
+        "workerStarts": 1
+      }
+    ],
+    "account": {
+      "recommendCardAfterChoiceMs": 4203,
+      "workerStarts": 2
+    },
+    "grid": {
+      "stepMs": [
+        263,
+        190,
+        220,
+        489,
+        206,
+        152,
+        271,
+        162,
+        516,
+        191
+      ],
+      "totalMs": 2660,
+      "waitsOver300ms": 2,
+      "workerStarts": 0
+    },
+    "search": {
+      "first": {
+        "firstResultMs": 1111,
+        "empty": false,
+        "workerStarts": 0
+      },
+      "second": {
+        "firstResultMs": 686,
+        "empty": false,
+        "workerStarts": 0
+      }
+    },
+    "library": {
+      "firstCardMs": 650,
+      "workerStarts": 0
+    }
+  },
+  "workersByScript": {
+    "public-kernel-worker.js": 1,
+    "identity-worker.js": 1,
+    "account-read-kernel-worker.js": 1,
+    "initials-worker.js": 2
+  }
+}

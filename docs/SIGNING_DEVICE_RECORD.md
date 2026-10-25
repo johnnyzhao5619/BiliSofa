@@ -1,9 +1,10 @@
 # 签名与部署记录
 
-2026-10-23；以下为逐版本开发侧载记录，非Samsung认证/公开发布。应用ID `BiliSofa01.TV`、自有BiliSofa profile及Author保持。
+2026-10-25；以下为逐版本开发侧载记录，非Samsung认证/公开发布。应用ID `BiliSofa01.TV`、自有BiliSofa profile及Author保持。
 
 | 工件 | 当前结论 |
 | --- | --- |
+| 0.54.0 常驻公共与账号只读内核（ADR-108） | **已签名并升级安装/启动（平台确认，不清数据）**；签名`515a6229…29dd`（证书预检PASS，权限不变）；0.52.0、0.53.0未签名、未部署；设备对比与门槛见[证据](design/evidence/2026-10-25-network-kernel/README.md) |
 | 0.51.3 游客访客标识、设置中清除与登录提示 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`19ac5ad3…3c5f`（证书预检PASS，权限不变）；本机`/tmp/sdb.log`归root所有、SDB无法写日志，后台服务启动后随即退出（推断与此有关），改为前台运行SDB服务后连接；升级安装/启动platformSuccess（一次，不清数据）；源码归档`aaddfb3d…759a`；ADR-106；原生仅`catalog/`的manifest、probe.js与wasm（`build/catalog-visitor`），其余69个原生资源与0.51.2逐字节一致；游客V1g、清除访客标识、登录状态回归 USER PASS；[hash/源码/验证](design/evidence/2026-10-23-up-fix3/README.md) |
 | 0.51.2 登录会话读取公开列表、请求节奏与本机记录/队列详情 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`33eec812…dfba`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`edf20427…57d2`；ADR-105；原生新增`public-read/`（`build/public-read`），原有68个原生资源与0.51.1逐字节一致；V1（登录状态）、V2②补、导航与UP主页回归 USER PASS；[hash/源码/验证](design/evidence/2026-10-23-up-fix2/README.md) |
 | 0.51.1 运行时User-Agent、所有入口共用详情与失败后焦点 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`854d7904…6209`（证书预检PASS，权限不变）；重启本机SDB服务后连接，升级安装/启动platformSuccess（一次，不清数据）；源码归档`20e2cc29…e5ca`；ADR-104；原生仅`catalog/`的manifest与wasm（`build/catalog-ua`），其余66个原生资源与0.51.0逐字节一致；V1 FAIL，导航与关注页直达卡 PASS，V2②部分（见ADR-105）；[hash/源码/验证](design/evidence/2026-10-23-up-fix/README.md) |

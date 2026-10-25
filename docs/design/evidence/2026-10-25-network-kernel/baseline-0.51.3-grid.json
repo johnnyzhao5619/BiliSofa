@@ -1,0 +1,33 @@
+{
+  "label": "baseline-0.51.3-grid",
+  "at": "2026-10-25T18:04:26.121Z",
+  "userAgentTizen": "Tizen 9.0",
+  "runs": {
+    "grid": {
+      "stepMs": [
+        4550,
+        2534,
+        2522,
+        2432,
+        2450,
+        2404,
+        2705,
+        2368,
+        154,
+        null
+      ],
+      "totalMs": 42119,
+      "waitsOver300ms": 9,
+      "workerStarts": 8
+    }
+  },
+  "workersByScript": {
+    "guest-worker.js": 14,
+    "identity-worker.js": 1,
+    "recommend-worker.js": 1,
+    "initials-worker.js": 2,
+    "search-worker.js": 4,
+    "library-worker.js": 2,
+    "catalog-worker.js": 1
+  }
+}

@@ -1,27 +1,31 @@
-import { DomainError } from '../../../../packages/contracts/src/index.ts';
+import { DomainError, type Scope } from '../../../../packages/contracts/src/index.ts';
 import { isSearchRequest, parseKernelEvent, type KernelEvent, type KernelRequest } from '../../../../packages/contracts/src/public-kernel.ts';
 import { wbiKeys, type WbiKeyStore } from './wbi-keys.ts';
 export interface KernelWorker { postMessage(value: unknown): void; terminate(): void; onmessage: ((event: { data: unknown }) => void) | null; onerror: ((event: unknown) => void) | null; }
 export interface KernelOptions {
+  /** The Worker script; the public kernel by default. */
+  file?: string;
+  /** WBI salt handling for public searches; off for the account kernel, whose nav carries its own. */
+  signing?: boolean;
   create?(): KernelWorker; keys?: WbiKeyStore; now?(): number;
   bootMs?: number; requestMs?: number; stopMs?: number; closeMs?: number; idleMs?: number;
 }
 interface Caller { signal: AbortSignal; resolve(result: Record<string, unknown>): void; reject(error: unknown): void; abort(): void; }
-interface Job { id: string; key: string; request: KernelRequest; prefetch: boolean; callers: Caller[]; retried: boolean; stopping: boolean; }
+interface Job<Q> { id: string; key: string; request: Q; prefetch: boolean; callers: Caller[]; retried: boolean; stopping: boolean; }
 type Timer = ReturnType<typeof setTimeout>;
 /** A signature refusal (risk control or stale salts) drops the cached WBI keys and retries once. */
 const refused = (r: Record<string, unknown>) => (r.kind === 'api_error' && [-352, -403, -412].includes(Number(r.apiCode))) || (r.kind === 'http_error' && r.status === 412);
-/** ADR-108: the main-thread owner of the resident public read kernel.
+/** ADR-108: the main-thread owner of a resident read kernel (the public one, or one account's).
  * - One request in flight; page reads run before prefetches; identical requests share one transfer.
  * - Cancelling stops only that transfer; the WASM instance and its connections stay.
  * - A timeout, an invalid frame or a crash terminates the Worker (read-only lane, no write intent);
  *   the next request starts a fresh kernel. Three failures within two minutes pause the lane for 60 s.
  * - The kernel closes after five idle minutes, when the app is hidden, and on exit. */
-export class PublicKernel {
+export class ResidentKernel<Q extends { scope: Scope; operation: string } = KernelRequest> {
   private worker: KernelWorker | undefined;
   private ready = false;
-  private queue: Job[] = [];
-  private active: Job | undefined;
+  private queue: Job<Q>[] = [];
+  private active: Job<Q> | undefined;
   private sequence = 0;
   private failures: number[] = [];
   private pausedUntil = 0;
@@ -32,20 +36,21 @@ export class PublicKernel {
   private readonly keys: WbiKeyStore;
   private readonly now: () => number;
   constructor(private readonly options: KernelOptions = {}) {
-    this.create = options.create ?? (() => new Worker('public-kernel-worker.js') as unknown as KernelWorker);
+    const file = options.file ?? 'public-kernel-worker.js';
+    this.create = options.create ?? (() => new Worker(file) as unknown as KernelWorker);
     this.keys = options.keys ?? wbiKeys(); this.now = options.now ?? Date.now;
   }
   get paused(): boolean { return this.now() < this.pausedUntil; }
   /** Starts the kernel ahead of the first read (e.g. while the profile chooser is shown). */
   prewarm(): void { if (!this.closing && !this.paused) { this.spawn(); if (!this.active && !this.queue.length) this.armIdle(); } }
-  run(request: KernelRequest, signal: AbortSignal, prefetch = false): Promise<Record<string, unknown>> {
+  run(request: Q, signal: AbortSignal, prefetch = false): Promise<Record<string, unknown>> {
     if (signal.aborted) return Promise.reject(new DomainError('cancelled'));
     if (this.closing) return Promise.reject(new DomainError('cancelled'));
     if (this.paused) return Promise.reject(new DomainError('network'));
     const key = JSON.stringify({ ...request, scope: undefined });
     return new Promise((resolve, reject) => {
-      const shared = [this.active, ...this.queue].find((j): j is Job => !!j && !j.stopping && j.key === key);
-      const job: Job = shared ?? { id: this.nextId(), key, request, prefetch, callers: [], retried: false, stopping: false };
+      const shared = [this.active, ...this.queue].find((j): j is Job<Q> => !!j && !j.stopping && j.key === key);
+      const job: Job<Q> = shared ?? { id: this.nextId(), key, request, prefetch, callers: [], retried: false, stopping: false };
       const caller: Caller = { signal, resolve, reject, abort: () => this.leave(job, caller) };
       job.callers.push(caller);
       if (shared) { if (!prefetch && job.prefetch) { job.prefetch = false; this.promote(job); } }
@@ -73,12 +78,12 @@ export class PublicKernel {
     return promise;
   }
   private nextId(): string { this.sequence = this.sequence >= 999999999 ? 1 : this.sequence + 1; return 'k' + this.sequence; }
-  private promote(job: Job): void {
+  private promote(job: Job<Q>): void {
     const at = this.queue.indexOf(job); if (at < 0) return;
     this.queue.splice(at, 1); const first = this.queue.findIndex(j => j.prefetch);
     this.queue.splice(first < 0 ? this.queue.length : first, 0, job);
   }
-  private leave(job: Job, caller: Caller): void {
+  private leave(job: Job<Q>, caller: Caller): void {
     const at = job.callers.indexOf(caller); if (at < 0) return;
     job.callers.splice(at, 1); caller.reject(new DomainError('cancelled'));
     if (job.callers.length) return;
@@ -91,7 +96,7 @@ export class PublicKernel {
     // An unanswered stop means the instance is not responsive: replace it, without counting a failure.
     this.timer = setTimeout(() => { if (this.active === job) { this.drop(); this.active = undefined; this.pump(); } }, this.options.stopMs ?? 2000);
   }
-  private settle(job: Job, result: Record<string, unknown> | undefined, error?: unknown): void {
+  private settle(job: Job<Q>, result: Record<string, unknown> | undefined, error?: unknown): void {
     for (const caller of job.callers.splice(0)) {
       caller.signal.removeEventListener('abort', caller.abort);
       if (result) caller.resolve(result); else caller.reject(error);
@@ -129,17 +134,18 @@ export class PublicKernel {
     if (event.type === 'stopped') { this.pump(); return; }
     if (job.stopping) { this.pump(); return; }
     if (event.keys) this.keys.store(event.keys);
-    if (isSearchRequest(job.request) && refused(event.result) && !job.retried) {
+    if (this.searching(job) && refused(event.result) && !job.retried) {
       this.keys.invalidate(); job.retried = true; job.id = this.nextId(); this.queue.unshift(job); this.pump(); return;
     }
     this.failures = [];
     this.settle(job, event.result); this.pump();
   }
-  private send(job: Job): void {
-    const keys = isSearchRequest(job.request) ? this.keys.get() : undefined;
+  private searching(job: Job<Q>): boolean { return this.options.signing !== false && isSearchRequest(job.request as unknown as KernelRequest); }
+  private send(job: Job<Q>): void {
+    const keys = this.searching(job) ? this.keys.get() : undefined;
     this.worker!.postMessage({ version: 1, type: 'request', requestId: job.id, request: job.request, ...(keys ? { keys } : {}) });
     // A search without cached salts makes two transfers (nav, then the signed query).
-    const budget = (this.options.requestMs ?? 12000) * (isSearchRequest(job.request) && !keys ? 2 : 1);
+    const budget = (this.options.requestMs ?? 12000) * (this.searching(job) && !keys ? 2 : 1);
     this.timer = setTimeout(() => { if (this.active === job) this.fault('timeout'); }, budget);
   }
   private armIdle(): void {
@@ -156,5 +162,6 @@ export class PublicKernel {
     if (this.active === job && this.ready) this.send(job);
   }
 }
+export type PublicKernel = ResidentKernel<KernelRequest>;
 let shared: PublicKernel | undefined;
-export function publicKernel(): PublicKernel { return shared ??= new PublicKernel(); }
+export function publicKernel(): PublicKernel { return shared ??= new ResidentKernel(); }

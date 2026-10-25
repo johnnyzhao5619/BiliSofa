@@ -1,0 +1,55 @@
+{
+  "label": "baseline-0.51.3",
+  "at": "2026-10-25T18:03:33.994Z",
+  "userAgentTizen": "Tizen 9.0",
+  "runs": {
+    "cold": [
+      {
+        "firstShelfCardMs": 5182,
+        "chooserMs": 513,
+        "workerStarts": 2
+      },
+      {
+        "firstShelfCardMs": 4477,
+        "chooserMs": 428,
+        "workerStarts": 2
+      },
+      {
+        "firstShelfCardMs": 4373,
+        "chooserMs": 382,
+        "workerStarts": 2
+      }
+    ],
+    "account": {
+      "recommendCardAfterChoiceMs": 4240,
+      "workerStarts": 2
+    },
+    "grid": {
+      "skipped": "no 查看更多 on 热门"
+    },
+    "search": {
+      "first": {
+        "firstResultMs": 2744,
+        "empty": false,
+        "workerStarts": 2
+      },
+      "second": {
+        "firstResultMs": 3466,
+        "empty": false,
+        "workerStarts": 2
+      }
+    },
+    "library": {
+      "firstCardMs": 2379,
+      "workerStarts": 2
+    }
+  },
+  "workersByScript": {
+    "guest-worker.js": 2,
+    "identity-worker.js": 1,
+    "recommend-worker.js": 1,
+    "initials-worker.js": 2,
+    "search-worker.js": 4,
+    "library-worker.js": 2
+  }
+}

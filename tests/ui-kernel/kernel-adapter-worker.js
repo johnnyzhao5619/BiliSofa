@@ -1,7 +1,10 @@
-/* Test-only stand-in for public-kernel-worker.js (ADR-108). It speaks the kernel envelope and forwards each
+/* Test-only stand-in for public-kernel-worker.js and account-read-kernel-worker.js (ADR-108). It speaks the kernel envelope and forwards each
  * request to the per-request Worker of the same lane, so the existing native fixtures keep serving their data.
  * A forwarded batch therefore carries that fixture's page of four rows; the lanes accept up to twenty. */
-const files = { 'guest-popular': 'guest-worker.js', 'public-video-search': 'search-worker.js', 'public-user-search': 'search-worker.js', 'public-pgc-search': 'search-worker.js', 'public-search-hot': 'hot-search-worker.js' };
+const files = { 'guest-popular': 'guest-worker.js', 'public-video-search': 'search-worker.js', 'public-user-search': 'search-worker.js', 'public-pgc-search': 'search-worker.js', 'public-search-hot': 'hot-search-worker.js',
+  // The account kernel (P0b): each private read goes to the per-request lane Worker its fixture already fakes.
+  'watch-later-read': 'library-worker.js', 'history-read': 'library-worker.js', 'favorite-folders-read': 'library-worker.js', 'favorite-items-read': 'library-worker.js', 'follow-updates-read': 'library-worker.js',
+  'recommendations-read': 'recommend-worker.js', 'public-read': 'public-read-worker.js' };
 let current;
 onmessage = event => {
   const v = event.data;
