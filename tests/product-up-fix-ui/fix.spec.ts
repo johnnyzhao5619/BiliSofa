@@ -22,7 +22,7 @@ async function category(page:Page){
  await page.locator('[data-focus-id=shelf-categories]').click();await page.locator('[data-focus-id=category-1005]').click();
 }
 /** 0.51.2+ (ADR-105) names a risk-control refusal instead of the generic failure text. */
-const failureText=/product-up-fix-app$/.test(process.env.BILISOFA_TEST_ROOT??'dist/product-up-fix-app')?/内容暂时无法加载/:/内容暂时无法加载|B站暂时限制了访问（风控 -352）/;
+const failureText=/内容暂时无法加载|B站暂时限制了访问（风控 -352）/;
 const focused=(page:Page)=>page.evaluate(()=>{const a=document.activeElement as HTMLElement|null;return a?.dataset.focusId??a?.tagName??'';});
 test('ADR-104 a category ranking carries the TV runtime User-Agent and loads',async({page})=>{
  const errors=await mediaSetup(page,false);await routes(page,'agent-required');await category(page);

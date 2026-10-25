@@ -10,7 +10,6 @@ import { CommentsRuntime } from './comments-runtime.ts';
 import { OverlayRuntime } from './overlay-runtime.ts';
 import { OverlayProfiles } from './overlay-preferences-store.ts';
 import { avoidMask, isSourceEvidence, noteBridgeEvidence, resetSourceStep } from './bridge-evidence.ts';
-import { CDN_FAILOVER, SOURCE_FAILOVER } from '../../../../packages/contracts/src/cdn-failover.ts';
 
 export interface VodWorkerPort {
   onmessage: ((event: MessageEvent) => void) | null;
@@ -90,7 +89,7 @@ export class VodRuntime {
               if (!this.sourceClosed || v.request !== this.closeRequest) throw new DomainError('invalid');
               this.sourceClosed.resolve(); return;
             }
-            if (SOURCE_FAILOVER && v.kind === 'evidence') {
+            if (v.kind === 'evidence') {
               // ADR-102: fixed step codes only; a malformed code is a protocol fault like any other frame.
               vodKeys(v, ['version', 'owner', 'request', 'kind', 'code']);
               if (v.request !== 0 || typeof v.code !== 'string' || !isSourceEvidence(v.code)) throw new DomainError('invalid');
@@ -136,7 +135,7 @@ export class VodRuntime {
     } finally { signal.removeEventListener('abort', abort); if (this.pending === pending) this.pending = undefined; }
   }
   async read(value: unknown, signal: AbortSignal): Promise<VodReadResult> {
-    if (SOURCE_FAILOVER) resetSourceStep();
+    resetSourceStep();
     const query=vodReadQuery(value),result=await this.publicRead('read',query,parseVodReadResult,signal);
     if(result.catalog.item.bvid!==query.bvid||result.catalog.item.part!==query.part){this.fault();throw new DomainError('invalid');}
     if(this.closing||this.poisoned||signal.aborted)throw new DomainError('cancelled');
@@ -189,13 +188,13 @@ export class VodRuntime {
               else if (v.kind === 'renewed') vodKeys(v, ['version', 'owner', 'lease', 'kind']);
               else if (v.kind === 'evidence') {
                 vodKeys(v, ['version', 'owner', 'lease', 'kind', 'code']);
-                if (typeof v.code !== 'string' || !(/^bridge_(served_[0-2]|issue_[0-9]{1,3}_[0-9]{1,3})$/.test(v.code) || (CDN_FAILOVER && /^bridge_failover_[12]$/.test(v.code)) || (SOURCE_FAILOVER && /^bridge_failover_[12]_(upos|akamai|edge)$/.test(v.code)))) throw new DomainError('invalid');
-                if (CDN_FAILOVER) noteBridgeEvidence(v.code);
+                if (typeof v.code !== 'string' || !(/^bridge_(served_[0-2]|issue_[0-9]{1,3}_[0-9]{1,3})$/.test(v.code) || (/^bridge_failover_[12]$/.test(v.code)) || (/^bridge_failover_[12]_(upos|akamai|edge)$/.test(v.code)))) throw new DomainError('invalid');
+                noteBridgeEvidence(v.code);
               } else throw new DomainError('invalid');
             } catch { fault(); }
           };
           const channel = this.createChannel();
-          this.source!.postMessage({ version: 1, owner: this.owner, request: ++this.request, kind: 'attach', lease, choice, ...(SOURCE_FAILOVER ? { avoid: avoidMask() } : {}) }, [channel.port1]);
+          this.source!.postMessage({ version: 1, owner: this.owner, request: ++this.request, kind: 'attach', lease, choice, ...({ avoid: avoidMask() }) }, [channel.port1]);
           bridge.postMessage({ version: 1, owner: this.owner, lease, kind: 'init' }, [channel.port2]);
           startTimer = setTimeout(() => { if (!ready && !closed) fault(); }, this.readMs);
           await done.promise;

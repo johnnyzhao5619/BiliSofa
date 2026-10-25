@@ -6,9 +6,7 @@ import { CategoryRankingWorker, RankingWorker } from './ranking-worker.ts';
 import { SearchWorker } from './search-worker.ts';
 import { SearchReadError } from '../../../../packages/contracts/src/search.ts';
 import type { CategoryId } from '../../../../packages/contracts/src/categories.ts';
-import { UP_FIX2 } from '../../../../packages/contracts/src/public-read.ts';
 import { pacedRead, usedVisitor } from './public-lists.ts';
-import { UP_FIX3 } from '../../../../packages/contracts/src/visitor.ts';
 import { visitorIds } from './visitor-id.ts';
 /** All URLs, credentials and native calls remain behind the existing Worker. */
 export class PublicContentRuntime implements ContentRuntime {
@@ -43,15 +41,15 @@ export class PublicContentRuntime implements ContentRuntime {
         }
         if(query.page>1) throw new DomainError('invalid');
       }
-      if(UP_FIX2 && query.route==='category'){
+      if(query.route==='category'){
         // ADR-105: paced (10 min reuse, 60 s pause after a refusal); account session when signed in.
         const categoryId=query.categoryId,signed=this.signedCategory;
         const items=await pacedRead(String(categoryId),signed?'account':'guest','category',async()=>{
           if(signed) return signed(categoryId,task.signal);
           // ADR-106: anonymous reads carry B站's own visitor identity when one is (or can be) kept on this TV.
-          const visitor=UP_FIX3?await visitorIds().ensure(task.scope,task.signal):undefined;
+          const visitor=await visitorIds().ensure(task.scope,task.signal);
           if(task.signal.aborted || !this.sessions.accepts(task.scope)) throw new DomainError('cancelled');
-          if(UP_FIX3) usedVisitor(!!visitor);
+          usedVisitor(!!visitor);
           const r=await this.category.run({version:1,scope:task.scope,operation:'public-category-ranking',categoryId,...(visitor?{visitor}:{})},task.signal);
           if(r.kind==='api_error') throw new ContentApiError(r.apiCode!);
           if(r.kind!=='ok') throw new DomainError(r.kind==='cancelled'?'cancelled':r.kind==='invalid_response'?'invalid':'network');
@@ -62,8 +60,6 @@ export class PublicContentRuntime implements ContentRuntime {
       }
       const result=query.route==='search'
         ? await this.search.run({version:1,scope:task.scope,operation:'public-video-search',keyword:query.keyword,page:query.page},task.signal)
-        : query.route==='category'
-        ? await this.category.run({version:1,scope:task.scope,operation:'public-category-ranking',categoryId:query.categoryId},task.signal)
         : query.route==='ranking'
         ? await this.ranking.run({version:1,scope:task.scope,operation:'public-ranking'},task.signal)
         : await this.worker.run({version:1,scope:task.scope,operation:'guest-popular',page:query.page},task.signal);

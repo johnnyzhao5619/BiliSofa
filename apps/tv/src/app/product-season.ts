@@ -12,7 +12,6 @@ import { vodWorkspace } from './vod-workspace.ts';
 import { productButton } from './product-frame.ts';
 import { openFullText, needsFullText } from './full-text.ts';
 import { CoverArt } from '../platform/cover-art.ts';
-import { SEASON_STATUS_READ } from './season-policy.ts';
 
 const RESTRICTION = { none: '', member: '会员', purchase: '付费', region: '地区限制', unavailable: '暂不可播放', drm: 'DRM暂不支持', unknown: '' } as const;
 /** Viewer-facing reason for a follow state that could not be confirmed (ADR-096). */
@@ -113,7 +112,7 @@ export function productSeason(owner: ResourceOwner, shell: TvShell, profile: Pro
     try {
       await work; if (owner.signal.aborted || !season) return; status.textContent = ''; render();
       // The season view may carry a cached follow flag; ask the per-user status once (0.49.1).
-      if (follows && SEASON_STATUS_READ) void refreshFollow();
+      if (follows) void refreshFollow();
       if (season.cover) void art.load(season.cover).then(url => { if (!url || owner.signal.aborted) return; const image = document.createElement('img'); image.alt = ''; image.src = url; picture.replaceChildren(image); });
       const focused = document.activeElement as HTMLElement | null; if (!focused || focused === document.body || panel.contains(focused)) (play.disabled ? row.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? follow : play).focus();
     } catch (error) {

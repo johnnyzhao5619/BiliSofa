@@ -16,10 +16,9 @@ const akam = 'upos-hz-mirrorakam.akamaized.net', cosov = 'upos-sz-mirrorcosov.bi
 
 test('ADR-102 candidates keep Bilibili order, with edge nodes after named mirrors and Akamai', () => {
   assert.deepEqual([vodCdnClass(at(akam)), vodCdnClass(at(cosov)), vodCdnClass(at(edge))], ['akamai', 'upos', 'edge']);
-  assert.deepEqual(vodCdnPair([at(akam), at(cosov)], now, true), { url: at(akam), expiresAt: deadline * 1000, alternate: at(cosov) });
-  assert.deepEqual(vodCdnPair([at(edge), at(cosov), at(akam)], now, true), { url: at(cosov), expiresAt: deadline * 1000, alternate: at(akam) });
-  assert.deepEqual(vodCdnPair([at(edge)], now, true), { url: at(edge), expiresAt: deadline * 1000 });
-  assert.deepEqual(vodCdnPair([at(akam), at(cosov)], now, false).url, at(cosov), '0.50.3 order is unchanged');
+  assert.deepEqual(vodCdnPair([at(akam), at(cosov)], now), { url: at(akam), expiresAt: deadline * 1000, alternate: at(cosov) });
+  assert.deepEqual(vodCdnPair([at(edge), at(cosov), at(akam)], now), { url: at(cosov), expiresAt: deadline * 1000, alternate: at(akam) });
+  assert.deepEqual(vodCdnPair([at(edge)], now), { url: at(edge), expiresAt: deadline * 1000 });
 });
 
 const caps: VodCapabilities = { video: ['avc'], audio: ['aac'], qualities: [16, 32, 64, 80], maxWidth: 1920, maxHeight: 1080, maxFps: 30, rates: [1, 2] };
@@ -33,13 +32,13 @@ const part = { cid: '202', item: { bvid: 'BV0000000001', part: 1, title: '合成
 function owner(failing: RegExp) {
   const checked: string[] = [], codes: string[] = []; let reads = 0;
   const detail = { guestAllowed: true, parts: [part], summary: { title: '合成', owner: '合成', parts: [part.item] } } as unknown as PrivateVodDetail;
-  const api: VodReadApi = { async catalog(_b, _p, nonce) { const c: PrivateVodCatalog = parseVodPlayback(raw(deadline + 600 * reads++), part, nonce, now, true, true); return { detail, catalog: c }; },
+  const api: VodReadApi = { async catalog(_b, _p, nonce) { const c: PrivateVodCatalog = parseVodPlayback(raw(deadline + 600 * reads++), part, nonce, now); return { detail, catalog: c }; },
     async inspect(plan: PrivateVodPlan) {
       for (const [i, t] of [plan.video, plan.audio].entries()) { checked.push(new URL(t.url).hostname); if (failing.test(t.url)) throw new VodCheckError('network', i ? 1 : 0, 504, 0); }
       return { video: 160000, audio: 32000 };
     }, async close() {} };
   let n = 0;
-  const o = new VodSourceOwner(api, caps, undefined, () => String(n++ % 10).repeat(32), () => now, true, true, code => codes.push(code));
+  const o = new VodSourceOwner(api, caps, undefined, () => String(n++ % 10).repeat(32), () => now, code => codes.push(code));
   return { o, checked, codes };
 }
 const lease = 'b'.repeat(32);

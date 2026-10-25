@@ -1,9 +1,7 @@
 import { DomainError, record } from '../../../packages/contracts/src/index.ts';
 import { vodInteger, vodKeys } from '../../../packages/contracts/src/vod-catalog.ts';
 import { vodErrorCode, vodNonce } from '../../../packages/contracts/src/vod-runtime.ts';
-import { guestCdnUrl } from '../../../packages/bili-client/src/guest-video.ts';
 import { vodCdnClass, vodCdnUrl } from '../../../packages/bili-client/src/vod-cdn.ts';
-import { CDN_FAILOVER, SOURCE_FAILOVER } from '../../../packages/contracts/src/cdn-failover.ts';
 import { guestBridgeManifestUrl } from '../../../packages/media/src/guest-mpd.ts';
 
 interface Native {
@@ -30,7 +28,7 @@ function start(): void {
   if (!initialized || !source || entered || stopped || poisoned) return;
   entered = true;
   // ADR-101 native entry takes each track's backup ('-' when none) and the tracks that start on it.
-  const args = CDN_FAILOVER ? [source.videoAlternate || '-', source.audioAlternate || '-', String(source.start)] : [];
+  const args = [source.videoAlternate || '-', source.audioAlternate || '-', String(source.start)];
   try { worker.Module!.callMain(['bridge', source.bvid, lease, source.video, source.audio, source.metadata, ...args]); } catch { fault(); }
 }
 function receive(line: unknown): void {
@@ -50,10 +48,10 @@ function receive(line: unknown): void {
   else if (typeof line === 'string' && /^BRIDGE:(served:[0-2]|issue:[0-9]{1,3}:[0-9]{1,3})$/.test(line)) {
     // Fixed enums/counters only, never source URLs or native stderr.
     if (ready && !stopped) send('evidence', { code: line.replaceAll(':', '_').toLowerCase() });
-  } else if (CDN_FAILOVER && typeof line === 'string' && /^BRIDGE:failover:[12]$/.test(line)) {
+  } else if (typeof line === 'string' && /^BRIDGE:failover:[12]$/.test(line)) {
     // The source owner excludes that primary host for later leases on this page; the page sees a fixed code.
     if (ready && !stopped) {
-      const track = Number(line.slice(-1)), left = source && SOURCE_FAILOVER ? `_${vodCdnClass(track === 1 ? source.video : source.audio)}` : '';
+      const track = Number(line.slice(-1)), left = source ? `_${vodCdnClass(track === 1 ? source.video : source.audio)}` : '';
       port!.postMessage({ version: 1, lease, kind: 'failover', track }); send('evidence', { code: line.replaceAll(':', '_').toLowerCase() + left });
     }
   } else if (typeof line === 'string' && /^BRIDGE:(request:(get_full|get_open|get_range|get_suffix|head)|pump:burst|read_mib:[0-9]{1,10}|(?:resume|retry):[1-3]|request_timeout:1)$/.test(line)) {
@@ -84,15 +82,15 @@ worker.onmessage = event => {
         if (p.kind === 'stop') {
           vodKeys(p, ['version', 'lease', 'kind', 'code']); stop(vodErrorCode(p.code)); return;
         }
-        vodKeys(p, ['version', 'lease', 'kind', 'bvid', 'video', 'audio', 'metadata', 'expiresAt', ...(CDN_FAILOVER ? ['videoAlternate', 'audioAlternate', 'start'] : [])]);
+        vodKeys(p, ['version', 'lease', 'kind', 'bvid', 'video', 'audio', 'metadata', 'expiresAt', ...(['videoAlternate', 'audioAlternate', 'start'])]);
         if (!['offer', 'renew'].includes(String(p.kind)) || stopped || releasing || poisoned) return;
         if (typeof p.bvid !== 'string' || !/^BV[A-Za-z0-9]{10}$/.test(p.bvid) || typeof p.metadata !== 'string' || !/^[A-Za-z0-9.,-]{1,383}$/.test(p.metadata)) throw new DomainError('invalid');
         // ADR-102: Bilibili's order may put the Akamai backup first; the failover bridge admits that family natively too.
-        const primary = (value: unknown) => SOURCE_FAILOVER ? vodCdnUrl(value, Date.now()) : guestCdnUrl(value, Date.now());
+        const primary = (value: unknown) => vodCdnUrl(value, Date.now());
         const video = primary(p.video), audio = primary(p.audio);
         const alternate = (value: unknown) => value === '' ? undefined : vodCdnUrl(value, Date.now());
-        const va = CDN_FAILOVER ? alternate(p.videoAlternate) : undefined, aa = CDN_FAILOVER ? alternate(p.audioAlternate) : undefined;
-        const begin = CDN_FAILOVER ? vodInteger(p.start, 0, 3) : 0;
+        const va = alternate(p.videoAlternate), aa = alternate(p.audioAlternate);
+        const begin = vodInteger(p.start, 0, 3);
         if ((begin & 1 && !va) || (begin & 2 && !aa)) throw new DomainError('invalid');
         const expiresAt = Math.min(video.expiresAt, audio.expiresAt, va?.expiresAt ?? Infinity, aa?.expiresAt ?? Infinity);
         if (vodInteger(p.expiresAt, 1, Number.MAX_SAFE_INTEGER) !== expiresAt) throw new DomainError('invalid');
@@ -102,7 +100,7 @@ worker.onmessage = event => {
         } else {
           if (!source || !ready || next.bvid !== source.bvid || next.metadata !== source.metadata || next.expiresAt <= source.expiresAt) throw new DomainError('invalid');
           source = next;
-          const args = CDN_FAILOVER ? [next.videoAlternate || '-', next.audioAlternate || '-'] : [];
+          const args = [next.videoAlternate || '-', next.audioAlternate || '-'];
           try { worker.Module!.callMain(['renew', next.video, next.audio, next.metadata, ...args]); } catch { fault(); }
         }
       } catch { stop('invalid'); }

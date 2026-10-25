@@ -1,6 +1,4 @@
 import type {ResourceOwner} from '../app/resource-owner.ts';
-declare const BILISOFA_PRODUCT_BROWSE:boolean;
-export const PRODUCT_BROWSE=typeof BILISOFA_PRODUCT_BROWSE!=='undefined'&&BILISOFA_PRODUCT_BROWSE;
 type Page={buttons:HTMLButtonElement[];release:()=>void;noMore:boolean;expiresAt:number};
 const owners=new WeakMap<HTMLElement,ContinuousGrid>();
 /** A bounded DOM window over the source's existing pages. No synthetic key events,

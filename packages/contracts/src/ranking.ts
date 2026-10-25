@@ -2,7 +2,7 @@ import { parseCategoryId, type CategoryId } from './categories.ts';
 import { DomainError, boundedMessage, finite, popularScope, record, text, parsePopularCard, parseCoverReference, type Scope, type PopularCard, type PopularResult, type CoverReference } from './index.ts';
 import { pgcId } from './pgc-season.ts';
 import { parseUpArchiveCard, upMid, upPage, type UpArchiveCard } from './up-archives.ts';
-import { UP_FIX3, parseVisitorId, visitorArgument, type VisitorId } from './visitor.ts';
+import { parseVisitorId, visitorArgument, type VisitorId } from './visitor.ts';
 /** One public 番剧 ranking row (ADR-096); a season, not a BV-keyed video card. */
 export interface PgcRankCard { seasonId: string; title: string; subtitle: string; rating: string; badge: string; cover?: CoverReference; }
 export function parsePgcRankCard(value: unknown): PgcRankCard {
@@ -37,9 +37,8 @@ export type RankingResult = RankingRequest & {
 }
 export function parseRankingRequest(value: unknown): RankingRequest {
   const v = boundedMessage(value);
-  // Earlier builds accept no visitor and no public-visitor operation.
-  const visitor = UP_FIX3 && v.visitor !== undefined ? { visitor: visitorArgument(v.visitor) } : {}, extra = 'visitor' in visitor ? 1 : 0;
-  if (UP_FIX3 && v.operation === 'public-visitor') {
+  const visitor = v.visitor !== undefined ? { visitor: visitorArgument(v.visitor) } : {}, extra = 'visitor' in visitor ? 1 : 0;
+  if (v.operation === 'public-visitor') {
     if (v.version !== 1 || Object.keys(v).length !== 3 || Object.keys(v).some(k => !['version','scope','operation'].includes(k))) throw new DomainError('invalid');
     return { version: 1, scope: popularScope(v.scope), operation: 'public-visitor' };
   }

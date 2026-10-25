@@ -1,4 +1,4 @@
-import {ContinuousGrid,PRODUCT_BROWSE} from '../ui/continuous-grid.ts';
+import {ContinuousGrid} from '../ui/continuous-grid.ts';
 import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import type { AccountWorkspace } from './account-workspace.ts';
 import type { ResourceOwner } from './resource-owner.ts';
@@ -6,9 +6,7 @@ import type { TvShell } from './tv-shell.ts';
 import { ProductLibraryRead, type LibraryEntry } from './product-library-read.ts';
 import { libraryCard } from '../ui/library-card.ts';
 import { productButton } from './product-frame.ts';
-import { PRODUCT_SEASON } from './season-policy.ts';
 import { PgcHotRead, type PgcHotFilter } from './pgc-hot-read.ts';
-import { PRODUCT_PROFILES } from './profile-policy.ts';
 const HOT_FILTER_KEY = 'bilisofa.hot-filter.v1';
 /** Remembered 热门番剧 filter (0.50.0, ADR-098); 国创 first because overseas 番剧 are often region-locked. */
 function savedHotFilter(): PgcHotFilter {
@@ -16,7 +14,6 @@ function savedHotFilter(): PgcHotFilter {
   return { seasonType: 4, span: 'day3' };
 }
 import { CoverArt } from '../platform/cover-art.ts';
-import { PRODUCT_UP, UP_FIX } from '../../../../packages/contracts/src/up-archives.ts';
 export type FollowingTab = 'updates' | 'bangumi' | 'drama' | 'hot';
 export interface FollowingMemory {
   tab: FollowingTab;
@@ -40,20 +37,20 @@ const tabs = [['hot', '热门番剧'], ['updates', '关注更新'], ['bangumi', 
 export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'following' | 'catalog', memory: FollowingMemory, services: Services): HTMLElement {
   const privateContent = services.workspace.state.kind === 'active';
   // 0.49.0 (ADR-096): 番剧影视 opens on the public 热门番剧 ranking, which guests can browse too.
-  const hot = PRODUCT_SEASON && route === 'catalog';
+  const hot = route === 'catalog';
   if (route === 'catalog' && memory.tab === 'updates')
     memory.tab = hot ? 'hot' : 'bangumi';
   if (!hot && memory.tab === 'hot') memory.tab = route === 'following' ? 'updates' : 'bangumi';
-  const direct = PRODUCT_UP && route === 'following' && !!services.openCatalog;
+  const direct = route === 'following' && !!services.openCatalog;
   if (direct) memory.tab = 'updates';
   const available = tabs.filter(([kind]) => kind === 'hot' ? hot : route === 'following' ? !direct || kind === 'updates' : kind !== 'updates');
   const open = () => privateContent || memory.tab === 'hot';
   const hotReader = hot ? new PgcHotRead(owner) : undefined, art = hot ? new CoverArt() : undefined;
   if (art) owner.add('following-art', () => art.close());
   // 0.49.x read 番剧 · 三日 only; 0.50.0 adds the type and time-span filter row.
-  const hotFilter: PgcHotFilter = PRODUCT_PROFILES ? savedHotFilter() : { seasonType: 1, span: 'day3' };
+  const hotFilter: PgcHotFilter = savedHotFilter();
   const filters = document.createElement('div'); filters.className = 'tv-filters tv-hot-filters'; filters.setAttribute('role', 'group'); filters.setAttribute('aria-label', '热门番剧筛选');
-  const filterButtons = PRODUCT_PROFILES && hot ? ([['type', 4, '国创'], ['type', 1, '番剧'], ['span', 'day3', '近三日'], ['span', 'week', '近一周'], ['span', 'all', '累计热门']] as const).map(([group, value, label]) => {
+  const filterButtons = hot ? ([['type', 4, '国创'], ['type', 1, '番剧'], ['span', 'day3', '近三日'], ['span', 'week', '近一周'], ['span', 'all', '累计热门']] as const).map(([group, value, label]) => {
     const b = productButton(`hot-${group}-${value}`, label, () => {
       // A newer filter supersedes a load in progress (generation tickets drop the stale reply).
       if (owner.signal.aborted || blocked) return;
@@ -120,7 +117,7 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     void read(1, true, true); });
   const login = button('following-login', route === 'following' ? '登录查看关注更新' : '登录查看追番与追剧', () => { void shell.navigateTop({ page: 'account' }); });
   paging.append(previous, next, refresh);
-  const feed=PRODUCT_BROWSE?new ContinuousGrid(owner,grid,{load:page=>read(page),restored:value=>{page=value;memory.pages[memory.tab]=value;},top:()=> filterOn() ? activeFilter()! : 'following-tab-'+memory.tab,left:()=> 'nav-'+route,bottom:()=> 'following-refresh'}):undefined;
+  const feed=new ContinuousGrid(owner,grid,{load:page=>read(page),restored:value=>{page=value;memory.pages[memory.tab]=value;},top:()=> filterOn() ? activeFilter()! : 'following-tab-'+memory.tab,left:()=> 'nav-'+route,bottom:()=> 'following-refresh'});
   if(feed)previous.hidden=next.hidden=true;
   login.hidden = privateContent;
   const maxPage = () => memory.tab === 'updates' ? 25 : 25000;
@@ -137,8 +134,8 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
     if (busy && !feed || owner.signal.aborted)
       return;
     // A season card opens the season page itself; the intermediate panel only repeated it.
-    if (PRODUCT_SEASON && card.seasonId && !card.target) { services.openSeason({ seasonId: card.seasonId }); return; }
-    if (UP_FIX && services.openVideo && card.target) { services.openVideo({ bvid: card.target.bvid, title: card.title, owner: '', durationSec: 0, views: 0, ...(card.cover ? { cover: card.cover } : {}) }, card.target.part); return; }
+    if (card.seasonId && !card.target) { services.openSeason({ seasonId: card.seasonId }); return; }
+    if (services.openVideo && card.target) { services.openVideo({ bvid: card.target.bvid, title: card.title, owner: '', durationSec: 0, views: 0, ...(card.cover ? { cover: card.cover } : {}) }, card.target.part); return; }
     shell.openModal('following-detail', child => {
       const panel = document.createElement('section');
       panel.className = 'tv-library-detail';

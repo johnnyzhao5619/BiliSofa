@@ -9,7 +9,6 @@ import { MediaOverlayView } from '../ui/media-overlays.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { TvShell } from './tv-shell.ts';
 import { searchKeyword } from './search-keyword.ts';
-import { PRODUCT_READING } from './reading-policy.ts';
 
 /** Optional reads never control or close the decoder. The media page provides
  * actual snapshots; the shell remains the only keyboard/focus owner. */
@@ -144,20 +143,20 @@ export class VodOverlays {
       const reset = button('overlay-reset', () => this.resetPreferences());
       const back = button('overlay-back', () => { void this.shell.back(); }); back.textContent = '返回播放';
       // ADR-093: adjustable rows read “名称 ‹ 值 ›” and step with Left/Right inside fixed choices.
-      const value = (name: string, current: string) => PRODUCT_READING ? `${name} ‹ ${current} ›` : `${name}：${current}`;
+      const value = (name: string, current: string) => `${name} ‹ ${current} ›`;
       function renderText(b: HTMLElement, value: string) { if (b.textContent !== value) b.textContent = value; }
       const render = () => {
         if (child.signal.aborted) return; const d = this.preferences.danmaku, s = this.preferences.subtitles;
         renderText(dm, `弹幕：${d.enabled ? '开启' : '关闭'}`); dm.setAttribute('aria-pressed', String(d.enabled)); renderText(size, value('弹幕字号', String(d.fontSize))); renderText(opacity, value('弹幕透明度', `${Math.round(d.opacity * 100)}%`)); renderText(density, value('同屏上限', String(d.density))); renderText(area, value('弹幕区域', `${d.area * 100}%`)); renderText(filter, `关键词过滤：${d.filters.length}项`);
-        renderText(subtitles, `字幕：${s.enabled ? '开启' : '关闭'}`); subtitles.setAttribute('aria-pressed', String(s.enabled)); renderText(language, `字幕语言：${this.tracks.find(t => t.key === this.selected)?.label ?? '无可用轨道'}`); language.disabled = !this.tracks.length; renderText(subsize, value('字幕字号', String(s.fontSize))); renderText(early, '字幕提前0.5秒'); renderText(late, '字幕延后0.5秒'); renderText(zero, PRODUCT_READING ? value('字幕偏移', `${s.offsetMs > 0 ? '+' : ''}${s.offsetMs / 1000}秒`) : `字幕偏移：${s.offsetMs / 1000}秒 · 归零`); renderText(reload, '重新读取本项叠加数据'); renderText(reset, '重置当前身份叠加偏好'); renderText(status, (scope === 'subtitles' ? [this.subtitleStatus(), this.preferenceStatus] : scope === 'danmaku' ? [this.danmakuStatus, this.preferenceStatus] : [this.metadataStatus, this.danmakuStatus, this.preferenceStatus]).filter(Boolean).join('；'));
+        renderText(subtitles, `字幕：${s.enabled ? '开启' : '关闭'}`); subtitles.setAttribute('aria-pressed', String(s.enabled)); renderText(language, `字幕语言：${this.tracks.find(t => t.key === this.selected)?.label ?? '无可用轨道'}`); language.disabled = !this.tracks.length; renderText(subsize, value('字幕字号', String(s.fontSize))); renderText(early, '字幕提前0.5秒'); renderText(late, '字幕延后0.5秒'); renderText(zero, value('字幕偏移', `${s.offsetMs > 0 ? '+' : ''}${s.offsetMs / 1000}秒`)); renderText(reload, '重新读取本项叠加数据'); renderText(reset, '重置当前身份叠加偏好'); renderText(status, (scope === 'subtitles' ? [this.subtitleStatus(), this.preferenceStatus] : scope === 'danmaku' ? [this.danmakuStatus, this.preferenceStatus] : [this.metadataStatus, this.danmakuStatus, this.preferenceStatus]).filter(Boolean).join('；'));
       };
       grid.append(dm, size, opacity, density, area, filter, subtitles, language, subsize, early, late, zero, reload, reset);
-      if (PRODUCT_READING && scope) {
+      if (scope) {
         const subtitleRows = [subtitles, language, subsize, early, late, zero];
         for (const row of [dm, size, opacity, density, area, filter, ...subtitleRows]) row.hidden = scope === 'subtitles' ? !subtitleRows.includes(row) : subtitleRows.includes(row);
         heading.textContent = scope === 'subtitles' ? '字幕设置' : '弹幕设置';
       }
-      if (PRODUCT_READING) {
+      {
         early.hidden = late.hidden = true; node.classList.add('overlay-stepper');
         const step = (current: number, choices: number[], direction: number) => choices[Math.max(0, Math.min(choices.length - 1, Math.max(0, choices.indexOf(current)) + direction))]!;
         // save() replaces the preference object, so every step reads the current one.

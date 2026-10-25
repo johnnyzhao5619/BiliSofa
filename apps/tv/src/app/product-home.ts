@@ -1,4 +1,4 @@
-import {ContinuousGrid,PRODUCT_BROWSE} from '../ui/continuous-grid.ts';
+import {ContinuousGrid} from '../ui/continuous-grid.ts';
 import {productContinuing,continueDetails} from './product-continuing.ts';
 import { DomainError, type PopularCard } from '../../../../packages/contracts/src/index.ts';
 import { ContentApiError, PopularReadError, type ContentQuery } from '../../../../packages/contracts/src/content.ts';
@@ -12,14 +12,11 @@ import { PublicContentRuntime } from '../platform/content-runtime.ts';
 import { CoverArt } from '../platform/cover-art.ts';
 import { contentCard } from '../ui/content-card.ts';
 import { openVideoDetail, type VideoDetailServices } from './product-video-detail.ts';
-import { UP_FIX } from '../../../../packages/contracts/src/up-archives.ts';
-import { UP_FIX2 } from '../../../../packages/contracts/src/public-read.ts';
 import { limitedFrom, limitedText } from '../platform/public-lists.ts';
 import { productButton } from './product-frame.ts';
 import { contentLoadFailureText } from './user-messages.ts';
 import { categoryPicker } from './category-picker.ts';
 import { homeShelves } from './product-shelves.ts';
-import { PRODUCT_POLISH } from './polish-policy.ts';
 import type { VodAbout } from '../../../../packages/contracts/src/vod-catalog.ts';
 import { frameBack } from './product-frame.ts';
 export interface HomeSource {
@@ -71,7 +68,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
     const grid = document.createElement('div');
     grid.className = 'tv-grid';
     grid.setAttribute('aria-label', '视频');
-    const continuing=services.local&&!search?productContinuing(owner,services.profile,services.queue,card=>UP_FIX&&services.playPart?openVideoDetail(owner,shell,services,{bvid:card.point.bvid,title:card.title,owner:'',durationSec:0,views:0},{part:card.point.part}):continueDetails(owner,shell,card,services.profile,services.queue,services.local!.play)):undefined;
+    const continuing=services.local&&!search?productContinuing(owner,services.profile,services.queue,card=>services.playPart?openVideoDetail(owner,shell,services,{bvid:card.point.bvid,title:card.title,owner:'',durationSec:0,views:0},{part:card.point.part}):continueDetails(owner,shell,card,services.profile,services.queue,services.local!.play)):undefined;
     if(continuing?.first())node.dataset.initialFocusId=continuing.first()!;
     if(continuing){const all=productButton('continuing-all','查看全部本机记录',()=>services.local!.openLibrary());all.className='tv-continuing-all';continuing.node.append(all);}
     const paging = document.createElement('div');
@@ -116,7 +113,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
     previous.disabled = next.disabled = true;
     // Refresh is a recovery action: shown only for a failed or empty source, never as a trailing stop.
     refresh.hidden = true;
-    const feed=PRODUCT_BROWSE?new ContinuousGrid(owner,grid,{load:page=>{memory.source.page=page;return read(false);},restored:page=>{memory.source.page=page;},top:()=>sourceButtons.find(b=>b.getAttribute('aria-pressed')==='true')?.dataset.focusId??'source-popular',left:()=>search?'nav-search':'nav-home',bottom:()=> 'home-refresh'}):undefined;
+    const feed=new ContinuousGrid(owner,grid,{load:page=>{memory.source.page=page;return read(false);},restored:page=>{memory.source.page=page;},top:()=>sourceButtons.find(b=>b.getAttribute('aria-pressed')==='true')?.dataset.focusId??'source-popular',left:()=>search?'nav-search':'nav-home',bottom:()=> 'home-refresh'});
     if(feed)previous.hidden=next.hidden=true;
     paging.append(previous, next, refresh);
     function detail(card: PopularCard): void { openVideoDetail(owner, shell, services, card, { thumbnails: node }); }
@@ -177,7 +174,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
             if (committed)
                 memory.source = { ...committed };
             const code = error instanceof PopularReadError || error instanceof SearchReadError ? error.detail : error instanceof ContentApiError ? 'API ' + error.apiCode : error instanceof DomainError ? error.code : 'invalid';
-            const limited = UP_FIX2 ? limitedFrom(error) : undefined;
+            const limited = limitedFrom(error);
             status.textContent = limited ? limitedText(limited) : contentLoadFailureText(!!oldCards); status.title = code; refresh.textContent = '重试'; refresh.hidden = false;
             failed = true;
         }
@@ -190,17 +187,17 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
                 // ADR-104: a failed read never leaves the remote on nothing (BODY, a hidden shelf or a disabled control).
                 const now = document.activeElement as HTMLElement | null;
                 const lost = !now || now === document.body || !now.isConnected || (now as HTMLButtonElement).disabled || (node.contains(now) && !now.offsetParent);
-                if (UP_FIX && failed && node.isConnected && !document.querySelector('#overlays>section') && lost) refresh.focus();
+                if (failed && node.isConnected && !document.querySelector('#overlays>section') && lost) refresh.focus();
                 // ADR-105: after any read (a successful 重试 included) the remote lands on a card, 重试 or the selected source.
-                else if (UP_FIX2 && node.isConnected && !document.querySelector('#overlays>section') && lost)
+                else if (node.isConnected && !document.querySelector('#overlays>section') && lost)
                     (grid.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? (!refresh.hidden ? refresh : sourceButtons.find(b => b.getAttribute('aria-pressed') === 'true') ?? sourceButtons[0]))?.focus();
             }
         }
     }
     function wireTools(): void { wireTools0(); if(shelves&&continuing&&!gridMode){const row=shelves.firstRowIds(),cards=[...continuing.node.querySelectorAll<HTMLButtonElement>('.tv-continuing-grid button,[data-focus-id=continuing-all]')];cards.forEach((b,j)=>{b.dataset.down=row[Math.min(j,row.length-1)]??b.dataset.focusId;});} }
-    function wireTools0(): void { if(continuing){const cards=[...continuing.node.querySelectorAll<HTMLButtonElement>('.tv-continuing-grid button')],all=continuing.node.querySelector<HTMLButtonElement>('[data-focus-id=continuing-all]');if(all){if(cards.at(-1))cards.at(-1)!.dataset.right='continuing-all';all.dataset.left=cards.at(-1)?.dataset.focusId??'nav-home';all.dataset.right=sourceButtons.find(b=>!b.disabled)?.dataset.focusId??'source-popular';all.dataset.up=cards.at(-1)?.dataset.focusId??'nav-home';all.dataset.down=all.dataset.right;}} const searchButtons = [...tools.querySelectorAll<HTMLButtonElement>('.tv-search-actions button')]; searchButtons.forEach((b, i) => { b.dataset.left = searchButtons[i - 1]?.dataset.focusId ?? 'nav-search'; b.dataset.right = searchButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = continuing?.first()??b.dataset.focusId; b.dataset.down = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? b.dataset.focusId; }); sourceButtons.forEach((b, i) => { b.dataset.left = i ? sourceButtons[i - 1]!.dataset.focusId : 'nav-home'; b.dataset.right = sourceButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = continuing?.first()??b.dataset.focusId; b.dataset.down = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? 'home-refresh'; }); const available = [previous, next, refresh].filter(b => !b.disabled && !b.hidden); available.forEach((b, i) => { b.dataset.left = available[i - 1]?.dataset.focusId ?? (search ? 'nav-search' : 'nav-home'); b.dataset.right = available[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? (UP_FIX && !search ? (sourceButtons.find(s => s.getAttribute('aria-pressed') === 'true') ?? sourceButtons[0])?.dataset.focusId ?? 'nav-home' : 'search-input'); b.dataset.down = b.dataset.focusId; }); feed?.wire(); }
-    // Shelves landing (PRODUCT_POLISH): the existing continuous grid becomes the “查看更多” page.
-    const shelvesEnabled = PRODUCT_POLISH && !search;
+    function wireTools0(): void { if(continuing){const cards=[...continuing.node.querySelectorAll<HTMLButtonElement>('.tv-continuing-grid button')],all=continuing.node.querySelector<HTMLButtonElement>('[data-focus-id=continuing-all]');if(all){if(cards.at(-1))cards.at(-1)!.dataset.right='continuing-all';all.dataset.left=cards.at(-1)?.dataset.focusId??'nav-home';all.dataset.right=sourceButtons.find(b=>!b.disabled)?.dataset.focusId??'source-popular';all.dataset.up=cards.at(-1)?.dataset.focusId??'nav-home';all.dataset.down=all.dataset.right;}} const searchButtons = [...tools.querySelectorAll<HTMLButtonElement>('.tv-search-actions button')]; searchButtons.forEach((b, i) => { b.dataset.left = searchButtons[i - 1]?.dataset.focusId ?? 'nav-search'; b.dataset.right = searchButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = continuing?.first()??b.dataset.focusId; b.dataset.down = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? b.dataset.focusId; }); sourceButtons.forEach((b, i) => { b.dataset.left = i ? sourceButtons[i - 1]!.dataset.focusId : 'nav-home'; b.dataset.right = sourceButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = continuing?.first()??b.dataset.focusId; b.dataset.down = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? 'home-refresh'; }); const available = [previous, next, refresh].filter(b => !b.disabled && !b.hidden); available.forEach((b, i) => { b.dataset.left = available[i - 1]?.dataset.focusId ?? (search ? 'nav-search' : 'nav-home'); b.dataset.right = available[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = grid.querySelector<HTMLElement>('[data-focus-id]')?.dataset.focusId ?? (!search ? (sourceButtons.find(s => s.getAttribute('aria-pressed') === 'true') ?? sourceButtons[0])?.dataset.focusId ?? 'nav-home' : 'search-input'); b.dataset.down = b.dataset.focusId; }); feed?.wire(); }
+    // Shelves landing (ADR-091): the existing continuous grid becomes the “查看更多” page.
+    const shelvesEnabled = !search;
     let gridMode = !shelvesEnabled || memory.mode === 'grid', returnTo = '';
     const openGrid = (source: HomeSource, from: string) => { if (owner.signal.aborted) return; returnTo = from; memory.source = { ...source, page: 1 }; memory.mode = 'grid'; gridMode = true; showMode(); const tab = sourceButtons.find(b => b.dataset.focusId === 'source-' + source.kind); tab?.focus(); void read(false, true).then(() => { if (gridMode && document.activeElement === tab) grid.querySelector<HTMLElement>('[data-focus-id]')?.focus(); }); };
     const shelves = shelvesEnabled ? homeShelves(owner, services, () => wireTools(), detail, openGrid, () => { openGrid(memory.source.kind === 'search' || memory.source.kind === 'category' ? { kind: 'popular', page: 1 } : memory.source, 'shelf-categories'); category.click(); }, () => continuing?.first()) : undefined;

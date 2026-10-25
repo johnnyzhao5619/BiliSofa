@@ -30,6 +30,6 @@
 | 0.38.0冻结 | 倍速USER PASS；关注invalid/点赞-403/互动慢/跳动缺图未通过；[用户事实](design/evidence/2026-10-22-direct/USER_ACCEPTANCE.md) |
 | 0.37.0及以前冻结 | 原最小通过组与失败保持；不覆盖原工件或把旧UI通过扩展为新设备通过 |
 
-当前安装为0.51.3，升级安装/启动获平台确认。R07候选未集成/打包/签名/部署，不将旧WGT重标为新候选。各版本均未卸载或清数据，未执行代理账号POST。已签名包与冻结dist/build不覆盖；0.47.2起`overlay-read`从新目录`build/overlay-read-subtitle`打包，0.50.3起`vod/`桥接从`build/vod-failover`打包，0.50.4起`vod-api/`、`pgc-read/`从各自的`-failover`目录打包，0.51.0起`catalog/`从`build/catalog-up`打包，0.51.1起从`build/catalog-ua`打包，0.51.2新增`public-read/`（`build/public-read`），0.51.3起`catalog/`从`build/catalog-visitor`打包，其余原生沿用。签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。
+当前安装为0.51.3，升级安装/启动获平台确认。R07候选未集成/打包/签名/部署，不将旧WGT重标为新候选。各版本均未卸载或清数据，未执行代理账号POST。已签名包与冻结dist/build不覆盖；0.47.2起`overlay-read`从新目录`build/overlay-read-subtitle`打包，0.50.3起`vod/`桥接从`build/vod-failover`打包，0.50.4起`vod-api/`、`pgc-read/`从各自的`-failover`目录打包，0.51.0起`catalog/`从`build/catalog-up`打包，0.51.1起从`build/catalog-ua`打包，0.51.2新增`public-read/`（`build/public-read`），0.51.3起`catalog/`从`build/catalog-visitor`打包，其余原生沿用。签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。2026-10-24起为单一产品构建（ADR-107）：模块目录同上，构建输出`dist/bilisofa-app`；本机已清理0.51.2以前的dist目录与未签名包，已签名包与源码快照仍在仓库外保护目录。
 
 [当前验收](CURRENT_DEVICE_TEST.md) · [0.38.0原记录](archive/2026-10-22-direct-038/SIGNING_DEVICE_RECORD.md)

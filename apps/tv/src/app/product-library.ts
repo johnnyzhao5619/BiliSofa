@@ -1,4 +1,4 @@
-import {ContinuousGrid,PRODUCT_BROWSE} from '../ui/continuous-grid.ts';
+import {ContinuousGrid} from '../ui/continuous-grid.ts';
 import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import type { ProfileStore } from '../../../../packages/contracts/src/local-profile.ts';
 import { queuePart, queueItemKey, type QueueStore, type QueueItem } from '../../../../packages/contracts/src/local-queue.ts';
@@ -12,8 +12,6 @@ import { CoverArt } from '../platform/cover-art.ts';
 import { libraryCard, type LibraryCardView } from '../ui/library-card.ts';
 import { clockTime } from '../ui/content-card.ts';
 import type { PopularCard } from '../../../../packages/contracts/src/index.ts';
-import { UP_FIX } from '../../../../packages/contracts/src/up-archives.ts';
-import { UP_FIX2 } from '../../../../packages/contracts/src/public-read.ts';
 import type { VideoDetailContext } from './product-video-detail.ts';
 export type LibraryTab = 'local' | 'queue' | 'watchlater' | 'history' | 'folders';
 export interface LibraryMemory {
@@ -101,7 +99,7 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
   if (folder) filters.append(back);
   else{filters.append(...filterButtons);if(services.workspace.state.kind!=='active')filters.append(login);}
   paging.append(browse, previous, next, refresh, ...(folder ? [] : [continuous, back]));
-  const feed=PRODUCT_BROWSE?new ContinuousGrid(owner,grid,{load:page=>read(page,false,undefined,undefined,true),restored:page=>{currentPage=page;memory.pages[currentKind]=page;},top:()=>folder?prefix+'-back':'library-tab-'+currentKind,left:()=>folder?prefix+'-back':'nav-library',bottom:()=>prefix+'-refresh'}):undefined;
+  const feed=new ContinuousGrid(owner,grid,{load:page=>read(page,false,undefined,undefined,true),restored:page=>{currentPage=page;memory.pages[currentKind]=page;},top:()=>folder?prefix+'-back':'library-tab-'+currentKind,left:()=>folder?prefix+'-back':'nav-library',bottom:()=>prefix+'-refresh'});
   if(feed)previous.hidden=next.hidden=true;
   function currentTarget(entry: Entry): {
     target: {
@@ -165,13 +163,13 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
     }
     // History, watch-later and favourites open the full detail page; queue and local records keep their own panels.
     // ADR-105: 继续观看 and 本机播放队列 too, keeping their own actions on the full page.
-    if (UP_FIX2 && services.openVideo && entry.target && (entry.queued || entry.local)) {
+    if (services.openVideo && entry.target && (entry.queued || entry.local)) {
       services.openVideo({ bvid: entry.target.bvid, title: entry.title, owner: '', durationSec: 0, views: 0, ...(entry.cover ? { cover: entry.cover } : {}) }, entry.target.part, {
         ...(entry.queued ? { primary: { label: '从本项开始播放队列', run: () => queuePlay(entry) }, enqueue: false } : {}),
         extra: (child, closeThen) => contextActions(entry, child, closeThen) });
       return;
     }
-    if (UP_FIX && services.openVideo && entry.target && !entry.queued && !entry.local) {
+    if (services.openVideo && entry.target && !entry.queued && !entry.local) {
       services.openVideo({ bvid: entry.target.bvid, title: entry.title, owner: '', durationSec: 0, views: 0, ...(entry.cover ? { cover: entry.cover } : {}) }, entry.target.part); return;
     }
     shell.openModal('library-detail', child => {

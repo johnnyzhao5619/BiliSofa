@@ -1,6 +1,5 @@
 import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import { ContentApiError } from '../../../../packages/contracts/src/content.ts';
-import { UP_FIX3 } from '../../../../packages/contracts/src/visitor.ts';
 /** ADR-105 request hygiene for the two risk-controlled public lists (category rankings, UP uploads).
  * Process-local: a result is reused for 10 minutes; a risk-control refusal starts a 60 s pause in which
  * nothing is requested; the last outcome is kept for 帮助与诊断 as fixed words and integers only. */
@@ -25,7 +24,7 @@ export function limitedFrom(error: unknown): PublicLimitedError | undefined {
 export async function pacedRead<T>(key: string, lane: PublicLane, list: 'category' | 'up', read: () => Promise<T>, now = Date.now): Promise<T> {
   const hit = cache.get(`${lane}:${key}`);
   if (hit && now() - hit.at < TTL_MS) return hit.value as T;
-  if (pausedUntil > now()) throw new PublicLimitedError(pausedUntil - now(), last?.apiCode, last?.http, UP_FIX3 ? lane : undefined);
+  if (pausedUntil > now()) throw new PublicLimitedError(pausedUntil - now(), last?.apiCode, last?.http, lane);
   visitorUsed = undefined;
   try {
     const value = await read();
@@ -33,12 +32,12 @@ export async function pacedRead<T>(key: string, lane: PublicLane, list: 'categor
     last = { lane, list, ok: true, ...visitorMark(lane) }; return value;
   } catch (error) {
     const limited = limitedFrom(error);
-    if (limited) { pausedUntil = now() + PAUSE_MS; last = { lane, list, ok: false, ...visitorMark(lane), ...(limited.apiCode === undefined ? {} : { apiCode: limited.apiCode }), ...(limited.http === undefined ? {} : { http: limited.http }) }; throw new PublicLimitedError(PAUSE_MS, limited.apiCode, limited.http, UP_FIX3 ? lane : undefined); }
+    if (limited) { pausedUntil = now() + PAUSE_MS; last = { lane, list, ok: false, ...visitorMark(lane), ...(limited.apiCode === undefined ? {} : { apiCode: limited.apiCode }), ...(limited.http === undefined ? {} : { http: limited.http }) }; throw new PublicLimitedError(PAUSE_MS, limited.apiCode, limited.http, lane); }
     if (!(error instanceof DomainError && error.code === 'cancelled')) last = { lane, list, ok: false, ...visitorMark(lane) };
     throw error;
   }
 }
-const visitorMark = (lane: PublicLane) => UP_FIX3 && lane === 'guest' && visitorUsed !== undefined ? { visitor: visitorUsed } : {};
+const visitorMark = (lane: PublicLane) => lane === 'guest' && visitorUsed !== undefined ? { visitor: visitorUsed } : {};
 /** Seconds left in the pause, for “约 N 秒后可重试”. */
 export const pauseSeconds = (error: PublicLimitedError) => Math.max(1, Math.ceil(error.retryInMs / 1000));
 export function limitedText(error: PublicLimitedError): string {

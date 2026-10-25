@@ -1,2 +1,0 @@
-declare const BILISOFA_PRODUCT_STREAM:boolean;
-export const PRODUCT_STREAM=typeof BILISOFA_PRODUCT_STREAM!=='undefined'&&BILISOFA_PRODUCT_STREAM;

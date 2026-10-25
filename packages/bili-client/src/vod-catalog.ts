@@ -1,9 +1,7 @@
 import { DomainError, record, text } from '../../contracts/src/index.ts';
 import { parseVodCatalog, parseVodChoice, vodBvid, vodChoiceSupported, vodInteger, type AudioCodec, type VideoCodec, type VodCapabilities, type VodCatalog, type VodDetail, type VodAbout, type VodItem } from '../../contracts/src/vod-catalog.ts';
-import { GuestVideoError, guestCdnUrl } from './guest-video.ts';
+import { GuestVideoError } from './guest-video.ts';
 import { vodCdnPair } from './vod-cdn.ts';
-import { CDN_FAILOVER, SOURCE_FAILOVER } from '../../contracts/src/cdn-failover.ts';
-import { PRODUCT_UP } from '../../contracts/src/up-archives.ts';
 import { publicArtwork } from './public-artwork.ts';
 import type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-private.ts';
 export type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-private.ts';
@@ -29,14 +27,14 @@ function data(raw: string): Record<string, unknown> {
 function caption(value: unknown, max: number): string { return text(value, 2048).slice(0, max); }
 function optionalFlag(value: unknown): boolean { return value !== undefined && value !== false && value !== 0; }
 /** Detail-page facts are optional: a missing or malformed field is dropped and never blocks playback. */
-function vodAbout(d: Record<string, unknown>, withMid = PRODUCT_UP): VodAbout | undefined {
+function vodAbout(d: Record<string, unknown>): VodAbout | undefined {
   const about: VodAbout = {};
   if (typeof d.desc === 'string') { const description = d.desc.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 2000); if (description && description !== '-') about.description = description; }
   if (Number.isSafeInteger(d.pubdate) && (d.pubdate as number) > 0 && (d.pubdate as number) < 4102444800) about.publishedAt = d.pubdate as number;
   const stat = d.stat !== null && typeof d.stat === 'object' ? d.stat as Record<string, unknown> : {};
   for (const [key, field] of [['views', 'view'], ['likes', 'like'], ['danmaku', 'danmaku']] as const) { const n = stat[field]; if (Number.isSafeInteger(n) && (n as number) >= 0) about[key] = n as number; }
   const owner = d.owner !== null && typeof d.owner === 'object' ? d.owner as Record<string, unknown> : {}, face = publicArtwork(owner.face); if (face) about.face = face;
-  if (withMid && Number.isSafeInteger(owner.mid) && (owner.mid as number) > 0) about.ownerMid = String(owner.mid);
+  if (Number.isSafeInteger(owner.mid) && (owner.mid as number) > 0) about.ownerMid = String(owner.mid);
   return Object.keys(about).length ? about : undefined;
 }
 export function parseVodDetail(raw: string, bvid: string): PrivateVodDetail {
@@ -109,20 +107,14 @@ function frameRate(value: unknown): number {
   if (!Number.isFinite(rate) || rate <= 0 || rate > 240) throw new DomainError('invalid');
   return rate;
 }
-function source(raw: unknown, kind: 'video' | 'audio', now: number, failover: boolean, ordered: boolean): PrivateVodTrack {
+function source(raw: unknown, kind: 'video' | 'audio', now: number): PrivateVodTrack {
   const t = record(raw), codec = text(t.codecs, 64);
   if (t.mimeType !== `${kind}/mp4` && t.mime_type !== `${kind}/mp4`) throw new GuestVideoError('unsupported');
   if (t.drm_tech_type || t.drm || t.content_protection) throw new GuestVideoError('unsupported');
   if (kind === 'video') codecKind(codec, 'video'); else codecKind(codec, 'audio');
   const backup = t.backupUrl ?? t.backup_url ?? [];
   if (!Array.isArray(backup) || backup.length > 4) throw new DomainError('invalid');
-  let cdn: { url: string; expiresAt: number; alternate?: string } | undefined, expired = false;
-  if (failover) cdn = vodCdnPair([t.baseUrl ?? t.base_url, ...backup], now, ordered);
-  else for (const value of [t.baseUrl ?? t.base_url, ...backup]) {
-    try { cdn = guestCdnUrl(value, now); break; }
-    catch (error) { expired ||= error instanceof GuestVideoError && error.reason === 'expired_source'; }
-  }
-  if (!cdn) throw new GuestVideoError(expired ? 'expired_source' : 'cdn_unavailable');
+  const cdn = vodCdnPair([t.baseUrl ?? t.base_url, ...backup], now);
   const s = record(t.SegmentBase ?? t.segment_base);
   const initialization = text(s.Initialization ?? s.initialization, 32), indexRange = text(s.indexRange ?? s.index_range, 32);
   const init = /^0-([0-9]{1,8})$/.exec(initialization), index = /^([0-9]{1,8})-([0-9]{1,8})$/.exec(indexRange);
@@ -130,7 +122,7 @@ function source(raw: unknown, kind: 'video' | 'audio', now: number, failover: bo
   return { url: cdn.url, ...(cdn.alternate ? { alternate: cdn.alternate } : {}), expiresAt: cdn.expiresAt, codec, bandwidth: vodInteger(t.bandwidth, 1, kind === 'video' ? 200000000 : 16000000), initialization, indexRange,
     ...(kind === 'video' ? { width: vodInteger(t.width, 1, 16384), height: vodInteger(t.height, 1, 8640) } : {}) };
 }
-export function parseVodPlayback(raw: string, part: PrivateVodPart, catalogId: string, now = Date.now(), failover = CDN_FAILOVER, ordered = SOURCE_FAILOVER): PrivateVodCatalog {
+export function parseVodPlayback(raw: string, part: PrivateVodPart, catalogId: string, now = Date.now()): PrivateVodCatalog {
   if (!/^[a-f0-9]{32}$/.test(catalogId) || !Number.isSafeInteger(now) || now < 1) throw new DomainError('invalid');
   const d = data(raw), dash = record(d.dash);
   if (d.is_preview || d.drm_tech_type || d.durl) throw new GuestVideoError('unsupported');
@@ -143,7 +135,7 @@ export function parseVodPlayback(raw: string, part: PrivateVodPart, catalogId: s
   for (const rawTrack of dash.video) {
     const t = record(rawTrack);
     try {
-      const parsed = source(t, 'video', now, failover, ordered), codec = codecKind(parsed.codec, 'video'), quality = vodInteger(t.id, 1, 127);
+      const parsed = source(t, 'video', now), codec = codecKind(parsed.codec, 'video'), quality = vodInteger(t.id, 1, 127);
       const format = (formats as unknown[] | undefined)?.map(record).find(f => f.quality === quality);
       const label = format?.new_description ?? format?.description;
       videos.push({ key: `v${video.length}`, quality, label: label === undefined ? `画质 ${quality}` : caption(label, 64), codec,
@@ -169,7 +161,7 @@ export function parseVodPlayback(raw: string, part: PrivateVodPart, catalogId: s
   const audio: PrivateVodTrack[] = [], audios: VodCatalog['audios'] = [];
   for (const rawTrack of rawAudios) {
     try {
-      const parsed = source(rawTrack, 'audio', now, failover, ordered), codec = codecKind(parsed.codec, 'audio');
+      const parsed = source(rawTrack, 'audio', now), codec = codecKind(parsed.codec, 'audio');
       audios.push({ key: `a${audio.length}`, label: `${codec.toUpperCase()} · ${Math.round(parsed.bandwidth / 1000)} kbps`, codec, bandwidth: parsed.bandwidth });
       audio.push(parsed);
     } catch (error) {

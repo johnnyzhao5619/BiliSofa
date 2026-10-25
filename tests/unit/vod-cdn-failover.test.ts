@@ -19,11 +19,10 @@ test('ADR-101 destination policy adds only the Bilibili Akamai backup family, un
   assert.throws(() => vodCdnUrl(at(akam, 'v', Math.floor(now / 1000) + 10), now), { reason: 'expired_source' });
 });
 
-test('ADR-101 the primary stays the first bilivideo address; the backup is the first validated one on another host', () => {
-  assert.deepEqual(vodCdnPair([at(akam), at(cosov)], now), { url: at(cosov), expiresAt: deadline * 1000, alternate: at(akam) });
+test('ADR-101 the backup is the first validated address on another host; the pair expires with its earlier member', () => {
   assert.deepEqual(vodCdnPair([at(cosov), at(akam, 'v', deadline - 60)], now), { url: at(cosov), expiresAt: (deadline - 60) * 1000, alternate: at(akam, 'v', deadline - 60) });
   assert.deepEqual(vodCdnPair([at(cosov), at(cosov, 'w'), 'http://127.0.0.1/private'], now), { url: at(cosov), expiresAt: deadline * 1000 });
-  assert.throws(() => vodCdnPair([at(akam)], now), { reason: 'cdn_unavailable' });
+  assert.throws(() => vodCdnPair(['http://127.0.0.1/private'], now), { reason: 'cdn_unavailable' });
 });
 
 const caps: VodCapabilities = { video: ['avc'], audio: ['aac'], qualities: [16, 32, 64, 80], maxWidth: 1920, maxHeight: 1080, maxFps: 30, rates: [1, 2] };
@@ -33,24 +32,23 @@ const track = (kind: 'video' | 'audio') => ({ id: kind === 'video' ? 80 : 30280,
 const raw = JSON.stringify({ code: 0, data: { quality: 80, timelength: 3600000, support_formats: [{ quality: 80, new_description: '1080P' }], dash: { duration: 3600, video: [track('video')], audio: [track('audio')] } } });
 const part = { cid: '202', item: { bvid: 'BV0000000001', part: 1, title: '合成', durationMs: 3600000 } };
 
-test('ADR-101 the parser keeps the backup only in the failover build; older builds parse exactly as before', () => {
-  const on = parseVodPlayback(raw, part, 'a'.repeat(32), now, true), off = parseVodPlayback(raw, part, 'a'.repeat(32), now, false);
+test('ADR-101 the parser keeps each track’s backup privately; it never reaches the public catalog', () => {
+  const on = parseVodPlayback(raw, part, 'a'.repeat(32), now);
   assert.equal(on.video[0]!.url, at(cosov, 'video')); assert.equal(on.video[0]!.alternate, at(akam, 'video')); assert.equal(on.audio[0]!.alternate, at(akam, 'audio'));
-  assert.equal(off.video[0]!.url, at(cosov, 'video')); assert.ok(!('alternate' in off.video[0]!)); assert.ok(!JSON.stringify(off).includes('akamaized'));
   assert.ok(!JSON.stringify(on.summary).includes('akamaized'), 'backups never reach the public catalog');
 });
 
-function owner(failover: boolean) {
-  const catalog = parseVodPlayback(raw, part, 'a'.repeat(32), now, true);
+function owner() {
+  const catalog = parseVodPlayback(raw, part, 'a'.repeat(32), now);
   const detail: PrivateVodDetail = { guestAllowed: true, parts: [part], summary: { title: '合成', owner: '合成', parts: [part.item] } } as PrivateVodDetail;
   const api: VodReadApi = { async catalog(_b, _p, nonce) { const c = structuredClone(catalog) as PrivateVodCatalog; c.summary.id = nonce; return { detail, catalog: c }; },
     async inspect() { return { video: 160000, audio: 32000 }; }, async close() {} };
   let n = 0; const ids = ['c'.repeat(32), 'd'.repeat(32), 'e'.repeat(32)];
-  return new VodSourceOwner(api, caps, undefined, () => ids[n++ % 3]!, () => now, failover);
+  return new VodSourceOwner(api, caps, undefined, () => ids[n++ % 3]!, () => now);
 }
 
-test('ADR-101 the offer names each backup; a host the bridge left starts later leases on that track’s backup', async () => {
-  const o = owner(true);
+test('ADR-101/102 the offer names each backup; a host the bridge left is avoided by later leases on this page', async () => {
+  const o = owner();
   let result = await o.read({ bvid: 'BV0000000001', part: 1 });
   const choice = { catalogId: result.catalog.id, videoKey: 'v0', audioKey: 'a0' }, lease = 'b'.repeat(32);
   let offer = await o.attach(lease, choice);
@@ -59,13 +57,9 @@ test('ADR-101 the offer names each backup; a host the bridge left starts later l
   o.exclude(lease, 1); await o.release(lease);
   result = await o.read({ bvid: 'BV0000000001', part: 1 });
   offer = await o.attach(lease, { ...choice, catalogId: result.catalog.id });
-  // Exclusion is per host (like a DASH BaseURL exclusion list): both tracks shared the failing host.
-  assert.equal(offer.start, 3); assert.equal(offer.video, at(cosov, 'video'), 'the source check still reads the primary');
+  // Exclusion is per host (like a DASH BaseURL exclusion list): both tracks shared the failing host, so both move to their backup.
+  assert.equal(offer.start, 0); assert.equal(offer.video, at(akam, 'video')); assert.equal(offer.audio, at(akam, 'audio')); assert.equal(offer.videoAlternate, at(cosov, 'video'));
   await o.release(lease);
-  const old = owner(false); result = await old.read({ bvid: 'BV0000000001', part: 1 });
-  offer = await old.attach(lease, { ...choice, catalogId: result.catalog.id });
-  assert.deepEqual(Object.keys(offer).sort(), ['audio', 'bvid', 'expiresAt', 'metadata', 'video']);
-  assert.throws(() => old.exclude(lease, 1), { code: 'invalid' });
 });
 
 test('ADR-101 the diagnostics line keeps only fixed integers from bridge evidence', () => {

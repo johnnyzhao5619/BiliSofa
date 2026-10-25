@@ -15,7 +15,7 @@ test('ADR-105 a public list is reused for ten minutes and nothing is asked durin
   await assert.rejects(pacedRead('1004', 'guest', 'category', async () => { calls++; throw new ContentApiError(-352); }, now), (e: unknown) => e instanceof PublicLimitedError && e.apiCode === -352 && e.retryInMs === 60000);
   assert.equal(publicListNote(), '最近一次分区读取：游客 · B站返回 -352');
   t += 30000;
-  await assert.rejects(pacedRead('1008', 'guest', 'category', ok, now), (e: unknown) => e instanceof PublicLimitedError && limitedText(e) === 'B站暂时限制了访问（风控 -352），约 30 秒后可重试');
+  await assert.rejects(pacedRead('1008', 'guest', 'category', ok, now), (e: unknown) => e instanceof PublicLimitedError && limitedText(e) === 'B站暂时限制了访问（风控 -352），约 30 秒后可重试；登录后通常更稳定');
   assert.equal(calls, 3, 'paused: no request');
   t += 31000; await pacedRead('1008', 'guest', 'up', ok, now); assert.equal(calls, 4); assert.equal(publicListNote(), '最近一次UP投稿读取：游客 · 成功');
   await assert.rejects(pacedRead('9', 'guest', 'up', async () => { throw new PublicLimitedError(0, undefined, 412); }, now));

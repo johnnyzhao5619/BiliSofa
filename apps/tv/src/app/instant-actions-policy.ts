@@ -1,2 +1,0 @@
-declare const BILISOFA_PRODUCT_INSTANT:boolean;
-export const PRODUCT_INSTANT=typeof BILISOFA_PRODUCT_INSTANT!=='undefined'&&BILISOFA_PRODUCT_INSTANT;

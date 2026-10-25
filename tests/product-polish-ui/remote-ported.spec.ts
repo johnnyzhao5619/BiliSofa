@@ -29,10 +29,10 @@ test('ADR-088 (0.46) comments from the main row start on the first comment; repl
  for(let i=0;i<4;i++)await page.keyboard.press('Escape');await expect(page.getByRole('button',{name:'评论',exact:true})).toBeFocused();expect(f.errors).toEqual([]);
 });
 test('ADR-088 (0.46) 字幕 opens the subtitle/danmaku settings on their first item',async({page})=>{
- // Every build from 0.47.1 (ADR-093 fix) on splits the panel; only 0.46.0 and 0.47.0 keep it combined: 字幕 opens subtitle settings only, danmaku has its own entry in ⚙.
- const split=!/product-polish-app|product-search-reading-app/.test(process.env.BILISOFA_TEST_ROOT??'dist/product-polish-app'),name=split?'字幕设置':'字幕与弹幕设置';
+ // ADR-093: 字幕 opens subtitle settings only; danmaku has its own entry in ⚙.
+ const name='字幕设置';
  const f=await overlay(page,'normal',false);await playFromShelf(page);await page.getByRole('button',{name,exact:true}).click();
- await expect(page.locator(split?'[data-focus-id=overlay-subtitles]':'[data-focus-id=overlay-dm]')).toBeFocused();await page.keyboard.press('Escape');await expect(page.getByRole('button',{name,exact:true})).toBeFocused();expect(f.errors).toEqual([]);
+ await expect(page.locator('[data-focus-id=overlay-subtitles]')).toBeFocused();await page.keyboard.press('Escape');await expect(page.getByRole('button',{name,exact:true})).toBeFocused();expect(f.errors).toEqual([]);
 });
 test('ADR-088 (0.46) a transient notice from the ⚙ panel clears after about 4 s',async({page})=>{
  const errors=await start(page);await settings(page);await page.getByRole('button',{name:/^加入本机队列/}).click();

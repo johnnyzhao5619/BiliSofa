@@ -21,11 +21,8 @@ async function begin(page:Page,variant='normal'){
  return {errors,reads:()=>reads};
 }
 const up=(page:Page)=>page.locator('#overlays section.tv-up-page');
-/** 0.51.2+ (ADR-105) names the code and pauses 60 s; 0.51.0/0.51.1 show the plain message and retry once. */
-const paced=!/product-up(-fix)?-app$/.test(process.env.BILISOFA_TEST_ROOT??'dist/product-up-app');
-/** 0.51.3+ (ADR-106) adds a sign-in hint for a refused guest read. */
-const hinted=/product-up-fix3-app$/.test(process.env.BILISOFA_TEST_ROOT??'');
-const limitedText=hinted?/^B站暂时限制了访问（HTTP 412），约 \d+ 秒后可重试；登录后通常更稳定$/:paced?/^B站暂时限制了访问（HTTP 412），约 \d+ 秒后可重试$/:'B站暂时限制了访问，请稍后再试';
+/** ADR-105/106: the code is named, the lane pauses 60 s, and a refused guest read suggests signing in. */
+const limitedText=/^B站暂时限制了访问（HTTP 412），约 \d+ 秒后可重试；登录后通常更稳定$/;
 async function openUpFromDetail(page:Page,reads:()=>number){
  const card=page.locator('[data-focus-id^=shelf-popular-]').first();await expect(card).toBeVisible();await card.click();
  await page.locator('[data-focus-id=detail-up]').click();await expect(up(page)).toBeVisible();await expect(up(page).locator('.tv-status')).not.toHaveText('正在读取投稿');
@@ -62,7 +59,7 @@ test('ADR-103 rate limiting is named and never retried on its own; 重新读取 
  await page.waitForTimeout(2000);expect(reads()).toBe(base);
  await page.locator('[data-focus-id=up-retry]').click();
  // During the 0.51.2 pause 重新读取 asks nothing; earlier builds ask exactly once.
- if(paced){await page.waitForTimeout(1000);expect(reads()).toBe(base);}else await expect.poll(()=>reads()).toBe(base+1);
+ await page.waitForTimeout(1000);expect(reads()).toBe(base);
  await expect(up(page).locator('.tv-status')).toHaveText(limitedText);
  expect(errors).toEqual([]);
 });

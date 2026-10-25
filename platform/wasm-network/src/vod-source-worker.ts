@@ -6,7 +6,6 @@ import { VodNativeApi, vodNativeFailure, type VodApiNative } from './vod-native-
 import { VodSourceOwner, type PrivateVodOffer } from './vod-source-owner.ts';
 import { pgcId } from '../../../packages/contracts/src/pgc-season.ts';
 import { PgcNativeApi } from './pgc-native-api.ts';
-import { CDN_FAILOVER, SOURCE_FAILOVER } from '../../../packages/contracts/src/cdn-failover.ts';
 
 interface Native extends VodApiNative {
   arguments: string[]; noInitialRun: boolean; noExitRuntime: boolean;
@@ -19,7 +18,7 @@ interface Link { id: string; port: MessagePort; timer: ReturnType<typeof setTime
 let link: Link | undefined;
 function send(request: number, kind: string, payload: object = {}): void { worker.postMessage({ version: 1, owner, request, kind, ...payload }); }
 /** ADR-102: fixed step/track/host-class/integer codes for 帮助与诊断; never a URL or host name. */
-function evidence(code: string): void { if (SOURCE_FAILOVER && owner && !poisoned) send(0, 'evidence', { code }); }
+function evidence(code: string): void { if (owner && !poisoned) send(0, 'evidence', { code }); }
 function readFailure(): void {
   const f = api?.failure();
   if (f && f.operation !== 3) evidence(`read_${f.operation}_${f.timeout ? 'timeout' : `${f.http}_${f.transport}`}`);
@@ -54,7 +53,7 @@ async function attach(v: Record<string, unknown>, port: MessagePort): Promise<vo
     try {
       const frame = record(event.data);
       // ADR-101: the bridge left one track's primary host; later leases on this page start that track on its backup.
-      if (CDN_FAILOVER && frame.kind === 'failover') {
+      if (frame.kind === 'failover') {
         vodKeys(frame, ['version', 'lease', 'kind', 'track']);
         if (frame.version !== 1 || frame.lease !== id || current !== link) throw new DomainError('invalid');
         actor!.exclude(id, vodInteger(frame.track, 1, 2)); return;
@@ -71,7 +70,7 @@ async function attach(v: Record<string, unknown>, port: MessagePort): Promise<vo
     } catch { fault(); }
   };
   port.start();
-  try { offer(current, await actor.attach(id, v.choice, SOURCE_FAILOVER ? vodInteger(v.avoid, 0, 7) : 0), 'offer'); }
+  try { offer(current, await actor.attach(id, v.choice, vodInteger(v.avoid, 0, 7)), 'offer'); }
   catch (error) {
     if (vodNativeFailure(error) === 'unknown') fault();
     else if (link === current) port.postMessage({ version: 1, lease: id, kind: 'stop', code: vodNativeFailure(error) });
@@ -95,7 +94,7 @@ worker.onmessage = event => {
           if (seasonId) pgc = { api: api as PgcNativeApi, seasonId };
           actor = new VodSourceOwner(pgc ? pgc.api.source(pgc.seasonId) : api, caps, account, () => {
             const bytes = new Uint8Array(16); crypto.getRandomValues(bytes); return Array.from(bytes, n => n.toString(16).padStart(2, '0')).join('');
-          }, Date.now, CDN_FAILOVER, SOURCE_FAILOVER, evidence);
+          }, Date.now, evidence);
           account = undefined;
           send(0, 'ready');
         }, print(line: unknown) { api?.receive(line); }, printErr() {}, onAbort: fault, locateFile: (name: string) => `${directory}/${name}` };
@@ -137,7 +136,7 @@ worker.onmessage = event => {
       }); return;
     }
     if (v.kind === 'attach') {
-      vodKeys(v, ['version', 'owner', 'request', 'kind', 'lease', 'choice', ...(SOURCE_FAILOVER ? ['avoid'] : [])]);
+      vodKeys(v, ['version', 'owner', 'request', 'kind', 'lease', 'choice', ...(['avoid'])]);
       if (event.ports.length !== 1) throw new DomainError('invalid');
       void attach(v, event.ports[0]!).catch(fault); return;
     }

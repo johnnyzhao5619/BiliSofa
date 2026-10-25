@@ -32,11 +32,11 @@ test('ADR-103 the request names only an integer UP id and a page 1–50; results
   assert.throws(() => parseRankingResult({ version: 1, scope, operation: 'public-ranking', closed: true, kind: 'ok', status: 200, apiCode: 0, code: 'ranking.ok', items: [], archives }), 'other lanes cannot carry archives');
 });
 
-test('ADR-103 the detail keeps the UP id only in the 0.51.0 build, and only as a safe integer string', () => {
+test('ADR-103 the detail keeps the UP id, and only as a safe integer string', () => {
   assert.deepEqual(parseVodAbout({ ownerMid: '777' }), { ownerMid: '777' });
   for (const bad of ['0777', '7a', 777, '9007199254740992']) assert.throws(() => parseVodAbout({ ownerMid: bad }), String(bad));
   const raw = JSON.stringify({ code: 0, data: { bvid: 'BV0000000001', cid: 101, state: 0, title: '合成', owner: { name: '合成UP', mid: 777 }, desc: '简介', rights: { pay: 0, ugc_pay: 0, is_stein_gate: 0 }, pages: [{ cid: 101, page: 1, from: 'vupload', part: 'P1', duration: 80 }] } });
-  assert.equal(parseVodDetail(raw, 'BV0000000001').summary.about?.ownerMid, undefined, 'older builds unchanged');
+  assert.equal(parseVodDetail(raw, 'BV0000000001').summary.about?.ownerMid, '777');
 });
 
 test('ADR-104 only a bounded printable runtime User-Agent may reach native; anything else keeps the probe identifier', async () => {

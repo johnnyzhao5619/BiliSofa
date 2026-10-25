@@ -1,14 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-// The 0.51.3 build flag, set before the modules below are evaluated (this file runs in its own process).
-(globalThis as { BILISOFA_UP_FIX3?: boolean }).BILISOFA_UP_FIX3 = true;
-const { parseVisitorBody } = await import('../../packages/bili-client/src/ranking.ts');
-const { parseRankingRequest, parseRankingResult } = await import('../../packages/contracts/src/ranking.ts');
-const { visitorArgument } = await import('../../packages/contracts/src/visitor.ts');
-const { VisitorIds } = await import('../../apps/tv/src/platform/visitor-id.ts');
-const { ContentApiError } = await import('../../packages/contracts/src/content.ts');
-const { DomainError } = await import('../../packages/contracts/src/index.ts');
-const { PublicLimitedError, limitedText, pacedRead, publicListNote, resetPublicLists, usedVisitor } = await import('../../apps/tv/src/platform/public-lists.ts');
+import { parseVisitorBody } from '../../packages/bili-client/src/ranking.ts';
+import { parseRankingRequest, parseRankingResult } from '../../packages/contracts/src/ranking.ts';
+import { visitorArgument } from '../../packages/contracts/src/visitor.ts';
+import { VisitorIds } from '../../apps/tv/src/platform/visitor-id.ts';
+import { ContentApiError } from '../../packages/contracts/src/content.ts';
+import { DomainError } from '../../packages/contracts/src/index.ts';
+import { PublicLimitedError, limitedText, pacedRead, publicListNote, resetPublicLists, usedVisitor } from '../../apps/tv/src/platform/public-lists.ts';
 const scope = { accountId: 'guest', generation: 1, mediaSessionId: 'visitor', requestId: 'r1' };
 const b3 = 'AB12CD34-EF56-7890-ABCD-EF1234567890infoc', rawB4 = '0F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F012345-102300000-abc+/==', b4 = encodeURIComponent(rawB4);
 const value = `${b3}|${b4}|1761200000`;

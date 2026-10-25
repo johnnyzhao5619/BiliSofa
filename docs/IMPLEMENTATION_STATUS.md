@@ -7,6 +7,7 @@
 | 对象 | 当前事实 | 证据 |
 | --- | --- | --- |
 | 已安装0.51.3 | [ADR-106](adr/106-guest-visitor-identity-and-sign-in-hint.md)：游客读取分区与UP投稿时带B站官方访客标识（spi取得的buvid3/buvid4，本机保存30天，设置 → 本机数据可一键清除；新原生`catalog-visitor`，其余原生不变）；游客被风控拒绝时提示“登录后通常更稳定”，“帮助与诊断”写明是否带标识。本地737单元/原生20/新5条合成UI（前4条对冻结0.51.2失败）/回归102条/11包负例通过；签名`19ac5ad3…3c5f`（证书预检PASS，权限不变）；升级安装/启动platformSuccess（一次，不清数据）；源码归档`aaddfb3d…759a`；**游客V1g、清除访客标识、登录状态回归 USER PASS；U5集中验收V3–V6 USER PASS（V1–V6全部通过，无FAIL，[报告](acceptance/2026-10-23-u5-final/REPORT.md)）** | [证据](design/evidence/2026-10-23-up-fix3/README.md) |
+| 0.52.0候选（未签名/未部署） | [ADR-107](adr/107-single-product-build.md)：版本链收敛为单一产品构建（37个变体开关按当前值折叠、旧分支删除；构建/打包/签名/部署无变体参数；合成UI收敛为`playwright.app.config.ts`，旧套件归档）；行为等同0.51.3，原生模块逐字节一致。本地737单元/100条合成UI/11包负例通过；未签名WGT `f37077d0…c73e` | [证据](design/evidence/2026-10-24-single-build/README.md) |
 | 0.51.2（USER证据来源） | ADR-105：登录时分区排行与UP投稿用本人会话读取并节制请求；**V1 USER PASS（登录状态）、V2②补 USER PASS、导航与UP主页回归 USER PASS** | [证据](design/evidence/2026-10-23-up-fix2/README.md) |
 | 0.51.0–0.51.1（USER证据来源） | ADR-103/104：**V2① PASS、V2③ PASS、搜索视频与首页详情一致 PASS、导航 PASS、关注页直达卡 PASS、稍后再看/云端历史/收藏完整详情 PASS**；V1与继续观看/队列详情转ADR-105 | [证据](design/evidence/2026-10-23-up-fix/README.md) |
 | 0.50.4（USER证据来源） | ADR-102来源检查主备切换与运行内避开；**P4⁗ USER PASS**（伍六七之玄武国篇前三集） | [证据](design/evidence/2026-10-23-source-failover/README.md) |
@@ -17,7 +18,7 @@
 
 R07候选（ADR-086）本地：strict/边界293模块通过；DOM关闭修正前全量687项通过，修正后针对性20项通过，当前全量未重跑。真实桌面MP4台架0.25/0.5/0.75/1×通过；1.25×有效窗口不足中止（退出1），其余三档及真实DASH未执行，无电视小数倍速/人工声音通过。
 
-已签名包、冻结dist/build目录不覆盖，新变体使用新输出目录；账号/本机数据与旧unknown写日志保留、不重放。签名/部署按版本取得用户授权（升级安装，不清数据）；Git只在用户要求时提交/推送。
+已签名包不覆盖；构建为单一产品构建（ADR-107），新版本只提升`foundation-config.xml`中的版本号，本机仅保留0.51.2起的构建目录；账号/本机数据与旧unknown写日志保留、不重放。签名/部署按版本取得用户授权（升级安装，不清数据）；Git只在用户要求时提交/推送。
 
 ## 工作包
 

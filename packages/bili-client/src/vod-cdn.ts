@@ -18,18 +18,17 @@ export function vodCdnClass(url: string): CdnClass {
   const host = hostOf(url);
   return AKAMAI_BACKUP_HOST.test(host) ? 'akamai' : /^upos-[a-z0-9-]+\.bilivideo\.com$/.test(host) ? 'upos' : 'edge';
 }
-/** 0.50.3: the primary stays the first bilivideo candidate (the unchanged native source check reads it).
- * 0.50.4 (ordered): Bilibili's own order, with edge nodes after named mirrors and Akamai.
+/** ADR-102: Bilibili's own order, with edge nodes after named mirrors and Akamai.
  * The alternate is the first later-validated candidate on a different host. */
-export function vodCdnPair(candidates: unknown[], now: number, ordered = false): { url: string; expiresAt: number; alternate?: string } {
+export function vodCdnPair(candidates: unknown[], now: number): { url: string; expiresAt: number; alternate?: string } {
   let expired = false;
   const valid: { url: string; expiresAt: number }[] = [];
   for (const value of candidates) {
     try { valid.push(vodCdnUrl(value, now)); }
     catch (error) { expired ||= error instanceof GuestVideoError && error.reason === 'expired_source'; }
   }
-  if (ordered) valid.sort((a, b) => Number(vodCdnClass(a.url) === 'edge') - Number(vodCdnClass(b.url) === 'edge'));
-  const primary = ordered ? valid[0] : valid.find(c => hostOf(c.url).endsWith('.bilivideo.com'));
+  valid.sort((a, b) => Number(vodCdnClass(a.url) === 'edge') - Number(vodCdnClass(b.url) === 'edge'));
+  const primary = valid[0];
   if (!primary) throw new GuestVideoError(expired ? 'expired_source' : 'cdn_unavailable');
   const alternate = valid.find(c => hostOf(c.url) !== hostOf(primary.url));
   return alternate ? { url: primary.url, expiresAt: Math.min(primary.expiresAt, alternate.expiresAt), alternate: alternate.url } : primary;

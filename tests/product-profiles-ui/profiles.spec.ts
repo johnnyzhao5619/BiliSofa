@@ -41,7 +41,6 @@ test('ADR-099 an expired account says so on its card; choosing it hands over to 
  await card.click();await expect(chooser(page)).toHaveCount(0);await expect(page.locator('#pages')).toContainText('登录需要更新，请用原账号扫码');await expect(page.locator('[data-focus-id=add-account]')).toBeFocused();expect(errors).toEqual([]);
 });
 test('0.50.1 the chooser is a full page in the product style, and help shows the latest playback failure line',async({page})=>{
- test.skip(/product-profiles-app$/.test(process.env.BILISOFA_TEST_ROOT??'dist/product-profiles-app'),'0.50.1 and later behaviour');
  const errors=await launch(page);await expect(chooser(page)).toBeVisible();const box=await chooser(page).boundingBox();expect(box?.width).toBe(1920);expect(box?.height).toBe(1080);
  await expect(chooser(page).locator('.tv-launch-brand')).toHaveText('B');await expect(chooser(page).locator('.tv-eyebrow')).toContainText('BiliSofa');await expect(page.locator('[data-focus-id=launch-guest] svg')).toHaveCount(1);
  await page.keyboard.press('Escape');await page.locator('[data-focus-id=nav-settings]').click();await page.locator('[data-focus-id=settings-section-help]').click();

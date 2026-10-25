@@ -1,8 +1,6 @@
 import type {ResourceOwner} from './resource-owner.ts';
 import {clockTime} from '../ui/content-card.ts';
 import {productButton} from './product-frame.ts';
-declare const BILISOFA_PRODUCT_PLAYER:boolean;
-export const PRODUCT_PLAYER=typeof BILISOFA_PRODUCT_PLAYER!=='undefined'&&BILISOFA_PRODUCT_PLAYER;
 export const ICONS={
   play:'M7 4v16l13-8Z',pause:'M7 4h3v16H7zM14 4h3v16h-3z',previous:'M6 5v14M19 5 9 12l10 7Z',next:'M18 5v14M5 5l10 7-10 7Z',
   parts:'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',danmaku:'M3 5h18v11H8l-4 3v-3H3zM7 9h6M7 12h9',subtitles:'M3 5h18v14H3zM7 11h4M13 11h4M7 15h10',

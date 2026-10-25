@@ -675,3 +675,11 @@ Candidate probe commands now exist: `npm ci --ignore-scripts`, `npm run check`, 
 2026-10-23；**当前没有待执行的设备测试组。** 已安装0.51.3，游客V1g、清除访客标识、登录状态回归USER PASS（[证据](design/evidence/2026-10-23-up-fix3/README.md)，[ADR-106](adr/106-guest-visitor-identity-and-sign-in-hint.md)）。下一组按[收口计划](plans/2026-10-23-remaining-work-plan.md)第6.3节V3–V6，经用户安排后执行。
 
 已安装工件为0.51.3：0.45.0–0.51.3各批所请求组USER PASS（前端三批、详情与番剧页、追番、热门番剧筛选、启动账号选择、播放中断重连与CDN/来源主备切换、UP主页投稿、登录与游客状态下的分区），此前投屏/F11等所请求组保持；不等于完整产品通过。
+
+## 单一产品构建（ADR-107）后替换的行
+
+已签名包、冻结dist/build目录不覆盖，新变体使用新输出目录；账号/本机数据与旧unknown写日志保留、不重放。签名/部署按版本取得用户授权（升级安装，不清数据）；Git只在用户要求时提交/推送。
+
+| R14 / W07发布准备 | 内部源码/签名包配对已有，最终发布候选未冻结 | 最终源码、依赖/许可、无私密信息检查、可复现构建、签名包hash、安装升级/回退说明和剩余限制齐全；发布动作另待授权 |
+
+当前安装为0.51.3，升级安装/启动获平台确认。R07候选未集成/打包/签名/部署，不将旧WGT重标为新候选。各版本均未卸载或清数据，未执行代理账号POST。已签名包与冻结dist/build不覆盖；0.47.2起`overlay-read`从新目录`build/overlay-read-subtitle`打包，0.50.3起`vod/`桥接从`build/vod-failover`打包，0.50.4起`vod-api/`、`pgc-read/`从各自的`-failover`目录打包，0.51.0起`catalog/`从`build/catalog-up`打包，0.51.1起从`build/catalog-ua`打包，0.51.2新增`public-read/`（`build/public-read`），0.51.3起`catalog/`从`build/catalog-visitor`打包，其余原生沿用。签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。

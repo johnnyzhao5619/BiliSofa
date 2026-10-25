@@ -1,12 +1,12 @@
 import {test,expect} from '@playwright/test';
-import {setup,cards,launchChooser} from './season-helpers.ts';
+import {setup,cards} from './season-helpers.ts';
 // ADR-096: 番剧影视 opens on the public 热门番剧 ranking; season cards open the product season page;
 // 追番 is one press with the F11 contract (single submit, read-back, unknown only queries).
 test('ADR-096 a guest lands on 热门番剧 (public ranking, malformed rows skipped) and a card opens the season page',async({page})=>{
  const f=await setup(page,false);await page.locator('[data-focus-id=nav-catalog]').click();
  await expect(page.locator('[data-focus-id=following-tab-hot]')).toHaveAttribute('aria-pressed','true');await expect(page.locator('.tv-following .tv-source-note')).toContainText('不是个性化推荐');
  // 0.50.0 opens on 国创 · 近三日 (ADR-098); earlier builds read 番剧 · 三日 only.
- await expect(cards(page).first()).toContainText(launchChooser()?'合成国创 三日 1':'合成热门番剧 1');await expect(page.locator('.tv-following .tv-status')).toContainText('共 30 项');
+ await expect(cards(page).first()).toContainText('合成国创 三日 1');await expect(page.locator('.tv-following .tv-status')).toContainText('共 30 项');
  await expect(page.locator('[data-focus-id=following-tab-bangumi]')).toBeDisabled();
  await cards(page).first().click();await expect(page.locator('.tv-season-page')).toBeVisible();await expect(page.locator('.tv-season-page [data-focus-id=season-play]')).toBeFocused();
  await expect(page.locator('[data-focus-id=season-follow]')).toBeHidden();await expect(page.locator('.pgc-season-panel')).toHaveCount(0);expect(f.errors).toEqual([]);

@@ -1,7 +1,6 @@
 import { parseRankingRequest, parseRankingResult, type RankingRequest, type RankingResult } from '../../../packages/contracts/src/ranking.ts';
 import { parseRankingBody, parsePgcRankingBody, parseUpArchivesBody, parseVisitorBody } from '../../../packages/bili-client/src/ranking.ts';
-import { UP_FIX3 } from '../../../packages/contracts/src/visitor.ts';
-import { UP_FIX, runtimeUserAgent } from '../../../packages/contracts/src/up-archives.ts';
+import { runtimeUserAgent } from '../../../packages/contracts/src/up-archives.ts';
 interface NativeModule {
   arguments: string[]; noInitialRun: boolean; onRuntimeInitialized(): void;
   print(line: unknown): void; printErr(): void; onAbort(): void; locateFile(name: string): string;
@@ -32,9 +31,9 @@ worker.onmessage = async event => {
   } catch { finish({ kind: 'transport_error', status: 0, code: 'ranking.native_unavailable' }); return; }
   if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'ranking.cancelled' }); return; }
   // ADR-104: the TV web runtime's own User-Agent, unchanged; without one the module keeps its probe identifier.
-  const agent = UP_FIX ? runtimeUserAgent((globalThis as { navigator?: { userAgent?: unknown } }).navigator?.userAgent) : undefined;
+  const agent = runtimeUserAgent((globalThis as { navigator?: { userAgent?: unknown } }).navigator?.userAgent);
   // ADR-106: the stored visitor identity (already validated by the request parser) comes first; native validates it again.
-  const visitor = UP_FIX3 && (active.operation === 'public-category-ranking' || active.operation === 'public-up-archives') && active.visitor ? ['--visitor=' + active.visitor] : [];
+  const visitor = (active.operation === 'public-category-ranking' || active.operation === 'public-up-archives') && active.visitor ? ['--visitor=' + active.visitor] : [];
   worker.Module = {
     arguments: [...visitor,...(agent?['--ua='+agent]:[]),...(active.operation==='public-visitor'?['visitor-id']:active.operation==='public-up-archives'?['up-archives',active.mid,String(active.page)]:active.operation==='public-category-ranking'?['category-ranking',String(active.categoryId)]:active.operation==='public-pgc-ranking'?(active.span==='all'?['pgc-index',String(active.seasonType),String(active.page)]:['pgc-ranking',String(active.seasonType),active.span==='week'?'7':'3']):['ranking'])], noInitialRun: true,
     onRuntimeInitialized() {

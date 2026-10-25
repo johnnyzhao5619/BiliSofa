@@ -3,10 +3,8 @@ import { UP_ARCHIVE_PAGE, UP_ARCHIVE_PAGES } from '../../../../packages/contract
 import { SessionManager } from '../../../../packages/bili-client/src/session.ts';
 import { UpArchivesWorker } from '../platform/ranking-worker.ts';
 import type { ResourceOwner } from './resource-owner.ts';
-import { UP_FIX2 } from '../../../../packages/contracts/src/public-read.ts';
 import type { UpArchiveCard } from '../../../../packages/contracts/src/up-archives.ts';
 import { PublicLimitedError, pacedRead, usedVisitor } from '../platform/public-lists.ts';
-import { UP_FIX3 } from '../../../../packages/contracts/src/visitor.ts';
 import { visitorIds } from '../platform/visitor-id.ts';
 /** Why a page of uploads could not be shown; fixed words only. */
 export class UpArchiveError extends Error { constructor(readonly reason: 'limited' | 'network' | 'invalid' | 'cancelled') { super(reason); } }
@@ -25,9 +23,9 @@ export class UpArchiveRead {
       try {
         if (signed) { const value = await signed(mid, page, task.signal); if (!this.sessions.accepts(task.scope)) throw new UpArchiveError('cancelled'); return value; }
         // ADR-106: anonymous reads carry B站's own visitor identity when one is (or can be) kept on this TV.
-        const visitor = UP_FIX3 ? await visitorIds().ensure(task.scope, task.signal) : undefined;
+        const visitor = await visitorIds().ensure(task.scope, task.signal);
         if (!this.sessions.accepts(task.scope)) throw new UpArchiveError('cancelled');
-        if (UP_FIX3) usedVisitor(!!visitor);
+        usedVisitor(!!visitor);
         const result = await this.worker.run({ version: 1, scope: task.scope, operation: 'public-up-archives', mid, page, ...(visitor ? { visitor } : {}) }, task.signal);
         if (!this.sessions.accepts(task.scope) || result.kind === 'cancelled') throw new UpArchiveError('cancelled');
         if ((result.kind === 'http_error' && result.status === 412) || (result.kind === 'api_error' && LIMITED.has(result.apiCode ?? 0))) throw new PublicLimitedError(0, result.apiCode, result.kind === 'http_error' ? result.status : undefined);
@@ -40,24 +38,11 @@ export class UpArchiveRead {
     });
   }
   async read(mid: string, name: string, page: number): Promise<{ items: PopularCard[]; total: number; noMore: boolean }> {
-    if (UP_FIX2) {
+    {
       const read = await this.paced(mid, page);
       const owner = name.slice(0, 48) || 'UP主', total = read.total;
       const items = read.archives.map(a => ({ bvid: a.bvid, title: a.title, owner, durationSec: a.durationSec, views: a.views, ...(a.cover ? { cover: a.cover } : {}) }));
       return { items, total, noMore: !items.length || page * UP_ARCHIVE_PAGE >= total || page >= UP_ARCHIVE_PAGES };
     }
-    const task = this.sessions.begin('up-archives');
-    try {
-      const result = await this.worker.run({ version: 1, scope: task.scope, operation: 'public-up-archives', mid, page }, task.signal);
-      if (!this.sessions.accepts(task.scope) || result.kind === 'cancelled') throw new UpArchiveError('cancelled');
-      if ((result.kind === 'http_error' && result.status === 412) || (result.kind === 'api_error' && LIMITED.has(result.apiCode ?? 0))) throw new UpArchiveError('limited');
-      if (result.kind !== 'ok' || !result.archives) throw new UpArchiveError(result.kind === 'invalid_response' ? 'invalid' : 'network');
-      const total = result.archivesTotal ?? result.archives.length, owner = name.slice(0, 48) || 'UP主';
-      const items = result.archives.map(a => ({ bvid: a.bvid, title: a.title, owner, durationSec: a.durationSec, views: a.views, ...(a.cover ? { cover: a.cover } : {}) }));
-      return { items, total, noMore: !items.length || page * UP_ARCHIVE_PAGE >= total || page >= UP_ARCHIVE_PAGES };
-    } catch (error) {
-      if (error instanceof UpArchiveError) throw error;
-      throw new UpArchiveError(error instanceof DomainError && error.code === 'cancelled' ? 'cancelled' : 'network');
-    } finally { task.finish(); }
   }
 }

@@ -1,8 +1,6 @@
 import { DomainError, record } from './index.ts';
-declare const BILISOFA_UP_FIX3:boolean;
-/** 0.51.3 (ADR-106): anonymous category/UP reads carry B站's own visitor identity, as a browser does after its first visit. */
-export const UP_FIX3=typeof BILISOFA_UP_FIX3!=='undefined'&&BILISOFA_UP_FIX3;
-/** buvid3 as served; buvid4 already URL-encoded as a browser stores it. */
+/** ADR-106: anonymous category/UP reads carry B站's own visitor identity, as a browser does after its first visit.
+ * buvid3 as served; buvid4 already URL-encoded as a browser stores it. */
 export interface VisitorId { b3: string; b4: string; }
 const B3 = /^[A-Za-z0-9-]{16,64}$/, B4 = /^[A-Za-z0-9%-]{16,128}$/, NUT = /^[0-9]{10}$/;
 export function parseVisitorId(value: unknown): VisitorId {

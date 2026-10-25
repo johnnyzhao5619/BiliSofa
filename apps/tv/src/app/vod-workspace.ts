@@ -1,11 +1,5 @@
-import {PRODUCT_STREAM} from './stream-policy.ts';
-import {PRODUCT_INSTANT} from './instant-actions-policy.ts';
 import {PlayerInteractions,actionValue} from './player-interactions.ts';
-import {PRODUCT_ACTIONS} from './player-actions-policy.ts';
-import {PRODUCT_INTERACTIONS} from './interaction-policy.ts';
-import {PlayerPresentation,PRODUCT_PLAYER,ICONS,setLabel,setIcon} from './player-presentation.ts';
-import {PRODUCT_POLISH} from './polish-policy.ts';
-import {PRODUCT_READING} from './reading-policy.ts';
+import {PlayerPresentation,ICONS,setLabel,setIcon} from './player-presentation.ts';
 import {rememberResume,forgetResume} from './resume-memory.ts';
 import {SeekGesture} from '../../../../packages/media/src/seek-acceleration.ts';
 import {Countdown,nextUpIndex} from '../../../../packages/media/src/next-up.ts';
@@ -30,10 +24,8 @@ import {videoInteractions} from './video-interactions.ts';
 import { vodComments } from './vod-comments.ts';
 import { VodControls } from './vod-controls.ts';
 import { playbackFailureText } from './user-messages.ts';
-import { MEDIA_RECONNECT, RECONNECT_LIMIT, reconnectPlan } from './reconnect-policy.ts';
+import { RECONNECT_LIMIT, reconnectPlan } from './reconnect-policy.ts';
 import { clockTime } from '../ui/content-card.ts';
-declare const BILISOFA_W06:boolean;
-declare const BILISOFA_W05: boolean;
 function button(id: string, label: string, action: () => void): HTMLButtonElement {
   const b = document.createElement('button'); b.dataset.focusId = id; b.textContent = label; b.addEventListener('click', action); return b;
 }
@@ -50,8 +42,8 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   const title = document.createElement('h2'), timeline = document.createElement('p'), status = document.createElement('p'), controls = document.createElement('div'), resume = document.createElement('div');
   timeline.setAttribute('role', 'timer'); status.setAttribute('role', 'status'); status.textContent = '正在读取视频详情和可用轨道'; title.textContent = '视频播放';
   let access: VodAccess | undefined, catalog: VodReadResult | undefined, choice: VodChoice | undefined, player: VodPlayback | undefined;
-  let defaultFocusPending=PRODUCT_STREAM;
-  let playlist: VodItem[] = [], sequence = 'parts', busy = true, started = false, epoch = 0, continuous = queueNavigation?.continuous??(PRODUCT_READING ? profile.readContinuous?.() ?? true : PRODUCT_POLISH), repeat: RepeatMode = 'off', terminal = '', advice = '', reconnects = 0, reconnectAt = -Infinity, observedMs = 0;
+  let defaultFocusPending=true;
+  let playlist: VodItem[] = [], sequence = 'parts', busy = true, started = false, epoch = 0, continuous = queueNavigation?.continuous??(profile.readContinuous?.() ?? true), repeat: RepeatMode = 'off', terminal = '', advice = '', reconnects = 0, reconnectAt = -Infinity, observedMs = 0;
   const settings = profile.read(), jump = settings.kind === 'ok' ? settings.value.preferences.jumpSeconds : 10;
   const preview = new SeekPreview(() => player?.snapshot().media?.durationMs ?? 0, () => player?.snapshot().media?.timeMs ?? 0);
   const opening = Promise.resolve().then(open).then(value => { access = value; return value; }); void opening.catch(() => {});
@@ -60,17 +52,17 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   owner.signal.addEventListener('abort', abortPlayer, { once: true });
   owner.add('vod-player', async () => { owner.signal.removeEventListener('abort', abortPlayer); if (player && !(await player.close()).closed) throw new DomainError('unknown'); });
   document.body.classList.add('playing-media'); owner.add('vod-style', () => { document.body.classList.remove('playing-media'); });
-  const overlays = typeof BILISOFA_W05 !== 'undefined' && BILISOFA_W05 ? new VodOverlays(owner, shell, panel, () => ({ ...(access ? { access } : {}), ...(catalog ? { catalog } : {}), ...(player?.snapshot().media ? { media: player.snapshot().media! } : {}) })) : undefined;
+  const overlays = new VodOverlays(owner, shell, panel, () => ({ ...(access ? { access } : {}), ...(catalog ? { catalog } : {}), ...(player?.snapshot().media ? { media: player.snapshot().media! } : {}) }));
   const back = button('vod-back', '返回原卡', () => { void shell.closeOwnedModal(owner); });
-  if(PRODUCT_STREAM)back.hidden=true;
+  back.hidden=true;
   const toggle = button('vod-toggle', '暂停 / 继续', () => { advice = ''; player?.toggle(); });
   const earlier = button('vod-earlier', `预览后退 ${jump} 秒`, () => { preview.move(-jump * 1000); update(); });
-  if(PRODUCT_STREAM)earlier.hidden=true;
+  earlier.hidden=true;
   const later = button('vod-later', `预览前进 ${jump} 秒`, () => { preview.move(jump * 1000); update(); });
-  if(PRODUCT_STREAM)later.hidden=true;
+  later.hidden=true;
   let autoSeek: ReturnType<typeof setTimeout> | undefined;
   // One seek gesture accelerates 10→30→60 s (ADR-090) and still commits once.
-  const gesture = new SeekGesture(AUTO_SEEK_MS), step = () => PRODUCT_POLISH ? gesture.next(jump * 1000) : jump * 1000;
+  const gesture = new SeekGesture(AUTO_SEEK_MS), step = () => gesture.next(jump * 1000);
   const disarm = () => { clearTimeout(autoSeek); autoSeek = undefined; gesture.reset(); };
   owner.add('vod-auto-seek', disarm);
   const commit = button('vod-seek-confirm', '确认跳转', () => { disarm(); void preview.confirm(ms => player!.seek(ms)).catch(error => { if (!owner.signal.aborted) status.textContent = failure(error); }); update(); });
@@ -79,17 +71,17 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   const arm = () => { clearTimeout(autoSeek); autoSeek = setTimeout(() => { autoSeek = undefined; if (!owner.signal.aborted && preview.targetMs !== undefined && !commit.disabled) commit.click(); }, AUTO_SEEK_MS); };
   const directSeek = (direction: -1 | 1): boolean => { if (earlier.disabled) return false; preview.move(direction * step()); arm(); update(); return true; };
   const tracks = button('vod-tracks', '画质 / 编码 / 音轨', () => trackPicker());
-  const overlaySettings = button('vod-overlays', '弹幕 / 字幕', () => overlays?.settings(PRODUCT_READING ? 'subtitles' : undefined)); overlaySettings.hidden = !overlays;
+  const overlaySettings = button('vod-overlays', '弹幕 / 字幕', () => overlays?.settings('subtitles')); overlaySettings.hidden = !overlays;
   // 0.47: danmaku details have their own entry in ⚙; the main-row “字幕” opens subtitles only.
-  const danmakuSettings = button('vod-danmaku-settings', '弹幕设置', () => overlays?.settings('danmaku')); danmakuSettings.hidden = !PRODUCT_READING || !overlays;
+  const danmakuSettings = button('vod-danmaku-settings', '弹幕设置', () => overlays?.settings('danmaku')); danmakuSettings.hidden = !overlays;
   const comments = button('vod-comments', '评论', () => {
     const id = catalog?.catalog.id; if (!id || !access?.comments) return;
     vodComments(shell, () => access!.comments!(id), () => !owner.signal.aborted && catalog?.catalog.id === id);
   }); comments.hidden = !overlays;
   const interactions = button('vod-interactions','账号互动 / 投币 / 三连',()=>{const id=catalog?.catalog.id;if(!id||!access?.interactions)return;videoInteractions(shell,()=>access!.interactions!(id),()=>!owner.signal.aborted&&catalog?.catalog.id===id);});interactions.hidden=!overlays;
-  const instant=PRODUCT_INSTANT?new PlayerInteractions(owner,id=>access!.interactions!(id),()=>{advice=instant?.message??'';update();}):undefined;
+  const instant=new PlayerInteractions(owner,id=>access!.interactions!(id),()=>{advice=instant?.message??'';update();});
   let actionCatalog='',quickValues:{like?:boolean|null;follow?:boolean|null;'watch-later'?:boolean|null}={};
-  const quick=(kind:'like'|'follow'|'watch-later',label:string)=>{const b=button('vod-action-'+kind,label,()=>{const id=catalog?.catalog.id;if(!id||!access?.interactions)return;if(instant){instant.bind(id);instant.toggle(kind);return;}videoInteractions(shell,()=>access!.interactions!(id),()=>!owner.signal.aborted&&catalog?.catalog.id===id,kind,value=>{if(owner.signal.aborted||catalog?.catalog.id!==id)return;quickValues=value?{like:value.liked,follow:value.followed,'watch-later':value.watchLater}:{};update();});});b.hidden=!PRODUCT_ACTIONS;return b;};
+  const quick=(kind:'like'|'follow'|'watch-later',label:string)=>{const b=button('vod-action-'+kind,label,()=>{const id=catalog?.catalog.id;if(!id||!access?.interactions)return;if(instant){instant.bind(id);instant.toggle(kind);return;}videoInteractions(shell,()=>access!.interactions!(id),()=>!owner.signal.aborted&&catalog?.catalog.id===id,kind,value=>{if(owner.signal.aborted||catalog?.catalog.id!==id)return;quickValues=value?{like:value.liked,follow:value.followed,'watch-later':value.watchLater}:{};update();});});b.hidden=false;return b;};
   const like=quick('like','点赞'),follow=quick('follow','关注UP'),watch=quick('watch-later','稍后再看');
   const parts = button('vod-parts', '选择分P', () => {
     if (!catalog) return;
@@ -105,26 +97,22 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     }, entries.findIndex(e => e.item?.bvid === player?.snapshot().item.bvid && e.item?.part === player?.snapshot().item.part));
   });
   const previous = button('vod-previous', '上一P', () => { const s = player?.snapshot(); if (s && s.index > 0) void withResume(playlist[s.index - 1]!, position => select(s.index - 1, position)); });
-  previous.hidden = !PRODUCT_POLISH || !!queueNavigation;
+  previous.hidden = !!queueNavigation;
   const danmaku = button('vod-overlay-dm', '弹幕', () => { overlays?.toggleDanmaku(); update(); });
-  danmaku.hidden = !PRODUCT_POLISH || !overlays;
-  const next = button('vod-next', PRODUCT_POLISH ? '下一P' : '下一项', () => { if(queueNavigation){queueNavigation.next?.(continuous);return;}const s = player?.snapshot(); if (s) { const i = s.index + 1 < s.length ? s.index + 1 : 0; void withResume(playlist[i]!, position => select(i, position)); } });
-  // With PRODUCT_POLISH the workspace chains the next item itself after a countdown.
-  const sequenceMode = () => queueNavigation || PRODUCT_POLISH ? false : continuous;
-  const continuousButton = button('vod-continuous', '连播：关闭', () => { continuous = !continuous; if (PRODUCT_READING && !queueNavigation && profile.rememberContinuous?.(continuous) !== 'saved') feedback.textContent = '连播设置本次已生效，保存未确认'; if (!continuous) clearNextUp(); player?.mode(sequenceMode(), repeat); update(); });
-  const repeatButton = button('vod-repeat', '循环：关闭', () => { repeat = repeat === 'off' ? 'one' : repeat === 'one' ? queueNavigation?'off':'all' : 'off'; player?.mode(sequenceMode(), repeat); update(); });
+  danmaku.hidden = !overlays;
+  const next = button('vod-next', '下一P', () => { if(queueNavigation){queueNavigation.next?.(continuous);return;}const s = player?.snapshot(); if (s) { const i = s.index + 1 < s.length ? s.index + 1 : 0; void withResume(playlist[i]!, position => select(i, position)); } });
+  // The workspace chains the next item itself after a countdown (ADR-090), so the player never sequences.
+  const continuousButton = button('vod-continuous', '连播：关闭', () => { continuous = !continuous; if (!queueNavigation && profile.rememberContinuous?.(continuous) !== 'saved') feedback.textContent = '连播设置本次已生效，保存未确认'; if (!continuous) clearNextUp(); player?.mode(false, repeat); update(); });
+  const repeatButton = button('vod-repeat', '循环：关闭', () => { repeat = repeat === 'off' ? 'one' : repeat === 'one' ? queueNavigation?'off':'all' : 'off'; player?.mode(false, repeat); update(); });
   const rate = button('vod-rate', '倍速：1×', () => {
-    if(PRODUCT_ACTIONS){ratePicker();return;}
-    const target = player?.snapshot().media?.acceptedRate === 2 ? 1 : 2;
-    const result = player?.setRate(target);
-    advice = result && result !== 'accepted' ? result === 'unsupported' ? '此码流不支持所选倍速' : '当前暂不能调整倍速' : ''; update();
+    ratePicker();return;
   });
   function ratePicker(){
     shell.openModal('vod-rate-picker',child=>{
-      const n=document.createElement('section');n.className='vod-picker vod-rate-picker';const h=document.createElement('h2');h.textContent='播放倍速';const note=document.createElement('p');note.textContent=PRODUCT_INSTANT?'选择后立即生效。更多倍速暂不可用。':'当前AVPlay后端支持1×、2×；小数倍速需要其他播放后端，暂不可选。';const grid=document.createElement('div');grid.className=PRODUCT_INSTANT?'vod-grid vod-rate-list':'vod-grid';grid.setAttribute('role','radiogroup');grid.setAttribute('aria-label','播放倍速');
-      const keep=button('vod-rate-back','返回播放',()=>{void shell.back();});n.append(h,note,...(PRODUCT_INSTANT?[]:[keep]),grid);
-      for(const value of (PRODUCT_INSTANT?[1,2]:[.25,.5,.75,1,1.25,1.5,1.75,2])){const supported=(value===1||value===2)&&caps.rates.includes(value);const b=button('vod-rate-'+String(value).replace('.','_'),`${value===1?'正常 (1×)':value+'×'}${!supported?' · 暂不可用':''}`,()=>{if(child.signal.aborted||owner.signal.aborted)return;const result=player?.setRate(value as 1|2);if(result==='accepted'){advice='';void shell.back();}else{note.textContent=result==='unsupported'?'此码流不支持所选倍速；保持原倍速':'当前暂不能调整倍速；保持原倍速';}update();});b.disabled=!supported;if(PRODUCT_INSTANT){b.setAttribute('role','radio');b.setAttribute('aria-checked',String(value===(player?.snapshot().media?.acceptedRate??1)));}b.setAttribute('aria-pressed',String(value===(player?.snapshot().media?.acceptedRate??1)));grid.append(b);}return n;
-    },PRODUCT_INSTANT?'vod-rate-'+(player?.snapshot().media?.acceptedRate??1):'vod-rate-back');
+      const n=document.createElement('section');n.className='vod-picker vod-rate-picker';const h=document.createElement('h2');h.textContent='播放倍速';const note=document.createElement('p');note.textContent='选择后立即生效。更多倍速暂不可用。';const grid=document.createElement('div');grid.className='vod-grid vod-rate-list';grid.setAttribute('role','radiogroup');grid.setAttribute('aria-label','播放倍速');
+      n.append(h,note,grid);
+      for(const value of ([1,2])){const supported=(value===1||value===2)&&caps.rates.includes(value);const b=button('vod-rate-'+String(value).replace('.','_'),`${value===1?'正常 (1×)':value+'×'}${!supported?' · 暂不可用':''}`,()=>{if(child.signal.aborted||owner.signal.aborted)return;const result=player?.setRate(value as 1|2);if(result==='accepted'){advice='';void shell.back();}else{note.textContent=result==='unsupported'?'此码流不支持所选倍速；保持原倍速':'当前暂不能调整倍速；保持原倍速';}update();});b.disabled=!supported;b.setAttribute('role','radio');b.setAttribute('aria-checked',String(value===(player?.snapshot().media?.acceptedRate??1)));b.setAttribute('aria-pressed',String(value===(player?.snapshot().media?.acceptedRate??1)));grid.append(b);}return n;
+    },'vod-rate-'+(player?.snapshot().media?.acceptedRate??1));
   }
   const replay = button('vod-replay', '从头重播', () => { const s = player?.snapshot(); if (s) void select(s.index); });
   const enqueue = button('vod-enqueue', '加入当前分P到本机队列', () => {
@@ -139,13 +127,12 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   const controlLayer = overlays ? new VodControls(owner, panel, content, wake, canHide, { toggle: () => { if (toggle.disabled || !player) return false; advice = ''; player.toggle(); update(); return true; }, seek: directSeek }) : undefined;
   // Back already hides the layer; the extra button only cost a focus stop.
   const hide = button('vod-hide-controls', '隐藏控制栏', () => { controlLayer?.hide(); }); hide.hidden = true;
-  if (PRODUCT_POLISH) { toggle.dataset.ariaFixed = '1'; toggle.setAttribute('aria-label', '暂停 / 继续'); overlaySettings.textContent = '字幕'; overlaySettings.dataset.ariaFixed = '1'; overlaySettings.setAttribute('aria-label', PRODUCT_READING ? '字幕设置' : '字幕与弹幕设置'); interactions.textContent = '收藏夹'; }
-  if (PRODUCT_POLISH) controls.append(back, replay, toggle, previous, next, parts, danmaku, overlaySettings, comments, like, follow, watch, earlier, later, commit, cancel, tracks, danmakuSettings, rate, continuousButton, repeatButton, collection, interactions, enqueue, hide);
-  else controls.append(back, toggle, earlier, later, commit, cancel, tracks, overlaySettings, comments, interactions, like, follow, watch, parts, collection, next, continuousButton, repeatButton, rate, replay, enqueue, hide, previous, danmaku, danmakuSettings);
+  toggle.dataset.ariaFixed = '1'; toggle.setAttribute('aria-label', '暂停 / 继续'); overlaySettings.textContent = '字幕'; overlaySettings.dataset.ariaFixed = '1'; overlaySettings.setAttribute('aria-label', '字幕设置'); interactions.textContent = '收藏夹';
+  controls.append(back, replay, toggle, previous, next, parts, danmaku, overlaySettings, comments, like, follow, watch, earlier, later, commit, cancel, tracks, danmakuSettings, rate, continuousButton, repeatButton, collection, interactions, enqueue, hide);
   content.append(title, timeline, status, resume, controls); panel.append(content, wake);
-  const primaryIds = PRODUCT_POLISH ? ['vod-back','vod-replay','vod-toggle','vod-previous','vod-next','vod-parts','vod-overlay-dm','vod-overlays','vod-comments','vod-action-like','vod-action-follow','vod-action-watch-later','vod-earlier','vod-later','vod-seek-confirm','vod-seek-cancel'] : ['vod-back','vod-replay','vod-toggle','vod-earlier','vod-later','vod-seek-confirm','vod-seek-cancel',...(PRODUCT_ACTIONS?['vod-action-like','vod-action-follow','vod-action-watch-later','vod-rate']:[])];
-  const polish = PRODUCT_POLISH ? { openSettings: settingsPanel, icons: { 'vod-toggle': ICONS.pause, 'vod-previous': ICONS.previous, 'vod-next': ICONS.next, 'vod-parts': ICONS.parts, 'vod-overlay-dm': ICONS.danmaku, 'vod-overlays': ICONS.subtitles, 'vod-comments': ICONS.comments, 'vod-action-like': ICONS.like, 'vod-action-follow': ICONS.follow, 'vod-action-watch-later': ICONS.later }, iconOnly: ['vod-action-like', 'vod-action-follow', 'vod-action-watch-later'] } : {};
-  if(PRODUCT_PLAYER)presentation=new PlayerPresentation(owner,panel,title,timeline,status,controls,primaryIds,{preview:delta=>{if(!earlier.disabled){preview.move(delta);if(autoSeek)arm();update();}},confirm:()=>{if(!commit.disabled)commit.click();},target:()=>preview.targetMs,stepMs:step},resume,polish);
+  const primaryIds = ['vod-back','vod-replay','vod-toggle','vod-previous','vod-next','vod-parts','vod-overlay-dm','vod-overlays','vod-comments','vod-action-like','vod-action-follow','vod-action-watch-later','vod-earlier','vod-later','vod-seek-confirm','vod-seek-cancel'];
+  const polish = { openSettings: settingsPanel, icons: { 'vod-toggle': ICONS.pause, 'vod-previous': ICONS.previous, 'vod-next': ICONS.next, 'vod-parts': ICONS.parts, 'vod-overlay-dm': ICONS.danmaku, 'vod-overlays': ICONS.subtitles, 'vod-comments': ICONS.comments, 'vod-action-like': ICONS.like, 'vod-action-follow': ICONS.follow, 'vod-action-watch-later': ICONS.later }, iconOnly: ['vod-action-like', 'vod-action-follow', 'vod-action-watch-later'] };
+  presentation=new PlayerPresentation(owner,panel,title,timeline,status,controls,primaryIds,{preview:delta=>{if(!earlier.disabled){preview.move(delta);if(autoSeek)arm();update();}},confirm:()=>{if(!commit.disabled)commit.click();},target:()=>preview.targetMs,stepMs:step},resume,polish);
   shell.modalInput(owner, { back() { if (nextUp?.active) { cancelNextUp(); return true; } if (preview.targetMs !== undefined) { disarm(); preview.cancel(); update(); return true; } if(presentation?.back())return true;return controlLayer?.back() ?? false; }, key(event) { return controlLayer?.key(event)||presentation?.key(event)||false; },
     media(command) {
       // Stop leaves like Back-to-exit (ADR-088 D2); other keys act on the playing item even under a panel.
@@ -161,15 +148,14 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     if (owner.signal.aborted) return;
     const s = player?.snapshot(), media = s?.media, available = !busy && !s?.moving && !s?.stopped && !!media && !media.seeking && ['playing', 'paused'].includes(media.state);
     for (const control of [toggle, earlier, later, tracks, overlaySettings, comments, interactions, like, follow, watch, parts, collection, next, rate]) control.disabled = !available;
-    interactions.disabled ||= !access?.interactions||!PRODUCT_INTERACTIONS&&typeof BILISOFA_W06!=='undefined'&&BILISOFA_W06;
-    if(PRODUCT_INTERACTIONS){interactions.textContent=PRODUCT_INSTANT?'收藏夹':'点赞 / 关注 / 收藏';interactions.title=access?.interactions?'读取当前账号实际状态，选择后预览确认':'请先在管理账号中使用已保存账号';}
-    else if(typeof BILISOFA_W06!=='undefined'&&BILISOFA_W06){interactions.textContent=PRODUCT_PLAYER?'账号互动 · 暂不可用':'账号互动 · 暂缓修复';interactions.title=PRODUCT_PLAYER?'当前版本尚未开放账号互动':'本人状态读取失败，按用户要求暂缓，未记为通过';}
+    interactions.disabled ||= !access?.interactions||false;
+    interactions.textContent='收藏夹';interactions.title=access?.interactions?'读取当前账号实际状态，选择后预览确认':'请先在管理账号中使用已保存账号';
     if(actionCatalog!==(catalog?.catalog.id??'')){actionCatalog=catalog?.catalog.id??'';quickValues={};instant?.bind(actionCatalog);}
     if(instant&&available&&access?.interactions)instant.preload();
     interactions.disabled ||= !!instant?.busy;
-    for(const b of [like,follow,watch])b.hidden=!PRODUCT_ACTIONS||preview.targetMs!==undefined||PRODUCT_POLISH&&!access?.interactions;
-    if(PRODUCT_ACTIONS)rate.hidden=preview.targetMs!==undefined;
-    for(const [b,kind,label,on]of [[like,'like','点赞','已点赞'],[follow,'follow','关注UP','已关注UP'],[watch,'watch-later','稍后再看','已加入稍后再看']]as const){b.disabled=!available||!access?.interactions||!!instant?.busy&&!instant.snapshot;const value=instant?actionValue(instant.snapshot,kind):quickValues[kind];b.setAttribute('aria-busy',String(instant?.busy??false));b.setAttribute('aria-disabled',String(b.disabled||instant?.busy||false));setLabel(b,value===true?on:instant&&!PRODUCT_STREAM&&typeof value!=='boolean'?'核对'+label:label);if(typeof value==='boolean')b.setAttribute('aria-pressed',String(value));else b.removeAttribute('aria-pressed');}
+    for(const b of [like,follow,watch])b.hidden=preview.targetMs!==undefined||!access?.interactions;
+    rate.hidden=preview.targetMs!==undefined;
+    for(const [b,kind,label,on]of [[like,'like','点赞','已点赞'],[follow,'follow','关注UP','已关注UP'],[watch,'watch-later','稍后再看','已加入稍后再看']]as const){b.disabled=!available||!access?.interactions||!!instant?.busy&&!instant.snapshot;const value=instant?actionValue(instant.snapshot,kind):quickValues[kind];b.setAttribute('aria-busy',String(instant?.busy??false));b.setAttribute('aria-disabled',String(b.disabled||instant?.busy||false));setLabel(b,value===true?on:instant&&false&&typeof value!=='boolean'?'核对'+label:label);if(typeof value==='boolean')b.setAttribute('aria-pressed',String(value));else b.removeAttribute('aria-pressed');}
     earlier.disabled ||= !media?.durationMs; later.disabled ||= !media?.durationMs;
     collection.disabled ||= !catalog?.detail.collection?.entries.length;
     parts.disabled ||= (catalog?.detail.parts.length ?? 0) < 2;
@@ -186,12 +172,12 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     if (terminal) say(terminal);
     else if (busy || s?.moving || media?.state === 'loading') say('正在读取所选内容和播放源');
     else if (!started) say('是否继续本分P上次在电视观看的位置？');
-    else say(media?.seeking ? '正在跳转' : advice || (media?.state === 'paused' ? '已暂停' : media?.state === 'playing' ? (PRODUCT_POLISH ? '' : '正在播放') : '正在准备'));
-    if (controls.contains(document.activeElement) && (document.activeElement as HTMLButtonElement).disabled && !(instant?.busy&&[like,follow,watch].includes(document.activeElement as HTMLButtonElement))) (PRODUCT_STREAM?(toggle.disabled?wake:toggle):back).focus();
-    if(PRODUCT_PLAYER){commit.hidden=cancel.hidden=preview.targetMs===undefined;presentation?.update(media?.timeMs??0,media?.durationMs??0,!!available,episodeMode?'番剧影视':PRODUCT_POLISH?catalog?.detail.owner??'':'');}
+    else say(media?.seeking ? '正在跳转' : advice || (media?.state === 'paused' ? '已暂停' : media?.state === 'playing' ? ('') : '正在准备'));
+    if (controls.contains(document.activeElement) && (document.activeElement as HTMLButtonElement).disabled && !(instant?.busy&&[like,follow,watch].includes(document.activeElement as HTMLButtonElement))) ((toggle.disabled?wake:toggle)).focus();
+    commit.hidden=cancel.hidden=preview.targetMs===undefined;presentation?.update(media?.timeMs??0,media?.durationMs??0,!!available,episodeMode?'番剧影视':catalog?.detail.owner??'');
     if(defaultFocusPending&&available&&!panel.inert){defaultFocusPending=false;const active=document.activeElement as HTMLElement|null;if(active===document.body||active===wake||active?.dataset.focusId==='player-timeline'||active===toggle)toggle.focus();}
     hide.disabled = !available;
-    if (PRODUCT_POLISH) {
+    {
       const playing = media?.state === 'playing', on = !!overlays?.danmakuEnabled();
       setLabel(toggle, playing ? '暂停' : '播放'); setIcon(toggle, playing ? ICONS.pause : ICONS.play);
       setLabel(danmaku, on ? '弹幕 开' : '弹幕 关'); danmaku.setAttribute('aria-pressed', String(on));
@@ -231,14 +217,14 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     }, (outcome, closure, fault) => {
       diagnostics.add('media', closure.closed ? outcome === 'ended' ? 'ended' : 'failed' : 'close_unknown'); if (fault) diagnostics.mediaFailure(fault);
       if (!owner.signal.aborted && ticket === epoch) { if(outcome==='ended'&&closure.closed&&queueNavigation&&continuous&&queueNavigation.next){queueNavigation.next(continuous);return;}
-        if(outcome==='ended'&&closure.closed&&PRODUCT_POLISH&&!queueNavigation){const ended=player?.snapshot(),at=ended?nextUpIndex(ended.index,ended.length,continuous,repeat):undefined;terminal='播放结束';update();if(at!==undefined)startNextUp(at);return;}terminal = !closure.closed ? failure(new DomainError('unknown')) : outcome === 'ended' ? '播放结束' : failure(new DomainError(fault?.reason ?? 'network')); if (outcome !== 'ended' && reconnect(closure.closed, fault?.reason)) return; update(); }
+        if(outcome==='ended'&&closure.closed&&!queueNavigation){const ended=player?.snapshot(),at=ended?nextUpIndex(ended.index,ended.length,continuous,repeat):undefined;terminal='播放结束';update();if(at!==undefined)startNextUp(at);return;}terminal = !closure.closed ? failure(new DomainError('unknown')) : outcome === 'ended' ? '播放结束' : failure(new DomainError(fault?.reason ?? 'network')); if (outcome !== 'ended' && reconnect(closure.closed, fault?.reason)) return; update(); }
     });
-    player.mode(sequenceMode(), repeat); player.start(position); diagnostics.add('media', 'started'); busy = false;if(PRODUCT_STREAM)defaultFocusPending=true;update();if(!PRODUCT_STREAM)back.focus();
+    player.mode(false, repeat); player.start(position); diagnostics.add('media', 'started'); busy = false;defaultFocusPending=true;update();
   }
   /** ADR-100: a transient network/timeout failure reopens the same item with a fresh source read (B站 may
    * hand out another node) a little before the last position, at most twice in two minutes. */
   function reconnect(closed: boolean, reason: string | undefined): boolean {
-    const s = MEDIA_RECONNECT ? player?.snapshot() : undefined; if (!s || owner.signal.aborted) return false;
+    const s = player?.snapshot(); if (!s || owner.signal.aborted) return false;
     // The failed media may already have reset its clock; the last observed position is where the viewer was.
     const now = performance.now(), plan = reconnectPlan(reason, closed, reconnects, reconnectAt, now, Math.max(observedMs, s.media?.timeMs ?? 0)); if (!plan) return false;
     reconnects = plan.attempt; reconnectAt = now; catalog = undefined;
@@ -329,7 +315,7 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   }
   const timer = setInterval(update, 200); owner.add('vod-timer', () => clearInterval(timer));
   // Registered last so it runs before the player closes: Home (document hidden) keeps the real position for G4; a normal exit forgets it.
-  if (PRODUCT_READING && !episodeMode && !queueNavigation) owner.add('vod-resume-memory', () => {
+  if (!episodeMode && !queueNavigation) owner.add('vod-resume-memory', () => {
     const s = player?.snapshot(), media = s?.media;
     if (document.hidden && s && media && media.timeMs > 0 && media.durationMs > media.timeMs) rememberResume({ bvid: s.item.bvid, part: s.item.part, title: catalog ? `${catalog.detail.title} · P${s.item.part}` : `P${s.item.part}`, timeMs: Math.floor(media.timeMs), durationMs: Math.floor(media.durationMs) });
     else forgetResume();
@@ -351,6 +337,6 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
       if (!panel.inert) resume.querySelector<HTMLButtonElement>('button')?.focus();
     } else await restart(initial.items, initial.index, kind);
   }).catch(error => { if (!owner.signal.aborted) { busy = false; terminal = failure(error); update(); } });
-  if(PRODUCT_STREAM)panel.dataset.initialFocusId='vod-toggle';
+  panel.dataset.initialFocusId='vod-toggle';
   update(); return panel;
 }

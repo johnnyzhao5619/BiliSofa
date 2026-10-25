@@ -4,10 +4,9 @@ import type { PrivateAccount } from '../../../packages/contracts/src/private-acc
 import type { PrivateVodPlan, VodSourceTotals } from '../../../packages/contracts/src/vod-private.ts';
 import { parsePrivateAccount } from '../../../packages/contracts/src/private-account.ts';
 import { parseVodNav } from '../../../packages/bili-client/src/vod-nav.ts';
-import { guestCdnUrl, GuestVideoError } from '../../../packages/bili-client/src/guest-video.ts';
+import { GuestVideoError } from '../../../packages/bili-client/src/guest-video.ts';
 import { parseVodDetail, parseVodPlayback, resolveVodPart, type PrivateVodCatalog, type PrivateVodDetail } from '../../../packages/bili-client/src/vod-catalog.ts';
 import { vodCdnUrl } from '../../../packages/bili-client/src/vod-cdn.ts';
-import { SOURCE_FAILOVER } from '../../../packages/contracts/src/cdn-failover.ts';
 
 export interface VodApiNative {
   HEAPU8: Uint8Array;
@@ -172,12 +171,12 @@ export class VodNativeApi {
     return this.batch(signal, async () => {
       const totals: number[] = [];
       for (const [index, track] of [plan.video, plan.audio].entries()) {
-        const url = SOURCE_FAILOVER ? vodCdnUrl(track.url, Date.now()).url : guestCdnUrl(track.url, Date.now()).url;
+        const url = vodCdnUrl(track.url, Date.now()).url;
         // ADR-102: a network/timeout check names its track, so the owner can try that track's backup.
         try { await this.request(3, url, signal); }
         catch (error) {
           const f = this.failed;
-          if (SOURCE_FAILOVER && error instanceof DomainError && (error.code === 'network' || error.code === 'timeout')) throw new VodCheckError(error.code, index === 0 ? 0 : 1, f?.http ?? 0, f?.transport ?? 0);
+          if (error instanceof DomainError && (error.code === 'network' || error.code === 'timeout')) throw new VodCheckError(error.code, index === 0 ? 0 : 1, f?.http ?? 0, f?.transport ?? 0);
           throw error;
         }
         try {

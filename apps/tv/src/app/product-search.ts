@@ -1,4 +1,4 @@
-import {ContinuousGrid,PRODUCT_BROWSE} from '../ui/continuous-grid.ts';
+import {ContinuousGrid} from '../ui/continuous-grid.ts';
 import { DomainError, type PopularCard } from '../../../../packages/contracts/src/index.ts';
 import type { SearchHistoryStore } from '../../../../packages/contracts/src/search-history.ts';
 import type { ProfileStore } from '../../../../packages/contracts/src/local-profile.ts';
@@ -15,7 +15,6 @@ import { libraryCard } from '../ui/library-card.ts';
 import { clockTime } from '../ui/content-card.ts';
 import { keywordPad } from './keyword-pad.ts';
 import { frameBack } from './product-frame.ts';
-import { PRODUCT_READING } from './reading-policy.ts';
 export interface SearchMemory {
   keyword?: string;
   type: SearchType;
@@ -30,7 +29,7 @@ interface Services {
   openSeason(card: {
     seasonId: string;
   }): void;
-  /** 0.51.0 (ADR-103): the shared video detail page and the UP page; older variants keep the search detail. */
+  /** ADR-103: the shared video detail page and the UP page. */
   openVideo?(card: PopularCard): void;
   openUp?(up: { mid: string; name: string; fans: number; videos: number }): void;
 }
@@ -83,7 +82,7 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
   // One-page search (ADR-092): keys and candidates stay on the left; choosing a word searches at once.
   let focusResults = false;
   const recent = document.createElement('div'); recent.className = 'tv-search-recent'; recent.setAttribute('aria-label', '最近搜索');
-  const pad = PRODUCT_READING ? keywordPad(owner, keyword => { focusResults = true; accepted(keyword); }, () => { delete memory.keyword; memory.pages = {}; void read(1, true); }, memory.keyword ?? '') : undefined;
+  const pad = keywordPad(owner, keyword => { focusResults = true; accepted(keyword); }, () => { delete memory.keyword; memory.pages = {}; void read(1, true); }, memory.keyword ?? '');
   if (pad) { input.hidden = true; node.dataset.initialFocusId = pad.firstId; frameBack.set(node, () => pad.back()); }
   function showRecent(): void {
     if (!pad) return; recent.replaceChildren(); recent.hidden = !!memory.keyword;
@@ -104,7 +103,7 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
   const refresh = button('search-refresh', '刷新', () => { if (!busy && memory.keyword && !blocked)
     void read(1,true); });
   paging.append(previous, next, refresh);
-  const feed=PRODUCT_BROWSE?new ContinuousGrid(owner,grid,{load:page=>read(page),restored:page=>{committedPage=page;memory.pages[memory.type]=page;},top:()=> 'search-type-'+memory.type,left:()=> PRODUCT_READING ? 'keyword-key-f' : 'nav-search',bottom:()=> 'search-refresh'}):undefined;
+  const feed=new ContinuousGrid(owner,grid,{load:page=>read(page),restored:page=>{committedPage=page;memory.pages[memory.type]=page;},top:()=> 'search-type-'+memory.type,left:()=> 'keyword-key-f',bottom:()=> 'search-refresh'});
   if(feed)previous.hidden=next.hidden=true;
   function detail(entry: SearchEntry): void {
     if (owner.signal.aborted || busy && !feed)

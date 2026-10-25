@@ -4,9 +4,7 @@ import { vodKeys } from './vod-catalog.ts';
 import { parsePrivateAccount, type PrivateAccount } from './private-account.ts';
 import { parseCategoryId } from './categories.ts';
 import { parseUpArchiveCard, upMid, upPage } from './up-archives.ts';
-declare const BILISOFA_UP_FIX2:boolean;
 /** 0.51.2 (ADR-105): signed-in public reads, request pacing and visible risk-control results. */
-export const UP_FIX2=typeof BILISOFA_UP_FIX2!=='undefined'&&BILISOFA_UP_FIX2;
 export type { PublicReadCommand, PublicReadResult } from './public-read-types.ts';
 export interface PublicReadRequest { version: 1; operation: 'public-read'; scope: Scope; command: PublicReadCommand; account: PrivateAccount; }
 export function parsePublicReadCommand(value: unknown): PublicReadCommand {

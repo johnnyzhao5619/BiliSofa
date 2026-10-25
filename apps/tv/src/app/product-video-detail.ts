@@ -2,15 +2,12 @@ import type { PopularCard } from '../../../../packages/contracts/src/index.ts';
 import type { ProfileStore } from '../../../../packages/contracts/src/local-profile.ts';
 import type { QueueStore } from '../../../../packages/contracts/src/local-queue.ts';
 import type { VodAbout } from '../../../../packages/contracts/src/vod-catalog.ts';
-import { PRODUCT_UP, UP_FIX, type UpArchiveCard } from '../../../../packages/contracts/src/up-archives.ts';
-import { UP_FIX2 } from '../../../../packages/contracts/src/public-read.ts';
+import { type UpArchiveCard } from '../../../../packages/contracts/src/up-archives.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { TvShell } from './tv-shell.ts';
 import { CoverArt } from '../platform/cover-art.ts';
 import { clockTime, viewsText } from '../ui/content-card.ts';
 import { productButton } from './product-frame.ts';
-import { PRODUCT_POLISH } from './polish-policy.ts';
-import { PRODUCT_DETAIL } from './detail-policy.ts';
 import { openFullText, needsFullText } from './full-text.ts';
 /** Local calendar date of a Unix-seconds timestamp, e.g. 2026-10-23. */
 const dateText = (seconds: number) => { const d = new Date(seconds * 1000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -38,7 +35,7 @@ export interface VideoDetailOptions extends VideoDetailContext { thumbnails?: Pa
 export function openVideoDetail(owner: ResourceOwner, shell: TvShell, services: VideoDetailServices, card: PopularCard, options: VideoDetailOptions = {}): void {
     const { thumbnails, modal = 'product-detail' } = options;
     // ADR-104: entries from 我的/关注/继续观看 resume their own part; part 1 looks exactly like the home page.
-    const part = UP_FIX && options.part && options.part > 1 && services.playPart ? options.part : 1;
+    const part = options.part && options.part > 1 && services.playPart ? options.part : 1;
     // A layer id is open at most once; the UP page opens its videos as their own layer above a home detail.
     shell.openModal(modal, child => {
         const panel = document.createElement('section');
@@ -48,10 +45,10 @@ export function openVideoDetail(owner: ResourceOwner, shell: TvShell, services: 
         heading.textContent = card.title;
         panel.setAttribute('aria-labelledby', heading.id);
         const by = document.createElement('p');
-        by.textContent = UP_FIX ? [card.owner, card.durationSec > 0 ? clockTime(card.durationSec) : '', PRODUCT_POLISH && card.views > 0 ? `${viewsText(card.views)}播放` : ''].filter(Boolean).join(' · ') : `${card.owner} · ${clockTime(card.durationSec)}${PRODUCT_POLISH && card.views > 0 ? ` · ${viewsText(card.views)}播放` : ''}`;
-        if (PRODUCT_POLISH) panel.classList.add('tv-detail-page');
+        by.textContent = [card.owner, card.durationSec > 0 ? clockTime(card.durationSec) : '', card.views > 0 ? `${viewsText(card.views)}播放` : ''].filter(Boolean).join(' · ');
+        panel.classList.add('tv-detail-page');
         const saved = services.profile.readPart(card.bvid, part);
-        const at = saved.kind === 'ok' && saved.value && (saved.value.timeMs < card.durationSec * 1000 || (UP_FIX && !card.durationSec)) ? saved.value.timeMs : 0;
+        const at = saved.kind === 'ok' && saved.value && (saved.value.timeMs < card.durationSec * 1000 || (!card.durationSec)) ? saved.value.timeMs : 0;
         let opening = false;
         const play = (position: number) => { if (opening || child.signal.aborted)
             return; opening = true; void shell.closeOwnedModal(child).then(() => { if (!owner.signal.aborted && !shell.restartRequired)
@@ -61,7 +58,7 @@ export function openVideoDetail(owner: ResourceOwner, shell: TvShell, services: 
             return; opening = true; void shell.closeOwnedModal(child).then(() => { if (!owner.signal.aborted && !shell.restartRequired)
             action(); }); };
         const label = part > 1 ? `P${part} ` : '', resumeLabel = at ? `继续观看 · ${label}${clockTime(at / 1000)}` : part > 1 ? `播放 · P${part}` : '播放';
-        const custom = UP_FIX2 ? options.primary : undefined;
+        const custom = options.primary;
         const primary = custom ? productButton('detail-play', custom.label, () => closeThen(() => custom.run())) : productButton('detail-play', resumeLabel, () => play(at));
         primary.className = 'tv-primary';
         const actions = document.createElement('div');
@@ -73,10 +70,10 @@ export function openVideoDetail(owner: ResourceOwner, shell: TvShell, services: 
             actions.append(productButton('detail-from-start', part > 1 ? '从头播放此分P' : '从头播放', () => play(0)));
         const result = document.createElement('p');
         result.setAttribute('role', 'status');
-        if (!UP_FIX2 || options.enqueue !== false)
+        if (options.enqueue !== false)
             actions.append(productButton('detail-enqueue', part > 1 ? `加入本机队列 · P${part}` : '加入本机队列 · 首P', () => { if (child.signal.aborted)
                 return; const outcome = services.queue.add(part > 1 ? { bvid: card.bvid, part, title: card.title } : { bvid: card.bvid, title: card.title }); result.textContent = outcome === 'saved' ? '已加入本机队列' : outcome === 'full' ? '本机队列已满' : `本机队列保存未确认（${outcome}）`; }));
-        if (UP_FIX2 && options.extra) actions.append(...options.extra(child, closeThen));
+        if (options.extra) actions.append(...options.extra(child, closeThen));
         const id = document.createElement('p');
         id.className = 'tv-secondary';
         id.textContent = card.bvid;
@@ -94,13 +91,13 @@ export function openVideoDetail(owner: ResourceOwner, shell: TvShell, services: 
         }
         else {
             picture.textContent = 'BiliSofa';
-            if (PRODUCT_UP && card.cover) { const covers = new CoverArt(); child.add('detail-cover', () => covers.close()); void covers.load(card.cover).then(url => { if (!url || child.signal.aborted) return; const image = document.createElement('img'); image.alt = ''; image.src = url; picture.replaceChildren(image); }); }
+            if (card.cover) { const covers = new CoverArt(); child.add('detail-cover', () => covers.close()); void covers.load(card.cover).then(url => { if (!url || child.signal.aborted) return; const image = document.createElement('img'); image.alt = ''; image.src = url; picture.replaceChildren(image); }); }
         }
         header.append(picture, summary);
         // The BV id is a support detail, not viewing information.
         id.hidden = true;
         panel.append(header, actions, result, id);
-        if (PRODUCT_POLISH && services.parts && services.playPart) detailParts(owner, shell, services, child, panel, actions, card, summary, by);
+        if (services.parts && services.playPart) detailParts(owner, shell, services, child, panel, actions, card, summary, by);
         return panel;
     }, 'detail-play');
 }
@@ -112,7 +109,7 @@ function detailAbout(shell: TvShell, services: VideoDetailServices, card: Popula
     if (facts.length) { const meta = document.createElement('p'); meta.className = 'tv-detail-meta'; meta.textContent = facts.join(' · '); summary.append(meta); }
     if (about.face) { const faces = new CoverArt(); child.add('detail-face', () => faces.close()); void faces.load(about.face).then(url => { if (!url || child.signal.aborted) return; const image = document.createElement('img'); image.className = 'tv-detail-face'; image.alt = ''; image.src = url; by.prepend(image); }); }
     // ADR-103: the UP's own page. A detail opened from an UP page has no openUp, so pages never nest in a loop.
-    if (PRODUCT_UP && about.ownerMid && services.openUp) { const up = { mid: about.ownerMid, name: card.owner }; actions.append(productButton('detail-up', 'UP主页', () => { if (!child.signal.aborted) services.openUp!(up); })); }
+    if (about.ownerMid && services.openUp) { const up = { mid: about.ownerMid, name: card.owner }; actions.append(productButton('detail-up', 'UP主页', () => { if (!child.signal.aborted) services.openUp!(up); })); }
     if (!about.description) return;
     const text = about.description, description = document.createElement('p'); description.className = 'tv-detail-desc'; description.textContent = text; summary.append(description);
     // Long text is clamped to four lines; the full text opens as its own layer and Back returns here.
@@ -124,9 +121,9 @@ function detailParts(owner: ResourceOwner, shell: TvShell, services: VideoDetail
     const pending = services.parts!(card.bvid, controller.signal).then(({ items: list, about, owner: readOwner }) => {
         if (child.signal.aborted) return;
         // ADR-104: an entry from 我的/关注/继续观看 may not know the UP name; the detail read supplies it.
-        const named = UP_FIX && !card.owner && readOwner ? { ...card, owner: readOwner } : card;
+        const named = !card.owner && readOwner ? { ...card, owner: readOwner } : card;
         if (named !== card) by.textContent = [named.owner, by.textContent].filter(Boolean).join(' · ');
-        if (PRODUCT_DETAIL && about) detailAbout(shell, services, named, child, summary, by, actions, about);
+        if (about) detailAbout(shell, services, named, child, summary, by, actions, about);
         if (list.length < 2) { note.textContent = ''; return; }
         note.textContent = `共 ${list.length}P`;
         const buttons = list.slice(0, 48).map(item => {

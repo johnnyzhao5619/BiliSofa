@@ -1,7 +1,5 @@
 import type { PopularCard } from '../../../../packages/contracts/src/index.ts';
 import type { CoverArt } from '../platform/cover-art.ts';
-declare const BILISOFA_PRODUCT_POLISH: boolean;
-const POLISH = typeof BILISOFA_PRODUCT_POLISH !== 'undefined' && BILISOFA_PRODUCT_POLISH;
 /** 12345 → 1.2万, 230000000 → 2.3亿; whole numbers below ten thousand. */
 export function viewsText(views: number): string {
     if (!Number.isFinite(views) || views < 0) return '';
@@ -28,7 +26,7 @@ export function contentCard(card: PopularCard, id: string, art: CoverArt, signal
     title.textContent = card.title;
     const author = document.createElement('span');
     author.className = 'tv-card-author';
-    author.textContent = POLISH && card.views > 0 ? `${card.owner} · ${viewsText(card.views)}播放` : card.owner;
+    author.textContent = card.views > 0 ? `${card.owner} · ${viewsText(card.views)}播放` : card.owner;
     button.setAttribute('aria-label', `${card.title}，${card.owner}，${Math.floor(card.durationSec / 60)}分${card.durationSec % 60}秒`);
     button.append(picture, title, author);
     button.onclick = () => { if (!signal.aborted)
