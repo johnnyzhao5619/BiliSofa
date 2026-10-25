@@ -17,7 +17,7 @@ test('F02 guest popular normalizes bounded public fields and does not interpret 
 test('W01/F02 guest protocol rejects arbitrary URLs, credentials, false HTTP success and unbounded display data', () => {
   const request = { version: 1, scope, operation: 'guest-popular', page: 1 };
   assert.deepEqual(parsePopularRequest(request), request); assert.deepEqual(parsePopularResult(result()), result());
-  for (const patch of [{ url: 'https://example.invalid' }, { cookie: 'synthetic' }, { page: 11 }, { page: 1.5 }, { scope: { ...scope, accountId: 'account' } }, { scope: { ...scope, token: 'synthetic' } }]) assert.throws(() => parsePopularRequest({ ...request, ...patch }));
+  for (const patch of [{ url: 'https://example.invalid' }, { cookie: 'synthetic' }, { page: 26 }, { page: 1.5 }, { scope: { ...scope, accountId: 'account' } }, { scope: { ...scope, token: 'synthetic' } }]) assert.throws(() => parsePopularRequest({ ...request, ...patch }));
   for (const patch of [{ closed: false }, { status: 412 }, { code: 'guest.http_412' }, { items: [card, card] }, { items: [{ ...card, title: 'x'.repeat(121) }] }, { rawBody: 'outside' }, { kind: 'http_error' }]) assert.throws(() => parsePopularResult({ ...result(), ...patch }));
   assert.equal(parsePopularResult({ version: 1, scope, operation: 'guest-popular', closed: true, kind: 'http_error', status: 412, code: 'guest.http_412', items: [], noMore: true }).kind, 'http_error');
 });

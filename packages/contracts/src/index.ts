@@ -47,10 +47,12 @@ export function parseScope(value: unknown): Scope {
   if (!Number.isInteger(generation)) throw new DomainError('invalid');
   return { accountId: text(s.accountId), generation, mediaSessionId: text(s.mediaSessionId), requestId: text(s.requestId) };
 }
-export function boundedMessage(value: unknown): Record<string, unknown> {
+/** ADR-108: one 20-row public batch crosses the kernel Worker boundary under its own larger bound. */
+export const BATCH_ROWS = 20, BATCH_MESSAGE_BYTES = 32768;
+export function boundedMessage(value: unknown, limit = 4096): Record<string, unknown> {
   let encoded: string;
   try { encoded = JSON.stringify(value); } catch { throw new DomainError('invalid'); }
-  if (!encoded || new TextEncoder().encode(encoded).length > 4096) throw new DomainError('invalid');
+  if (!encoded || new TextEncoder().encode(encoded).length > limit) throw new DomainError('invalid');
   return record(value);
 }
 export function parseProbeRequest(value: unknown): ProbeRequest {
@@ -166,7 +168,7 @@ export function popularScope(value: unknown): Scope {
   return scope;
 }
 export function parsePopularRequest(value: unknown): PopularRequest {
-  const v = boundedMessage(value), page = finite(v.page, 1, 10);
+  const v = boundedMessage(value), page = finite(v.page, 1, 25);
   if (v.version !== 1 || v.operation !== 'guest-popular' || !Number.isInteger(page) || Object.keys(v).some(k => !['version', 'scope', 'operation', 'page'].includes(k))) throw new DomainError('invalid');
   return { version: 1, scope: popularScope(v.scope), operation: 'guest-popular', page };
 }
@@ -175,10 +177,11 @@ export function parsePopularCard(item: unknown): PopularCard {
   if (Object.keys(card).length !== (card.cover===undefined?5:6) || Object.keys(card).some(k => !['bvid', 'title', 'owner', 'durationSec', 'views','cover'].includes(k)) || !/^BV[A-Za-z0-9]{10}$/.test(bvid) || !Number.isInteger(durationSec) || !Number.isInteger(views)) throw new DomainError('invalid');
   return { bvid, title, owner, durationSec, views,...(card.cover===undefined?{}:{cover:parseCoverReference(card.cover)}) };
 }
-export function parsePopularResult(value: unknown): PopularResult {
-  const v = boundedMessage(value), status = finite(v.status, 0, 599);
+/** `rows` is 4 for a screen page, or BATCH_ROWS for one kernel batch (ADR-108). */
+export function parsePopularResult(value: unknown, rows: 4 | typeof BATCH_ROWS = 4): PopularResult {
+  const v = boundedMessage(value, rows === 4 ? 4096 : BATCH_MESSAGE_BYTES), status = finite(v.status, 0, 599);
   if (v.version !== 1 || v.operation !== 'guest-popular' || v.closed !== true || !Number.isInteger(status) || (status !== 0 && status < 100) || !['ok', 'http_error', 'api_error', 'invalid_response', 'transport_error', 'cancelled'].includes(String(v.kind)) || Object.keys(v).some(k => !['version', 'scope', 'operation', 'closed', 'kind', 'status', 'apiCode', 'code', 'items', 'noMore'].includes(k))) throw new DomainError('invalid');
-  if (!Array.isArray(v.items) || v.items.length > 4 || typeof v.noMore !== 'boolean' || (v.kind !== 'ok' && v.items.length)) throw new DomainError('invalid');
+  if (!Array.isArray(v.items) || v.items.length > rows || typeof v.noMore !== 'boolean' || (v.kind !== 'ok' && v.items.length)) throw new DomainError('invalid');
   const items = v.items.map(parsePopularCard);
   if (new Set(items.map(item => item.bvid)).size !== items.length) throw new DomainError('invalid');
   const code = text(v.code, 96);

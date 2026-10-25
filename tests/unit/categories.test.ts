@@ -5,6 +5,7 @@ import {parseContentQuery} from '../../packages/contracts/src/content.ts';
 import {parseRankingRequest,parseRankingResult,type RankingRequest} from '../../packages/contracts/src/ranking.ts';
 import {PublicContentRuntime} from '../../apps/tv/src/platform/content-runtime.ts';
 import {resetPublicLists} from '../../apps/tv/src/platform/public-lists.ts';
+import { withFakeKernel } from './fake-public-kernel.ts';
 /** Guest category reads first obtain B站's visitor identity (ADR-106) on the same catalog Worker file. */
 const visitor=(q:RankingRequest)=>({...q,closed:true,kind:'ok',status:200,apiCode:0,code:'ranking.ok',items:[],visitorId:{b3:'AB12CD34-EF56-7890-ABCD-EF1234567890infoc',b4:'0F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F0'}});
 const scope={accountId:'guest',generation:1,mediaSessionId:'category',requestId:'c1'};
@@ -19,10 +20,8 @@ test('W03 category contracts accept only generated numeric facts, one anonymous 
  assert.throws(()=>parseRankingResult({...response(q as RankingRequest),operation:'public-ranking'}));
 });
 test('W03 category snapshots are keyed, paged copies; a category is reused for ten minutes (ADR-105), a failed read leaves no snapshot',async()=>{
- resetPublicLists();const original=globalThis.Worker,requests:RankingRequest[]=[];let fail=false;
- class FakeWorker{onmessage:((e:{data:unknown})=>void)|undefined;onerror:(()=>void)|undefined;constructor(file:string){assert.equal(file,'catalog-worker.js');}postMessage(q:RankingRequest){if(q.operation==='public-visitor'){queueMicrotask(()=>this.onmessage?.({data:visitor(q)}));return;}requests.push(q);queueMicrotask(()=>this.onmessage?.({data:fail?{...response(q),kind:'api_error',apiCode:-352,code:'ranking.api_error',items:[]}:response(q)}));}terminate(){}}
- globalThis.Worker=FakeWorker as unknown as typeof Worker;
- try{
+ resetPublicLists();const requests:RankingRequest[]=[];let fail=false;
+ await withFakeKernel(q=>{const r=q as RankingRequest;if(r.operation==='public-visitor')return visitor(r);requests.push(r);return fail?{...response(r),kind:'api_error',apiCode:-352,code:'ranking.api_error',items:[]}:response(r);},async()=>{
   const runtime=new PublicContentRuntime(),signal=new AbortController().signal;
   const a=await runtime.read({route:'category',categoryId:1005,page:1},signal);a.items[0]!.title='mutated';await runtime.read({route:'category',categoryId:1005,page:2},signal);
   assert.equal((await runtime.read({route:'category',categoryId:1005,page:1},signal)).items[0]!.title,'合成分区');assert.equal(requests.length,1);
@@ -32,11 +31,11 @@ test('W03 category snapshots are keyed, paged copies; a category is reused for t
   await runtime.read({route:'category',categoryId:1005,page:1},signal);assert.equal(requests.length,3,'reused within ten minutes');
   assert.ok(requests.every(q=>q.operation!=='public-category-ranking'||'visitor'in q),'guest category reads carry the visitor identity');
   fail=true;await assert.rejects(runtime.read({route:'category',categoryId:1004,page:1},signal),{apiCode:-352});await assert.rejects(runtime.read({route:'category',categoryId:1004,page:2},signal),{code:'invalid'});assert.deepEqual(await runtime.close(),{closed:true});
- }finally{globalThis.Worker=original;}
+ });
 });
-test('W03 category reply for another valid category does not authorize response or native reuse',async()=>{
- resetPublicLists();const original=globalThis.Worker;
- class FakeWorker{onmessage:((e:{data:unknown})=>void)|undefined;onerror:(()=>void)|undefined;constructor(_file:string){}postMessage(q:RankingRequest){queueMicrotask(()=>this.onmessage?.({data:q.operation==='public-visitor'?visitor(q):{...response(q),categoryId:1008}}));}terminate(){}}
- globalThis.Worker=FakeWorker as unknown as typeof Worker;
- try{const runtime=new PublicContentRuntime();await assert.rejects(runtime.read({route:'category',categoryId:1005,page:1},new AbortController().signal),{code:'invalid'});assert.deepEqual(await runtime.close(),{closed:false});}finally{globalThis.Worker=original;}
+test('W03 category reply for another valid category is never accepted',async()=>{
+ resetPublicLists();
+ await withFakeKernel(q=>{const r=q as RankingRequest;return r.operation==='public-visitor'?visitor(r):{...response(r),categoryId:1008};},async()=>{
+  const runtime=new PublicContentRuntime();await assert.rejects(runtime.read({route:'category',categoryId:1005,page:1},new AbortController().signal),{code:'invalid'});assert.deepEqual(await runtime.close(),{closed:true});
+ });
 });

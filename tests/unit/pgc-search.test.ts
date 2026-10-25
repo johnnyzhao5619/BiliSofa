@@ -10,7 +10,7 @@ const body=(rows:unknown[]=Array.from({length:4},(_,i)=>row(i)),patch={})=>JSON.
 const result=()=>({version:1,scope,operation:'public-pgc-search',closed:true,kind:'ok',status:200,code:'pgc.ok',...parsePgcSearchBody(body(),1)});
 test('PGC scoped request rejects caller routes, credentials, foreign identity and unsupported pages',()=>{
  const q={version:1,scope,operation:'public-pgc-search',keyword:'凡人',page:1};assert.deepEqual(parsePgcSearchRequest(q),q);
- for(const patch of [{operation:'public-user-search'},{url:'https://outside.invalid/'},{cookie:'outside'},{seasonId:'28747'},{page:11},{scope:{...scope,accountId:'another'}}])assert.throws(()=>parsePgcSearchRequest({...q,...patch}));
+ for(const patch of [{operation:'public-user-search'},{url:'https://outside.invalid/'},{cookie:'outside'},{seasonId:'28747'},{page:26},{scope:{...scope,accountId:'another'}}])assert.throws(()=>parsePgcSearchRequest({...q,...patch}));
 });
 test('PGC actual public row shape normalizes bounded summary without episodes, follow state or URLs',()=>{
  const r=parsePgcSearchBody(body(),1);assert.deepEqual(r.items[0],{seasonId:'28747',title:'凡人修仙传',category:'国创',region:'中国大陆',tags:'小说改/玄幻/热血/励志',status:'更新至第196话',score:9.7});assert.equal(r.items.length,4);assert.equal(r.noMore,false);assert.equal(JSON.stringify(r).includes('outside'),false);assert.equal(JSON.stringify(r).includes('is_follow'),false);

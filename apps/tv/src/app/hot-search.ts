@@ -1,7 +1,7 @@
 import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import type { HotSearchTerm } from '../../../../packages/contracts/src/hot-search.ts';
 import { SessionManager } from '../../../../packages/bili-client/src/session.ts';
-import { HotSearchWorker } from '../platform/hot-search-worker.ts';
+import { KernelHotSearch } from '../platform/public-lanes.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { TvShell } from './tv-shell.ts';
 /** Public terms are transient; choosing one explicitly enters the normal search. */
@@ -10,7 +10,7 @@ export function hotSearch(owner:ResourceOwner,shell:TvShell,accepted:(keyword:st
   const heading=document.createElement('h2');heading.id='hot-search-title';heading.textContent='热搜';section.setAttribute('aria-labelledby',heading.id);
   const status=document.createElement('p');status.setAttribute('role','status');
   const list=document.createElement('div');list.className='hot-search-terms';
-  const worker=new HotSearchWorker(),sessions=new SessionManager();
+  const worker=new KernelHotSearch(),sessions=new SessionManager();
   owner.add('hot-search-worker',async()=>{sessions.dispose();await worker.dispose();});
   let terms:HotSearchTerm[]=[],page=0,busy=false,selected=false;
   const button=(id:string,label:string,action:()=>void)=>{const node=document.createElement('button');node.dataset.focusId=id;node.textContent=label;node.addEventListener('click',()=>{if(!owner.signal.aborted)action();});return node;};

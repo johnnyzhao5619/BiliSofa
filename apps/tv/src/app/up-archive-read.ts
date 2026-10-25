@@ -1,7 +1,7 @@
 import { DomainError, type PopularCard } from '../../../../packages/contracts/src/index.ts';
 import { UP_ARCHIVE_PAGE, UP_ARCHIVE_PAGES } from '../../../../packages/contracts/src/up-archives.ts';
 import { SessionManager } from '../../../../packages/bili-client/src/session.ts';
-import { UpArchivesWorker } from '../platform/ranking-worker.ts';
+import { KernelUpArchives } from '../platform/public-lanes.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { UpArchiveCard } from '../../../../packages/contracts/src/up-archives.ts';
 import { PublicLimitedError, pacedRead, usedVisitor } from '../platform/public-lists.ts';
@@ -13,7 +13,7 @@ const LIMITED = new Set([-352, -412, -509, -799]);
 /** UP主页·投稿 (ADR-103): anonymous public lane, one page per explicit request, no prefetch or retry. */
 export class UpArchiveRead {
   private readonly sessions = new SessionManager();
-  private readonly worker = new UpArchivesWorker();
+  private readonly worker = new KernelUpArchives();
   constructor(owner: ResourceOwner, private readonly signed?: (mid: string, page: number, signal: AbortSignal) => Promise<{ archives: UpArchiveCard[]; total: number }>) { owner.add('up-archive-read', async () => { this.sessions.dispose(); await this.worker.dispose(); }); }
   /** 0.51.2 (ADR-105): paced, and with an active account its own session; a refusal surfaces as PublicLimitedError. */
   private async paced(mid: string, page: number): Promise<{ archives: UpArchiveCard[]; total: number }> {

@@ -9,10 +9,11 @@ export class SearchBodyError extends DomainError {
 export function searchTitle(value:unknown):string {
   return text(value,1024).replace(/<em class="keyword">|<\/em>/g,'').slice(0,120);
 }
-export function parseSearchBody(raw:string,page:number):{apiCode:number;items:PopularCard[];noMore:boolean} {
+/** `rows` is the requested page_size: 4, or 20 for an ADR-108 kernel batch (pages 1-5). */
+export function parseSearchBody(raw:string,page:number,rows:4|20=4):{apiCode:number;items:PopularCard[];noMore:boolean} {
   let issue:SearchResponseIssue='body';
   try {
-  if(!Number.isInteger(page)||page<1||page>10||new TextEncoder().encode(raw).length>524288)throw new DomainError('invalid');
+  if(!Number.isInteger(page)||page<1||page>(rows===4?10:5)||new TextEncoder().encode(raw).length>524288)throw new DomainError('invalid');
   issue='json';
   let parsed:unknown;try{parsed=JSON.parse(raw);}catch{throw new DomainError('invalid');}
   issue='envelope';
@@ -20,15 +21,15 @@ export function parseSearchBody(raw:string,page:number):{apiCode:number;items:Po
   if(apiCode!==0)return {apiCode,items:[],noMore:true};
   const data=record(root.data);issue='pagination';
   const pages=finite(data.numPages,0,1000000),total=finite(data.numResults,0,Number.MAX_SAFE_INTEGER);
-  if(data.page!==page || data.pagesize!==4 || !Number.isInteger(pages)||!Number.isInteger(total) || (total===0)!==(pages===0) || total>0&&pages<page)throw new DomainError('invalid');
+  if(data.page!==page || data.pagesize!==rows || !Number.isInteger(pages)||!Number.isInteger(total) || (total===0)!==(pages===0) || total>0&&pages<page)throw new DomainError('invalid');
   // Public service may omit result only for the explicit zero-result response.
-  const rows=data.result===undefined&&total===0?[]:data.result;
+  const list=data.result===undefined&&total===0?[]:data.result;
   issue='rows';
-  if(!Array.isArray(rows)||rows.length>4||total===0&&rows.length)throw new DomainError('invalid');
+  if(!Array.isArray(list)||list.length>rows||total===0&&list.length)throw new DomainError('invalid');
   const seen=new Set<string>();
   // Video search mixes in other row kinds (e.g. paid courses, type "ketang", without a BV id).
   // They are skipped, not fatal: failing the page made common short keywords look empty.
-  const items=rows.filter(item=>{issue='rows';const v=record(item);issue='type';if(typeof v.type!=='string'||!/^[a-z_]{1,32}$/.test(v.type))throw new DomainError('invalid');return v.type==='video';}).map(item=>{
+  const items=list.filter(item=>{issue='rows';const v=record(item);issue='type';if(typeof v.type!=='string'||!/^[a-z_]{1,32}$/.test(v.type))throw new DomainError('invalid');return v.type==='video';}).map(item=>{
     issue='rows';const v=record(item);
     issue='identity';const bvid=text(v.bvid,12);
     if(!/^BV[A-Za-z0-9]{10}$/.test(bvid)||seen.has(bvid))throw new DomainError('invalid');seen.add(bvid);
@@ -43,6 +44,6 @@ export function parseSearchBody(raw:string,page:number):{apiCode:number;items:Po
     const title=searchTitle(v.title);if(!title.length)throw new DomainError('invalid');
     const cover=publicArtwork(v.pic);return {bvid,title,owner:text(v.author,128).slice(0,48),durationSec,views,...(cover?{cover}:{})};
   });
-  return {apiCode,items,noMore:page>=Math.min(pages,10)||rows.length===0};
+  return {apiCode,items,noMore:page>=Math.min(pages,rows===4?10:5)||list.length===0};
   } catch { throw new SearchBodyError(issue); }
 }

@@ -1,20 +1,18 @@
 import { DomainError, type PopularCard } from '../../../../packages/contracts/src/index.ts';
 import { ContentApiError, PopularReadError, parseContentQuery, type ContentRuntime, type ContentQuery, type ContentPage } from '../../../../packages/contracts/src/content.ts';
 import { SessionManager } from '../../../../packages/bili-client/src/session.ts';
-import { PopularWorker } from './popular-worker.ts';
-import { CategoryRankingWorker, RankingWorker } from './ranking-worker.ts';
-import { SearchWorker } from './search-worker.ts';
+import { KernelCategoryRanking, KernelPopular, KernelRanking, KernelVideoSearch } from './public-lanes.ts';
 import { SearchReadError } from '../../../../packages/contracts/src/search.ts';
 import type { CategoryId } from '../../../../packages/contracts/src/categories.ts';
 import { pacedRead, usedVisitor } from './public-lists.ts';
 import { visitorIds } from './visitor-id.ts';
-/** All URLs, credentials and native calls remain behind the existing Worker. */
+/** All URLs, credentials and native calls remain behind the resident public kernel (ADR-108). */
 export class PublicContentRuntime implements ContentRuntime {
   private readonly sessions = new SessionManager();
-  private readonly worker = new PopularWorker();
-  private readonly ranking = new RankingWorker();
-  private readonly category = new CategoryRankingWorker();
-  private readonly search = new SearchWorker();
+  private readonly worker = new KernelPopular();
+  private readonly ranking = new KernelRanking();
+  private readonly category = new KernelCategoryRanking();
+  private readonly search = new KernelVideoSearch();
   private rankingSnapshot: PopularCard[] | undefined;
   private rankingKey: string | undefined;
   private closing: Promise<{closed:boolean}> | undefined;
@@ -30,8 +28,7 @@ export class PublicContentRuntime implements ContentRuntime {
     const abort=()=>{ if(this.sessions.accepts(task.scope)) this.sessions.invalidate(); };
     signal.addEventListener('abort',abort,{once:true});
     try {
-      // Route replacement and cached pages wait for all native owners. A failed
-      // close poisons the lane instead of overlapping an unconfirmed old read.
+      // Route replacement cancels this runtime's own transfers; the shared kernel stays (ADR-108).
       await Promise.all([this.worker.dispose(),this.ranking.dispose(),this.category.dispose(),this.search.dispose()]);
       if(signal.aborted || !this.sessions.accepts(task.scope)) throw new DomainError('cancelled');
       if(query.route==='ranking'||query.route==='category'){
@@ -58,6 +55,8 @@ export class PublicContentRuntime implements ContentRuntime {
         if(signal.aborted || !this.sessions.accepts(task.scope)) throw new DomainError('cancelled');
         this.rankingSnapshot=items;return this.rankingPage(1);
       }
+      // 刷新 renews the shared snapshot (popular) or list (ranking); paging and returning reuse them.
+      if('refresh' in query && query.refresh){if(query.route==='popular')this.worker.invalidate({version:1,scope:task.scope,operation:'guest-popular',page:1});else if(query.route==='ranking')this.ranking.invalidate({version:1,scope:task.scope,operation:'public-ranking'});}
       const result=query.route==='search'
         ? await this.search.run({version:1,scope:task.scope,operation:'public-video-search',keyword:query.keyword,page:query.page},task.signal)
         : query.route==='ranking'

@@ -1,6 +1,6 @@
 import { DomainError, type Scope } from '../../../../packages/contracts/src/index.ts';
 import { parseVisitorId, visitorArgument, type VisitorId } from '../../../../packages/contracts/src/visitor.ts';
-import { VisitorIdWorker } from './ranking-worker.ts';
+import { KernelVisitor } from './public-lanes.ts';
 type StorageApi = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const KEY = 'bilisofa.visitor.v1', TTL_MS = 30 * 86400000, RETRY_MS = 600000;
 /** ADR-106: B站's own anonymous visitor identity (buvid3/buvid4 plus the second it was obtained), kept on this TV only
@@ -50,7 +50,7 @@ export class VisitorIds {
   }
 }
 async function obtainVisitor(scope: Scope, signal: AbortSignal): Promise<VisitorId | undefined> {
-  const worker = new VisitorIdWorker();
+  const worker = new KernelVisitor();
   try {
     const result = await worker.run({ version: 1, scope, operation: 'public-visitor' }, signal);
     if (result.kind === 'cancelled') throw new DomainError('cancelled');

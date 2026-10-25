@@ -13,6 +13,8 @@ export function parseLiveSearchCard(value:unknown):LiveSearchCard {
 }
 export function parseLiveSearchRequest(value:unknown):LiveSearchRequest {
  const v=boundedMessage(value);if(v.operation!=='public-live-search')throw new DomainError('invalid');
+ // Live search keeps its own four-per-page module and ten pages (outside ADR-108's kernel).
+ if(typeof v.page!=='number'||v.page>10)throw new DomainError('invalid');
  return {...parseSearchRequest({...v,operation:'public-video-search'}),operation:'public-live-search'};
 }
 export function parseLiveSearchResult(value:unknown):LiveSearchResult {

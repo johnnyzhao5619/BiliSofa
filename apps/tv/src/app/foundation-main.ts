@@ -25,6 +25,7 @@ import {bridgeEvidence,type SourceStep} from '../platform/bridge-evidence.ts';
 import {openLaunchChooser,rememberProfile,forgetProfile} from './launch-chooser.ts';
 import { drawQr, clearQr } from '../ui/qr-code.ts';
 import { TvShell } from './tv-shell.ts';
+import { publicKernel } from '../platform/public-kernel.ts';
 import { localProfiles } from '../platform/local-profile-store.ts';
 import { searchHistories } from '../platform/search-history-store.ts';
 import { localSettings } from './local-settings.ts';
@@ -61,7 +62,7 @@ const root = document.querySelector<HTMLElement>('#pages')!, overlays = document
 {let notice:ReturnType<typeof setTimeout>|undefined;new MutationObserver(()=>{clearTimeout(notice);const text=feedback.textContent??'';if(text&&!/正在|未确认|扫码|登录|失效|重新打开|权限/.test(text))notice=setTimeout(()=>{if(feedback.textContent===text)feedback.textContent='';},4000);}).observe(feedback,{childList:true,characterData:true,subtree:true});}
 const repository = protectedAccountStore(), login = new LoginCoordinator(repository, () => new IdentityWorkerClient());
 const queues=localQueues();
-const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.52.0'); diagnostics.add('app','started');document.body.classList.add('product-instant');document.body.classList.add('product-stream');
+const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.53.0'); diagnostics.add('app','started');document.body.classList.add('product-instant');document.body.classList.add('product-stream');
 const histories=searchHistories();
 const writes = new RetainedWrites(writeJournal());
 function writeSummary(id:string){const old=writes.summary(id),video=interactionWrites().summary(id);return old&&video?{total:old.total+video.total,unknown:old.unknown+video.unknown}:undefined;}
@@ -205,7 +206,7 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
   shell.openModal('exit', () => {
     const modal = document.createElement('section'), title = document.createElement('h2'); title.id = 'exit-title'; title.textContent = '退出 BiliSofa？'; modal.setAttribute('aria-labelledby', title.id); modal.append(title);
     modal.append(button('stay', '继续使用', () => { void shell.back(); }), button('exit', '退出', () => {
-      void workspace.dispose().then(closed => { if (closed) { disposed = true; exitApplication(); } else feedback.textContent = '资源关闭未确认，请使用系统返回键退出应用'; });
+      void Promise.all([workspace.dispose(), publicKernel().close()]).then(([closed]) => { if (closed) { disposed = true; exitApplication(); } else feedback.textContent = '资源关闭未确认，请使用系统返回键退出应用'; });
     })); return modal;
   });
 }, 15000, () => { if (selecting && !document.hidden) void use(); }, mediaCommand);
@@ -213,11 +214,14 @@ diagnostics.add('app', registerMediaKeys() === 'registered' ? 'media_keys_regist
 workspace = new AccountWorkspace(shell, repository, accountRuntime, undefined, 16000, writes, true);
 const visibility = () => {
   if (disposed) return;
-  if (document.hidden) { diagnostics.add('lifecycle','suspended'); selectionEpoch++; selecting = false; void workspace.setHidden(true).catch(e => { feedback.textContent = message(e); }); }
+  // ADR-108: the resident public kernel closes with the app and starts again on the next read.
+  if (document.hidden) { diagnostics.add('lifecycle','suspended'); selectionEpoch++; selecting = false; void publicKernel().close(); void workspace.setHidden(true).catch(e => { feedback.textContent = message(e); }); }
   else { diagnostics.add('lifecycle','resumed'); void selection(() => workspace.setHidden(false), () => workspace.state.kind === 'active' ? '账号身份已重新确认' : '已返回游客界面'); }
 };
 document.addEventListener('visibilitychange', visibility);
-globalThis.addEventListener('pagehide', () => { disposed = true; document.removeEventListener('visibilitychange', visibility); void workspace.dispose(); }, { once: true });
+globalThis.addEventListener('pagehide', () => { disposed = true; document.removeEventListener('visibilitychange', visibility); void publicKernel().close(); void workspace.dispose(); }, { once: true });
+// ADR-108: boot the public kernel (WASM compile, first TLS) while the first screen and the chooser appear.
+publicKernel().prewarm();
 // 0.50.0 (ADR-099): a cold start asks who is watching before any private content is read.
 void shell.start().then(() => {
   if (disposed) return;

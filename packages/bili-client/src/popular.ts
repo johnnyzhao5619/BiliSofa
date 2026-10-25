@@ -2,15 +2,16 @@ import { DomainError, finite, record, text, type PopularCard } from '../../contr
 import {publicArtwork} from './public-artwork.ts';
 // Public guest route only, no auth identity or client key is copied. Bounded body
 // decoding happens in the Worker; callers receive normalized display data only.
-export function parsePopularBody(raw: string): { apiCode: number; items: PopularCard[]; noMore: boolean } {
-  if (new TextEncoder().encode(raw).length > 131072) throw new DomainError('invalid');
+/** `rows` is the requested ps: 4 (one screen page) or 20 (one ADR-108 kernel batch). */
+export function parsePopularBody(raw: string, rows: 4 | 20 = 4): { apiCode: number; items: PopularCard[]; noMore: boolean } {
+  if (new TextEncoder().encode(raw).length > (rows === 4 ? 131072 : 524288)) throw new DomainError('invalid');
   let parsed: unknown;
   try { parsed = JSON.parse(raw); } catch { throw new DomainError('invalid'); }
   const root = record(parsed), code = finite(root.code, -2147483648, 2147483647);
   if (!Number.isInteger(code)) throw new DomainError('invalid');
   if (code !== 0) return { apiCode: code, items: [], noMore: true };
   const data = record(root.data);
-  if (!Array.isArray(data.list) || data.list.length > 4 || typeof data.no_more !== 'boolean') throw new DomainError('invalid');
+  if (!Array.isArray(data.list) || data.list.length > rows || typeof data.no_more !== 'boolean') throw new DomainError('invalid');
   const seen = new Set<string>();
   const items = data.list.map(item => {
     const v = record(item), owner = record(v.owner), stat = record(v.stat);

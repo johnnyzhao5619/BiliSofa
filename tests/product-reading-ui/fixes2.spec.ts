@@ -8,7 +8,9 @@ const variant=(page:Page,name:string)=>page.route('**/search/probe.js',route=>ro
 async function choose(page:Page){await page.locator('[data-focus-id=nav-search]').click();await page.locator('[data-focus-id=keyword-key-n]').click();await page.locator('[data-focus-id=keyword-key-h]').click();await page.locator('[data-focus-id=keyword-candidate-0]').click();}
 test('S1 a video page with a paid-course row shows the videos instead of failing; focus goes to the first result',async({page})=>{
  const errors=await setup(page,false);await variant(page,'course');await choose(page);
- await expect(page.locator('[data-focus-id=search-card-0]')).toBeFocused();await expect(page.locator('[data-focus-id=search-card-2]')).toBeVisible();await expect(page.locator('[data-focus-id=search-card-3]')).toHaveCount(0);
+ await expect(page.locator('[data-focus-id=search-card-0]')).toBeFocused();await expect(page.locator('[data-focus-id=search-card-2]')).toBeVisible();
+ // ADR-108: the skipped course row no longer leaves a gap; the next batch fills the fourth slot.
+ await expect(page.locator('[data-focus-id=search-card-3]')).toBeVisible();
  await expect(page.locator('.tv-search .tv-status')).not.toContainText('无法完成');expect(errors).toEqual([]);
 });
 for(const [name,text] of [['empty','暂无结果'],['wrong-page','无法完成']] as const)test(`S1 when the search is ${name}, focus stays on 搜索 next to the chosen word, not on A`,async({page})=>{

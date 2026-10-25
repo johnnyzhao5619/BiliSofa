@@ -3,9 +3,7 @@ import type { PopularCard } from '../../../../packages/contracts/src/index.ts';
 import type { UserSearchCard } from '../../../../packages/contracts/src/user-search.ts';
 import type { PgcSearchCard } from '../../../../packages/contracts/src/pgc-search.ts';
 import { SessionManager } from '../../../../packages/bili-client/src/session.ts';
-import { SearchWorker } from '../platform/search-worker.ts';
-import { UserSearchWorker } from '../platform/user-search-worker.ts';
-import { PgcSearchWorker } from '../platform/pgc-search-worker.ts';
+import { KernelVideoSearch, KernelUserSearch, KernelPgcSearch } from '../platform/public-lanes.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 export type SearchType = 'video' | 'up' | 'pgc';
 export type SearchEntry = {
@@ -24,9 +22,9 @@ export class ProductSearchError extends Error {
 /** One public read lane; replacement waits for native close before another type starts. */
 export class ProductSearchRead {
   private readonly sessions = new SessionManager();
-  private readonly video = new SearchWorker();
-  private readonly up = new UserSearchWorker();
-  private readonly pgc = new PgcSearchWorker();
+  private readonly video = new KernelVideoSearch();
+  private readonly up = new KernelUserSearch();
+  private readonly pgc = new KernelPgcSearch();
   private generation = 0;
   private confirmed = true;
   constructor(private readonly owner: ResourceOwner) {
@@ -42,7 +40,8 @@ export class ProductSearchRead {
     if (!this.confirmed)
       throw new DomainError('unknown');
   }
-  async read(type: SearchType, keyword: string, page: number): Promise<{
+  /** `fresh` (刷新) renews this keyword's snapshot; paging and returning reuse it (ADR-108). */
+  async read(type: SearchType, keyword: string, page: number, fresh = false): Promise<{
     items: SearchEntry[];
     noMore: boolean;
   }> {
@@ -53,6 +52,7 @@ export class ProductSearchRead {
     const task = this.sessions.begin('product-search');
     try {
       const base = { version: 1 as const, scope: task.scope, keyword, page };
+      if (fresh) { if (type === 'video') this.video.invalidate({ ...base, operation: 'public-video-search' }); else if (type === 'up') this.up.invalidate({ ...base, operation: 'public-user-search' }); else this.pgc.invalidate({ ...base, operation: 'public-pgc-search' }); }
       const result = type === 'video' ? await this.video.run({ ...base, operation: 'public-video-search' }, task.signal) : type === 'up' ? await this.up.run({ ...base, operation: 'public-user-search' }, task.signal) : await this.pgc.run({ ...base, operation: 'public-pgc-search' }, task.signal);
       if (this.owner.signal.aborted || generation !== this.generation || !this.sessions.accepts(task.scope))
         throw new DomainError('cancelled');

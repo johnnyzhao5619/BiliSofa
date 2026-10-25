@@ -2,7 +2,7 @@ import {DomainError} from '../../../../packages/contracts/src/index.ts';
 import type {PgcSearchCard} from '../../../../packages/contracts/src/pgc-search.ts';
 import type {SearchHistoryStore} from '../../../../packages/contracts/src/search-history.ts';
 import {SessionManager} from '../../../../packages/bili-client/src/session.ts';
-import {PgcSearchWorker} from '../platform/pgc-search-worker.ts';
+import {KernelPgcSearch} from '../platform/public-lanes.ts';
 import type {ResourceOwner} from './resource-owner.ts';
 import type {TvShell} from './tv-shell.ts';
 import type {AppDiagnostics} from './app-diagnostics.ts';
@@ -14,7 +14,7 @@ export function pgcSearch(owner:ResourceOwner,shell:TvShell,initialKeyword:strin
  const title=document.createElement('h2');title.id='pgc-search-title';section.setAttribute('aria-labelledby',title.id);
  const status=document.createElement('p');status.setAttribute('role','status');status.tabIndex=-1;
  const list=document.createElement('div');list.className='pgc-search-grid';
- const worker=new PgcSearchWorker(),sessions=new SessionManager();owner.add('pgc-search-worker',async()=>{sessions.dispose();await worker.dispose();});
+ const worker=new KernelPgcSearch(),sessions=new SessionManager();owner.add('pgc-search-worker',async()=>{sessions.dispose();await worker.dispose();});
  let keyword=initialKeyword,page=1,busy=false,failedPage:number|undefined;
  const button=(id:string,label:string,action:()=>void)=>{const b=document.createElement('button');b.dataset.focusId=id;b.textContent=label;b.addEventListener('click',()=>{if(!owner.signal.aborted)action();});return b;};
  const back=button('pgc-search-back','返回',()=>{void shell.back();});

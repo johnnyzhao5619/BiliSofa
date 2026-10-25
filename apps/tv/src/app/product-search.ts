@@ -73,7 +73,7 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
     memory.pages = {};
     if (services.history.remember(keyword) !== 'saved')
       services.feedback.textContent = '搜索历史保存未确认，可在设置核查';
-    void read(1, true);
+    void read(1, true, true);
   }
   const input = button('search-input', '输入关键词', () => shell.openModal('search-keyword', child => searchKeyword(child, shell, accepted, '内容'), 'keyword-key-a'));
   const hot = button('search-hot', '热搜', () => shell.openModal('search-hot', child => hotSearch(child, shell, accepted), 'hot-back'));
@@ -98,10 +98,10 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
   tabs.append(...tabButtons);
   const previous = button('search-previous', '上一页', () => { if (!busy && committedPage > 1)
     void read(committedPage - 1); });
-  const next = button('search-next', '下一页', () => { if (!busy && !noMore && committedPage < 10)
+  const next = button('search-next', '下一页', () => { if (!busy && !noMore && committedPage < 25)
     void read(committedPage + 1); });
   const refresh = button('search-refresh', '刷新', () => { if (!busy && memory.keyword && !blocked)
-    void read(1,true); });
+    void read(1,true,true); });
   paging.append(previous, next, refresh);
   const feed=new ContinuousGrid(owner,grid,{load:page=>read(page),restored:page=>{committedPage=page;memory.pages[memory.type]=page;},top:()=> 'search-type-'+memory.type,left:()=> 'keyword-key-f',bottom:()=> 'search-refresh'});
   if(feed)previous.hidden=next.hidden=true;
@@ -179,12 +179,12 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
   function controls(): void {
     input.textContent = memory.keyword ? '关键词：' + memory.keyword : '输入关键词';
     previous.disabled = busy || blocked || committedPage <= 1;
-    next.disabled = busy || blocked || noMore || committedPage >= 10;
+    next.disabled = busy || blocked || noMore || committedPage >= 25;
     refresh.disabled = busy || blocked || !memory.keyword; refresh.hidden = !memory.keyword;
     input.disabled = hot.disabled = history.disabled = blocked;
     wire();
   }
-  async function read(page: number, replace = false): Promise<void> {
+  async function read(page: number, replace = false, fresh = false): Promise<void> {
     if (owner.signal.aborted || blocked)
       return;
     const ticket = ++epoch, keyword = memory.keyword, type = memory.type;
@@ -207,7 +207,7 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
     const active = document.activeElement as HTMLElement | null, focusId = active?.dataset.focusId ?? shell.navigation.current.anchor.focusId;
     status.textContent = `正在搜索“${keyword}” · ${types.find(t => t[0] === type)![1]}`;
     try {
-      const result = await reader.read(type, keyword, page);
+      const result = await reader.read(type, keyword, page, fresh);
       if (owner.signal.aborted || ticket !== epoch)
         return;
       if(!feed)art.close();
@@ -221,7 +221,7 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
         const cover = entry.kind === 'video' ? entry.card.cover : undefined;
         return libraryCard({ id: 'search-card-' + (feed?(page-1)*4+i:i), title, subtitle, badge: type === 'up' ? 'UP主' : type === 'pgc' ? '番剧影视' : '视频', ...(cover ? { cover } : {}) }, owner.signal, () => detail(entry), art);
       });
-      if(feed){const currentArt=art;feed.commit(sourceKey,page,rendered,result.noMore,10,1,()=>currentArt.close());}else grid.replaceChildren(...rendered);
+      if(feed){const currentArt=art;feed.commit(sourceKey,page,rendered,result.noMore,25,1,()=>currentArt.close());}else grid.replaceChildren(...rendered);
       status.textContent = `“${keyword}” · ${types.find(t => t[0] === type)![1]} · ${result.items.length ? feed?'向下浏览更多':'第 ' + page + ' 页' : '暂无结果'}${page === 10 && !noMore ? ' · 已到本次浏览上限' : ''}`;
       controls();
       const now = document.activeElement as HTMLElement | null;

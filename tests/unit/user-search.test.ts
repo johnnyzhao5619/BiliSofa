@@ -11,7 +11,7 @@ const body=(rows:unknown[]=Array.from({length:4},(_,i)=>row(i)),patch={})=>JSON.
 const result=()=>({version:1,scope,operation:'public-user-search',closed:true,kind:'ok',status:200,code:'up.ok',...parseUserSearchBody(body(),1)});
 test('UP requests remain scoped anonymous typed queries with no caller destination or credentials',()=>{
  const request={version:1,scope,operation:'public-user-search',keyword:'你好',page:1};assert.deepEqual(parseUserSearchRequest(request),request);
- for(const patch of [{operation:'public-video-search'},{url:'https://outside.invalid/'},{cookie:'outside'},{page:11},{uid:'123'},{scope:{...scope,accountId:'account-a'}}])assert.throws(()=>parseUserSearchRequest({...request,...patch}));
+ for(const patch of [{operation:'public-video-search'},{url:'https://outside.invalid/'},{cookie:'outside'},{page:26},{uid:'123'},{scope:{...scope,accountId:'account-a'}}])assert.throws(()=>parseUserSearchRequest({...request,...patch}));
 });
 test('UP parser preserves identity/counts and one full attached card, ignoring links, signature and unused previews',()=>{
  const r=parseUserSearchBody(body(),1);assert.equal(r.items.length,4);assert.equal(r.noMore,false);assert.deepEqual(r.items[0],{uid:'1',name:'合成UP',fans:123,videos:2,preview:{bvid:'BV0000000000',title:'你好投稿',owner:'合成UP',durationSec:126,views:123}});

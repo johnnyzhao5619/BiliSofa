@@ -1,12 +1,13 @@
 # 当前实施状态
 
-更新：2026-10-23。完整v1.0.0仍未完成。已安装0.51.3。[唯一收口台账](PRODUCT_CLOSURE.md) · [签名与部署记录](SIGNING_DEVICE_RECORD.md)（逐版本历史） · [测试报告](TEST_REPORT.md)。本页只记当前结论。
+更新：2026-10-25。完整v1.0.0仍未完成。已安装0.51.3。[唯一收口台账](PRODUCT_CLOSURE.md) · [签名与部署记录](SIGNING_DEVICE_RECORD.md)（逐版本历史） · [测试报告](TEST_REPORT.md)。本页只记当前结论。
 
 ## 当前验收对象
 
 | 对象 | 当前事实 | 证据 |
 | --- | --- | --- |
 | 已安装0.51.3 | [ADR-106](adr/106-guest-visitor-identity-and-sign-in-hint.md)：游客读取分区与UP投稿时带B站官方访客标识（spi取得的buvid3/buvid4，本机保存30天，设置 → 本机数据可一键清除；新原生`catalog-visitor`，其余原生不变）；游客被风控拒绝时提示“登录后通常更稳定”，“帮助与诊断”写明是否带标识。本地737单元/原生20/新5条合成UI（前4条对冻结0.51.2失败）/回归102条/11包负例通过；签名`19ac5ad3…3c5f`（证书预检PASS，权限不变）；升级安装/启动platformSuccess（一次，不清数据）；源码归档`aaddfb3d…759a`；**游客V1g、清除访客标识、登录状态回归 USER PASS；U5集中验收V3–V6 USER PASS（V1–V6全部通过，无FAIL，[报告](acceptance/2026-10-23-u5-final/REPORT.md)）** | [证据](design/evidence/2026-10-23-up-fix3/README.md) |
+| 0.53.0候选（未签名/未部署，P0a） | [ADR-108](adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)：公开列表改走常驻公共内核（一个WASM实例、连接复用），WBI签名盐缓存，热门与搜索上游每批20条、界面仍4卡一页并跨批去重；主机原生8/8、单元747/747、打包负例11/11；**设备门槛（耗时对比、`terminate`循环、播放内存、-352）未验证**；P0b账号只读内核未开始 | [ADR-108](adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md) |
 | 0.52.0候选（未签名/未部署） | [ADR-107](adr/107-single-product-build.md)：版本链收敛为单一产品构建（37个变体开关按当前值折叠、旧分支删除；构建/打包/签名/部署无变体参数；合成UI收敛为`playwright.app.config.ts`，旧套件归档）；行为等同0.51.3，原生模块逐字节一致。本地737单元/100条合成UI/11包负例通过；未签名WGT `f37077d0…c73e` | [证据](design/evidence/2026-10-24-single-build/README.md) |
 | 0.51.2（USER证据来源） | ADR-105：登录时分区排行与UP投稿用本人会话读取并节制请求；**V1 USER PASS（登录状态）、V2②补 USER PASS、导航与UP主页回归 USER PASS** | [证据](design/evidence/2026-10-23-up-fix2/README.md) |
 | 0.51.0–0.51.1（USER证据来源） | ADR-103/104：**V2① PASS、V2③ PASS、搜索视频与首页详情一致 PASS、导航 PASS、关注页直达卡 PASS、稍后再看/云端历史/收藏完整详情 PASS**；V1与继续观看/队列详情转ADR-105 | [证据](design/evidence/2026-10-23-up-fix/README.md) |

@@ -2,7 +2,7 @@ import {DomainError,type PopularCard} from '../../../../packages/contracts/src/i
 import type {UserSearchCard} from '../../../../packages/contracts/src/user-search.ts';
 import type {SearchHistoryStore} from '../../../../packages/contracts/src/search-history.ts';
 import {SessionManager} from '../../../../packages/bili-client/src/session.ts';
-import {UserSearchWorker} from '../platform/user-search-worker.ts';
+import {KernelUserSearch} from '../platform/public-lanes.ts';
 import type {ResourceOwner} from './resource-owner.ts';
 import type {TvShell} from './tv-shell.ts';
 import type {AppDiagnostics} from './app-diagnostics.ts';
@@ -14,7 +14,7 @@ export function userSearch(owner:ResourceOwner,shell:TvShell,initialKeyword:stri
   const title=document.createElement('h2');title.id='user-search-title';section.setAttribute('aria-labelledby',title.id);
   const status=document.createElement('p');status.setAttribute('role','status');status.tabIndex=-1;
   const list=document.createElement('div');list.className='user-search-grid';
-  const worker=new UserSearchWorker(),sessions=new SessionManager();owner.add('user-search-worker',async()=>{sessions.dispose();await worker.dispose();});
+  const worker=new KernelUserSearch(),sessions=new SessionManager();owner.add('user-search-worker',async()=>{sessions.dispose();await worker.dispose();});
   let keyword=initialKeyword,page=1,busy=false,failedPage:number|undefined;
   const button=(id:string,label:string,action:()=>void)=>{const node=document.createElement('button');node.dataset.focusId=id;node.textContent=label;node.addEventListener('click',()=>{if(!owner.signal.aborted)action();});return node;};
   const back=button('user-search-back','返回',()=>{void shell.back();});

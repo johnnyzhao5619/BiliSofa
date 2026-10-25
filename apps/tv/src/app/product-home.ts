@@ -146,7 +146,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
                 const request: ContentQuery = query.kind === 'search' ? { route: 'search', keyword: query.keyword!, page: query.page } : query.kind === 'category' ? { route: 'category', categoryId: query.categoryId!, page: query.page } : { route: query.kind === 'ranking' ? 'ranking' : 'popular', page: query.page };
                 if ((request.route === 'ranking' || request.route === 'category') && query.page > 1 && !committed)
                     await runtime.read({ ...request, page: 1 }, controller.signal);
-                result = await runtime.read((fresh && query.page === 1 && (request.route === 'ranking' || request.route === 'category')) ? { ...request, refresh: true } : request, controller.signal);
+                result = await runtime.read((fresh && query.page === 1 && request.route !== 'search') ? { ...request, refresh: true } : request, controller.signal);
             }
             committed = { ...query };
             if (owner.signal.aborted || ticket !== epoch)
@@ -155,12 +155,12 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
             art = new CoverArt();
             const buttons = result.items.map(card => contentCard(card, 'home-card-' + card.bvid, art, owner.signal, () => detail(card)));
             buttons.forEach((b, i) => { const id = (at: number) => buttons[at]?.dataset.focusId ?? b.dataset.focusId!; b.dataset.left = i % 4 ? id(i - 1) : search ? 'nav-search' : 'nav-home'; b.dataset.right = i % 4 < 3 ? id(i + 1) : id(i); b.dataset.up = selected?.dataset.focusId ?? (search ? 'search-input' : 'source-popular'); b.dataset.down = 'home-refresh'; });
-            if(feed){const currentArt=art;feed.commit(sourceKey,query.page,buttons,result.noMore,query.kind==='ranking'||query.kind==='category'?25:query.kind==='recommend'?1000000:10,result.firstPage??1,()=>currentArt.close());}
+            if(feed){const currentArt=art;feed.commit(sourceKey,query.page,buttons,result.noMore,query.kind==='recommend'?1000000:25,result.firstPage??1,()=>currentArt.close());}
             else grid.replaceChildren(...buttons);
             refresh.textContent = '刷新'; refresh.hidden = buttons.length > 0 || (!!feed && grid.querySelector('button') !== null);
             status.textContent = buttons.length ? `${query.kind === 'ranking' ? '全站排行榜' : query.kind === 'category' ? '分区排行榜' : query.kind === 'recommend' ? '当前账号推荐' : query.kind === 'search' ? `“${query.keyword}” 的视频` : '热门视频'}${feed?' · 向下浏览更多':' · 第 '+query.page+' 页'}` : '暂时没有视频，可换一个栏目';
             previous.disabled = query.page <= ('firstPage' in result ? Number(result.firstPage) : 1);
-            next.disabled = result.noMore || query.page >= (query.kind === 'ranking' || query.kind === 'category' ? 25 : query.kind === 'recommend' ? 1000000 : 10);
+            next.disabled = result.noMore || query.page >= (query.kind === 'recommend' ? 1000000 : 25);
             // Async results may replace owned content, never a modal or a moved rail focus.
             const now = document.activeElement as HTMLElement | null;
             const stillOwns = now === active || node.contains(now) || now?.dataset.focusId === 'nav-home' || now === document.body;

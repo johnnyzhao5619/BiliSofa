@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { routeKernelAdapter } from '../ui-kernel/kernel-adapter.ts';
 const native=readFileSync('tests/cast-app-ui/native-fixture.js','utf8');
 interface Reply{action:string;id:number;status:number;body:string;}
 export async function setup(page:Page,variant='normal',decoder='normal',initialOffset=12000){
@@ -27,6 +28,7 @@ export async function setup(page:Page,variant='normal',decoder='normal',initialO
   },castAppFixture:{snapshot:()=>({state,time,opened,played,closed,urls,calls})}});
  },{decoder,initialOffset});
  await page.route('**/native/probe.js',r=>r.fulfill({contentType:'text/javascript',body:readFileSync('tests/media-ui/native-fixture.js','utf8').replace('__VARIANT__','normal')}));
+ await routeKernelAdapter(page);
  await page.goto('/');if(await page.locator('[data-focus-id=nav-cast]').count())await page.locator('[data-focus-id=nav-cast]').click();await page.locator('[data-focus-id=cast-entry]').click();
  return {replies,queue,errors};
 }

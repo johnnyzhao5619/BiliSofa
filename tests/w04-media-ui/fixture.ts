@@ -1,5 +1,6 @@
 import {expect,type Page}from'@playwright/test';
 import {readFileSync}from'node:fs';
+import {routeKernelAdapter} from '../ui-kernel/kernel-adapter.ts';
 const legacy=readFileSync('tests/media-ui/native-fixture.js','utf8').replace('__VARIANT__','normal');
 const rawApi=readFileSync('tests/w04-media-ui/vod-api-fixture.js','utf8'),api=rawApi.replace('__PGC__','0'),bridge=readFileSync('tests/w04-media-ui/vod-bridge-fixture.js','utf8');
 const search=readFileSync('tests/search-ui/native-fixture.js','utf8').replace('__VARIANT__','normal');
@@ -32,6 +33,7 @@ export async function setup(page: Page, start = true, device: 'package'|'denied'
     mediaFixture:{failPrepare(n:number){fails=n;},snapshot:()=>({state,time,duration,opened,closed,rate,operations:[...operations]}),tick(ms:number){time=ms;listener.oncurrentplaytime?.(ms);},end(){listener.onstreamcompleted?.();},fail(){listener.onerror?.('PLAYER_ERROR_CONNECTION_FAILED');},duration(ms:number){duration=ms;},late(){old.oncurrentplaytime?.(999999);}}});
     if(device==='no-player')delete (globalThis as unknown as {webapis:{avplay?:unknown}}).webapis.avplay;
   },{productInfoDeclared,device,tickCadenceMs});
+  await routeKernelAdapter(page);
   await page.goto('/');if(!start)return errors;if(await page.locator('[data-focus-id=nav-home]').count()){if(await page.locator('.tv-stream-grid').count())await expect(page.locator('.tv-grid .tv-card').first()).toBeVisible();else await expect(page.locator('.tv-grid .tv-card')).toHaveCount(4);await page.locator('.tv-grid .tv-card').first().click();await page.getByRole('button',{name:'播放',exact:true}).click();await expect(page.getByRole('button',{name:'暂停 / 继续',exact:true})).toBeEnabled();return errors;}await page.getByRole('button',{name:'读取游客热门'}).click();await expect(page.locator('.popular-grid button')).toHaveCount(4);
   await page.locator('.popular-grid button').first().click();await expect(page.getByRole('button',{name:'暂停 / 继续',exact:true})).toBeEnabled();
   return errors;

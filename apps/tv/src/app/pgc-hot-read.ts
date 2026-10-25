@@ -1,7 +1,7 @@
 import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import type { PgcRankCard, PgcRankSpan, PgcRankType } from '../../../../packages/contracts/src/ranking.ts';
 import { SessionManager } from '../../../../packages/bili-client/src/session.ts';
-import { PgcRankingWorker } from '../platform/ranking-worker.ts';
+import { KernelPgcRanking } from '../platform/public-lanes.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { LibraryEntry } from './product-library-read.ts';
 const PAGE = 20, INDEX_PAGES = 5;
@@ -11,7 +11,7 @@ export interface PgcHotFilter { seasonType: PgcRankType; span: PgcRankSpan; }
  * Anonymous lane only, no account or write surface. Refresh drops the cached filter. */
 export class PgcHotRead {
   private readonly sessions = new SessionManager();
-  private readonly worker = new PgcRankingWorker();
+  private readonly worker = new KernelPgcRanking();
   private readonly cache = new Map<string, { seasons: PgcRankCard[]; more: boolean }>();
   constructor(owner: ResourceOwner) {
     owner.add('pgc-hot-read', async () => { this.sessions.dispose(); this.cache.clear(); await this.worker.dispose(); });

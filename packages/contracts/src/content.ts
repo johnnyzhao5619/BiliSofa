@@ -34,9 +34,9 @@ export function parseContentQuery(value: unknown): ContentQuery {
     return {route:'category',page:v.page as number,categoryId:parseCategoryId(v.categoryId),...(v.refresh===true?{refresh:true}:{})};
   }
   if(v.route==='search'){
-    if(Object.keys(v).length!==3 || Object.keys(v).some(k=>!['route','page','keyword'].includes(k)) || !Number.isInteger(v.page) || Number(v.page)<1 || Number(v.page)>10)throw new DomainError('invalid');
+    if(Object.keys(v).length!==3 || Object.keys(v).some(k=>!['route','page','keyword'].includes(k)) || !Number.isInteger(v.page) || Number(v.page)<1 || Number(v.page)>25)throw new DomainError('invalid');
     return {route:'search',page:v.page as number,keyword:parseSearchKeyword(v.keyword)};
   }
-  if(Object.keys(v).some(k=>!['route','page','refresh'].includes(k)) || !['popular','ranking'].includes(String(v.route)) || !Number.isInteger(v.page) || Number(v.page)<1 || Number(v.page)>(v.route==='ranking'?25:10) || ('refresh' in v && (v.refresh!==true || v.route!=='ranking' || v.page!==1))) throw new DomainError('invalid');
+  if(Object.keys(v).some(k=>!['route','page','refresh'].includes(k)) || !['popular','ranking'].includes(String(v.route)) || !Number.isInteger(v.page) || Number(v.page)<1 || Number(v.page)>25 || ('refresh' in v && (v.refresh!==true || v.page!==1))) throw new DomainError('invalid');
   return {route:v.route as 'popular'|'ranking',page:v.page as number,...(v.refresh===true?{refresh:true}:{})};
 }
