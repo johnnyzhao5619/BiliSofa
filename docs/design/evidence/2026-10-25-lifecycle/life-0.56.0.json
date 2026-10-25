@@ -1,0 +1,58 @@
+{
+  "label": "v0.56.0",
+  "at": "2026-10-25T22:32:49.523Z",
+  "runs": {
+    "account": {
+      "recommendCardAfterChoiceMs": 2619,
+      "workerStarts": 0,
+      "coverFetches": 4
+    },
+    "covers": {
+      "firstCardMs": 120,
+      "firstRowCoversMs": 181,
+      "workerStarts": 0,
+      "coverFetches": 0
+    },
+    "back": {
+      "fromDetail": {
+        "ms": 241,
+        "workerStarts": 0,
+        "coverFetches": 0
+      },
+      "fromUpThenDetail": {
+        "ms": 513,
+        "workerStarts": 0,
+        "coverFetches": 0
+      }
+    },
+    "top": {
+      "toSearch": {
+        "ms": 127,
+        "workerStarts": 0,
+        "coverFetches": 0
+      },
+      "toLibrary": {
+        "ms": 296,
+        "workerStarts": 0,
+        "coverFetches": 0
+      },
+      "backToHomeWithCovers": {
+        "ms": 181,
+        "workerStarts": 0,
+        "coverFetches": 0
+      }
+    },
+    "switch": {
+      "toGuestHome": {
+        "ms": 321,
+        "workerStarts": 0,
+        "coverFetches": 0
+      },
+      "backToAccountRecommend": {
+        "ms": 2789,
+        "workerStarts": 1,
+        "coverFetches": 4
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # 当前验收安排
 
-2026-10-25；**当前没有待执行的设备测试组。** 已安装0.54.0（[ADR-108](adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)），设备对比与`terminate`门槛已完成（[证据](design/evidence/2026-10-25-network-kernel/README.md)）；尚未完成的两项：用1080P视频补测播放门槛，以及日常使用一天后的-352计数。0.51.3及更早版本的验收结论保持（U5集中验收V1–V6 USER PASS，[报告](acceptance/2026-10-23-u5-final/REPORT.md)）。
+2026-10-25；**当前没有待执行的设备测试组。** 已安装0.56.0（[ADR-109](adr/109-cover-cache-single-account-verification-and-lifecycle-measurement.md)，[设备证据](design/evidence/2026-10-25-lifecycle/README.md)）。仍OPEN：后台恢复耗时（需不依赖调试连接的测量方法）、1080P播放门槛、日常使用一天后的-352计数。0.51.3及更早版本的验收结论保持（U5集中验收V1–V6 USER PASS，[报告](acceptance/2026-10-23-u5-final/REPORT.md)）。
 
 - [当前实施状态](IMPLEMENTATION_STATUS.md)：已安装包与未部署候选分开记录。
 - [唯一收口台账](PRODUCT_CLOSURE.md)：R01–R15剩余项与U5最终T1–T8矩阵。

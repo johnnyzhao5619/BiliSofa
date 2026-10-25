@@ -1,6 +1,6 @@
 # P0-3 改动方案（封面缓存、身份只核对一次、生命周期测量）
 
-2026-10-25。对应[ADR-109](../adr/109-cover-cache-single-account-verification-and-lifecycle-measurement.md)。状态：**用户确认3项决定（2026-10-25）；P0-3a在0.56.0实现（未签名/未安装），见ADR-109“P0-3a实现”；装机测量待授权**。分支`perf/p0-network-kernel`。
+2026-10-25。对应[ADR-109](../adr/109-cover-cache-single-account-verification-and-lifecycle-measurement.md)。状态：**用户确认3项决定（2026-10-25）；P0-3a在0.56.0实现并已安装，设备结果见ADR-109“设备结果”：建议不做DOM保活，后台恢复待可靠测量**。分支`perf/p0-network-kernel`。
 
 ## 为什么改了范围
 
