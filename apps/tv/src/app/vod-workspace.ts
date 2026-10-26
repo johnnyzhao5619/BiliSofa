@@ -147,6 +147,7 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   function update(): void {
     if (owner.signal.aborted) return;
     const s = player?.snapshot(), media = s?.media, available = !busy && !s?.moving && !s?.stopped && !!media && !media.seeking && ['playing', 'paused'].includes(media.state);
+    const preparing = !!media && !s?.stopped && ['idle', 'preparing', 'ready'].includes(media.state);
     for (const control of [toggle, earlier, later, tracks, overlaySettings, comments, interactions, like, follow, watch, parts, collection, next, rate]) control.disabled = !available;
     interactions.disabled ||= !access?.interactions||false;
     interactions.textContent='收藏夹';interactions.title=access?.interactions?'读取当前账号实际状态，选择后预览确认':'请先在管理账号中使用已保存账号';
@@ -170,8 +171,9 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     if(queueNavigation)title.textContent=queueNavigation.label+' · '+(catalog?title.textContent:'视频播放');
     timeline.textContent = media ? `${(media.timeMs / 1000).toFixed(1)} / ${(media.durationMs / 1000).toFixed(1)} 秒${preview.targetMs === undefined ? '' : ` · 预览 ${(preview.targetMs / 1000).toFixed(1)} 秒（确认后跳转）`}` : '';
     if (terminal) say(terminal);
-    // ADR-110: name the stage instead of one line for the whole start.
-    else if (busy || s?.moving || media?.state === 'loading') say(advice && advice.includes('重试') ? advice : !catalog ? '正在读取视频信息' : media?.buffering ? '缓冲中' : '正在获取播放源');
+    // ADR-110: name the stage instead of one line for the whole start. A player that exists but has not
+    // shown a frame (idle/preparing/ready) is buffering; the fallback note returns once playback starts.
+    else if (busy || s?.moving || media?.state === 'loading' || preparing) say(advice && advice.includes('重试') ? advice : !catalog ? '正在读取视频信息' : media?.buffering || preparing ? '缓冲中' : '正在获取播放源');
     else if (!started) say('是否继续本分P上次在电视观看的位置？');
     else say(media?.seeking ? '正在跳转' : advice || (media?.state === 'paused' ? '已暂停' : media?.state === 'playing' ? ('') : '正在准备'));
     if (controls.contains(document.activeElement) && (document.activeElement as HTMLButtonElement).disabled && !(instant?.busy&&[like,follow,watch].includes(document.activeElement as HTMLButtonElement))) ((toggle.disabled?wake:toggle)).focus();
