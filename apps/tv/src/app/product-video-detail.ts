@@ -9,6 +9,7 @@ import { CoverArt } from '../platform/cover-art.ts';
 import { clockTime, viewsText } from '../ui/content-card.ts';
 import { productButton } from './product-frame.ts';
 import { openFullText, needsFullText } from './full-text.ts';
+import { backdrop } from '../ui/backdrop.ts';
 import type { VodAccess } from '../../../../packages/contracts/src/vod-runtime.ts';
 import type { VodPrefetch } from './vod-prefetch.ts';
 /** Local calendar date of a Unix-seconds timestamp, e.g. 2026-10-23. */
@@ -86,9 +87,12 @@ export function openVideoDetail(owner: ResourceOwner, shell: TvShell, services: 
         id.className = 'tv-secondary';
         id.textContent = card.bvid;
         const header = document.createElement('div');
-        header.className = 'tv-detail-header';
+        // ADR-114: two columns, cover left; title, facts, description and the actions right. Focus still starts on play.
+        header.className = 'tv-detail-header tv-detail-split';
         const summary = document.createElement('div');
-        summary.append(heading, by);
+        summary.className = 'tv-detail-summary';
+        summary.append(heading, by, actions, result);
+        const ambience = backdrop(panel, child.signal);
         const picture = document.createElement('div');
         picture.className = 'tv-detail-picture';
         const thumbnail = thumbnails?.querySelector<HTMLImageElement>(`[data-focus-id="home-card-${card.bvid}"] img, [data-focus-id$="-${card.bvid}"] img`);
@@ -96,34 +100,35 @@ export function openVideoDetail(owner: ResourceOwner, shell: TvShell, services: 
             const image = thumbnail.cloneNode() as HTMLImageElement;
             image.alt = '';
             picture.append(image);
+            ambience.show(image.getAttribute('src') ?? undefined);
         }
         else {
             picture.textContent = 'BiliSofa';
-            if (card.cover) { const covers = new CoverArt(); child.add('detail-cover', () => covers.close()); void covers.load(card.cover).then(url => { if (!url || child.signal.aborted) return; const image = document.createElement('img'); image.alt = ''; image.src = url; picture.replaceChildren(image); }); }
+            if (card.cover) { const covers = new CoverArt(); child.add('detail-cover', () => covers.close()); void covers.load(card.cover).then(url => { if (!url || child.signal.aborted) return; const image = document.createElement('img'); image.alt = ''; image.src = url; picture.replaceChildren(image); ambience.show(url); }); }
         }
         header.append(picture, summary);
         // The BV id is a support detail, not viewing information.
         id.hidden = true;
-        panel.append(header, actions, result, id);
-        if (services.parts && services.playPart) detailParts(owner, shell, services, child, panel, actions, card, summary, by, prefetch);
+        panel.append(header, id);
+        if (services.parts && services.playPart) detailParts(owner, shell, services, child, panel, actions, card, by, prefetch);
         return panel;
     }, 'detail-play');
 }
 /** Multi-part list on the detail page; reading is cancelled and awaited before the detail closes. */
 /** Detail facts from the same read as the part list (ADR-095); absent facts leave no gap. */
-function detailAbout(shell: TvShell, services: VideoDetailServices, card: PopularCard, child: ResourceOwner, summary: HTMLElement, by: HTMLElement, actions: HTMLElement, about: VodAbout): void {
+function detailAbout(shell: TvShell, services: VideoDetailServices, card: PopularCard, child: ResourceOwner, by: HTMLElement, actions: HTMLElement, about: VodAbout): void {
     const count = (n: number) => viewsText(n);
     const facts = [about.publishedAt ? `发布于 ${dateText(about.publishedAt)}` : '', about.likes !== undefined ? `${count(about.likes)}点赞` : '', about.danmaku !== undefined ? `${count(about.danmaku)}弹幕` : ''].filter(Boolean);
-    if (facts.length) { const meta = document.createElement('p'); meta.className = 'tv-detail-meta'; meta.textContent = facts.join(' · '); summary.append(meta); }
+    if (facts.length) { const meta = document.createElement('p'); meta.className = 'tv-detail-meta'; meta.textContent = facts.join(' · '); actions.before(meta); }
     if (about.face) { const faces = new CoverArt(); child.add('detail-face', () => faces.close()); void faces.load(about.face).then(url => { if (!url || child.signal.aborted) return; const image = document.createElement('img'); image.className = 'tv-detail-face'; image.alt = ''; image.src = url; by.prepend(image); }); }
     // ADR-103: the UP's own page. A detail opened from an UP page has no openUp, so pages never nest in a loop.
     if (about.ownerMid && services.openUp) { const up = { mid: about.ownerMid, name: card.owner }; actions.append(productButton('detail-up', 'UP主页', () => { if (!child.signal.aborted) services.openUp!(up); })); }
     if (!about.description) return;
-    const text = about.description, description = document.createElement('p'); description.className = 'tv-detail-desc'; description.textContent = text; summary.append(description);
-    // Long text is clamped to four lines; the full text opens as its own layer and Back returns here.
-    if (needsFullText(text)) actions.append(productButton('detail-description', '简介全文', () => openFullText(shell, 'detail-description', '简介', text)));
+    const text = about.description, description = document.createElement('p'); description.className = 'tv-detail-desc'; description.textContent = text; actions.before(description);
+    // Long text is clamped to three lines (ADR-114); the full text opens as its own layer and Back returns here.
+    if (needsFullText(text, 3)) actions.append(productButton('detail-description', '简介全文', () => openFullText(shell, 'detail-description', '简介', text)));
 }
-function detailParts(owner: ResourceOwner, shell: TvShell, services: VideoDetailServices, child: ResourceOwner, panel: HTMLElement, actions: HTMLElement, card: PopularCard, summary: HTMLElement, by: HTMLElement, prefetch?: VodPrefetch): void {
+function detailParts(owner: ResourceOwner, shell: TvShell, services: VideoDetailServices, child: ResourceOwner, panel: HTMLElement, actions: HTMLElement, card: PopularCard, by: HTMLElement, prefetch?: VodPrefetch): void {
     const row = document.createElement('div'), note = document.createElement('p'), controller = new AbortController();
     row.className = 'tv-detail-parts'; note.className = 'tv-secondary'; note.setAttribute('role', 'status'); note.textContent = '正在读取分P';
     // ADR-110: facts come from the public kernel's view; if that read fails, the prefetched playback read has the same facts.
@@ -136,7 +141,7 @@ function detailParts(owner: ResourceOwner, shell: TvShell, services: VideoDetail
         // ADR-104: an entry from 我的/关注/继续观看 may not know the UP name; the detail read supplies it.
         const named = !card.owner && readOwner ? { ...card, owner: readOwner } : card;
         if (named !== card) by.textContent = [named.owner, by.textContent].filter(Boolean).join(' · ');
-        if (about) detailAbout(shell, services, named, child, summary, by, actions, about);
+        if (about) detailAbout(shell, services, named, child, by, actions, about);
         const total = count ?? list.length;
         if (total < 2) { note.textContent = ''; return; }
         note.textContent = `共 ${total}P`;

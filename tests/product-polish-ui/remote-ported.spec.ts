@@ -43,7 +43,10 @@ test('ADR-113 a queued item with a saved position continues there and offers 从
  await page.keyboard.press('Escape');await page.keyboard.press('Escape');const card=page.locator('[data-focus-id^=shelf-popular-]').first();await expect(card).toBeFocused();await page.waitForTimeout(500);
  await card.click({button:'right'});await page.locator('[data-focus-id=card-menu-queue]').click();await expect(page.locator('.tv-card-menu [role=status]')).toHaveText('已加入本机队列');await page.keyboard.press('Escape');
  await page.locator('[data-focus-id=nav-library]').click();await page.getByRole('button',{name:'本机播放队列',exact:true}).click();await page.locator('[data-focus-id^=queue-]').first().click();
- await expect(page.locator('[data-focus-id=vod-start-over]')).toBeFocused();await expect(page.locator('[data-focus-id=vod-resume]')).toHaveCount(0);await expect.poll(async()=>(await snapshot(page)).time,{timeout:8000}).toBeGreaterThanOrEqual(3000);expect(errors).toEqual([]);
+ // ADR-113: 从头播放 appears with the first frame (never during loading) and is one seek to 0, not a fresh read.
+ await expect(page.locator('[data-focus-id=vod-start-over]')).toBeFocused();expect((await snapshot(page)).state).toBe('PLAYING');await expect(page.locator('[data-focus-id=vod-resume]')).toHaveCount(0);await expect.poll(async()=>(await snapshot(page)).time,{timeout:8000}).toBeGreaterThanOrEqual(3000);
+ const opened=(await snapshot(page)).operations.filter(n=>n==='open').length;await page.locator('[data-focus-id=vod-start-over]').click();await expect.poll(async()=>(await snapshot(page)).time,{timeout:8000}).toBeLessThan(3000);
+ expect((await snapshot(page)).operations.filter(n=>n==='open').length).toBe(opened);await expect(page.locator('[data-focus-id=vod-start-over]')).toHaveCount(0);expect(errors).toEqual([]);
 });
 test('ADR-088 (0.46) detail has no list-return button or BV id; home has no trailing refresh',async({page})=>{
  const errors=await setup(page,false);await expect(page.locator('[data-focus-id^=shelf-popular-]').first()).toBeFocused();await expect(page.locator('[data-focus-id=home-refresh]')).toBeHidden();

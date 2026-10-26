@@ -12,6 +12,7 @@ import type { TvShell } from './tv-shell.ts';
 import { PublicContentRuntime } from '../platform/content-runtime.ts';
 import { CoverArt } from '../platform/cover-art.ts';
 import { contentCard } from '../ui/content-card.ts';
+import { backdrop } from '../ui/backdrop.ts';
 import { limitedFrom, limitedText } from '../platform/public-lists.ts';
 import { productButton } from './product-frame.ts';
 import { contentLoadFailureText } from './user-messages.ts';
@@ -56,6 +57,8 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
     eyebrow.textContent = 'BiliSofa · 坐下来，看点喜欢的';
     const title = document.createElement('h1');
     title.textContent = search ? '搜索喜欢的内容' : services.name ? '为你发现' : '今天，想看什么？';
+    // ADR-114: the shelves landing drops the tagline and page title for one small identity line, so more rows fit.
+    if (!search) { title.className = 'tv-home-identity'; title.textContent = `BiliSofa · ${services.name ?? '游客'}`; }
     const tools = document.createElement('div');
     tools.className = 'tv-filters';
     const status = document.createElement('p');
@@ -202,9 +205,12 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
     if (shelves) shelfArea.append(...(continuing ? [continuing.node] : []), shelves.node);
     function showMode(): void { if (!shelves) return; shelfArea.hidden = gridMode; for (const part of [tools, status, grid, paging]) part.hidden = !gridMode; }
     if (shelves) frameBack.set(node, () => { if (!gridMode) return false; gridMode = false; memory.mode = 'shelves'; readAbort?.abort(); showMode(); (node.querySelector<HTMLElement>(`[data-focus-id="${returnTo}"]`) ?? node.querySelector<HTMLElement>(`[data-focus-id="${shelves.first() ?? ''}"]`))?.focus(); return true; });
-    if (shelves) node.append(eyebrow, title, shelfArea, tools, status, grid, paging); else
+    if (shelves) node.append(title, shelfArea, tools, status, grid, paging); else
     node.append(eyebrow,title,...(continuing?[continuing.node]:[]),tools,status,grid,paging);
     showMode();
+    // ADR-114: a card focused for 0.3 s lends its loaded cover to the page backdrop; anything else fades it out.
+    const ambience=backdrop(node,owner.signal),lend=(event:FocusEvent)=>{const card=(event.target as HTMLElement).closest?.('.tv-card');ambience.show(card?.querySelector('img')?.getAttribute('src')??undefined,300);};
+    node.addEventListener('focusin',lend);owner.add('home-backdrop',()=>node.removeEventListener('focusin',lend));
     const returned=(event:FocusEvent)=>{if(!continuing||continuing.node.contains(event.target as Node))return;continuing.refresh();wireTools();};node.addEventListener('focusin',returned);owner.add('home-continuing-focus',()=>node.removeEventListener('focusin',returned));
     wireTools();
     if (gridMode && (!search || memory.source.keyword))

@@ -10,4 +10,4 @@ export function openFullText(shell: TvShell, id: string, heading: string, text: 
   }, 'detail-description-text');
 }
 /** Long text is clamped in place; this decides whether a full-text entry is offered. */
-export const needsFullText = (text: string) => text.length > 120 || text.split('\n').length > 4;
+export const needsFullText = (text: string, lines = 4) => text.length > lines * 30 || text.split('\n').length > lines;

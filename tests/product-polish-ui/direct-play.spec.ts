@@ -31,5 +31,7 @@ test('ADR-113 Down on the main row opens 画质 · 倍速 · 弹幕 · 字幕 ·
  await page.keyboard.press('ArrowUp');await expect(quick).toBeHidden();
  await page.getByRole('button',{name:'暂停 / 继续',exact:true}).focus();await page.keyboard.press('ArrowDown');await expect(quick).toBeVisible();await page.keyboard.press('Escape');await expect(quick).toBeHidden();await expect(page.locator('.vod-panel')).toBeVisible();
  await page.keyboard.press('ArrowDown');await page.locator('[data-focus-id=player-quick-tracks]').click();
- const current=page.getByRole('button',{name:/480P/});await expect(current).toBeFocused();await expect(current).toHaveAttribute('aria-pressed','true');expect(errors).toEqual([]);
+ const current=page.getByRole('button',{name:/480P/});await expect(current).toBeFocused();await expect(current).toHaveAttribute('aria-pressed','true');
+ // A picker closes the quick row first: its Back returns to the main row, one more Back hides the controls.
+ await expect(quick).toBeHidden();await page.keyboard.press('Escape');await expect(page.locator('.tv-player-primary button:focus')).toHaveCount(1);await expect(quick).toBeHidden();expect(errors).toEqual([]);
 });

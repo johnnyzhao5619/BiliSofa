@@ -1,13 +1,12 @@
 # 当前实施状态
 
-更新：2026-10-25。完整v1.0.0仍未完成。已安装0.59.0。[唯一收口台账](PRODUCT_CLOSURE.md) · [签名与部署记录](SIGNING_DEVICE_RECORD.md)（逐版本历史） · [测试报告](TEST_REPORT.md)。本页只记当前结论。
+更新：2026-10-26。完整v1.0.0仍未完成。已安装0.61.1。[唯一收口台账](PRODUCT_CLOSURE.md) · [签名与部署记录](SIGNING_DEVICE_RECORD.md)（逐版本历史） · [测试报告](TEST_REPORT.md)。本页只记当前结论。
 
 ## 当前验收对象
 
 | 对象 | 当前事实 | 证据 |
 | --- | --- | --- |
-| 已安装0.59.0 | [ADR-112](adr/112-parallel-source-checks-and-overlay-binding-reuse.md) P1-1b：叠加层与评论经私有绑定复用aid、cid与签名盐，对比0.58.0首帧到首条弹幕3.50→2.94 s、打开评论到第一条3.69→3.22 s；视频与音频来源检查并行在设备上运行但这一段没有变快；含0.58.0的列表逐卡容错（[ADR-111](adr/111-list-item-tolerance-and-unknown-duration.md)）、0.57.x的起播改进与0.54.0–0.56.0的常驻内核 | [设备证据](design/evidence/2026-10-26-p1-1b/README.md) |
-| 0.60.0候选（未签名/未部署） | [ADR-113](adr/113-direct-play-quick-settings-and-navigation-trim.md) P1-2a：卡片短按OK直接播放、长按0.5 s打开卡片菜单（详情、从头播放、稍后再看、加入本机队列、UP主页、条目操作）；续播不再弹窗（8 s“从头播放”）；播放器主行↓快捷设置条；单元774/774、合成UI 105/105、打包12/12 | [测试报告](TEST_REPORT.md) |
+| 已安装0.61.1 | [ADR-114](adr/114-tv-layout-and-visual-pass.md)界面与布局：首页一行身份小字、约两排半货架、卡片标题两行与元信息紧贴、骨架卡与一行失败货架；“小电视”天线焦点框；详情两栏；播放器快捷设置条图标、进度条加粗与时间右置；搜索空候选提示。模糊封面背景在0.61.0实测拖慢方向键（间隔600 ms时中位数32→72 ms、每隔一次卡0.6–1.5 s），0.61.1按第3项关闭；复测中位数30/33 ms（间隔600/150 ms），没有超过200 ms的按键，回到0.60.0水平。用户实看（0.61.0）6项全部符合。含0.60.1的ADR-113实按修正 | [设备证据](design/evidence/2026-10-26-p2a-device/README.md)、[截图对比](design/evidence/2026-10-26-p2a-layout/README.md) |
 | 0.52.0候选（未签名/未部署） | [ADR-107](adr/107-single-product-build.md)：版本链收敛为单一产品构建（37个变体开关按当前值折叠、旧分支删除；构建/打包/签名/部署无变体参数；合成UI收敛为`playwright.app.config.ts`，旧套件归档）；行为等同0.51.3，原生模块逐字节一致。本地737单元/100条合成UI/11包负例通过；未签名WGT `f37077d0…c73e` | [证据](design/evidence/2026-10-24-single-build/README.md) |
 | 0.51.2（USER证据来源） | ADR-105：登录时分区排行与UP投稿用本人会话读取并节制请求；**V1 USER PASS（登录状态）、V2②补 USER PASS、导航与UP主页回归 USER PASS** | [证据](design/evidence/2026-10-23-up-fix2/README.md) |
 | 0.51.0–0.51.1（USER证据来源） | ADR-103/104：**V2① PASS、V2③ PASS、搜索视频与首页详情一致 PASS、导航 PASS、关注页直达卡 PASS、稍后再看/云端历史/收藏完整详情 PASS**；V1与继续观看/队列详情转ADR-105 | [证据](design/evidence/2026-10-23-up-fix/README.md) |

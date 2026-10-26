@@ -5,7 +5,8 @@ export const ICONS={
   play:'M7 4v16l13-8Z',pause:'M7 4h3v16H7zM14 4h3v16h-3z',previous:'M6 5v14M19 5 9 12l10 7Z',next:'M18 5v14M5 5l10 7-10 7Z',
   parts:'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',danmaku:'M3 5h18v11H8l-4 3v-3H3zM7 9h6M7 12h9',subtitles:'M3 5h18v14H3zM7 11h4M13 11h4M7 15h10',
   comments:'M4 4h16v12H8l-4 4z',like:'M7 10v10H4V10zM7 10l4-7c2 0 3 1 3 3v3h5l-2 11H7',follow:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8M19 8v6m-3-3h6',
-  later:'M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18',settings:'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1',
+  later:'M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18',quality:'M3 5h18v14H3zM7 9v6M7 12h4M11 9v6M14 9h2.5a2.5 2.5 0 0 1 0 6H14z',
+  rate:'M4 16a8 8 0 1 1 16 0M12 16l4-5',repeat:'M4 11V8h14l-3-3M20 13v3H6l3 3',settings:'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1',
 } as const;
 /** Icon + label; the label text stays the accessible name unless data-aria-fixed keeps a stable one. */
 export function decorate(button:HTMLButtonElement,path:string,iconOnly=false):void{
@@ -25,7 +26,7 @@ interface Options {
   iconOnly?:readonly string[];
   /** ADR-113 quick settings row: Down on the main row shows these controls (by focus id) in one row; each proxy clicks
    * its original, so pickers and toggles behave exactly as in ⚙. `label` replaces the original's text. */
-  quick?:readonly {id:string;label?:string}[];
+  quick?:readonly {id:string;label?:string;picker?:boolean;icon?:string}[];
 }
 interface Intent {
   preview(deltaMs:number):void;
@@ -50,7 +51,9 @@ export class PlayerPresentation {
     panel.classList.add('tv-player');title.classList.add('tv-player-title');status.classList.add('tv-player-status');
     this.badge.className='tv-player-badge';const heading=document.createElement('div');heading.className='tv-player-heading';title.replaceWith(heading);heading.append(title,this.badge);
     this.seek.className='tv-player-seek';this.seek.dataset.focusId='player-timeline';this.seek.tabIndex=0;this.seek.setAttribute('role','slider');this.seek.setAttribute('aria-label','播放进度，左右预览，确认跳转，返回取消');
-    this.progress.max=1;this.progress.value=0;this.progress.setAttribute('aria-hidden','true');this.marker.className='tv-player-marker';this.marker.hidden=true;this.seek.append(this.progress,this.marker);timer.before(this.seek);timer.classList.add('tv-player-time');
+    this.progress.max=1;this.progress.value=0;this.progress.setAttribute('aria-hidden','true');this.marker.className='tv-player-marker';this.marker.hidden=true;this.seek.append(this.progress,this.marker);timer.classList.add('tv-player-time');
+    // ADR-114: the time sits at the right end of the bar instead of on its own line.
+    const track=document.createElement('div');track.className='tv-player-track';timer.before(track);track.append(this.seek,timer);
     this.primary.className='tv-player-primary';this.secondary.className='tv-player-secondary';this.secondary.hidden=true;this.quickRow.className='tv-player-quick';this.quickRow.hidden=true;
     const buttons=[...controls.querySelectorAll<HTMLButtonElement>(':scope>button')];
     for(const button of buttons)(primaryIds.includes(button.dataset.focusId??'')?this.primary:this.secondary).append(button);
@@ -62,8 +65,10 @@ export class PlayerPresentation {
   get moreOpen():boolean{return this.expanded||this.quickOpen;}
   back():boolean{if(this.quickOpen){this.closeQuick();return true;}if(!this.expanded)return false;this.expanded=false;this.render();this.more.focus();return true;}
   private openQuick():void{
-    const doc=this.panel.ownerDocument,proxies=(this.options.quick??[]).map(({id,label})=>{const source=doc.querySelector<HTMLButtonElement>(`[data-focus-id="${id}"]`);if(!source||source.hidden)return undefined;
-      const b=productButton('player-quick-'+id.replace(/^vod-/,''),label??'',()=>{if(this.owner.signal.aborted||source.disabled)return;source.click();this.render();});b.dataset.source=id;if(label)b.dataset.fixed='1';return b;}).filter((b):b is HTMLButtonElement=>!!b);
+    const doc=this.panel.ownerDocument,proxies=(this.options.quick??[]).map(({id,label,picker,icon})=>{const source=doc.querySelector<HTMLButtonElement>(`[data-focus-id="${id}"]`);if(!source||source.hidden)return undefined;
+      const b=productButton('player-quick-'+id.replace(/^vod-/,''),label??'',()=>{if(this.owner.signal.aborted||source.disabled)return;
+        // A picker closes the row first, so its own Back returns to the main row and one more Back hides the controls.
+        if(picker)this.closeQuick();source.click();this.render();});b.dataset.source=id;if(label)b.dataset.fixed='1';else b.textContent=source.getAttribute('aria-label')??source.textContent??'';if(icon)decorate(b,icon);return b;}).filter((b):b is HTMLButtonElement=>!!b);
     if(!proxies.length)return;
     this.quickRow.replaceChildren(...proxies);this.quickOpen=true;this.render();(proxies.find(b=>!b.disabled)??proxies[0]!).focus();
   }
@@ -102,7 +107,7 @@ export class PlayerPresentation {
     const leading=this.lead?buttons(this.lead):[];
     // Quick-row proxies mirror their originals' label and state on every render.
     this.quickRow.hidden=!this.quickOpen;
-    for(const b of [...this.quickRow.querySelectorAll<HTMLButtonElement>('button[data-source]')]){const source=this.panel.ownerDocument.querySelector<HTMLButtonElement>(`[data-focus-id="${b.dataset.source}"]`);if(!source)continue;b.disabled=source.disabled;if(!b.dataset.fixed){const text=source.getAttribute('aria-label')??source.textContent??'';if(b.textContent!==text)b.textContent=text;}const pressed=source.getAttribute('aria-pressed');if(pressed===null)b.removeAttribute('aria-pressed');else b.setAttribute('aria-pressed',pressed);}
+    for(const b of [...this.quickRow.querySelectorAll<HTMLButtonElement>('button[data-source]')]){const source=this.panel.ownerDocument.querySelector<HTMLButtonElement>(`[data-focus-id="${b.dataset.source}"]`);if(!source)continue;b.disabled=source.disabled;if(!b.dataset.fixed)setLabel(b,source.getAttribute('aria-label')??source.textContent??'');const pressed=source.getAttribute('aria-pressed');if(pressed===null)b.removeAttribute('aria-pressed');else b.setAttribute('aria-pressed',pressed);}
     const rows=[...(leading.length?[leading]:[]),buttons(this.primary),...(this.quickOpen?[buttons(this.quickRow)]:[])],extra=this.expanded?buttons(this.secondary):[];
     for(let i=0;i<extra.length;i+=4)rows.push(extra.slice(i,i+4));
     const nearest=(row:HTMLButtonElement[]|undefined,index:number)=>row?.map((b,i)=>({b,d:Math.abs(i-index)})).filter(item=>!item.b.disabled).sort((a,b)=>a.d-b.d)[0]?.b.dataset.focusId;

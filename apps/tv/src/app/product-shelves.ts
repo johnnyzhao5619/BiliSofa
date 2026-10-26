@@ -23,13 +23,15 @@ export function homeShelves(owner: ResourceOwner, services: HomeServices, change
     { key: 'popular', label: '热门视频', source: { kind: 'popular', page: 1 }, pages: 2 },
     { key: 'ranking', label: '排行榜', source: { kind: 'ranking', page: 1 }, pages: 3 },
   ];
+  /** ADR-114: card-sized placeholders that hold a row's place until its cards arrive; they are never focusable. */
+  const skeletons = () => Array.from({ length: 5 }, () => { const card = document.createElement('div'), picture = document.createElement('span'); card.className = 'tv-card-skeleton'; card.setAttribute('aria-hidden', 'true'); picture.className = 'tv-card-picture'; card.append(picture, document.createElement('i'), document.createElement('i')); return card; });
   const shelves: Shelf[] = specs.map(spec => {
     const section = document.createElement('section'), heading = document.createElement('h2'), row = document.createElement('div'), status = document.createElement('p');
     section.className = 'tv-shelf'; heading.textContent = spec.label; row.className = 'tv-shelf-row'; row.setAttribute('aria-label', spec.label); status.className = 'tv-shelf-status'; status.setAttribute('role', 'status');
     const more = productButton(`shelf-more-${spec.key}`, '查看更多', () => { if (!owner.signal.aborted) openGrid({ ...spec.source }, more.dataset.focusId!); });
     more.className = 'tv-shelf-more';
     const retry = productButton(`shelf-retry-${spec.key}`, '重试', () => { void load(shelf); }); retry.hidden = true;
-    section.append(heading, row, status);
+    row.append(...skeletons()); section.append(heading, row, status);
     const shelf: Shelf = { ...spec, node: section, row, status, more, retry, state: 'idle' };
     return shelf;
   });
@@ -65,20 +67,23 @@ export function homeShelves(owner: ResourceOwner, services: HomeServices, change
   function load(shelf: Shelf): Promise<void> {
     if (shelf.state === 'loading' || shelf.state === 'ready') return queue;
     shelf.state = 'loading'; shelf.status.textContent = '正在加载'; shelf.retry.hidden = true;
+    // A retry keeps the one-line failed layout until cards arrive, so the row does not jump while it reloads.
+    shelf.node.classList.toggle('tv-shelf-loading', !!shelf.row.querySelector('.tv-card-skeleton'));
     queue = queue.then(async () => {
       if (owner.signal.aborted) return;
       try {
         const items = await read(shelf); if (owner.signal.aborted) return;
         const seen = new Set<string>();
         const buttons = items.filter(card => !seen.has(card.bvid) && seen.add(card.bvid)).slice(0, 12).map(card => { const a = actions(card); return contentCard(card, `shelf-${shelf.key}-${card.bvid}`, art, owner.signal, () => a.choose(), a.hold); });
-        shelf.row.replaceChildren(...buttons, shelf.more); shelf.state = 'ready'; shelf.status.textContent = buttons.length ? '' : '暂时没有内容';
+        shelf.row.replaceChildren(...buttons, shelf.more); shelf.state = 'ready'; shelf.node.classList.remove('tv-shelf-loading', 'tv-shelf-failed'); shelf.status.textContent = buttons.length ? '' : '暂时没有内容';
         wire(); changed();
         // The first loaded row takes focus only if the viewer has not moved anywhere yet.
         const active = document.activeElement as HTMLElement | null;
         if (shelf === shelves[0] && buttons[0] && !top() && (active === document.body || active?.dataset.focusId === 'nav-home') && !document.querySelector('#overlays>section')) buttons[0].focus();
       } catch (error) {
         if (owner.signal.aborted) return;
-        shelf.state = 'failed'; shelf.status.textContent = contentLoadFailureText(false); shelf.status.title = error instanceof DomainError ? error.code : 'invalid';
+        // ADR-114: a failed row is one line: the reason, then 重试 and 查看更多 as ordinary buttons.
+        shelf.state = 'failed'; shelf.node.classList.remove('tv-shelf-loading'); shelf.node.classList.add('tv-shelf-failed'); shelf.status.textContent = contentLoadFailureText(false); shelf.status.title = error instanceof DomainError ? error.code : 'invalid';
         shelf.row.replaceChildren(shelf.retry, shelf.more); shelf.retry.hidden = false; wire();
       }
     });

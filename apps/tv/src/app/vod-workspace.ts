@@ -132,7 +132,7 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   content.append(title, timeline, status, resume, controls); panel.append(content, wake);
   const primaryIds = ['vod-back','vod-replay','vod-toggle','vod-previous','vod-next','vod-parts','vod-overlay-dm','vod-overlays','vod-comments','vod-action-like','vod-action-follow','vod-action-watch-later','vod-earlier','vod-later','vod-seek-confirm','vod-seek-cancel'];
   // ADR-113: Down on the main row opens 画质 · 倍速 · 弹幕 · 字幕 · 连播; ⚙ keeps every setting.
-  const polish = { openSettings: settingsPanel, quick: [{ id: 'vod-tracks', label: '画质' }, { id: 'vod-rate' }, { id: 'vod-overlay-dm' }, { id: 'vod-overlays', label: '字幕' }, { id: 'vod-continuous' }], icons: { 'vod-toggle': ICONS.pause, 'vod-previous': ICONS.previous, 'vod-next': ICONS.next, 'vod-parts': ICONS.parts, 'vod-overlay-dm': ICONS.danmaku, 'vod-overlays': ICONS.subtitles, 'vod-comments': ICONS.comments, 'vod-action-like': ICONS.like, 'vod-action-follow': ICONS.follow, 'vod-action-watch-later': ICONS.later }, iconOnly: ['vod-action-like', 'vod-action-follow', 'vod-action-watch-later'] };
+  const polish = { openSettings: settingsPanel, quick: [{ id: 'vod-tracks', label: '画质', picker: true, icon: ICONS.quality }, { id: 'vod-rate', picker: true, icon: ICONS.rate }, { id: 'vod-overlay-dm', icon: ICONS.danmaku }, { id: 'vod-overlays', label: '字幕', picker: true, icon: ICONS.subtitles }, { id: 'vod-continuous', icon: ICONS.repeat }], icons: { 'vod-toggle': ICONS.pause, 'vod-previous': ICONS.previous, 'vod-next': ICONS.next, 'vod-parts': ICONS.parts, 'vod-overlay-dm': ICONS.danmaku, 'vod-overlays': ICONS.subtitles, 'vod-comments': ICONS.comments, 'vod-action-like': ICONS.like, 'vod-action-follow': ICONS.follow, 'vod-action-watch-later': ICONS.later }, iconOnly: ['vod-action-like', 'vod-action-follow', 'vod-action-watch-later'] };
   presentation=new PlayerPresentation(owner,panel,title,timeline,status,controls,primaryIds,{preview:delta=>{if(!earlier.disabled){preview.move(delta);if(autoSeek)arm();update();}},confirm:()=>{if(!commit.disabled)commit.click();},target:()=>preview.targetMs,stepMs:step},resume,polish);
   shell.modalInput(owner, { back() { if (nextUp?.active) { cancelNextUp(); return true; } if (preview.targetMs !== undefined) { disarm(); preview.cancel(); update(); return true; } if(presentation?.back())return true;return controlLayer?.back() ?? false; }, key(event) { return controlLayer?.key(event)||presentation?.key(event)||false; },
     media(command) {
@@ -190,8 +190,8 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
       previous.disabled = !available || !s || s.index === 0;
     }
     controlLayer?.update(media?.state === 'playing', !started || busy || !!instant?.busy || !!terminal || !!s?.moving || !!media?.seeking || !!media?.buffering || media?.state === 'loading' || media?.state === 'error' || media?.state === 'closed' || !!presentation?.moreOpen || preview.targetMs!==undefined || !!startOver);
-    // The start-over offer counts its 8 s from the first frame, not from the start command.
-    if (startOver && !startOverTimer && media?.state === 'playing') { const offered = startOver; startOverTimer = setTimeout(() => { const focused = document.activeElement === offered; clearStartOver(); if (focused && !panel.inert) toggle.focus(); update(); }, 8000); }
+    // The start-over offer appears with the first frame, not with the start command.
+    if (pendingStartOver && !startOver && media?.state === 'playing' && !s?.moving) showStartOver();
   }
   /** ADR-113: a saved local position is where playback continues, with no prompt (自动续播 on); off means from 0. */
   function resumeAt(item: { bvid: string; part: number; durationMs: number }): number {
@@ -201,21 +201,18 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   async function withResume(item: VodItem, run: (position: number) => Promise<void>): Promise<void> {
     const position = resumeAt(item); await run(position); offerStartOver(position);
   }
-  let startOver: HTMLButtonElement | undefined, startOverTimer: ReturnType<typeof setTimeout> | undefined;
+  // ADR-113: the offer waits for the first frame (pending), then shows 从头播放 focused for 8 s.
+  let pendingStartOver = 0, startOver: HTMLButtonElement | undefined, startOverTimer: ReturnType<typeof setTimeout> | undefined;
   owner.add('vod-start-over', () => clearTimeout(startOverTimer));
-  function clearStartOver(): void { clearTimeout(startOverTimer); startOverTimer = undefined; startOver = undefined; if (resume.querySelector('[data-focus-id=vod-start-over]')) resume.replaceChildren(); }
-  /** ADR-113: after continuing from saved progress, 从头播放 is focused with the controls shown, for 8 s from the first frame. */
-  function offerStartOver(fromMs: number): void {
-    clearStartOver(); if (owner.signal.aborted || fromMs <= 0) return;
+  function clearStartOver(): void { clearTimeout(startOverTimer); startOverTimer = undefined; startOver = undefined; pendingStartOver = 0; if (resume.querySelector('[data-focus-id=vod-start-over]')) resume.replaceChildren(); }
+  /** After continuing from saved progress: once the first frame shows, 从头播放 is one seek to 0 (never a fresh read). */
+  function offerStartOver(fromMs: number): void { clearStartOver(); if (!owner.signal.aborted && fromMs > 0) pendingStartOver = fromMs; }
+  function showStartOver(): void {
+    const fromMs = pendingStartOver; pendingStartOver = 0;
     const info = document.createElement('span'); info.textContent = `已从 ${clockTime(fromMs / 1000)} 继续`;
-    const again = button('vod-start-over', '从头播放', () => {
-      clearStartOver(); const s = player?.snapshot();
-      // Playing or paused: one seek to 0. Still preparing: start this item again from 0.
-      if (s?.media && ['playing', 'paused'].includes(s.media.state)) void player!.seek(0).catch(() => {}); else if (s) void restart(playlist, s.index, sequence, 0);
-      update();
-    });
+    const again = button('vod-start-over', '从头播放', () => { clearStartOver(); void player?.seek(0).catch(() => {}); update(); });
     resume.replaceChildren(info, again); startOver = again; controlLayer?.reveal('vod-start-over'); if (!panel.inert) again.focus();
-    update();
+    startOverTimer = setTimeout(() => { const focused = document.activeElement === again; clearStartOver(); if (focused && !panel.inert) toggle.focus(); update(); }, 8000);
   }
   async function select(index: number, position = 0): Promise<void> {
     if (!player || busy || owner.signal.aborted) return;
