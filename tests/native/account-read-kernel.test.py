@@ -1,5 +1,5 @@
 """ADR-108 P0b HOST account read kernel against local TLS with synthetic cookies only:
-one session and connection for every private read, new 20-row routes, bounds, stop and session end."""
+one session and connection for every private read, new 20-row routes, the 全站排行 (ADR-117), bounds, stop and session end."""
 from pathlib import Path
 import http.server, ssl, threading, tempfile, subprocess, json, time, unittest
 ROOT = Path(__file__).resolve().parents[2]
@@ -28,14 +28,16 @@ int main(int argc, char **argv) {
   if (!prepare() || !import()) return 2;
   if (!strcmp(mode, "session")) {
     char line[256]; snprintf(line, sizeof(line), "0|0|0||7cd084941338484aae1ad9425b84077c|4932caff0ff746eab6f01bf08b70ac45|%ld", (long)time(NULL));
-    request(0, ""); request(2, "0|0|"); request(3, ""); request(5, ""); request(7, "2"); request(8, "123|3"); request(9, "1005"); request(10, "12345|2"); request(6, line);
+    request(0, ""); request(2, "0|0|"); request(3, ""); request(5, ""); request(7, "2"); request(8, "123|3"); request(9, "1005"); request(10, "12345|2"); request(6, line); request(11, "all");
   } else if (!strcmp(mode, "invalid")) {
     const char *batches[] = {"", "0", "6", "01", "1|2", "1&ps=50"};
     for (size_t i = 0; i < sizeof(batches) / sizeof(*batches); i++) if (request(7, batches[i])) return 3;
     const char *items[] = {"123", "0|1", "123|6", "123|0", "1&x|1", "12345678901234567|1", "1|1|1"};
     for (size_t i = 0; i < sizeof(items) / sizeof(*items); i++) if (request(8, items[i])) return 4;
     if (request(9, "9999") || request(9, "1005|1") || request(10, "0|1") || request(10, "12|51") || request(10, "9007199254740992|1")) return 5;
-    if (request(1, "1") || request(4, "123|1") || request(11, "1") || request(-1, "")) return 6;
+    const char *rankings[] = {"", "0", "ALL", "all|x", "all&rid=1", "all\r\n"};
+    for (size_t i = 0; i < sizeof(rankings) / sizeof(*rankings); i++) if (request(11, rankings[i])) return 5;
+    if (request(1, "1") || request(4, "123|1") || request(12, "all") || request(-1, "")) return 6;
     printf("invalid ok\n");
   } else if (!strcmp(mode, "stop")) {
     strcpy(input, "1"); if (!kernel_begin(7)) return 7;
@@ -98,7 +100,7 @@ class AccountReadKernelTest(unittest.TestCase):
 
     def test_one_session_and_connection_serve_every_private_read(self):
         out, seen, peers = self.run_case('session')
-        self.assertNotIn('refused', ' '.join(out)); self.assertEqual(len(seen), 9); self.assertEqual(len(peers), 1)
+        self.assertNotIn('refused', ' '.join(out)); self.assertEqual(len(seen), 10); self.assertEqual(len(peers), 1)
         paths = [p for p, _, _ in seen]
         self.assertEqual(paths[:8], ['/x/web-interface/nav', '/x/web-interface/history/cursor?max=0&view_at=0&business=', '/x/v3/fav/folder/list4navigate',
                                      '/x/polymer/web-dynamic/v1/feed/nav?update_baseline=&offset=',
@@ -106,6 +108,7 @@ class AccountReadKernelTest(unittest.TestCase):
                                      '/x/v2/medialist/resource/list?mobi_app=web&type=3&biz_id=123&ps=20&desc=true&sort_field=3&tid=0&otype=2&with_current=false&direction=false&preview=0&use_pn=true&pn=3',
                                      '/x/web-interface/ranking/v2?rid=1005&type=all', '/x/series/recArchivesByKeywords?mid=12345&keywords=&ps=30&pn=2'])
         self.assertTrue(paths[8].startswith('/x/web-interface/wbi/index/top/feed/rcmd?') and '&ps=12&' in paths[8])
+        self.assertEqual(paths[9], '/x/web-interface/ranking/v2?rid=0&type=all'); self.assertEqual(seen[9][2], 'https://www.bilibili.com/')  # ADR-117
         self.assertTrue(all(c and 'SESSDATA=synthetic-session' in c and 'bili_jct=synthetic-csrf' in c for _, c, _ in seen), 'the verified jar goes with every read')
         self.assertEqual([r for _, _, r in seen][4:8], ['https://www.bilibili.com/list/watchlater', 'https://www.bilibili.com/', 'https://www.bilibili.com/', 'https://space.bilibili.com/'])
         self.assertEqual(out[0], 'AUTH:ready'); self.assertEqual(out[-1], 'AUTH:closed')

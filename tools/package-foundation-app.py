@@ -3,7 +3,7 @@ from pathlib import Path
 from candidate_native import load_candidate
 import argparse,hashlib,json,re,zipfile,subprocess,xml.etree.ElementTree as ET
 parser=argparse.ArgumentParser(description=__doc__);args=parser.parse_args()
-version='0.64.1'
+version='0.65.0'
 ROOT=Path(__file__).resolve().parents[1];STAGE=ROOT/'dist/bilisofa-app';NATIVE=ROOT/'build/identity'
 subprocess.run(['python3',str(ROOT/'tools/category-data.py'),'--check'],check=True)
 def sha(data):return hashlib.sha256(data).hexdigest()
@@ -45,7 +45,7 @@ if sha(files['account-read-kernel/probe.data'])!=account_kernel['caSha256']:rais
 files['account-read-kernel/manifest.json']=(account_dir/'manifest.json').read_bytes()
 for bad in [b'/x/player/',b'/heartbeat',b'/x/web-interface/view',b'bilivideo',b'/x/passport',b'/qrcode',b'/toview/del',b'/toview/add',b'/history/delete',b'/history/clear',b'/history/report',b'/fav/resource/deal',b'/fav/folder/add',b'/fav/folder/del',b'/dynamic/create',b'/pgc/web/follow',b'/x/relation',b'/x/web-interface/coin',b'/x/web-interface/like']:
  if bad in files['account-read-kernel/probe.wasm']:raise SystemExit('Account kernel unrelated route')
-if any(marker not in files['account-read-kernel/probe.wasm'] for marker in [b'ps=%d&desc=true&otype=2',b'biz_id=%s&ps=%d&desc=true',b'/x/web-interface/wbi/index/top/feed/rcmd',b'/x/web-interface/history/cursor',b'AUTH:closed']):raise SystemExit('Account kernel fixed route missing')
+if any(marker not in files['account-read-kernel/probe.wasm'] for marker in [b'ps=%d&desc=true&otype=2',b'biz_id=%s&ps=%d&desc=true',b'/x/web-interface/wbi/index/top/feed/rcmd',b'/x/web-interface/history/cursor',b'ranking/v2?rid=0&type=all',b'AUTH:closed']):raise SystemExit('Account kernel fixed route missing')
 if sha(files['search-words.json'])!='c723c86e502613bdaf3c613b5638ece0fe38772d92165b48f2d3ca140ba3256b' or sha(files['search-NOTICE'])!='b5830d96fb5a7e7e7ebcc295f352846b4b998e78fdc8f9aa68e134d2e4b39986':raise SystemExit('Search dictionary/license mismatch')
 media_files,media_manifest,_,_=load_candidate()
 for name,data in media_files.items():files['native/'+name]=data

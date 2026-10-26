@@ -1,0 +1,14 @@
+{"who":"account","how":"still","okAt":393,"popular":true,"popularAt":2087,"focusAt":null,"ranked":true,"rows":"为你推荐:4/0:: | 热门视频:8/0:: | 排行榜:12/0:: | 分区:0/0::"}
+{"t":48,"dir":"focus","to":""}
+{"t":61,"w":1,"dir":"out","type":"stop"}
+{"t":205,"w":2,"dir":"out","type":"request","op":"identity-verify"}
+{"t":215,"w":1,"dir":"in","type":"stopped"}
+{"t":1725,"w":2,"dir":"in","type":"result","op":"identity-verify","kind":"ok"}
+{"t":1737,"dir":"focus","to":"loading-back"}
+{"t":1867,"dir":"focus","to":"home-resume-BV*-p1"}
+{"t":1876,"w":2,"dir":"out","type":"request","op":"recommendations-read"}
+{"t":2528,"w":2,"dir":"in","type":"result","op":"recommendations-read","kind":"ok"}
+{"t":2551,"w":1,"dir":"out","type":"request","op":"guest-popular"}
+{"t":3177,"w":1,"dir":"in","type":"result","op":"guest-popular","kind":"ok","code":"guest.popular_ok","api":0}
+{"t":3192,"w":2,"dir":"out","type":"request","op":"public-read"}
+{"t":3888,"w":2,"dir":"in","type":"result","op":"public-read","kind":"ranking"}

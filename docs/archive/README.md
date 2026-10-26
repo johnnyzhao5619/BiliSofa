@@ -16,5 +16,5 @@
 | [2026-10-22-pre-u4](2026-10-22-pre-u4/SIGNING_DEVICE_RECORD.md) | U4 前的签名记录与测试报告 |
 | [2026-10-23-superseded](2026-10-23-superseded/README.md) | 2026-10-23 被取代的文档 |
 | [2026-10-24-phase-records](2026-10-24-phase-records/README.md) | W01–W06 阶段交付与过程记录 |
-| [2026-10-26-plans](2026-10-26-plans/) | 已在对应 ADR（108–116）中写明实现的方案原文 |
+| [2026-10-26-plans](2026-10-26-plans/) | 已在对应 ADR（108–117）中写明实现的方案原文 |
 | [2026-10-26-ledger-cleanup](2026-10-26-ledger-cleanup/README.md) | 2026-10-26 从台账、README 与说明中逐字移出的过程描述和过时措辞 |

@@ -1,7 +1,8 @@
 /* ADR-105: signed-in reads of two public lists through the bounded account lane.
  * vod-api.c (TLS, two cookie jars, exact-identity nav, bounded close) is included
- * unchanged; only operations 0 (nav), 4 (one category ranking) and 5 (one page of
- * an UP's uploads) are allowed. No write, CDN, playurl or caller URL route. */
+ * unchanged; only operations 0 (nav), 4 (one category ranking), 5 (one page of
+ * an UP's uploads) and 6 (the 全站排行, input `all`; 0.65.0 ADR-117) are allowed.
+ * No write, CDN, playurl or caller URL route. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,10 +24,13 @@ static int public_extra_read(int operation, char *input, char *url, size_t capac
     *separator++ = 0;
     if (!public_digits(input, 16) || strtoull(input, NULL, 10) > 9007199254740991ULL || !public_digits(separator, 2) || atoi(separator) > 50) return 0;
     n = snprintf(url, capacity, "https://api.bilibili.com/x/series/recArchivesByKeywords?mid=%s&keywords=&ps=30&pn=%s", input, separator);
+  } else if (operation == 6) {
+    if (strcmp(input, "all")) return 0;
+    n = snprintf(url, capacity, "https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all");
   } else return 0;
   return n > 0 && (size_t)n < capacity;
 }
-#define BILISOFA_MAX_READ_OPERATION 5
+#define BILISOFA_MAX_READ_OPERATION 6
 #define BILISOFA_EXTRA_READ public_extra_read
-#define BILISOFA_OPERATION_ALLOWED(operation) ((operation) == 0 || (operation) == 4 || (operation) == 5)
+#define BILISOFA_OPERATION_ALLOWED(operation) ((operation) == 0 || (operation) == 4 || (operation) == 5 || (operation) == 6)
 #include "vod-api.c"

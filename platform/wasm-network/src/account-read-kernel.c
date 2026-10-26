@@ -7,8 +7,9 @@
  * jar, cookie-line checks, Set-Cookie domain checks, body/header bounds, tick
  * and close are this kernel's engine. Operations 0 (nav), 2, 3, 5 and 6 go
  * through their own builders. New here are watch later and favorite items with
- * 20 rows per page, the two signed public lists, stop-current-only and a session
- * that lives up to ten minutes instead of twenty seconds.
+ * 20 rows per page, the signed public lists (category, UP uploads and, 0.65.0
+ * ADR-117, the 全站排行), stop-current-only and a session that lives up to ten
+ * minutes instead of twenty seconds.
  *
  * Read-only GETs only: no write, login, playback, CDN or caller URL route. */
 #define RECOMMEND_NO_MAIN
@@ -19,7 +20,7 @@
 #endif
 #define KERNEL_ROWS 20
 enum { ACCOUNT_NAV = 0, ACCOUNT_HISTORY = 2, ACCOUNT_FOLDERS = 3, ACCOUNT_FOLLOW_UPDATES = 5, ACCOUNT_RECOMMEND = 6,
-  ACCOUNT_WATCH_LATER = 7, ACCOUNT_FAVORITE_ITEMS = 8, ACCOUNT_CATEGORY = 9, ACCOUNT_UP = 10 };
+  ACCOUNT_WATCH_LATER = 7, ACCOUNT_FAVORITE_ITEMS = 8, ACCOUNT_CATEGORY = 9, ACCOUNT_UP = 10, ACCOUNT_RANKING = 11 };
 static int account_digits(const char *s, size_t max) { size_t n = s ? strlen(s) : 0; return n && n <= max && s[0] != '0' && strspn(s, "0123456789") == n; }
 static int account_batch(const char *s) { return account_digits(s, 1) && s[0] <= '5'; }
 static int account_url(int operation, char *value) {
@@ -34,6 +35,9 @@ static int account_url(int operation, char *value) {
   } else if (operation == ACCOUNT_CATEGORY) {
     int id = part ? 0 : catalog_category_id(value); if (!id) return 0;
     n = snprintf(request_url, sizeof(request_url), "https://api.bilibili.com/x/web-interface/ranking/v2?rid=%d&type=all", id);
+  } else if (operation == ACCOUNT_RANKING) {
+    if (strcmp(value, "all")) return 0;
+    n = snprintf(request_url, sizeof(request_url), "https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all");
   } else if (operation == ACCOUNT_UP) {
     if (!part || strchr(part + 1, '|')) return 0; *part++ = 0;
     if (!account_digits(value, 16) || strtoull(value, NULL, 10) > 9007199254740991ULL || !account_digits(part, 2) || atoi(part) > 50) return 0;
@@ -53,7 +57,7 @@ AUTH_EXPORT int kernel_open(void) {
 AUTH_EXPORT int kernel_begin(int operation) {
   if (operation == ACCOUNT_NAV || operation == ACCOUNT_HISTORY || operation == ACCOUNT_FOLDERS || operation == ACCOUNT_FOLLOW_UPDATES) return auth_begin(operation);
   if (operation == ACCOUNT_RECOMMEND) return recommend_begin();
-  if (operation < ACCOUNT_WATCH_LATER || operation > ACCOUNT_UP || !live || active >= 0 || now_ms() < 0 || now_ms() >= session_until) { OPENSSL_cleanse(input, sizeof(input)); return 0; }
+  if (operation < ACCOUNT_WATCH_LATER || operation > ACCOUNT_RANKING || !live || active >= 0 || now_ms() < 0 || now_ms() >= session_until) { OPENSSL_cleanse(input, sizeof(input)); return 0; }
   char copy[AUTH_PRIVATE_CAP + 1]; const char *end = memchr(input, 0, sizeof(input));
   if (!end || end == input) { OPENSSL_cleanse(input, sizeof(input)); return 0; }
   memcpy(copy, input, (size_t)(end - input) + 1); OPENSSL_cleanse(input, sizeof(input));

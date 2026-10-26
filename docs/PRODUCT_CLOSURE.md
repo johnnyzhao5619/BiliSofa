@@ -1,6 +1,6 @@
 # 当前交付收口与剩余门槛
 
-更新：2026-10-26。已安装0.64.1；U5集中验收V1–V6全部USER PASS（[U5报告](acceptance/2026-10-23-u5-final/REPORT.md)）；PAUSED（R08、R12、R14）、BLOCKED（图文/关注动态）与条件未验证项单列，不宣布完整v1.0.0完成。逐版本结果见[签名与部署记录](SIGNING_DEVICE_RECORD.md)；下表R01–R15为唯一剩余清单。
+更新：2026-10-26。已安装0.65.0；U5集中验收V1–V6全部USER PASS（[U5报告](acceptance/2026-10-23-u5-final/REPORT.md)）；PAUSED（R08、R12、R14）、BLOCKED（图文/关注动态）与条件未验证项单列，不宣布完整v1.0.0完成。逐版本结果见[签名与部署记录](SIGNING_DEVICE_RECORD.md)；下表R01–R15为唯一剩余清单。
 
 **当前执行边界：** 签名/部署按版本逐次授权（升级安装，不清数据）；真实账号写入须具体授权；GitHub Release/公开发布另待授权。R07候选未集成/打包/部署。
 

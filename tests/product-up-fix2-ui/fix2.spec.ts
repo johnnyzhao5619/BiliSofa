@@ -26,17 +26,20 @@ async function help(page:Page){
  await page.locator('[data-focus-id=nav-settings]').click();await page.locator('[data-focus-id=settings-section-help]').click();return page.locator('.tv-public-note');
 }
 const status=(page:Page)=>page.locator('.tv-home .tv-status').first();
+// ADR-117: the signed home reads its 排行榜 row with the same session first; wait until that row has settled.
+const rankingSettled=(page:Page)=>expect(page.locator('[data-focus-id^=shelf-ranking-],[data-focus-id=shelf-retry-ranking]:not([hidden])').first()).toBeVisible();
 test('ADR-105 signed in, a category ranking is read with the account session (not the anonymous lane) and help names it',async({page})=>{
- const c=await signedIn(page);const before=c.catalogReads();await category(page);
+ const c=await signedIn(page);await rankingSettled(page);const before=c.catalogReads(),reads=c.publicReads();await category(page);
  await expect(page.locator('#pages [data-focus-id^=home-card-]').first()).toContainText('会话分区 1');await expect(status(page)).toContainText('分区排行榜');
- expect(c.publicReads()).toBe(1);expect(c.catalogReads()).toBe(before);
+ expect(c.publicReads()-reads).toBe(1);expect(c.catalogReads()).toBe(before);
  await expect(await help(page)).toHaveText('最近一次分区读取：账号会话 · 成功');expect(c.errors).toEqual([]);
 });
 test('ADR-105 a -352 refusal is named with its code, then nothing is requested during the pause',async({page})=>{
- const c=await signedIn(page,'limited');await category(page);
- await expect(status(page)).toHaveText(/^B站暂时限制了访问（风控 -352），约 (60|59) 秒后可重试$/);expect(c.publicReads()).toBe(1);
+ // ADR-117: here the home's 排行榜 row is the first refused read; the categories opened in the pause send nothing.
+ const c=await signedIn(page,'limited');await rankingSettled(page);expect(c.publicReads()).toBe(1);await category(page);
+ await expect(status(page)).toHaveText(/^B站暂时限制了访问（风控 -352），约 \d+ 秒后可重试$/);expect(c.publicReads()).toBe(1);
  await category(page,'1004',true);await expect(status(page)).toContainText('风控 -352');expect(c.publicReads()).toBe(1);
- await expect(await help(page)).toHaveText('最近一次分区读取：账号会话 · B站返回 -352');expect(c.errors).toEqual([]);
+ await expect(await help(page)).toHaveText('最近一次全站排行读取：账号会话 · B站返回 -352');expect(c.errors).toEqual([]);
 });
 test('ADR-105 as a guest, the same category within ten minutes is read once',async({page})=>{
  const errors=await mediaSetup(page,false);const c=await counted(page);const before=c.catalogReads();

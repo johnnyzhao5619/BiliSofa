@@ -11,22 +11,23 @@ import { homeSnapshots, type HomeSnapshots } from '../platform/home-snapshot-sto
 import { contentCard } from '../ui/content-card.ts';
 import { productButton } from './product-frame.ts';
 import { contentLoadFailureText } from './user-messages.ts';
+import { limitedFrom, limitedText } from '../platform/public-lists.ts';
 /** Structural subset of the home types; kept local so shelves never import the home page. */
 interface HomeSource { kind: 'popular' | 'ranking' | 'category' | 'recommend' | 'search'; page: number; categoryId?: CategoryId; }
-interface HomeServices { account?: string; recommend?(page: number, signal: AbortSignal, refresh: boolean): Promise<{ items: PopularCard[] }>; }
+interface HomeServices { account?: string; recommend?(page: number, signal: AbortSignal, refresh: boolean): Promise<{ items: PopularCard[] }>; signedRanking?(signal: AbortSignal): Promise<PopularCard[]>; }
 interface Shelf { key: SnapshotShelf; label: string; source: HomeSource; pages: number; node: HTMLElement; row: HTMLElement; status: HTMLElement; more: HTMLButtonElement; retry: HTMLButtonElement;
   state: 'idle' | 'loading' | 'ready' | 'failed'; items: PopularCard[]; shown: number; nextPage: number; extending: boolean; }
 const ROW = 12, REUSE_MS = 300000, POPULAR_PAGES = 3;
 /** ADR-116: what this run last read per row, so returning home within five minutes reads nothing. */
 const recent = new Map<string, { at: number; items: PopularCard[] }>();
-/** Home shelves (ADR-091): rows load one at a time, the first at mount and each next
- * one when focus reaches the row above. A failed row keeps its own retry; no automatic
- * retries, so rate-limited sources (API -352/HTTP 412) are not hammered.
+/** Home shelves (ADR-091): rows load one at a time. ADR-117: the first at mount, then each next
+ * one as soon as the row above has settled (focus reaching a row only starts it earlier). A failed
+ * row keeps its own retry; no automatic retries, so rate-limited sources (API -352/HTTP 412) are not hammered.
  * ADR-116: a row first shows the last snapshot (no older than a day) and is replaced in place when its read
  * lands, keeping the focused card; a failed refresh keeps the snapshot and says so. */
 export function homeShelves(owner: ResourceOwner, services: HomeServices, changed: () => void, actions: (card: PopularCard) => { choose(): void; hold: HoldHandlers }, openGrid: (source: HomeSource, from: string) => void, top: () => string | undefined, snapshots: HomeSnapshots = homeSnapshots()): { node: HTMLElement; first(): string | undefined; firstRowIds(): string[]; opening(): string | undefined } {
   const node = document.createElement('div'); node.className = 'tv-shelves';
-  const runtime = new PublicContentRuntime(), art = new CoverArt(), controller = new AbortController();
+  const runtime = new PublicContentRuntime(services.signedRanking ? { ranking: services.signedRanking } : {}), art = new CoverArt(), controller = new AbortController();
   owner.add('home-shelves', async () => { controller.abort(); art.close(); if (!(await runtime.close()).closed) throw new DomainError('unknown'); });
   const specs: { key: SnapshotShelf; label: string; source: HomeSource; pages: number }[] = [
     ...(services.recommend && services.account ? [{ key: 'recommend' as const, label: '为你推荐', source: { kind: 'recommend' as const, page: 1 }, pages: 1 }] : []),
@@ -101,7 +102,7 @@ export function homeShelves(owner: ResourceOwner, services: HomeServices, change
   function load(shelf: Shelf): Promise<void> {
     if (shelf.state === 'loading' || shelf.state === 'ready') return queue;
     const memo = recent.get(memoKey(shelf));
-    if (memo && Date.now() - memo.at < REUSE_MS) { show(shelf, memo.items, ROW); shelf.state = 'ready'; shelf.status.textContent = memo.items.length ? '' : '暂时没有内容'; focusFirst(shelf); return queue; }
+    if (memo && Date.now() - memo.at < REUSE_MS) { show(shelf, memo.items, ROW); shelf.state = 'ready'; shelf.status.textContent = memo.items.length ? '' : '暂时没有内容'; focusFirst(shelf); after(shelf); return queue; }
     shelf.state = 'loading'; shelf.retry.hidden = true;
     const stale = shelf.items.length > 0;
     if (!stale) shelf.status.textContent = '正在加载';
@@ -117,15 +118,23 @@ export function homeShelves(owner: ResourceOwner, services: HomeServices, change
         focusFirst(shelf);
       } catch (error) {
         if (owner.signal.aborted) return;
-        shelf.status.title = error instanceof DomainError ? error.code : 'invalid';
+        const limited = limitedFrom(error);
+        shelf.status.title = limited ? 'limited' : error instanceof DomainError ? error.code : 'invalid';
         // ADR-116: a failed refresh keeps the last snapshot on screen and says it is the last one.
         if (stale && shelf.row.querySelector('.tv-card')) { shelf.state = 'ready'; shelf.status.textContent = '显示的是上次的内容'; return; }
         // ADR-114: a failed row is one line: the reason, then 重试 and 查看更多 as ordinary buttons.
-        shelf.state = 'failed'; shelf.node.classList.remove('tv-shelf-loading'); shelf.node.classList.add('tv-shelf-failed'); shelf.status.textContent = contentLoadFailureText(false);
+        // ADR-117: a risk-control refusal says so and how long the pause lasts; 重试 in the pause sends nothing.
+        shelf.state = 'failed'; shelf.node.classList.remove('tv-shelf-loading'); shelf.node.classList.add('tv-shelf-failed'); shelf.status.textContent = limited ? limitedText(limited) : contentLoadFailureText(false);
         shelf.row.replaceChildren(shelf.retry, shelf.more); shelf.retry.hidden = false; wire();
-      }
+      } finally { after(shelf); }
     });
     return queue;
+  }
+  /** ADR-117: once a row has settled (read, reused or failed), the next idle row starts; one row at a time.
+   * Not while a page covers the home (e.g. 谁在观看 over a guest home): focus coming back starts it instead. */
+  function after(shelf: Shelf): void {
+    const next = shelves[shelves.indexOf(shelf) + 1];
+    if (!owner.signal.aborted && next?.state === 'idle' && !document.querySelector('#overlays>section')) void load(next);
   }
   /** The first row takes focus only if the viewer has not moved anywhere yet. */
   function focusFirst(shelf: Shelf): void {
@@ -138,27 +147,32 @@ export function homeShelves(owner: ResourceOwner, services: HomeServices, change
     if (shelf.shown < shelf.items.length) { appendTo(shelf, shelf.items.slice(shelf.shown, shelf.shown + ROW)); return; }
     if (shelf.key !== 'popular' || shelf.nextPage > POPULAR_PAGES) return;
     shelf.extending = true;
-    try {
-      const page = shelf.nextPage++, result = await runtime.read({ route: 'popular', page }, controller.signal);
-      if (owner.signal.aborted) return;
-      if (result.noMore) shelf.nextPage = Number.MAX_SAFE_INTEGER;
-      const known = new Set(shelf.items.map(card => card.bvid)), added = unique(result.items).filter(card => !known.has(card.bvid));
-      shelf.items = [...shelf.items, ...added]; appendTo(shelf, added.slice(0, ROW));
-    } catch { /* the row stays as it is; reaching its end again tries the next page */ shelf.nextPage--; }
-    finally { shelf.extending = false; }
+    // ADR-117: in the same queue as the row reads, so it never cancels a row that is still being read.
+    queue = queue.then(async () => {
+      try {
+        if (owner.signal.aborted) return;
+        const page = shelf.nextPage++, result = await runtime.read({ route: 'popular', page }, controller.signal);
+        if (owner.signal.aborted) return;
+        if (result.noMore) shelf.nextPage = Number.MAX_SAFE_INTEGER;
+        const known = new Set(shelf.items.map(card => card.bvid)), added = unique(result.items).filter(card => !known.has(card.bvid));
+        shelf.items = [...shelf.items, ...added]; appendTo(shelf, added.slice(0, ROW));
+      } catch { /* the row stays as it is; reaching its end again tries the next page */ shelf.nextPage--; }
+      finally { shelf.extending = false; }
+    });
+    return queue;
   }
   function appendTo(shelf: Shelf, items: readonly PopularCard[]): void {
     if (!items.length) return;
     shelf.more.before(...items.map(card => button(shelf, card))); shelf.shown += items.length; wire(); notify();
   }
-  // Load the next row as soon as focus enters a row; never more than one row ahead. The last card asks for more.
+  // Focus entering a row starts the next one early (it would start anyway once the row above settles). The last card asks for more.
   const ahead = (event: FocusEvent) => {
     const target = event.target as HTMLElement, index = shelves.findIndex(s => s.node.contains(target)), shelf = shelves[index], next = shelves[index + 1];
     if (index >= 0 && next?.state === 'idle') void load(next);
     if (shelf && target.classList.contains('tv-card') && target.nextElementSibling === shelf.more) void extend(shelf);
   };
   node.addEventListener('focusin', ahead); owner.add('home-shelves-focus', () => node.removeEventListener('focusin', ahead));
-  // ADR-116: every row with a snapshot shows it at once; the reads keep their one-row-ahead order.
+  // ADR-116: every row with a snapshot shows it at once; the reads then run in row order (ADR-117).
   for (const shelf of shelves) { const snap = snapshots.read(shelf.key, account(shelf)); if (snap) show(shelf, snap.cards, ROW); }
   wire();
   if (shelves[0]) { void load(shelves[0]); focusFirst(shelves[0]); }

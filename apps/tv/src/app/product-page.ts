@@ -104,8 +104,8 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
     }, () => { if (!owner.signal.aborted) feedback.textContent = '暂时无法读取账号的稍后再看，可稍后再试'; }); };
     // ADR-113: each video card's short press (play) and hold (card menu with the entry's own actions).
     const cardActions = (card: PopularCard, part = 1, context?: VideoDetailContext) => videoCard(owner, shell, services, card, { part, ...context });
-    // ADR-105: with an active account, the two risk-controlled public lists use its own session (read-only).
-    if (state?.kind === 'active') { const signed = signedPublicReads(workspace); services.signedCategory = (id, signal) => signed.category(id, signal); services.signedUp = (mid, page, signal) => signed.up(mid, page, signal); }
+    // ADR-105/117: with an active account, the risk-controlled public lists use its own session (read-only).
+    if (state?.kind === 'active') { const signed = signedPublicReads(workspace); services.signedCategory = (id, signal) => signed.category(id, signal); services.signedRanking = signal => signed.ranking(signal); services.signedUp = (mid, page, signal) => signed.up(mid, page, signal); }
     if(route.page==='library')return productLibrary(owner,shell,{profile,queue,workspace,feedback,play:playTarget,...({openVideo:(card:PopularCard,part:number,context?:VideoDetailContext)=>openVideoDetail(owner,shell,services,card,{part,...context}),videoCard:cardActions}),playQueue:(items,index,continuous)=>{if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}queuePlayback(shell,items,index,continuous,profile,diagnostics,feedback,vod);}},memory.library);
     if (route.page === 'home') {
         // ADR-113: the first three home visits per identity show the hold hint under a focused card (per-viewer convenience).

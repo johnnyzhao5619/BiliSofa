@@ -1,4 +1,4 @@
-// Synthetic ADR-105 public-read native boundary: signed nav (uid 101), one category ranking, one UP page.
+// Synthetic ADR-105 public-read native boundary: signed nav (uid 101), one category ranking, one UP page and (ADR-117) the 全站排行.
 // Production Worker, contract and parsers run unchanged. 'limited' answers the list reads with API -352.
 (function(){
  const m=Module,variant='__VARIANT__',heap=new Uint8Array(200000);let length=0,open=false,last=0;
@@ -11,6 +11,7 @@
    if(operation===0)value={code:0,data:{isLogin:true,mid:101,uname:'合成账号',wbi_img:{img_url:'https://i0.hdslb.com/bfs/wbi/'+'a'.repeat(32)+'.png',sub_url:'https://i0.hdslb.com/bfs/wbi/'+'b'.repeat(32)+'.png'}}};
    else if(operation===4){if(!/^10[0-9]{2}$/.test(arg))throw Error('fixture.bad_category');value=variant==='limited'?{code:-352,message:'risk'}:{code:0,data:{list:Array.from({length:12},(_,i)=>({bvid:'BV1CS'+String(i).padStart(7,'0'),title:'会话分区 '+(i+1),owner:{name:'会话UP'},duration:90,stat:{view:100+i}}))}};}
    else if(operation===5){if(!/^[1-9][0-9]*\|[1-9][0-9]?$/.test(arg))throw Error('fixture.bad_up');value=variant==='limited'?{code:-352}:{code:0,data:{archives:[{bvid:'BV1UPS000001',title:'会话投稿 1',duration:60,stat:{view:1},pubdate:1790000000}],page:{total:1}}};}
+   else if(operation===6){if(arg!=='all')throw Error('fixture.bad_ranking');value=variant==='limited'?{code:-352}:{code:0,data:{list:Array.from({length:12},(_,i)=>({bvid:'BV1RS'+String(i).padStart(7,'0'),title:'会话排行 '+(i+1),owner:{name:'会话UP'},duration:90,stat:{view:10}}))}};}
    else throw Error('fixture.unapproved_public_route');
    heap.fill(0,0,4097);const bytes=new TextEncoder().encode(JSON.stringify(value));heap.set(bytes,8192);length=bytes.length;m.print('VODAPI:response:'+operation);return 1;
   },_vod_stop(){open=false;heap.fill(0);length=0;m.print('VODAPI:closed');}

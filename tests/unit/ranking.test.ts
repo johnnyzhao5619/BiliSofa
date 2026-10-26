@@ -4,6 +4,7 @@ import { parseRankingBody } from '../../packages/bili-client/src/ranking.ts';
 import { parseRankingRequest, parseRankingResult, type RankingRequest } from '../../packages/contracts/src/ranking.ts';
 import { ContentApiError, parseContentQuery } from '../../packages/contracts/src/content.ts';
 import { PublicContentRuntime } from '../../apps/tv/src/platform/content-runtime.ts';
+import { PublicLimitedError, limitedText, publicListNote, resetPublicLists } from '../../apps/tv/src/platform/public-lists.ts';
 import { withFakeKernel, flush as kernelFlush } from './fake-public-kernel.ts';
 const scope={accountId:'guest',generation:1,mediaSessionId:'ranking',requestId:'r1'};
 const rawCard=(i:number)=>({bvid:'BV'+String(i).padStart(10,'0'),title:'合成标题',owner:{name:'合成UP'},duration:80,stat:{view:10}});
@@ -33,20 +34,21 @@ test('W03 typed pagination is limited to 25 ranking pages and explicit first-pag
  for(const v of [{route:'ranking',page:26},{route:'ranking',page:2,refresh:true},{route:'popular',page:2,refresh:true},{route:'ranking',page:1,refresh:false}])assert.throws(()=>parseContentQuery(v));
 });
 test('W03 catalog caches exactly 25 four-card pages, returns copies, and explicitly refreshes without stale fallback',async()=>{
- let mode='ok';
+ let mode='ok';resetPublicLists();
  await withFakeKernel(q=>mode==='ok'?result(q as RankingRequest):{...result(q as RankingRequest),kind:'api_error',apiCode:-101,code:'ranking.api_error',items:[]},async workers=>{
   const runtime=new PublicContentRuntime(),signal=new AbortController().signal,requests=()=>workers[0]?.requests.length??0;
   await assert.rejects(runtime.read({route:'ranking',page:2},signal),{code:'invalid'});assert.equal(requests(),0);
   const first=await runtime.read({route:'ranking',page:1},signal);first.items[0]!.title='mutated';assert.equal(workers[0]!.file,'public-kernel-worker.js');
   for(let page=2;page<=25;page++){const r=await runtime.read({route:'ranking',page},signal);assert.equal(r.items.length,4);assert.equal(r.items[0]!.bvid,'BV'+String((page-1)*4).padStart(10,'0'));assert.equal(r.noMore,page===25);}
   assert.equal((await runtime.read({route:'ranking',page:1},signal)).items[0]!.title,'合成标题');assert.equal(requests(),1);
-  // ADR-108: another runtime (the shelf vs. its full grid) reuses the same list for five minutes.
+  // ADR-108/117: another runtime (the shelf vs. its full grid) reuses the same list (now ten minutes, ADR-105 pacing).
   await new PublicContentRuntime().read({route:'ranking',page:1},signal);assert.equal(requests(),1);
   mode='fail';await assert.rejects(runtime.read({route:'ranking',page:1,refresh:true},signal),{code:'network'});await assert.rejects(runtime.read({route:'ranking',page:2},signal),{code:'invalid'});assert.equal(requests(),2);
   mode='ok';await runtime.read({route:'ranking',page:1,refresh:true},signal);assert.equal(requests(),3);assert.deepEqual(await runtime.close(),{closed:true});
  });
 });
 test('W03 changing public route cancels only the old transfer on the shared kernel; Home cannot refill cache',async()=>{
+ resetPublicLists();
  await withFakeKernel(()=>undefined,async workers=>{
   const runtime=new PublicContentRuntime(),signal=new AbortController().signal;
   const old=runtime.read({route:'ranking',page:1},signal),oldCheck=assert.rejects(old,{code:'cancelled'});await kernelFlush();assert.equal(workers.length,1);
@@ -58,4 +60,26 @@ test('W03 changing public route cancels only the old transfer on the shared kern
   const pending=runtime.read({route:'ranking',page:1},signal),pendingCheck=assert.rejects(pending,{code:'cancelled'});await kernelFlush();const closure=runtime.close();await pendingCheck;assert.deepEqual(await closure,{closed:true});
   await assert.rejects(runtime.read({route:'ranking',page:1},signal),{code:'cancelled'});
  });
+});
+test('ADR-117 signed in, the 全站排行 is read with the account session only; the anonymous kernel is not asked',async()=>{
+ resetPublicLists();
+ await withFakeKernel(q=>result(q as RankingRequest),async workers=>{
+  let calls=0;const signal=new AbortController().signal;
+  const runtime=new PublicContentRuntime({ranking:async()=>{calls++;return parseRankingBody(body(8)).items;}});
+  const first=await runtime.read({route:'ranking',page:1},signal);assert.equal(first.items.length,4);assert.equal((await runtime.read({route:'ranking',page:2},signal)).noMore,true);
+  assert.equal(calls,1);assert.equal(workers.length,0,'no anonymous ranking read');assert.equal(publicListNote(),'最近一次全站排行读取：账号会话 · 成功');
+  await runtime.read({route:'ranking',page:1,refresh:true},signal);assert.equal(calls,2,'刷新 reads again');assert.deepEqual(await runtime.close(),{closed:true});
+ });
+});
+test('ADR-117 a refused anonymous 全站排行 starts the shared 60 s pause; 刷新 in the pause sends nothing',async()=>{
+ resetPublicLists();
+ await withFakeKernel(q=>({...result(q as RankingRequest),kind:'api_error',apiCode:-352,code:'ranking.api_error',items:[]}),async workers=>{
+  const runtime=new PublicContentRuntime(),signal=new AbortController().signal,requests=()=>workers[0]?.requests.length??0;
+  await assert.rejects(runtime.read({route:'ranking',page:1},signal),(e:unknown)=>e instanceof PublicLimitedError&&e.apiCode===-352&&e.lane==='guest'&&/^B站暂时限制了访问（风控 -352），约 60 秒后可重试；登录后通常更稳定$/.test(limitedText(e)));
+  assert.equal(requests(),1);assert.equal(publicListNote(),'最近一次全站排行读取：游客 · B站返回 -352');
+  await assert.rejects(runtime.read({route:'ranking',page:1,refresh:true},signal),(e:unknown)=>e instanceof PublicLimitedError);
+  await assert.rejects(runtime.read({route:'category',categoryId:1005,page:1},signal),(e:unknown)=>e instanceof PublicLimitedError,'the pause is shared with the category lists');
+  assert.equal(requests(),1,'paused: nothing more was sent');assert.deepEqual(await runtime.close(),{closed:true});
+ });
+ resetPublicLists();
 });

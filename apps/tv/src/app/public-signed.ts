@@ -24,6 +24,11 @@ export function signedPublicReads(workspace: AccountWorkspace) {
       const r = await run({ kind: 'category', categoryId }, signal);
       if (r.kind === 'category') return r.items; if (r.kind === 'refused') throw refused(r); throw new DomainError('invalid');
     },
+    /** 0.65.0 (ADR-117): the 全站排行 with the same session. */
+    async ranking(signal: AbortSignal): Promise<PopularCard[]> {
+      const r = await run({ kind: 'ranking' }, signal);
+      if (r.kind === 'ranking') return r.items; if (r.kind === 'refused') throw refused(r); throw new DomainError('invalid');
+    },
     async up(mid: string, page: number, signal: AbortSignal): Promise<{ archives: UpArchiveCard[]; total: number }> {
       const r = await run({ kind: 'up', mid, page }, signal);
       if (r.kind === 'up') return { archives: r.archives, total: r.total }; if (r.kind === 'refused') throw refused(r); throw new DomainError('invalid');

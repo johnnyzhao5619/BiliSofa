@@ -7,7 +7,7 @@ const port = globalThis as unknown as { onmessage: ((event: MessageEvent) => voi
 let active: PublicReadRequest | undefined, api: PublicNativeApi | undefined, complete = false;
 const controller = new AbortController();
 function fault(): void { if (complete) return; complete = true; setTimeout(() => { throw new Error('public-read.native_close_unknown'); }, 0); }
-type Outcome = { kind: 'category'; apiCode: number; items: unknown[] } | { kind: 'up'; apiCode: number; archives: unknown[]; total: number };
+type Outcome = { kind: 'category' | 'ranking'; apiCode: number; items: unknown[] } | { kind: 'up'; apiCode: number; archives: unknown[]; total: number };
 /** One request per Worker (ADR-105), like the comments lane. Only fixed integers describe a refusal. */
 async function finish(value?: Outcome, error?: unknown): Promise<void> {
   if (complete || !active) return;
@@ -16,7 +16,7 @@ async function finish(value?: Outcome, error?: unknown): Promise<void> {
   const base = { version: 1, operation: 'public-read', scope: active.scope, closed: true };
   const result = controller.signal.aborted ? { ...base, kind: 'error', code: 'cancelled' }
     : value && value.apiCode !== 0 ? { ...base, kind: 'refused', apiCode: value.apiCode }
-    : value?.kind === 'category' ? { ...base, kind: 'category', items: value.items }
+    : value?.kind === 'category' || value?.kind === 'ranking' ? { ...base, kind: value.kind, items: value.items }
     : value?.kind === 'up' ? { ...base, kind: 'up', archives: value.archives, total: value.total }
     : error instanceof VodResponseError && error.http >= 400 && error.http <= 599 ? { ...base, kind: 'refused', http: error.http }
     : { ...base, kind: 'error', code: vodNativeFailure(error) };

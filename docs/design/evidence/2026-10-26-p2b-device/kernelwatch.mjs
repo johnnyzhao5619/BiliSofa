@@ -1,5 +1,8 @@
-// Ranking timeout investigation: watch (never hold) Worker messages from 谁在观看 → OK → 热门 → focus into 热门 (starts 排行榜).
-// Logs only times, message types, operation names, result kinds and fixed result codes.
+// Ranking investigation (0.64.1) and ADR-117 check (0.65.0): watch (never hold) Worker messages from 谁在观看 → OK → home.
+// usage: node kernelwatch.mjs [account|guest] [focus|still] — `focus` moves focus into 热门 after 6 s (0.64.1 method),
+// `still` never moves it (0.65.0 reads its rows in order by itself). Logs only times, message types, operation names,
+// result kinds, fixed result codes and API integers.
+const [who = 'account', how = 'focus'] = process.argv.slice(2);
 const t = (await (await fetch('http://127.0.0.1:9333/json')).json()).find(x => x.type === 'page'); const ws = new WebSocket(t.webSocketDebuggerUrl); await new Promise(y => ws.onopen = y);
 let id = 0; const pending = new Map(); ws.onmessage = m => { const d = JSON.parse(m.data); if (pending.has(d.id)) { pending.get(d.id)(d); pending.delete(d.id); } };
 const call = (method, params = {}) => new Promise(y => { const i = ++id; pending.set(i, y); ws.send(JSON.stringify({ id: i, method, params })); });
@@ -15,15 +18,17 @@ await ev(`(()=>{const log=window.__kw=[],t0=performance.now();let n=0;const P=Wo
  P.terminate=function(){log.push({t:Math.round(performance.now()-t0),w:this.__kw,dir:'terminate'});return term.apply(this);};
  document.addEventListener('focusin',e=>{const id=e.target?.dataset?.focusId||'';log.push({t:Math.round(performance.now()-t0),dir:'focus',to:id.replace(/BV\\w+/,'BV*').replace(/\\d{3,}/g,'n')});},true);
  window.__kwT0=t0;return 1})()`);
+if (who === 'guest') await ev(`(document.querySelector('[data-focus-id=launch-guest]').focus(),1)`);
 await key('Enter', 13);
 const okAt = await ev('Math.round(performance.now()-window.__kwT0)');
 const popular = await until(`!!document.querySelector('[data-focus-id^=shelf-popular-]')`, 60000);
 const popularAt = await ev('Math.round(performance.now()-window.__kwT0)');
-await sleep(6000);
-const focusAt = await ev(`(document.querySelector('[data-focus-id^=shelf-popular-]')?.focus(),Math.round(performance.now()-window.__kwT0))`);
-const rankingDone = `window.__kw.some(e=>e.t>${focusAt}&&(e.dir==='terminate'||(e.dir==='in'&&e.op==='public-ranking')))`;
-const ranked = await until(rankingDone, 60000); await sleep(1500);
-const rows = await ev(`[...document.querySelectorAll('.tv-shelf')].map(s=>(s.querySelector('h2')?.textContent)+':'+s.querySelectorAll('.tv-card').length+'/'+s.querySelectorAll('.tv-card-skeleton').length+':'+(s.querySelector('.tv-shelf-status')?.title||'')).join(' | ')`);
-console.log(JSON.stringify({ okAt, popular, popularAt, focusAt, ranked, rows }));
+let focusAt = null;
+if (how === 'focus') { await sleep(6000); focusAt = await ev(`(document.querySelector('[data-focus-id^=shelf-popular-]')?.focus(),Math.round(performance.now()-window.__kwT0))`); }
+const after = focusAt ?? 0;
+const rankingDone = `window.__kw.some(e=>e.t>${after}&&(e.dir==='terminate'||(e.dir==='in'&&(e.op==='public-ranking'||e.op==='public-read'))))`;
+const ranked = await until(rankingDone, 30000); await sleep(1500);
+const rows = await ev(`[...document.querySelectorAll('.tv-shelf')].map(s=>(s.querySelector('h2')?.textContent)+':'+s.querySelectorAll('.tv-card').length+'/'+s.querySelectorAll('.tv-card-skeleton').length+':'+(s.querySelector('.tv-shelf-status')?.title||'')+':'+(s.querySelector('.tv-shelf-status')?.textContent||'').slice(0,40)).join(' | ')`);
+console.log(JSON.stringify({ who, how, okAt, popular, popularAt, focusAt, ranked, rows }));
 for (const e of await ev('window.__kw')) console.log(JSON.stringify(e));
 ws.close();

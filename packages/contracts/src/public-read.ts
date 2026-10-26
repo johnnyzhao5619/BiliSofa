@@ -11,6 +11,7 @@ export function parsePublicReadCommand(value: unknown): PublicReadCommand {
   if (value === null || typeof value !== 'object') throw new DomainError('invalid');
   const v = value as Record<string, unknown>;
   if (v.kind === 'category') { vodKeys(v, ['kind', 'categoryId']); return { kind: 'category', categoryId: parseCategoryId(v.categoryId) }; }
+  if (v.kind === 'ranking') { vodKeys(v, ['kind']); return { kind: 'ranking' }; }
   if (v.kind === 'up') { vodKeys(v, ['kind', 'mid', 'page']); return { kind: 'up', mid: upMid(v.mid), page: upPage(v.page) }; }
   throw new DomainError('invalid');
 }
@@ -27,12 +28,12 @@ export function parsePublicReadResult(raw: unknown): PublicReadResult {
   const base = { version: 1 as const, operation: 'public-read' as const, scope: parseScope(v.scope), closed: true as const };
   if (v.version !== 1 || v.operation !== 'public-read' || v.closed !== true) throw new DomainError('invalid');
   const int = (n: unknown, min: number, max: number) => { if (!Number.isSafeInteger(n) || (n as number) < min || (n as number) > max) throw new DomainError('invalid'); return n as number; };
-  if (v.kind === 'category') {
+  if (v.kind === 'category' || v.kind === 'ranking') {
     vodKeys(v, ['version', 'operation', 'scope', 'closed', 'kind', 'items', ...(v.skipped === undefined ? [] : ['skipped'])]);
     if (!Array.isArray(v.items) || v.items.length > 100) throw new DomainError('invalid');
     const items = v.items.map(parsePopularCard); if (new Set(items.map(i => i.bvid)).size !== items.length) throw new DomainError('invalid');
     const skipped = skippedCount(v.skipped, 100, items.length);
-    return { ...base, kind: 'category', items, ...(skipped === undefined ? {} : { skipped }) };
+    return { ...base, kind: v.kind, items, ...(skipped === undefined ? {} : { skipped }) };
   }
   if (v.kind === 'up') {
     vodKeys(v, ['version', 'operation', 'scope', 'closed', 'kind', 'archives', 'total', ...(v.skipped === undefined ? [] : ['skipped'])]);

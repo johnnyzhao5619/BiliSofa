@@ -66,6 +66,8 @@ int main(int argc, char **argv) {
     for (unsigned i = 0; i < sizeof(categories) / sizeof(categories[0]); i++) { strcpy(vod_input, categories[i]); if (vod_begin(4)) return 33; }
     const char *pages[] = { "12345", "012|1", "12345|0", "12345|51", "12345|01", "1|2|3", "12&x|1", "9007199254740992|1" };
     for (unsigned i = 0; i < sizeof(pages) / sizeof(pages[0]); i++) { strcpy(vod_input, pages[i]); if (vod_begin(5)) return 34; }
+    const char *rankings[] = { "", "0", "ALL", "all|x", "all&rid=1", "all\r\n" };
+    for (unsigned i = 0; i < sizeof(rankings) / sizeof(rankings[0]); i++) { strcpy(vod_input, rankings[i]); if (vod_begin(6)) return 38; }
     strcpy(vod_input, "BV0000000001"); if (vod_begin(1)) return 35;
     snprintf(vod_input, sizeof(vod_input), "https://fixture.bilivideo.com/a.m4s?deadline=%lld", (long long)time(NULL) + 3600); if (vod_begin(3)) return 36;
     vod_finish(); curl_slist_free_all(mapping); return clean() ? 0 : 37;
@@ -103,8 +105,9 @@ int main(int argc, char **argv) {
       }
       vod_response_clear();
 #ifdef BILISOFA_PUBLIC_FIXTURE
-      /* ADR-105: nav, then one category ranking, then one UP page; nothing else is allowed. */
-      if (operation == 5) { vod_finish(); break; }
+      /* ADR-105: nav, then one category ranking, then one UP page, then (ADR-117) the 全站排行; nothing else is allowed. */
+      if (operation == 6) { vod_finish(); break; }
+      if (operation == 5) { operation = 6; strcpy(vod_input, "all"); if (!vod_begin(operation)) return 39; continue; }
       if (operation == 0) { operation = 4; strcpy(vod_input, "1005"); if (!vod_begin(operation)) return 31; continue; }
       if (operation == 4) { operation = 5; strcpy(vod_input, "12345|2"); if (!vod_begin(operation)) return 32; continue; }
 #endif

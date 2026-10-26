@@ -4,8 +4,10 @@ import { SessionManager } from '../../../../packages/bili-client/src/session.ts'
 import { KernelCategoryRanking, KernelPopular, KernelRanking, KernelVideoSearch } from './public-lanes.ts';
 import { SearchReadError } from '../../../../packages/contracts/src/search.ts';
 import type { CategoryId } from '../../../../packages/contracts/src/categories.ts';
-import { pacedRead, usedVisitor } from './public-lists.ts';
+import { forgetPaced, pacedRead, usedVisitor } from './public-lists.ts';
 import { visitorIds } from './visitor-id.ts';
+/** The active account's own session for the paced public lists; absent for guests. */
+export interface SignedLists { category?(categoryId: CategoryId, signal: AbortSignal): Promise<PopularCard[]>; ranking?(signal: AbortSignal): Promise<PopularCard[]>; }
 /** All URLs, credentials and native calls remain behind the resident public kernel (ADR-108). */
 export class PublicContentRuntime implements ContentRuntime {
   private readonly sessions = new SessionManager();
@@ -16,8 +18,8 @@ export class PublicContentRuntime implements ContentRuntime {
   private rankingSnapshot: PopularCard[] | undefined;
   private rankingKey: string | undefined;
   private closing: Promise<{closed:boolean}> | undefined;
-  /** 0.51.2 (ADR-105): with an active account, category rankings use its own session. */
-  constructor(private readonly signedCategory?: (categoryId: CategoryId, signal: AbortSignal) => Promise<PopularCard[]>) {}
+  /** With an active account, category rankings (0.51.2, ADR-105) and the 全站排行 (0.65.0, ADR-117) use its own session. */
+  constructor(private readonly signed: SignedLists = {}) {}
   async read(value: ContentQuery, signal: AbortSignal): Promise<ContentPage> {
     const query=parseContentQuery(value);
     if(this.closing || signal.aborted) throw new DomainError('cancelled');
@@ -40,7 +42,7 @@ export class PublicContentRuntime implements ContentRuntime {
       }
       if(query.route==='category'){
         // ADR-105: paced (10 min reuse, 60 s pause after a refusal); account session when signed in.
-        const categoryId=query.categoryId,signed=this.signedCategory;
+        const categoryId=query.categoryId,signed=this.signed.category;
         const items=await pacedRead(String(categoryId),signed?'account':'guest','category',async()=>{
           if(signed) return signed(categoryId,task.signal);
           // ADR-106: anonymous reads carry B站's own visitor identity when one is (or can be) kept on this TV.
@@ -55,20 +57,30 @@ export class PublicContentRuntime implements ContentRuntime {
         if(signal.aborted || !this.sessions.accepts(task.scope)) throw new DomainError('cancelled');
         this.rankingSnapshot=items;return this.rankingPage(1);
       }
-      // 刷新 renews the shared snapshot (popular) or list (ranking); paging and returning reuse them.
-      if('refresh' in query && query.refresh){if(query.route==='popular')this.worker.invalidate({version:1,scope:task.scope,operation:'guest-popular',page:1});else if(query.route==='ranking')this.ranking.invalidate({version:1,scope:task.scope,operation:'public-ranking'});}
+      if(query.route==='ranking'){
+        // ADR-117: paced like the category lists; 刷新 drops the reused list but never the pause.
+        const signed=this.signed.ranking,lane=signed?'account':'guest';
+        if('refresh' in query && query.refresh){forgetPaced('all',lane);this.ranking.invalidate({version:1,scope:task.scope,operation:'public-ranking'});}
+        const items=await pacedRead('all',lane,'ranking',async()=>{
+          if(signed) return signed(task.signal);
+          const r=await this.ranking.run({version:1,scope:task.scope,operation:'public-ranking'},task.signal);
+          if(r.kind==='api_error') throw new ContentApiError(r.apiCode!);
+          if(r.kind!=='ok') throw new DomainError(r.kind==='cancelled'?'cancelled':r.kind==='invalid_response'?'invalid':r.code.endsWith('.native_unavailable')?'unsupported':'network');
+          return r.items;
+        });
+        if(signal.aborted || !this.sessions.accepts(task.scope)) throw new DomainError('cancelled');
+        this.rankingSnapshot=items;return this.rankingPage(1);
+      }
+      // 刷新 renews the shared popular snapshot; paging and returning reuse it.
+      if('refresh' in query && query.refresh && query.route==='popular')this.worker.invalidate({version:1,scope:task.scope,operation:'guest-popular',page:1});
       const result=query.route==='search'
         ? await this.search.run({version:1,scope:task.scope,operation:'public-video-search',keyword:query.keyword,page:query.page},task.signal)
-        : query.route==='ranking'
-        ? await this.ranking.run({version:1,scope:task.scope,operation:'public-ranking'},task.signal)
         : await this.worker.run({version:1,scope:task.scope,operation:'guest-popular',page:query.page},task.signal);
       if(signal.aborted || !this.sessions.accepts(task.scope)) throw new DomainError('cancelled');
       if(result.kind==='api_error') throw new ContentApiError(result.apiCode!);
       if(result.operation==='public-video-search' && result.kind!=='ok')throw new SearchReadError(result);
       if(result.operation==='guest-popular' && result.kind!=='ok')throw new PopularReadError(result);
       if(result.kind!=='ok') throw new DomainError(result.kind==='cancelled'?'cancelled':result.kind==='invalid_response'?'invalid':result.code.endsWith('.native_unavailable')?'unsupported':'network');
-      if(result.operation==='public-ranking'||result.operation==='public-category-ranking'){this.rankingSnapshot=result.items;return this.rankingPage(1);}
-      if(result.operation==='public-pgc-ranking'||result.operation==='public-up-archives'||result.operation==='public-visitor')throw new DomainError('invalid'); // served by their own workers, never this lane
       return {items:result.items,noMore:result.noMore};
     } finally { signal.removeEventListener('abort',abort);task.finish(); }
   }

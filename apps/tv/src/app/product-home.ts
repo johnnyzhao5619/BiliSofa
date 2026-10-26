@@ -34,6 +34,8 @@ export interface HomeMemory {
 export interface HomeServices extends VideoCardServices {
     /** 0.51.2 (ADR-105): category rankings with the active account's own session. */
     signedCategory?(categoryId: CategoryId, signal: AbortSignal): Promise<PopularCard[]>;
+    /** 0.65.0 (ADR-117): the 全站排行 with the same session. */
+    signedRanking?(signal: AbortSignal): Promise<PopularCard[]>;
     profile: ProfileStore;
     queue: QueueStore;
     feedback: HTMLElement;
@@ -67,7 +69,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
     if(continuing){const all=productButton('continuing-all','查看全部本机记录',()=>services.local!.openLibrary());all.className='tv-continuing-all';continuing.node.append(all);}
     const paging = document.createElement('div');
     paging.className = 'tv-paging';
-    const runtime = new PublicContentRuntime(services.signedCategory);
+    const runtime = new PublicContentRuntime({ ...(services.signedCategory ? { category: services.signedCategory } : {}), ...(services.signedRanking ? { ranking: services.signedRanking } : {}) });
     let readAbort:AbortController|undefined;
     let art = new CoverArt(), busy = false, epoch = 0, committed: HomeSource | undefined;
     const abort = () => {readAbort?.abort();art.close();};

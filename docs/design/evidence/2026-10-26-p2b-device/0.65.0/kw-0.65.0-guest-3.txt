@@ -1,0 +1,5 @@
+{"who":"guest","how":"still","okAt":251,"popular":true,"popularAt":326,"focusAt":null,"ranked":true,"rows":"热门视频:8/0:: | 排行榜:12/0:limited:显示的是上次的内容 | 分区:0/0::"}
+{"t":35,"dir":"focus","to":"launch-guest"}
+{"t":96,"dir":"focus","to":"home-resume-BV*-p1"}
+{"t":1399,"w":1,"dir":"out","type":"request","op":"public-ranking"}
+{"t":1704,"w":1,"dir":"in","type":"result","op":"public-ranking","kind":"api_error","code":"ranking.api_error","api":-352}

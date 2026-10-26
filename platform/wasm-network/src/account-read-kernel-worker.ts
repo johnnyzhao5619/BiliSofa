@@ -22,7 +22,7 @@ interface Native {
   _auth_stop(): void; _kernel_begin(operation: number): number; _kernel_stop(): number;
 }
 const port = globalThis as unknown as { onmessage: ((event: MessageEvent) => void) | null; postMessage(value: KernelEvent): void; importScripts(path: string): void; Module: Record<string, unknown> };
-const NAV = 0, HISTORY = 2, FOLDERS = 3, FOLLOW_UPDATES = 5, RECOMMEND = 6, WATCH_LATER = 7, FAVORITE_ITEMS = 8, CATEGORY = 9, UP = 10, VERIFY_MS = 600000;
+const NAV = 0, HISTORY = 2, FOLDERS = 3, FOLLOW_UPDATES = 5, RECOMMEND = 6, WATCH_LATER = 7, FAVORITE_ITEMS = 8, CATEGORY = 9, UP = 10, RANKING = 11, VERIFY_MS = 600000;
 let native: Native | undefined, phase: 'idle' | 'loading' | 'ready' | 'failed' = 'idle', live = false, ended: 'timeout' | 'network' | undefined;
 let session: { accountId: string; cookieLines: string; uid: string; verifiedAt: number; keys?: { img: string; sub: string } } | undefined;
 let current: { requestId: string; request: AccountKernelRequest; expected: number; token: number } | undefined, tokens = 0;
@@ -62,7 +62,10 @@ function read(): void {
     if (!keys) { deliver(failure(r, 'invalid', 'recommend.invalid')); return; }
     begin(RECOMMEND, `${r.freshType}|${r.index}|${r.brush}|${r.shown}|${keys.img}|${keys.sub}|${Math.floor(Date.now() / 1000)}`); return;
   case 'identity-verify': begin(NAV, ''); return;
-  default: begin(r.command.kind === 'category' ? CATEGORY : UP, r.command.kind === 'category' ? String(r.command.categoryId) : `${r.command.mid}|${r.command.page}`);
+  default: {
+    const c = r.command;
+    if (c.kind === 'category') begin(CATEGORY, String(c.categoryId)); else if (c.kind === 'ranking') begin(RANKING, 'all'); else begin(UP, `${c.mid}|${c.page}`);
+  }
   }
 }
 /** Opens (or switches) the session for this request's account, verifies nav when due, then reads. */
@@ -123,7 +126,7 @@ function responded(token: number): void {
     else if (r.operation === 'follow-updates-read') deliver({ ...ok, batch: parseFollowUpdatesBody(raw, r.offset) });
     else if (r.operation === 'recommendations-read') deliver({ ...ok, batch: parseRecommendationBody(raw, r.account.uid) });
     else if (r.operation === 'identity-verify') deliver(failure(r, 'invalid'));
-    else if (r.command.kind === 'category') { const p = parseRankingBody(raw); deliver(p.apiCode !== 0 ? { ...base(r), kind: 'refused', apiCode: p.apiCode } : { ...base(r), kind: 'category', items: p.items, ...(p.skipped ? { skipped: p.skipped } : {}) }); }
+    else if (r.command.kind === 'category' || r.command.kind === 'ranking') { const p = parseRankingBody(raw); deliver(p.apiCode !== 0 ? { ...base(r), kind: 'refused', apiCode: p.apiCode } : { ...base(r), kind: r.command.kind, items: p.items, ...(p.skipped ? { skipped: p.skipped } : {}) }); }
     else { const p = parseUpArchivesBody(raw); deliver(p.apiCode !== 0 ? { ...base(r), kind: 'refused', apiCode: p.apiCode } : { ...base(r), kind: 'up', archives: p.archives, total: p.total, ...(p.skipped ? { skipped: p.skipped } : {}) }); }
   } catch (error) {
     const code: ErrorCode = error instanceof DomainError ? error.code : 'invalid';

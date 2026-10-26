@@ -1,17 +1,19 @@
 import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import { ContentApiError } from '../../../../packages/contracts/src/content.ts';
-/** ADR-105 request hygiene for the two risk-controlled public lists (category rankings, UP uploads).
+/** ADR-105 request hygiene for the risk-controlled public lists (category rankings, UP uploads and, 0.65.0 ADR-117, the 全站排行).
  * Process-local: a result is reused for 10 minutes; a risk-control refusal starts a 60 s pause in which
- * nothing is requested; the last outcome is kept for 帮助与诊断 as fixed words and integers only. */
+ * that lane requests nothing (ADR-117: per lane, so a guest refusal never blocks the account session); the last outcome is kept for 帮助与诊断 as fixed words and integers only. */
 const TTL_MS = 600000, PAUSE_MS = 60000;
 /** B站 risk control answers these lanes with API -352/-412/-509/-799 or HTTP 412. */
 export const LIMITED_API_CODES = new Set([-352, -412, -509, -799]);
 export type PublicLane = 'account' | 'guest';
+export type PublicList = 'category' | 'up' | 'ranking';
 export class PublicLimitedError extends Error {
   /** `lane` (0.51.3, ADR-106) is set by pacedRead so a refused guest read can suggest signing in. */
   constructor(readonly retryInMs: number, readonly apiCode?: number, readonly http?: number, readonly lane?: PublicLane) { super('limited'); }
 }
-let pausedUntil = 0, last: { lane: PublicLane; list: 'category' | 'up'; ok: boolean; apiCode?: number; http?: number; visitor?: boolean } | undefined, visitorUsed: boolean | undefined;
+const paused = new Map<PublicLane, { until: number; apiCode?: number; http?: number }>();
+let last: { lane: PublicLane; list: PublicList; ok: boolean; apiCode?: number; http?: number; visitor?: boolean } | undefined, visitorUsed: boolean | undefined;
 /** 0.51.3 (ADR-106): an anonymous read reports whether it carried the B站 visitor identity, for 帮助与诊断 only. */
 export function usedVisitor(value: boolean): void { visitorUsed = value; }
 const cache = new Map<string, { at: number; value: unknown }>();
@@ -21,10 +23,11 @@ export function limitedFrom(error: unknown): PublicLimitedError | undefined {
   if (error instanceof ContentApiError && LIMITED_API_CODES.has(error.apiCode)) return new PublicLimitedError(PAUSE_MS, error.apiCode);
   return undefined;
 }
-export async function pacedRead<T>(key: string, lane: PublicLane, list: 'category' | 'up', read: () => Promise<T>, now = Date.now): Promise<T> {
+export async function pacedRead<T>(key: string, lane: PublicLane, list: PublicList, read: () => Promise<T>, now = Date.now): Promise<T> {
   const hit = cache.get(`${lane}:${key}`);
   if (hit && now() - hit.at < TTL_MS) return hit.value as T;
-  if (pausedUntil > now()) throw new PublicLimitedError(pausedUntil - now(), last?.apiCode, last?.http, lane);
+  const pause = paused.get(lane);
+  if (pause && pause.until > now()) throw new PublicLimitedError(pause.until - now(), pause.apiCode, pause.http, lane);
   visitorUsed = undefined;
   try {
     const value = await read();
@@ -32,12 +35,14 @@ export async function pacedRead<T>(key: string, lane: PublicLane, list: 'categor
     last = { lane, list, ok: true, ...visitorMark(lane) }; return value;
   } catch (error) {
     const limited = limitedFrom(error);
-    if (limited) { pausedUntil = now() + PAUSE_MS; last = { lane, list, ok: false, ...visitorMark(lane), ...(limited.apiCode === undefined ? {} : { apiCode: limited.apiCode }), ...(limited.http === undefined ? {} : { http: limited.http }) }; throw new PublicLimitedError(PAUSE_MS, limited.apiCode, limited.http, lane); }
+    if (limited) { paused.set(lane, { until: now() + PAUSE_MS, ...(limited.apiCode === undefined ? {} : { apiCode: limited.apiCode }), ...(limited.http === undefined ? {} : { http: limited.http }) }); last = { lane, list, ok: false, ...visitorMark(lane), ...(limited.apiCode === undefined ? {} : { apiCode: limited.apiCode }), ...(limited.http === undefined ? {} : { http: limited.http }) }; throw new PublicLimitedError(PAUSE_MS, limited.apiCode, limited.http, lane); }
     if (!(error instanceof DomainError && error.code === 'cancelled')) last = { lane, list, ok: false, ...visitorMark(lane) };
     throw error;
   }
 }
 const visitorMark = (lane: PublicLane) => lane === 'guest' && visitorUsed !== undefined ? { visitor: visitorUsed } : {};
+/** 刷新 (ADR-117): drops the reused list; the pause still applies. */
+export function forgetPaced(key: string, lane: PublicLane): void { cache.delete(`${lane}:${key}`); }
 /** Seconds left in the pause, for “约 N 秒后可重试”. */
 export const pauseSeconds = (error: PublicLimitedError) => Math.max(1, Math.ceil(error.retryInMs / 1000));
 export function limitedText(error: PublicLimitedError): string {
@@ -47,9 +52,9 @@ export function limitedText(error: PublicLimitedError): string {
 /** One line for 帮助与诊断. */
 export function publicListNote(): string {
   if (!last) return '';
-  const what = last.list === 'category' ? '分区' : 'UP投稿', how = last.lane === 'account' ? '账号会话' : last.visitor === undefined ? '游客' : last.visitor ? '游客（带访客标识）' : '游客（无访客标识）';
+  const what = last.list === 'category' ? '分区' : last.list === 'ranking' ? '全站排行' : 'UP投稿', how = last.lane === 'account' ? '账号会话' : last.visitor === undefined ? '游客' : last.visitor ? '游客（带访客标识）' : '游客（无访客标识）';
   const result = last.ok ? '成功' : last.apiCode !== undefined ? `B站返回 ${last.apiCode}` : last.http !== undefined ? `HTTP ${last.http}` : '读取失败';
   return `最近一次${what}读取：${how} · ${result}`;
 }
 /** Tests only: a fresh process. */
-export function resetPublicLists(): void { pausedUntil = 0; last = undefined; visitorUsed = undefined; cache.clear(); }
+export function resetPublicLists(): void { paused.clear(); last = undefined; visitorUsed = undefined; cache.clear(); }

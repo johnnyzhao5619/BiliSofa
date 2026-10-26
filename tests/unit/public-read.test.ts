@@ -24,12 +24,29 @@ test('ADR-105 a public list is reused for ten minutes and nothing is asked durin
   t += 61000; let tries = 0; await assert.rejects(pacedRead('x', 'guest', 'up', async () => { tries++; throw new Error('boom'); }, now)); await assert.rejects(pacedRead('x', 'guest', 'up', async () => { tries++; throw new Error('boom'); }, now)); assert.equal(tries, 2);
 });
 
+test('ADR-117 the pause is per lane: a refused guest read never blocks the account session', async () => {
+  resetPublicLists(); let t = 1000000, calls = 0; const now = () => t;
+  await assert.rejects(pacedRead('all', 'guest', 'ranking', async () => { calls++; throw new ContentApiError(-352); }, now), (e: unknown) => e instanceof PublicLimitedError && e.lane === 'guest');
+  assert.deepEqual(await pacedRead('all', 'account', 'ranking', async () => { calls++; return ['x']; }, now), ['x']);
+  assert.equal(calls, 2); assert.equal(publicListNote(), '最近一次全站排行读取：账号会话 · 成功');
+  await assert.rejects(pacedRead('1005', 'guest', 'category', async () => { calls++; return ['y']; }, now), (e: unknown) => e instanceof PublicLimitedError && e.apiCode === -352, 'the guest lane is still paused');
+  assert.equal(calls, 2); resetPublicLists();
+});
+
 test('ADR-105 the signed-in request needs an account; results carry only cards, archives or fixed integers', () => {
   const q = { version: 1, operation: 'public-read', scope, command: { kind: 'category', categoryId: 1005 }, account };
   assert.equal(parsePublicReadRequest(q).command.kind, 'category');
   for (const bad of [{ ...q, account: undefined }, { ...q, command: { kind: 'category', categoryId: 9999 } }, { ...q, command: { kind: 'up', mid: '012', page: 1 } }, { ...q, command: { kind: 'up', mid: '1', page: 51 } }, { ...q, command: { kind: 'search', keyword: 'x' } }, { ...q, extra: 1 }])
     assert.throws(() => parsePublicReadRequest(bad), JSON.stringify(bad.command));
+  // ADR-117: the 全站排行 command has no parameters; its result is a card list like a category.
+  assert.deepEqual(parsePublicReadRequest({ ...q, command: { kind: 'ranking' } }).command, { kind: 'ranking' });
+  for (const bad of [{ kind: 'ranking', categoryId: 1005 }, { kind: 'ranking', rid: 0 }, { kind: 'ranking', url: 'https://outside.invalid/' }])
+    assert.throws(() => parsePublicReadRequest({ ...q, command: bad }), JSON.stringify(bad));
   const base = { version: 1, operation: 'public-read', scope, closed: true };
+  const card = { bvid: 'BV1RS0000001', title: '会话排行', owner: '会话UP', durationSec: 90, views: 10 };
+  assert.equal(parsePublicReadResult({ ...base, kind: 'ranking', items: [card] }).kind, 'ranking');
+  for (const bad of [{ ...base, kind: 'ranking', items: [card, card] }, { ...base, kind: 'ranking', items: Array(101).fill(card) }, { ...base, kind: 'ranking', items: [], total: 1 }])
+    assert.throws(() => parsePublicReadResult(bad), JSON.stringify(bad).slice(0, 80));
   assert.equal(parsePublicReadResult({ ...base, kind: 'refused', apiCode: -352 }).kind, 'refused');
   for (const bad of [{ ...base, kind: 'refused' }, { ...base, kind: 'refused', apiCode: -352, message: 'risk' }, { ...base, kind: 'refused', http: 99 }, { ...base, kind: 'error', code: 'outside' }, { ...base, kind: 'category', items: [{ bvid: 'x' }] }])
     assert.throws(() => parsePublicReadResult(bad), JSON.stringify(bad));

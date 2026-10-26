@@ -65,7 +65,9 @@ test('ADR-106 a refused guest read suggests signing in; 帮助与诊断 says whe
   await assert.rejects(pacedRead('1005', 'guest', 'category', async () => { usedVisitor(true); throw new ContentApiError(-352); }, now), (e: unknown) => e instanceof PublicLimitedError && limitedText(e) === 'B站暂时限制了访问（风控 -352），约 60 秒后可重试；登录后通常更稳定');
   assert.equal(publicListNote(), '最近一次分区读取：游客（带访客标识） · B站返回 -352');
   t += 1000;
-  await assert.rejects(pacedRead('1006', 'account', 'category', async () => [], now), (e: unknown) => e instanceof PublicLimitedError && limitedText(e) === 'B站暂时限制了访问（风控 -352），约 59 秒后可重试', 'the account lane has no sign-in hint');
+  // ADR-117: the pause is per lane, so the account session still reads; its own refusal has no sign-in hint.
+  assert.deepEqual(await pacedRead('1006', 'account', 'category', async () => [], now), []);
+  await assert.rejects(pacedRead('1007', 'account', 'category', async () => { throw new ContentApiError(-352); }, now), (e: unknown) => e instanceof PublicLimitedError && limitedText(e) === 'B站暂时限制了访问（风控 -352），约 60 秒后可重试', 'the account lane has no sign-in hint');
   t += 61000; await pacedRead('7', 'guest', 'up', async () => { usedVisitor(false); return []; }, now);
   assert.equal(publicListNote(), '最近一次UP投稿读取：游客（无访客标识） · 成功');
   await pacedRead('8', 'account', 'up', async () => [], now); assert.equal(publicListNote(), '最近一次UP投稿读取：账号会话 · 成功');
