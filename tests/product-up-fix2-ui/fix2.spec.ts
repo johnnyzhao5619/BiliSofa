@@ -19,7 +19,7 @@ async function signedIn(page:Page,variant='normal'){
  return {...c,errors:f.errors};
 }
 async function category(page:Page,id='1005',fromGrid=false){
- await page.locator(fromGrid?'[data-focus-id=source-category]':'[data-focus-id=shelf-categories]').click();await page.locator('[data-focus-id=category-'+id+']').click();
+ if(fromGrid){await page.locator('[data-focus-id=source-category]').click();await page.locator('[data-focus-id=category-'+id+']').click();}else await page.locator('[data-focus-id=shelf-category-'+id+']').click(); // ADR-116: home categories are direct entries
 }
 async function help(page:Page){
  for(let i=0;i<4&&!(await page.locator('[data-focus-id=nav-settings]').isVisible());i++)await page.keyboard.press('Escape');

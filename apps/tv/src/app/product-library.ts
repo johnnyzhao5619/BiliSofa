@@ -84,9 +84,7 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
     void shell.closeOwnedModal(owner);
   else
     void shell.navigateTop({ page: 'settings' }); });
-  const refresh = button('refresh', '刷新', () => { void read(1, true); }), previous = button('previous', '上一页', () => { if (!previous.disabled)
-    void read(currentPage - 1); }), next = button('next', '下一页', () => { if (!next.disabled)
-    void read(currentPage + 1); });
+  const refresh = button('refresh', '刷新', () => { void read(1, true); });
   const continuous = button('continuous', '播完自动下一项', () => { const value = services.queue.read(); if (value.kind === 'ok') {
     services.feedback.textContent = services.queue.continuous(!value.value.continuous) === 'saved' ? '连播设置已保存' : '连播设置可能未保存，可再切换一次';
     void read(currentPage);
@@ -94,16 +92,14 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
   continuous.setAttribute('role', 'switch');
   // An empty list offers a way to content instead of a refresh that cannot change it.
   const browse = button('browse', '去首页看看', () => { void shell.navigateTop({ page: 'home' }); }); browse.hidden = true;
-  previous.disabled = next.disabled = true;
   const filterButtons = tabs.map(([kind, label]) => { const b = button('tab-' + kind, label, () => { if (folder)
     return; memory.tab = kind; void read(memory.pages[kind] ?? 1); }); if (kind !== 'local' && kind !== 'queue')
     b.disabled = services.workspace.state.kind !== 'active'; return b; });
   const login=button('login','登录查看账号片库',()=>{void shell.navigateTop({page:'account'});});
   if (folder) filters.append(back);
   else{filters.append(...filterButtons);if(services.workspace.state.kind!=='active')filters.append(login);}
-  paging.append(browse, previous, next, refresh, ...(folder ? [] : [continuous, back]));
+  paging.append(browse, refresh, ...(folder ? [] : [continuous, back]));
   const feed=new ContinuousGrid(owner,grid,{load:page=>read(page,false,undefined,undefined,true),restored:page=>{currentPage=page;memory.pages[currentKind]=page;},top:()=>folder?prefix+'-back':'library-tab-'+currentKind,left:()=>folder?prefix+'-back':'nav-library',bottom:()=>prefix+'-refresh'});
-  if(feed)previous.hidden=next.hidden=true;
   function currentTarget(entry: Entry): {
     target: {
       bvid: string;
@@ -236,16 +232,12 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
   async function read(page: number, fresh = false, restore?: string, ordinal?: number, stream=false): Promise<void> {
     const generation = ++ticket, source = folder ? { kind: 'items' as const, folderKey: folder.key } : { kind: memory.tab };
     currentKind = memory.tab;
-    const sourceKey=JSON.stringify(source);feed?.prepare(sourceKey,!stream);const retained=!!feed&&grid.childElementCount>0;
+    const sourceKey=JSON.stringify(source);feed.prepare(sourceKey,!stream);const retained=grid.childElementCount>0;
     panel.dataset.source = folder ? 'items' : currentKind;
-    previous.disabled = next.disabled = true;
     refresh.disabled = true;
     continuous.hidden = !!folder || currentKind !== 'queue';
     filterButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(tabs[i]![0] === currentKind)));
     const active = document.activeElement as HTMLElement | null, activeId = restore ?? (!panel.isConnected ? shell.navigation.current.anchor.focusId : active?.dataset.focusId);
-    if(!feed)grid.querySelectorAll<HTMLButtonElement>('button').forEach(b => b.disabled = true);
-    if (!feed && panel.isConnected && grid.contains(active))
-      (folder ? back : filterButtons.find((_button, i) => tabs[i]![0] === currentKind) ?? back).focus();
     status.textContent = '正在读取' + (folder ? '收藏内容' : tabs.find(([kind]) => kind === currentKind)![1]);
     try {
       await reader.cancel();
@@ -286,16 +278,13 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
         return;
       currentPage = page;
       memory.pages[currentKind] = page;
-      if(!feed)art.close();
       art = new CoverArt();
       const seen = new Set<string>();
       const buttons = items.map((entry, i) => { entry.ordinal=(page-1)*4+i; if (seen.has(entry.id))
         entry.id += '-' + i; seen.add(entry.id); const a = videoActions(entry); return libraryCard(entry as LibraryCardView, owner.signal, a ? () => a.choose() : () => details(entry), art, a?.hold); });
-      if(feed){const currentArt=art;feed.commit(sourceKey,page,buttons,noMore,currentKind==='local'&&!folder?48:25,1,()=>currentArt.close());}else grid.replaceChildren(...buttons);
+      {const currentArt=art;feed.commit(sourceKey,page,buttons,noMore,currentKind==='local'&&!folder?48:25,1,()=>currentArt.close());}
       status.textContent = items.length ? `${note}${feed?' · 向下浏览更多':' · 第 '+page+' 页'}` : source.kind === 'history' && !noMore ? '本页没有当前范围内的记录，可继续下一页' : `${note} · ${source.kind === 'local' ? '还没有本机续播位置' : source.kind === 'queue' ? '队列为空，可从视频详情加入' : source.kind === 'watchlater' ? '稍后再看为空' : source.kind === 'history' ? '云端历史为空或未记录' : '收藏夹为空'}`;
       if(page>=25&&!noMore&&source.kind!=='local'&&source.kind!=='queue')status.textContent+=' · 当前读取上限25页，可刷新查看最新';
-      previous.disabled = page <= 1;
-      next.disabled = noMore || page >= (currentKind === 'local' && !folder ? 48 : 25);
       refresh.disabled = false; refresh.textContent = '刷新';
       browse.hidden = !!folder || buttons.length > 0 || grid.querySelector('button') !== null || !(source.kind === 'local' || source.kind === 'queue'); refresh.hidden = !browse.hidden;
       wire();
@@ -310,11 +299,9 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
       }
     }
     catch (error) {
-      feed?.failure();
+      feed.failure();
       if (owner.signal.aborted || generation !== ticket)
         return;
-      if(!feed)art.close();
-      if(!feed)grid.replaceChildren();
       status.textContent = error instanceof DomainError && error.code === 'login' ? '登录已失效，请在账号中重新扫码' : '片库暂时无法加载，本机数据仍保留，可重试或返回'; status.title = error instanceof DomainError ? error.code : 'unknown';
       refresh.disabled = error instanceof DomainError && error.code === 'unknown'; refresh.hidden = false; refresh.textContent = '重试'; browse.hidden = true;
       continuous.disabled = true;
@@ -332,9 +319,9 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
     buttons.forEach((b, i) => { b.dataset.left = i % 4 ? buttons[i - 1]!.dataset.focusId : folder ? back.dataset.focusId : 'nav-library'; b.dataset.right = buttons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = up; b.dataset.down = refresh.dataset.focusId; });
     const activeFilters = [...filterButtons,...(!folder&&services.workspace.state.kind!=='active'?[login]:[])].filter(b => !b.disabled && !b.hidden);
     activeFilters.forEach((b, i) => { b.dataset.left = activeFilters[i - 1]?.dataset.focusId ?? 'nav-library'; b.dataset.right = activeFilters[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = b.dataset.focusId; b.dataset.down = buttons[0]?.dataset.focusId ?? refresh.dataset.focusId; });
-    const controls = [browse, previous, next, refresh, ...(continuous.hidden ? [] : [continuous]), back].filter(b => !b.disabled && !b.hidden);
+    const controls = [browse, refresh, ...(continuous.hidden ? [] : [continuous]), back].filter(b => !b.disabled && !b.hidden);
     controls.forEach((b, i) => { b.dataset.left = controls[i - 1]?.dataset.focusId ?? (folder ? back.dataset.focusId : 'nav-library'); b.dataset.right = controls[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = buttons[0]?.dataset.focusId ?? up; b.dataset.down = b.dataset.focusId; });
-    feed?.wire();
+    feed.wire();
   }
   panel.append(note, heading, filters, status, grid, paging);
   void read(folder ? 1 : memory.pages[memory.tab] ?? 1);

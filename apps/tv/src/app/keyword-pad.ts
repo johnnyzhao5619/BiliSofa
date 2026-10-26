@@ -1,5 +1,5 @@
 import { parseSearchKeyword } from '../../../../packages/contracts/src/search.ts';
-import { InitialsWorker } from '../platform/initials-worker.ts';
+import { sharedInitials } from '../platform/initials-worker.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 /** In-page keyword entry for the one-page search (ADR-092). Choosing a local candidate
  * (or the typed letters) searches immediately; nothing is sent while letters are typed.
@@ -10,7 +10,8 @@ export function keywordPad(owner: ResourceOwner, search: (keyword: string) => vo
   preview.className = 'tv-keyword-preview'; buffer.className = 'tv-keyword-buffer'; state.className = 'tv-keyword-state'; state.setAttribute('role', 'status');
   const candidates = document.createElement('div'), tools = document.createElement('div'), keys = document.createElement('div');
   candidates.className = 'tv-keyword-candidates'; candidates.setAttribute('aria-label', '中文词语候选'); tools.className = 'tv-keyword-tools'; keys.className = 'tv-keyword-keys'; keys.setAttribute('aria-label', '字母与数字');
-  const worker = new InitialsWorker(); owner.add('keyword-pad-worker', () => worker.dispose());
+  // ADR-116: the app-wide dictionary Worker; leaving or clearing only drops this pad's question.
+  const worker = sharedInitials(); owner.add('keyword-pad-worker', () => worker.cancel());
   let letters = '', keyword = initial, words: string[] = [], page = 0, busy = false, generation = 0;
   const button = (id: string, label: string, action: () => void) => { const b = document.createElement('button'); b.dataset.focusId = id; b.textContent = label; b.addEventListener('click', () => { if (!owner.signal.aborted) action(); }); return b; };
   const submit = () => { let value: string; try { value = parseSearchKeyword(keyword); } catch { state.textContent = '先选择关键词'; return; } search(value); };
@@ -56,13 +57,13 @@ export function keywordPad(owner: ResourceOwner, search: (keyword: string) => vo
   }
   function refresh(): void {
     const epoch = ++generation; page = 0; words = []; busy = !!letters; render();
-    if (!letters) { worker.dispose(); state.textContent = ''; return; }
+    if (!letters) { worker.cancel(); state.textContent = ''; return; }
     state.textContent = '正在查找候选';
     void worker.query(letters).then(value => { if (owner.signal.aborted || epoch !== generation) return; words = value; busy = false; render(); state.textContent = words.length ? '选中候选词即搜索，也可按“搜索”' : '没有候选，可按“搜索”直接用字母搜索'; })
       .catch(() => { if (owner.signal.aborted || epoch !== generation) return; busy = false; render(); state.textContent = '候选暂时无法读取，可按“搜索”直接用字母搜索'; });
   }
   node.append(preview, buffer, candidates, tools, keys, state); refresh();
-  owner.add('keyword-pad-buffer', () => { worker.dispose(); words = []; letters = ''; });
+  owner.add('keyword-pad-buffer', () => { worker.cancel(); words = []; letters = ''; });
   return {
     node, firstId: 'keyword-key-a', keyword: () => keyword,
     set(value: string) { keyword = value; letters = ''; refresh(); },

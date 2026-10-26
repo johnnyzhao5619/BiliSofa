@@ -15,6 +15,13 @@ export class InitialsWorker {
     catch { task.finish(); return Promise.reject(new DomainError('invalid')); }
     return new Promise((resolve, reject) => {
       this.pending = { query, resolve, reject, finish: task.finish };
+      if (!this.start()) { this.fail(); return; }
+      this.send();
+    });
+  }
+  /** Starts the Worker (which loads and parses the dictionary) without asking anything yet. */
+  warm(): void { this.start(); }
+  private start(): boolean {
       if (!this.worker) {
         try {
           const worker = new Worker('initials-worker.js'); this.worker = worker;
@@ -32,10 +39,9 @@ export class InitialsWorker {
             }
             this.send();
           };
-        } catch { this.fail(); return; }
+        } catch { return false; }
       }
-      this.send();
-    });
+      return true;
   }
   private send(): void {
     if (this.flight || !this.pending || !this.worker) return;
@@ -43,6 +49,8 @@ export class InitialsWorker {
     this.timer = setTimeout(() => this.fail(), 5000);
     try { this.worker.postMessage(this.flight); } catch { this.fail(); }
   }
+  /** Drops the waiting question but keeps the Worker and its parsed dictionary (ADR-116). */
+  cancel(): void { this.pending?.reject(new DomainError('cancelled')); this.pending?.finish(); this.pending = undefined; this.owner.invalidate(); }
   private fail(): void { this.pending?.reject(new DomainError('unsupported')); this.dispose(); }
   dispose(): void {
     this.pending?.reject(new DomainError('cancelled')); this.pending?.finish(); this.pending = undefined;
@@ -50,3 +58,8 @@ export class InitialsWorker {
     this.worker?.terminate(); this.worker = undefined;
   }
 }
+let shared: InitialsWorker | undefined;
+/** ADR-116: one dictionary Worker for the whole app. Keyword pads cancel their questions instead of disposing it;
+ * it is warmed when the home is idle and closed only when the app leaves (pagehide). */
+export function sharedInitials(): InitialsWorker { return shared ??= new InitialsWorker(); }
+export function releaseInitials(): void { shared?.dispose(); shared = undefined; }

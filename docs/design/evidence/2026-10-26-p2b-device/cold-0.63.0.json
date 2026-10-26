@@ -1,0 +1,32 @@
+[
+ {
+  "label": "0.63.0",
+  "build": "0.63.0",
+  "clear": false,
+  "hadSnapshot": false,
+  "firstCardMs": 2374,
+  "freshRowMs": 2374,
+  "searchFirstMs": 600,
+  "searchAgainMs": 544
+ },
+ {
+  "label": "0.63.0",
+  "build": "0.63.0",
+  "clear": false,
+  "hadSnapshot": false,
+  "firstCardMs": 2422,
+  "freshRowMs": 2422,
+  "searchFirstMs": 576,
+  "searchAgainMs": 591
+ },
+ {
+  "label": "0.63.0",
+  "build": "0.63.0",
+  "clear": false,
+  "hadSnapshot": false,
+  "firstCardMs": 2254,
+  "freshRowMs": 2254,
+  "searchFirstMs": 598,
+  "searchAgainMs": 531
+ }
+]

@@ -1,5 +1,7 @@
 import {localOverlayPreferences} from '../platform/overlay-preferences-store.ts';
 import {productSettings} from './product-settings.ts';
+import {releaseInitials,sharedInitials} from '../platform/initials-worker.ts';
+import {homeSnapshots} from '../platform/home-snapshot-store.ts';
 import {productAccount} from './product-account.ts';
 import {productFrame} from './product-frame.ts';
 import {productPage,type ProductMemory} from './product-page.ts';
@@ -57,7 +59,7 @@ const root = document.querySelector<HTMLElement>('#pages')!, overlays = document
 {let notice:ReturnType<typeof setTimeout>|undefined;new MutationObserver(()=>{clearTimeout(notice);const text=feedback.textContent??'';if(text&&!/正在|未确认|扫码|登录|失效|重新打开|权限/.test(text))notice=setTimeout(()=>{if(feedback.textContent===text)feedback.textContent='';},4000);}).observe(feedback,{childList:true,characterData:true,subtree:true});}
 const repository = protectedAccountStore(), login = new LoginCoordinator(repository, () => new IdentityWorkerClient());
 const queues=localQueues();
-const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.63.0'); diagnostics.add('app','started'); onListSkips(() => diagnostics.add('app','list_items_skipped'));document.body.classList.add('product-instant');document.body.classList.add('product-stream');
+const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.64.1'); diagnostics.add('app','started'); onListSkips(() => diagnostics.add('app','list_items_skipped'));document.body.classList.add('product-instant');document.body.classList.add('product-stream');
 const histories=searchHistories();
 const writes = new RetainedWrites(writeJournal());
 function writeSummary(id:string){const old=writes.summary(id),video=interactionWrites().summary(id);return old&&video?{total:old.total+video.total,unknown:old.unknown+video.unknown}:undefined;}
@@ -120,7 +122,7 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
     });
   };
   // ADR-113 #4 (P1-2b): the account lives in Settings as its first group; the account route opens Settings on it.
-  if (route.page === 'settings' || route.page === 'account') {const view=localSettings(owner, shell, profile, diagnostics, () => state?.kind === 'active' ? writeSummary(state.account.id) : 'guest',history,state?.kind==='active'?()=>{shell.openModal('read-cache-clear',child=>readCacheClear(child,shell,workspace),'cache-keep');}:undefined,queue,()=>{void shell.navigateTop({page:'home'});});const probeDevice=vodRuntimeStatus(),probeCaps=probeDevice?.kind==='available'?probeDevice.capabilities:undefined;
+  if (route.page === 'settings' || route.page === 'account') {const view=localSettings(owner, shell, profile, diagnostics, () => state?.kind === 'active' ? writeSummary(state.account.id) : 'guest',history,state?.kind==='active'?()=>{shell.openModal('read-cache-clear',child=>readCacheClear(child,shell,workspace),'cache-keep');}:undefined,queue,()=>{void shell.navigateTop({page:'home'});},state?.kind==='active'?()=>homeSnapshots().clearAccount(state.account.id):undefined);const probeDevice=vodRuntimeStatus(),probeCaps=probeDevice?.kind==='available'?probeDevice.capabilities:undefined;
     // R07 rate probe (ADR-095) lives in 帮助与诊断 and only runs when the viewer starts it.
     const probe=probeCaps?productButton('settings-rate-probe','倍速探查（诊断）',()=>{if(!owner.signal.aborted)shell.openModal('rate-probe',child=>rateProbe(child,shell,probeCaps,()=>openVodAccess(probeCaps),profile),'rate-probe-start');}):undefined;
     const account=accountView();
@@ -137,7 +139,7 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
     // ADR-113: the card menu's 稍后再看 uses the signed-in account's own interaction lane.
     const openInteractions=state?.kind==='active'?(bvid:string)=>workspace.read((runtime,scope,signal)=>{if(!runtime.openInteractions)throw new DomainError('unsupported');return runtime.openInteractions(bvid,scope,signal);},value=>{const lane=value as import('../../../../packages/contracts/src/video-interactions-dto.ts').VideoInteractionAccess;if(!lane||typeof lane.read!=='function'||typeof lane.submit!=='function'||typeof lane.close!=='function')throw new DomainError('invalid');return lane;}):undefined;
     const vod=caps?{caps,open:()=>openVodAccess(caps),openPgc:(seasonId:string)=>openPgcMedia(seasonId,caps),...(openInteractions?{interactions:openInteractions}:{}),playLive:(card:import('../../../../packages/contracts/src/live-search.ts').LiveSearchCard)=>playLive({roomId:card.roomId,title:card.title,owner:card.owner,category:card.category,state:card.state}),...(state?.kind==='active'?{follows:(child:ResourceOwner)=>pgcFollows(child,workspace)}:{})}:undefined;
-    return wrap(productPage(owner,shell,route,productMemory,{profile,queue,history,feedback,diagnostics,workspace,unavailable,vod,libraryEnabled:true,discoveryEnabled:true,collectionsEnabled:true}));
+    return wrap(productPage(owner,shell,route,productMemory,{profile,queue,history,feedback,diagnostics,workspace,unavailable,vod}));
   }
   function accountView():HTMLElement {
   const section = document.createElement('section');
@@ -183,7 +185,7 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
           const retained = document.createElement('p'); retained.textContent = '搜索历史和本机队列也会清除'; modal.append(retained);
           modal.append(button('keep-account', '保留账号', () => { void shell.back(); }), button('confirm-remove', '确认移除', () => {
             void (async () => {
-              await shell.back(); await workspace.select(); forgetProfile(account.id);
+              await shell.back(); await workspace.select(); forgetProfile(account.id); homeSnapshots().clearAccount(account.id);
               const removed = profiles.profile(account.id).clear(); diagnostics.add('local',removed === 'deleted' ? 'deleted' : 'delete_unconfirmed');
               const searchRemoved=histories.profile(account.id).clear(),queueRemoved=queues.profile(account.id).clear();
               if (removed !== 'deleted'||searchRemoved!=='deleted'||queueRemoved!=='deleted') { feedback.textContent = '本地记录清除未确认，账号已保留，可重试移除'; await shell.navigate({ page: 'account' }); return; }
@@ -214,9 +216,11 @@ const visibility = () => {
   else { diagnostics.add('lifecycle','resumed'); void selection(() => workspace.setHidden(false), () => workspace.state.kind === 'active' ? '账号身份已重新确认' : '已返回游客界面'); }
 };
 document.addEventListener('visibilitychange', visibility);
-globalThis.addEventListener('pagehide', () => { disposed = true; document.removeEventListener('visibilitychange', visibility); void publicKernel().close(); void workspace.dispose(); }, { once: true });
+globalThis.addEventListener('pagehide', () => { disposed = true; document.removeEventListener('visibilitychange', visibility); void publicKernel().close(); releaseInitials(); void workspace.dispose(); }, { once: true });
 // ADR-108: boot the public kernel (WASM compile, first TLS) while the first screen and the chooser appear.
 publicKernel().prewarm();
+// ADR-116: the search dictionary loads once, when the first screen has settled (no network; parsing only).
+setTimeout(() => { if (disposed) return; const idle = (globalThis as { requestIdleCallback?: (run: () => void) => void }).requestIdleCallback; if (idle) idle(() => { if (!disposed) sharedInitials().warm(); }); else sharedInitials().warm(); }, 3000);
 // 0.50.0 (ADR-099): a cold start asks who is watching before any private content is read.
 void shell.start().then(() => {
   if (disposed) return;

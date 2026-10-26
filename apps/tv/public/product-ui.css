@@ -155,3 +155,11 @@ body.product-instant #overlays>section.vod-rate-picker{inset:160px 64px auto aut
 .tv-keyword-hint{grid-column:1/-1;margin:0;padding:16px 4px;font-size:var(--tv-fs-aux);color:var(--tv-muted)}
 .tv-keyword-candidates button[hidden],.tv-keyword-hint[hidden]{display:none}
 .tv-keyword-tools button{white-space:nowrap}
+/* ADR-116 categories: one row of direct entries under the rankings; ordinary buttons, no card lift or antennas. */
+.tv-shelf-row.tv-category-row{padding:12px 24px 24px;margin:0 -24px;gap:16px}
+.tv-category-row>button{flex:none;min-height:64px;margin:0;padding:10px 28px;font-size:var(--tv-fs-card)}
+/* ADR-116 综合: one UP row and one 番剧影视 row above the video results, four cards and “全部” each. */
+.tv-search-mixed:empty{display:none}
+.tv-search-mixed-row{display:flex;flex-wrap:wrap;gap:16px;margin:0 0 20px}
+.tv-search-mixed-row>h3{flex:0 0 100%;margin:0;font-size:var(--tv-fs-aux);font-weight:400;color:var(--tv-muted)}
+.tv-search-mixed-row>button{flex:0 0 calc((100% - 64px)/5);min-width:0;margin:0}

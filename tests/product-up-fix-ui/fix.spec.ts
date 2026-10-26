@@ -20,7 +20,7 @@ async function routes(page:Page,mode:'agent-required'|'api'){
  await page.route('**/vod-api/probe.js',r=>r.fulfill({contentType:'text/javascript',body:api}));
 }
 async function category(page:Page){
- await page.locator('[data-focus-id=shelf-categories]').click();await page.locator('[data-focus-id=category-1005]').click();
+ await page.locator('[data-focus-id=shelf-category-1005]').click();
 }
 /** 0.51.2+ (ADR-105) names a risk-control refusal instead of the generic failure text. */
 const failureText=/内容暂时无法加载|B站暂时限制了访问（风控 -352）/;

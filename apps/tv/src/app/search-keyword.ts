@@ -1,5 +1,5 @@
 import { parseSearchKeyword } from '../../../../packages/contracts/src/search.ts';
-import { InitialsWorker } from '../platform/initials-worker.ts';
+import { sharedInitials } from '../platform/initials-worker.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { TvShell } from './tv-shell.ts';
 /** Local keyword entry for search or viewing filters. One shell focus owner. */
@@ -13,7 +13,7 @@ export function searchKeyword(owner:ResourceOwner,shell:TvShell,accepted:(value:
   const tools=document.createElement('div');tools.className='keyword-tools';
   const keys=document.createElement('div');keys.className='keyword-keys';keys.setAttribute('aria-label','字母与数字');
   const footer=document.createElement('div');footer.className='keyword-footer';
-  const worker=new InitialsWorker();owner.add('initials-worker',()=>worker.dispose());
+  const worker=sharedInitials();owner.add('initials-worker',()=>worker.cancel());
   let letters='',keyword='',words:string[]=[],page=0,busy=false,generation=0,submitting=false;
   const button=(id:string,label:string,action:()=>void)=>{const b=document.createElement('button');b.dataset.focusId=id;b.textContent=label;b.addEventListener('click',()=>{if(!owner.signal.aborted&&!submitting)action();});return b;};
   const focus=(id:string)=>modal.querySelector<HTMLButtonElement>(`[data-focus-id="${id}"]`)?.focus();
@@ -54,13 +54,13 @@ export function searchKeyword(owner:ResourceOwner,shell:TvShell,accepted:(value:
   }
   function refresh():void{
     const epoch=++generation;page=0;words=[];busy=!!letters;render();
-    if(!letters){worker.dispose();state.textContent=target==='过滤词'?'本地候选；确认后只添加观看过滤词':`本地候选；确认关键词后搜索${target}`;return;}
+    if(!letters){worker.cancel();state.textContent=target==='过滤词'?'本地候选；确认后只添加观看过滤词':`本地候选；确认关键词后搜索${target}`;return;}
     state.textContent='正在查找本地候选';
     void worker.query(letters).then(value=>{if(owner.signal.aborted||epoch!==generation)return;words=value;busy=false;render();state.textContent=words.length?`本地候选 · 第 1 / ${Math.ceil(words.length/8)} 页`:'无候选，可使用字母/数字或重新输入';}).catch(()=>{if(owner.signal.aborted||epoch!==generation)return;busy=false;render();state.textContent='本地候选加载失败，可重试或返回';});
   }
   shell.modalInput(owner,{back(){if(!letters)return false;letters='';refresh();return true;},key(event){if(submitting)return false;if(/^[a-z0-9]$/i.test(event.key)){if(!event.repeat)append(event.key.toLowerCase());return true;}if(event.key==='Backspace'){if(!event.repeat)remove();return true;}return false;}});
   modal.append(title,preview,buffer,candidates,tools,keys,state,footer);refresh();
   // Input frame's close is expected for submit; parent also checks its own owner.
-  owner.add('keyword-buffer',()=>{worker.dispose();words=[];letters=keyword='';});
+  owner.add('keyword-buffer',()=>{worker.cancel();words=[];letters=keyword='';});
   return modal;
 }

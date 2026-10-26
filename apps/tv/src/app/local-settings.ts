@@ -8,7 +8,7 @@ import type { SearchHistoryRead, SearchHistoryStore } from '../../../../packages
 export function localReadIssue(value: Exclude<LocalRead,{kind:'ok'}>['kind']): string {
   return value === 'corrupt' ? '本地记录损坏，请确认清除后再保存' : value === 'future' ? '本地记录版本不支持，请确认清除后再保存' : value === 'unconfirmed' ? '本地保存结果未确认，请重新读取' : '本地存储不可用';
 }
-export function localSettings(owner: ResourceOwner, shell: TvShell, profile: ProfileStore, diagnostics: AppDiagnostics, writeSummary: () => {total:number;unknown:number} | 'guest' | undefined = () => 'guest', history?: SearchHistoryStore,clearReadCache?:()=>void,queue?:QueueStore,returnHome?:()=>void): HTMLElement {
+export function localSettings(owner: ResourceOwner, shell: TvShell, profile: ProfileStore, diagnostics: AppDiagnostics, writeSummary: () => {total:number;unknown:number} | 'guest' | undefined = () => 'guest', history?: SearchHistoryStore,clearReadCache?:()=>void,queue?:QueueStore,returnHome?:()=>void,forgetSnapshot?:()=>void): HTMLElement {
   const section = document.createElement('section'), heading = document.createElement('h1'); heading.textContent = '设置与本地记录';
   const status = document.createElement('p'); status.setAttribute('role','status');
   const list = document.createElement('p');
@@ -59,7 +59,8 @@ export function localSettings(owner: ResourceOwner, shell: TvShell, profile: Pro
       const modal=document.createElement('section'),title=document.createElement('h2');title.id='clear-local-title';title.textContent='清除当前身份的本地设置与续播？';modal.setAttribute('aria-labelledby',title.id);modal.append(title);
       modal.append(button('local-keep','保留',()=>{void shell.back();}),button('local-confirm-clear','确认清除',()=>{
         if(modalOwner.signal.aborted)return;
-        const result=profile.clear();diagnostics.add('local',result==='deleted'?'deleted':'delete_unconfirmed');
+        // ADR-116: clearing this identity's local data also forgets its 为你推荐 snapshot.
+        const result=profile.clear();forgetSnapshot?.();diagnostics.add('local',result==='deleted'?'deleted':'delete_unconfirmed');
         void shell.back().then(()=>{if(!owner.signal.aborted){read();status.textContent=result==='deleted'?'当前身份的本地记录已清除':'本地清除未确认，请重新读取后核查';}});
       }));return modal;
     });

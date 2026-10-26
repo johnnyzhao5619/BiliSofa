@@ -16,10 +16,12 @@ import { libraryCard } from '../ui/library-card.ts';
 import { clockTime, durationText } from '../ui/content-card.ts';
 import { keywordPad } from './keyword-pad.ts';
 import { frameBack } from './product-frame.ts';
+/** ADR-116: 综合 (the default) shows video results with one UP row and one 番剧影视 row above them. */
+export type SearchTab = SearchType | 'all';
 export interface SearchMemory {
   keyword?: string;
-  type: SearchType;
-  pages: Partial<Record<SearchType, number>>;
+  type: SearchTab;
+  pages: Partial<Record<SearchTab, number>>;
 }
 interface Services {
   history: SearchHistoryStore;
@@ -36,7 +38,8 @@ interface Services {
   videoCard?(card: PopularCard): { choose(): void; hold: HoldHandlers };
   openUp?(up: { mid: string; name: string; fans: number; videos: number }): void;
 }
-const types = [['video', '视频'], ['up', 'UP主'], ['pgc', '番剧影视']] as const;
+const types = [['all', '综合'], ['video', '视频'], ['up', 'UP主'], ['pgc', '番剧影视']] as const;
+const MIXED = 4;
 /** Shared query and type state; no SDK/network globals or page-level key owner. */
 export function productSearch(owner: ResourceOwner, shell: TvShell, memory: SearchMemory, services: Services): HTMLElement {
   const button = (id: string, label: string, action: () => void) => productButton(id, label, () => { if (!owner.signal.aborted) action(); });
@@ -64,8 +67,9 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
   grid.setAttribute('aria-label', '搜索结果');
   const paging = document.createElement('div');
   paging.className = 'tv-paging';
-  const reader = new ProductSearchRead(owner);
-  let art = new CoverArt(), epoch = 0, busy = false, blocked = false, committedPage = memory.pages[memory.type] ?? 1, noMore = true;
+  const reader = new ProductSearchRead(owner), mixedReader = new ProductSearchRead(owner, 'product-search-mixed');
+  let mixedEpoch = 0;
+  let art = new CoverArt(), epoch = 0, busy = false, blocked = false, noMore = true;
   const closeArt = () => art.close();
   owner.signal.addEventListener('abort', closeArt, { once: true });
   owner.add('search-art', () => { owner.signal.removeEventListener('abort', closeArt); art.close(); });
@@ -99,17 +103,13 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
     void read(memory.pages[type] ?? 1, true);
   }));
   tabs.append(...tabButtons);
-  const previous = button('search-previous', '上一页', () => { if (!busy && committedPage > 1)
-    void read(committedPage - 1); });
-  const next = button('search-next', '下一页', () => { if (!busy && !noMore && committedPage < 25)
-    void read(committedPage + 1); });
   const refresh = button('search-refresh', '刷新', () => { if (!busy && memory.keyword && !blocked)
     void read(1,true,true); });
-  paging.append(previous, next, refresh);
-  const feed=new ContinuousGrid(owner,grid,{load:page=>read(page),restored:page=>{committedPage=page;memory.pages[memory.type]=page;},top:()=> 'search-type-'+memory.type,left:()=> 'keyword-key-f',bottom:()=> 'search-refresh'});
-  if(feed)previous.hidden=next.hidden=true;
+  paging.append(refresh);
+  const mixed = document.createElement('div'); mixed.className = 'tv-search-mixed'; mixed.setAttribute('aria-label', '综合结果');
+  const feed=new ContinuousGrid(owner,grid,{load:page=>read(page),restored:page=>{memory.pages[memory.type]=page;},top:()=> 'search-type-'+memory.type,left:()=> 'keyword-key-f',bottom:()=> 'search-refresh'});
   function detail(entry: SearchEntry): void {
-    if (owner.signal.aborted || busy && !feed)
+    if (owner.signal.aborted)
       return;
     if (entry.kind === 'video' && services.openVideo) { services.openVideo(entry.card); return; }
     if (entry.kind === 'up' && services.openUp) { services.openUp({ mid: entry.card.uid, name: entry.card.name, fans: entry.card.fans, videos: entry.card.videos }); return; }
@@ -169,10 +169,15 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
     // The hidden legacy input must not be a direction target in the one-page layout.
     (pad ? [hot, history] : [input, hot, history]).forEach((b, i, all) => { b.dataset.left = all[i - 1]?.dataset.focusId ?? 'nav-search'; b.dataset.right = all[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = b.dataset.focusId; b.dataset.down = typeId; });
     tabButtons.forEach((b, i) => { b.setAttribute('aria-pressed', String(b.dataset.focusId === typeId)); b.disabled = blocked; b.dataset.left = tabButtons[i - 1]?.dataset.focusId ?? 'nav-search'; b.dataset.right = tabButtons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = 'search-input'; b.dataset.down = buttons[0]?.dataset.focusId ?? 'search-input'; });
-    const enabled = [previous, next, refresh].filter(b => !b.disabled && !b.hidden);
+    const enabled = [refresh].filter(b => !b.disabled && !b.hidden);
+    // 综合 rows sit between the type tabs and the video grid; each row's “全部” opens that tab.
+    const rows = [...mixed.querySelectorAll<HTMLElement>('.tv-search-mixed-row')].map(row => [...row.querySelectorAll<HTMLButtonElement>('button')]);
     buttons.forEach((b, i) => { b.dataset.left = buttons[i - 1]?.dataset.focusId ?? 'nav-search'; b.dataset.right = buttons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = typeId; b.dataset.down = enabled[0]?.dataset.focusId ?? typeId; });
     enabled.forEach((b, i) => { b.dataset.left = enabled[i - 1]?.dataset.focusId ?? 'nav-search'; b.dataset.right = enabled[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = buttons[0]?.dataset.focusId ?? typeId; b.dataset.down = b.dataset.focusId; });
-    feed?.wire();
+    rows.forEach((row, r) => row.forEach((b, i) => { b.dataset.left = row[i - 1]?.dataset.focusId ?? 'nav-search'; b.dataset.right = row[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = rows[r - 1]?.[Math.min(i, rows[r - 1]!.length - 1)]?.dataset.focusId ?? typeId; b.dataset.down = rows[r + 1]?.[Math.min(i, rows[r + 1]!.length - 1)]?.dataset.focusId ?? buttons[Math.min(i, 3)]?.dataset.focusId ?? b.dataset.focusId; }));
+    if (rows.length) { const last = rows.at(-1)!; buttons.slice(0, 4).forEach((b, i) => { b.dataset.up = last[Math.min(i, last.length - 1)]?.dataset.focusId ?? typeId; }); tabButtons.forEach(b => { b.dataset.down = rows[0]![0]?.dataset.focusId ?? b.dataset.down; }); }
+    feed.wire();
+    if (pad) for (const row of rows) if (row[0]) row[0].dataset.left = 'keyword-key-f';
     // The left edge of the result column belongs to the keyword pad. It is explicit: a
     // geometric search from 热搜 would find the nav rail at the same height first.
     if (pad) for (const b of [hot, ...tabButtons, ...enabled, recent.querySelector<HTMLButtonElement>('button')]) { if (b && (!b.dataset.left || b.dataset.left === 'nav-search')) b.dataset.left = 'keyword-key-f'; }
@@ -181,8 +186,6 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
   }
   function controls(): void {
     input.textContent = memory.keyword ? '关键词：' + memory.keyword : '输入关键词';
-    previous.disabled = busy || blocked || committedPage <= 1;
-    next.disabled = busy || blocked || noMore || committedPage >= 25;
     refresh.disabled = busy || blocked || !memory.keyword; refresh.hidden = !memory.keyword;
     input.disabled = hot.disabled = history.disabled = blocked;
     wire();
@@ -190,12 +193,11 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
   async function read(page: number, replace = false, fresh = false): Promise<void> {
     if (owner.signal.aborted || blocked)
       return;
-    const ticket = ++epoch, keyword = memory.keyword, type = memory.type;
+    const ticket = ++epoch, keyword = memory.keyword, tab = memory.type, type: SearchType = tab === 'all' ? 'video' : tab;
     busy = true;
-    const sourceKey=JSON.stringify([keyword,type]);feed?.prepare(sourceKey,replace);const retained=!!feed&&grid.childElementCount>0;
+    const sourceKey=JSON.stringify([keyword,tab]);feed.prepare(sourceKey,replace);const retained=grid.childElementCount>0;
+    if (replace || tab !== 'all') { mixed.replaceChildren(); mixedEpoch++; }
     if (replace) {
-      committedPage = memory.pages[type] ?? 1;
-      if(!feed)art.close();
       art = new CoverArt();
       grid.replaceChildren();
       noMore = true;
@@ -208,25 +210,24 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
       return;
     }
     const active = document.activeElement as HTMLElement | null, focusId = active?.dataset.focusId ?? shell.navigation.current.anchor.focusId;
-    status.textContent = `正在搜索“${keyword}” · ${types.find(t => t[0] === type)![1]}`;
+    status.textContent = `正在搜索“${keyword}” · ${types.find(t => t[0] === tab)![1]}`;
     try {
       const result = await reader.read(type, keyword, page, fresh);
       if (owner.signal.aborted || ticket !== epoch)
         return;
-      if(!feed)art.close();
       art = new CoverArt();
-      committedPage = page;
-      memory.pages[type] = page;
+      memory.pages[tab] = page;
       noMore = result.noMore;
       const rendered=result.items.map((entry, i) => {
         const title = entry.kind === 'up' ? entry.card.name : entry.card.title;
         const subtitle = entry.kind === 'video' ? [entry.card.owner, durationText(entry.card.durationSec)].filter(Boolean).join(' · ') : entry.kind === 'up' ? `${entry.card.videos} 投稿 · ${entry.card.fans} 粉丝` : `${entry.card.category || '番剧影视'} · ${entry.card.status || '更新未提供'}`;
         const cover = entry.kind === 'video' ? entry.card.cover : undefined;
         const a = entry.kind === 'video' ? services.videoCard?.(entry.card) : undefined;
-        return libraryCard({ id: 'search-card-' + (feed?(page-1)*4+i:i), title, subtitle, badge: type === 'up' ? 'UP主' : type === 'pgc' ? '番剧影视' : '视频', ...(cover ? { cover } : {}) }, owner.signal, a ? () => a.choose() : () => detail(entry), art, a?.hold);
+        return libraryCard({ id: 'search-card-' + ((page-1)*4+i), title, subtitle, badge: type === 'up' ? 'UP主' : type === 'pgc' ? '番剧影视' : '视频', ...(cover ? { cover } : {}) }, owner.signal, a ? () => a.choose() : () => detail(entry), art, a?.hold);
       });
-      if(feed){const currentArt=art;feed.commit(sourceKey,page,rendered,result.noMore,25,1,()=>currentArt.close());}else grid.replaceChildren(...rendered);
-      status.textContent = `“${keyword}” · ${types.find(t => t[0] === type)![1]} · ${result.items.length ? feed?'向下浏览更多':'第 ' + page + ' 页' : '暂无结果'}${page === 10 && !noMore ? ' · 已到本次浏览上限' : ''}`;
+      {const currentArt=art;feed.commit(sourceKey,page,rendered,result.noMore,25,1,()=>currentArt.close());}
+      status.textContent = `“${keyword}” · ${types.find(t => t[0] === tab)![1]} · ${result.items.length ? '向下浏览更多' : '暂无结果'}${page === 10 && !noMore ? ' · 已到本次浏览上限' : ''}`;
+      if (tab === 'all' && page === 1 && !mixed.childElementCount) void mixedRows(mixedEpoch, keyword);
       controls();
       const now = document.activeElement as HTMLElement | null;
       if (!retained && !document.querySelector('#overlays>section') && (now === active || now === document.body || node.contains(now))) {
@@ -235,7 +236,7 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
       }
     }
     catch (error) {
-      feed?.failure();
+      feed.failure();
       if (owner.signal.aborted || ticket !== epoch)
         return;
       blocked = error instanceof DomainError && error.code === 'unknown'; focusResults = false;
@@ -249,8 +250,23 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
       }
     }
   }
-  if (pad) { const main = document.createElement('div'), split = document.createElement('div'); main.className = 'tv-search-main'; split.className = 'tv-search-split'; main.append(tools, tabs, status, recent, grid, paging); split.append(pad.node, main); node.append(lead, title, split); }
-  else node.append(lead, title, tools, tabs, status, grid, paging);
+  /** ADR-116: after the videos, the first UP and 番剧影视 results, one request each and one after the other. A row
+   * that fails, is empty, or is overtaken by another read is simply not shown. */
+  async function mixedRows(ticket: number, keyword: string): Promise<void> {
+    // Its own reader and its own epoch: the grid reading its next page does not cancel these rows.
+    for (const [kind, label] of [['up', 'UP主'], ['pgc', '番剧影视']] as const) {
+      let items: SearchEntry[];
+      try { items = (await mixedReader.read(kind, keyword, 1)).items.slice(0, MIXED); } catch { if (owner.signal.aborted || ticket !== mixedEpoch) return; continue; }
+      if (owner.signal.aborted || ticket !== mixedEpoch || memory.type !== 'all' || memory.keyword !== keyword) return;
+      if (!items.length) continue;
+      const row = document.createElement('div'), heading = document.createElement('h3'); row.className = 'tv-search-mixed-row'; heading.textContent = label;
+      const cards = items.map((entry, i) => libraryCard({ id: `search-mixed-${kind}-${i}`, title: entry.kind === 'up' ? entry.card.name : entry.card.title, subtitle: entry.kind === 'up' ? `${entry.card.videos} 投稿 · ${entry.card.fans} 粉丝` : entry.kind === 'pgc' ? [entry.card.category, entry.card.status].filter(Boolean).join(' · ') : '', badge: label }, owner.signal, () => detail(entry), art));
+      const all = button(`search-mixed-${kind}-all`, `全部${label}`, () => tabButtons.find(b => b.dataset.focusId === 'search-type-' + kind)?.click());
+      row.append(heading, ...cards, all); mixed.append(row); wire();
+    }
+  }
+  if (pad) { const main = document.createElement('div'), split = document.createElement('div'); main.className = 'tv-search-main'; split.className = 'tv-search-split'; main.append(tools, tabs, status, recent, mixed, grid, paging); split.append(pad.node, main); node.append(lead, title, split); }
+  else node.append(lead, title, tools, tabs, status, mixed, grid, paging);
   controls();
   void read(memory.pages[memory.type] ?? 1);
   return node;

@@ -1,0 +1,62 @@
+[
+ {
+  "label": "0.64.0-none",
+  "build": "0.64.0",
+  "clear": true,
+  "hadSnapshot": false,
+  "firstCardMs": 2499,
+  "freshRowMs": 2499,
+  "searchFirstMs": 213,
+  "searchAgainMs": 80
+ },
+ {
+  "label": "0.64.0-snapshot",
+  "build": "0.64.0",
+  "clear": false,
+  "hadSnapshot": true,
+  "firstCardMs": 1817,
+  "freshRowMs": 2469,
+  "searchFirstMs": 138,
+  "searchAgainMs": 108
+ },
+ {
+  "label": "0.64.0-none",
+  "build": "0.64.0",
+  "clear": true,
+  "hadSnapshot": false,
+  "firstCardMs": 2351,
+  "freshRowMs": 2351,
+  "searchFirstMs": 186,
+  "searchAgainMs": 123
+ },
+ {
+  "label": "0.64.0-snapshot",
+  "build": "0.64.0",
+  "clear": false,
+  "hadSnapshot": true,
+  "firstCardMs": 2042,
+  "freshRowMs": 2707,
+  "searchFirstMs": 124,
+  "searchAgainMs": 167
+ },
+ {
+  "label": "0.64.0-none",
+  "build": "0.64.0",
+  "clear": true,
+  "hadSnapshot": false,
+  "firstCardMs": 2472,
+  "freshRowMs": 2472,
+  "searchFirstMs": 168,
+  "searchAgainMs": 116
+ },
+ {
+  "label": "0.64.0-snapshot",
+  "build": "0.64.0",
+  "clear": false,
+  "hadSnapshot": true,
+  "firstCardMs": 2021,
+  "freshRowMs": 2679,
+  "searchFirstMs": 129,
+  "searchAgainMs": 145
+ }
+]

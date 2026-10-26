@@ -2,6 +2,7 @@ import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import type { HotSearchTerm } from '../../../../packages/contracts/src/hot-search.ts';
 import { SessionManager } from '../../../../packages/bili-client/src/session.ts';
 import { KernelHotSearch } from '../platform/public-lanes.ts';
+import { homeSnapshots } from '../platform/home-snapshot-store.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { TvShell } from './tv-shell.ts';
 /** Public terms are transient; choosing one explicitly enters the normal search. */
@@ -32,26 +33,30 @@ export function hotSearch(owner:ResourceOwner,shell:TvShell,accepted:(keyword:st
       node.dataset.up=i<2?'hot-refresh':'hot-term-'+(i-2);
       node.dataset.down=i+2<slice.length?'hot-term-'+(i+2):next.disabled?'hot-back':'hot-next';list.append(node);
     });
-    if(section.isConnected)(list.querySelector<HTMLButtonElement>('button')??refresh).focus();
+    if(section.isConnected&&!list.contains(document.activeElement))(list.querySelector<HTMLButtonElement>('button')??refresh).focus();
   }
   async function read():Promise<void>{
     if(busy||owner.signal.aborted)return;
-    busy=true;terms=[];page=0;list.replaceChildren();refresh.disabled=previous.disabled=next.disabled=true;status.textContent='正在读取热搜';back.focus();
+    // ADR-116: the last terms (no older than a day) stay on screen while the list refreshes.
+    const shown=terms.length>0;
+    busy=true;if(!shown){terms=[];page=0;list.replaceChildren();back.focus();}refresh.disabled=previous.disabled=next.disabled=true;status.textContent=shown?'正在更新热搜，可先选上次的词':'正在读取热搜';
     sessions.invalidate();const task=sessions.begin('search-hot');
     const abort=()=>{sessions.invalidate();};owner.signal.addEventListener('abort',abort,{once:true});
     try{
       const result=await worker.run({version:1,scope:task.scope,operation:'public-search-hot'},task.signal);
       if(owner.signal.aborted||!sessions.accepts(task.scope))return;
       if(result.kind!=='ok'){
-        status.textContent=result.kind==='api_error'?`热搜接口暂不可用（API ${result.apiCode}），可手动刷新`:`热搜读取失败（${result.code}），可手动刷新`;
+        status.textContent=shown?'显示的是上次的热搜，可手动刷新':result.kind==='api_error'?`热搜接口暂不可用（API ${result.apiCode}），可手动刷新`:`热搜读取失败（${result.code}），可手动刷新`;
         return;
       }
-      terms=result.items;
-    }catch(error){if(!owner.signal.aborted)status.textContent=error instanceof DomainError&&error.code==='unknown'?'资源关闭未确认，请重新打开应用':'热搜读取未确认，可返回或手动刷新';}
+      terms=result.items;page=0;if(terms.length)homeSnapshots().writeHot(terms);
+    }catch(error){if(!owner.signal.aborted)status.textContent=error instanceof DomainError&&error.code==='unknown'?'资源关闭未确认，请重新打开应用':shown?'显示的是上次的热搜，可手动刷新':'热搜读取未确认，可返回或手动刷新';}
     finally{
       owner.signal.removeEventListener('abort',abort);task.finish();busy=false;
-      if(!owner.signal.aborted){refresh.disabled=false;if(terms.length||status.textContent==='正在读取热搜')render();else refresh.focus();}
+      if(!owner.signal.aborted){refresh.disabled=false;const note=status.textContent;if(terms.length||note==='正在读取热搜'){render();if(shown&&note!=='正在更新热搜，可先选上次的词')status.textContent=note;}else refresh.focus();}
     }
   }
-  section.append(heading,back,refresh,previous,next,status,list);void read();return section;
+  section.append(heading,back,refresh,previous,next,status,list);
+  const last=homeSnapshots().readHot();if(last){terms=last;render();}
+  void read();return section;
 }

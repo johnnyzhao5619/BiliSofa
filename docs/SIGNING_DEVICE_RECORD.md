@@ -4,6 +4,8 @@
 
 | 工件 | 当前结论 |
 | --- | --- |
+| 0.64.1 加载中的货架行可越过（ADR-116） | **已签名并升级安装/启动（平台确认，不清数据）**；未签名`54b7e4a6…436a`，签名`81f9632d…b6f2`（证书预检PASS，权限不变）；设备验证见[证据](design/evidence/2026-10-26-p2b-device/README.md) |
+| 0.64.0 首页快照、分区直达与搜索综合（ADR-116） | **已签名并升级安装/启动（平台确认，不清数据）**；未签名`0dba7d8d…7523`，签名`bbd6f27b…9691`（证书预检PASS，权限不变）；原生与Worker与0.63.0逐字节相同；设备验证见[证据](design/evidence/2026-10-26-p2b-device/README.md) |
 | 0.63.0 逐项来源检查与7天媒体上限（ADR-115） | **已签名并升级安装/启动（平台确认，不清数据）**；未签名`7c65c013…63b4`，签名`34a18c82…769f`（证书预检PASS，权限不变）；设备验证见[证据](design/evidence/2026-10-26-p1-1c/README.md)，超长视频未验证 |
 | 0.62.0 账号并入设置与按键开销（ADR-113 P1-2b） | **已签名并升级安装/启动（平台确认，不清数据）**；未签名`ca3a311b…fd6a`，签名`6f9f7bbe…3864`（证书预检PASS，权限不变）；设备验证见[证据](design/evidence/2026-10-26-p1-2b/README.md) |
 | 0.61.1 关闭模糊背景（ADR-114第3项） | **已签名并升级安装/启动（平台确认，不清数据）**；未签名`2901d15e…ba96`，签名`747fdfbd…768c`（证书预检PASS，权限不变）；首页方向键复测见[证据](design/evidence/2026-10-26-p2a-device/README.md) |
@@ -42,6 +44,6 @@
 | 0.38.0冻结 | 倍速USER PASS；关注invalid/点赞-403/互动慢/跳动缺图未通过；[用户事实](design/evidence/2026-10-22-direct/USER_ACCEPTANCE.md) |
 | 0.37.0及以前冻结 | 原最小通过组与失败保持；不覆盖原工件或把旧UI通过扩展为新设备通过 |
 
-当前安装为0.63.0（见表首行）。各版本均未卸载或清数据，未执行代理账号POST。已签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。单一产品构建（ADR-107）输出`dist/bilisofa-app`；原生打包目录：`vod/`←`build/vod-failover`，`vod-api/`、`pgc-read/`←各自的`-failover`目录（0.63.0起与0.58.0逐字节相同，ADR-115），`overlay-read/`←`build/overlay-read-subtitle`，`pgc-follow/`←`build/pgc-follow-status`，公共与账号只读内核←`build/public-kernel`、`build/account-read-kernel`（ADR-108），完整对照见[工具说明](../tools/README.md)。本机只保留当前与上一版未签名包。
+当前安装为0.64.1（见表首行）。各版本均未卸载或清数据，未执行代理账号POST。已签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。单一产品构建（ADR-107）输出`dist/bilisofa-app`；原生打包目录：`vod/`←`build/vod-failover`，`vod-api/`、`pgc-read/`←各自的`-failover`目录（0.63.0起与0.58.0逐字节相同，ADR-115），`overlay-read/`←`build/overlay-read-subtitle`，`pgc-follow/`←`build/pgc-follow-status`，公共与账号只读内核←`build/public-kernel`、`build/account-read-kernel`（ADR-108），完整对照见[工具说明](../tools/README.md)。本机只保留当前与上一版未签名包。
 
 [当前验收](CURRENT_DEVICE_TEST.md) · [0.38.0原记录](archive/2026-10-22-direct-038/SIGNING_DEVICE_RECORD.md)

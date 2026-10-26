@@ -22,11 +22,6 @@ import { clockTime } from '../ui/content-card.ts';
 import { beginResume, takeResume } from './resume-memory.ts';
 import { productHome, type HomeMemory, type HomeServices } from './product-home.ts';
 import { productRecommendations } from './product-recommendations.ts';
-import { searchKeyword } from './search-keyword.ts';
-import { hotSearch } from './hot-search.ts';
-import { historyPanel } from './search-history.ts';
-import { userSearch } from './user-search.ts';
-import { pgcSearch } from './pgc-search.ts';
 import { pgcFollows } from './pgc-follows.ts';
 import { productSeason } from './product-season.ts';
 import { vodWorkspace } from './vod-workspace.ts';
@@ -48,9 +43,6 @@ export interface ProductMemory {
     catalog?:FollowingMemory;
 }
 interface Services {
-    libraryEnabled?:boolean;
-    discoveryEnabled?:boolean;
-    collectionsEnabled?:boolean;
     profile: ProfileStore;
     queue: QueueStore;
     history: SearchHistoryStore;
@@ -82,7 +74,7 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
         delete memory.following;
         delete memory.catalog;
     }
-    if(dependencies.libraryEnabled&&memory.viewRevision!==workspace.viewRevision){memory.viewRevision=workspace.viewRevision;for(const kind of ['watchlater','history','folders']as const){delete memory.library.pages[kind];delete memory.library.anchors[kind];}if(memory.home.source.kind==='recommend')memory.home.source.page=1;for(const entry of [memory.following,memory.catalog])if(entry){entry.pages={};entry.anchors={};}}
+    if(memory.viewRevision!==workspace.viewRevision){memory.viewRevision=workspace.viewRevision;for(const kind of ['watchlater','history','folders']as const){delete memory.library.pages[kind];delete memory.library.anchors[kind];}if(memory.home.source.kind==='recommend')memory.home.source.page=1;for(const entry of [memory.following,memory.catalog])if(entry){entry.pages={};entry.anchors={};}}
     const play: HomeServices['play'] = (card, position, open) => { if (owner.signal.aborted)
         return; if (!vod) {
         feedback.textContent = typeof unavailable==='string'?unavailable:'当前平台缺少可用播放器';
@@ -102,7 +94,7 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
         const primary = productButton('resume-continue', `继续观看 · ${clockTime(resume.timeMs / 1000)}`, () => go(resume.timeMs)); primary.className = 'tv-primary';
         actions.append(primary, productButton('resume-start', '从头播放', () => go(0))); panel.append(heading, note, actions); return panel;
     }, 'resume-continue'); }, 0);
-    const services: HomeServices = { profile, queue, feedback, play, playPart: playTarget, ...(parts ? { parts } : {}), ...(vod ? { prefetch: (query: { bvid: string; part: number }) => new VodPrefetch(query, () => vod.open()) } : {}), ...(dependencies.libraryEnabled?{local:{play:playTarget,openLibrary:()=>{memory.library.tab='local';void shell.navigateTop({page:'library'});}}}:{}), ...(state?.kind === 'active' ? { name: state.account.name, recommend: productRecommendations(owner, workspace) } : {}) };
+    const services: HomeServices = { profile, queue, feedback, play, playPart: playTarget, ...(parts ? { parts } : {}), ...(vod ? { prefetch: (query: { bvid: string; part: number }) => new VodPrefetch(query, () => vod.open()) } : {}), local:{play:playTarget,openLibrary:()=>{memory.library.tab='local';void shell.navigateTop({page:'library'});}}, ...(state?.kind === 'active' ? { name: state.account.name, account: state.account.id, recommend: productRecommendations(owner, workspace) } : {}) };
     // ADR-103: UP pages from the detail page and search; the UP page's own details have no UP action.
     services.openUp = up => { if (!owner.signal.aborted) openUpPage(shell, services, up); };
     // ADR-113: 稍后再看 from a card menu: the account's interaction panel reads the real state, then writes once.
@@ -114,7 +106,7 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
     const cardActions = (card: PopularCard, part = 1, context?: VideoDetailContext) => videoCard(owner, shell, services, card, { part, ...context });
     // ADR-105: with an active account, the two risk-controlled public lists use its own session (read-only).
     if (state?.kind === 'active') { const signed = signedPublicReads(workspace); services.signedCategory = (id, signal) => signed.category(id, signal); services.signedUp = (mid, page, signal) => signed.up(mid, page, signal); }
-    if(route.page==='library'&&dependencies.libraryEnabled)return productLibrary(owner,shell,{profile,queue,workspace,feedback,play:playTarget,...({openVideo:(card:PopularCard,part:number,context?:VideoDetailContext)=>openVideoDetail(owner,shell,services,card,{part,...context}),videoCard:cardActions}),playQueue:(items,index,continuous)=>{if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}queuePlayback(shell,items,index,continuous,profile,diagnostics,feedback,vod);}},memory.library);
+    if(route.page==='library')return productLibrary(owner,shell,{profile,queue,workspace,feedback,play:playTarget,...({openVideo:(card:PopularCard,part:number,context?:VideoDetailContext)=>openVideoDetail(owner,shell,services,card,{part,...context}),videoCard:cardActions}),playQueue:(items,index,continuous)=>{if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}queuePlayback(shell,items,index,continuous,profile,diagnostics,feedback,vod);}},memory.library);
     if (route.page === 'home') {
         // ADR-113: the first three home visits per identity show the hold hint under a focused card (per-viewer convenience).
         holdHint(identity, owner);
@@ -124,12 +116,8 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
         seasonId: string;
     }) => { if (owner.signal.aborted)
         return; if(!vod){feedback.textContent=typeof unavailable==='string'?unavailable:'当前平台缺少可用播放器';return;} shell.openModal('product-season', child => productSeason(child, shell, profile, diagnostics, feedback, vod.caps, () => vod.openPgc(card.seasonId), source => createGuestProbePlayer(source.url), state?.kind === 'active' ? pgcFollows(child, workspace) : undefined), 'season-play'); return; };
-    if((route.page==='following'||route.page==='catalog')&&dependencies.collectionsEnabled){const page=route.page;return productFollowing(owner,shell,page,memory[page]??={tab:page==='following'?'updates':'hot',pages:{},anchors:{}},{workspace,openSeason,play:target=>{const saved=profile.readPart(target.bvid,target.part);playTarget(target,saved.kind==='ok'&&saved.value?saved.value.timeMs:0);},openSearch:type=>{memory.discovery??={type,pages:{}};memory.discovery.type=type;void shell.navigateTop({page:'search'});},...({openVideo:(card:PopularCard,part:number)=>openVideoDetail(owner,shell,services,card,{part}),videoCard:(card:PopularCard,part:number)=>cardActions(card,part)}),...({openCatalog:(tab:'bangumi'|'drama')=>{const catalog=memory.catalog??={tab,pages:{},anchors:{}};catalog.tab=tab;void shell.navigateTop({page:'catalog'});}})});}
-    if(route.page==='search'&&dependencies.discoveryEnabled)return productSearch(owner,shell,memory.discovery??=( {type:'video',pages:{}}),{history,profile,queue,feedback,play,openSeason,...({openVideo:(card:PopularCard)=>openVideoDetail(owner,shell,services,card),videoCard:(card:PopularCard)=>cardActions(card),openUp:(up:{mid:string;name:string;fans:number;videos:number})=>{if(!owner.signal.aborted)openUpPage(shell,services,up);}})});
-    if (route.page === 'search')
-        return productHome(owner, shell, services, memory.search, { remember: keyword => { history.remember(keyword); }, tools: accepted => { const tools = document.createElement('div'); tools.className = 'tv-search-actions'; tools.append(productButton('search-input', '输入关键词', () => { shell.openModal('search-keyword', child => searchKeyword(child, shell, accepted), 'keyword-key-a'); }), productButton('search-hot', '热搜', () => { shell.openModal('search-hot', child => hotSearch(child, shell, accepted), 'hot-back'); }), productButton('search-history', '搜索历史', () => { shell.openModal('search-history', child => historyPanel(child, shell, history, accepted), 'history-back'); }), productButton('search-up', '搜索UP主', () => { shell.openModal('up-keyword', child => searchKeyword(child, shell, keyword => { if (!owner.signal.aborted)
-                shell.openModal('user-search', nested => userSearch(nested, shell, keyword, history, diagnostics, feedback, card => play(card, 0)), 'user-search-back'); }, 'UP主'), 'keyword-key-a'); }), productButton('search-pgc', '搜索番剧影视', () => { shell.openModal('pgc-keyword', child => searchKeyword(child, shell, keyword => { if (!owner.signal.aborted)
-                shell.openModal('pgc-search', nested => pgcSearch(nested, shell, keyword, history, diagnostics, feedback, openSeason), 'pgc-search-back'); }, '番剧'), 'keyword-key-a'); })); return tools; } });
+    if(route.page==='following'||route.page==='catalog'){const page=route.page;return productFollowing(owner,shell,page,memory[page]??={tab:page==='following'?'updates':'hot',pages:{},anchors:{}},{workspace,openSeason,play:target=>{const saved=profile.readPart(target.bvid,target.part);playTarget(target,saved.kind==='ok'&&saved.value?saved.value.timeMs:0);},openSearch:type=>{memory.discovery??={type,pages:{}};memory.discovery.type=type;void shell.navigateTop({page:'search'});},...({openVideo:(card:PopularCard,part:number)=>openVideoDetail(owner,shell,services,card,{part}),videoCard:(card:PopularCard,part:number)=>cardActions(card,part)}),...({openCatalog:(tab:'bangumi'|'drama')=>{const catalog=memory.catalog??={tab,pages:{},anchors:{}};catalog.tab=tab;void shell.navigateTop({page:'catalog'});}})});}
+    if(route.page==='search')return productSearch(owner,shell,memory.discovery??=( {type:'all',pages:{}}),{history,profile,queue,feedback,play,openSeason,...({openVideo:(card:PopularCard)=>openVideoDetail(owner,shell,services,card),videoCard:(card:PopularCard)=>cardActions(card),openUp:(up:{mid:string;name:string;fans:number;videos:number})=>{if(!owner.signal.aborted)openUpPage(shell,services,up);}})});
     // Every other destination returned above; 投屏 is the last one here.
     if (route.page === 'cast') {const local=profile.read();return productCast(owner,shell,feedback,local.kind==='ok'?local.value.preferences.jumpSeconds:10,diagnostics);}
     return section;

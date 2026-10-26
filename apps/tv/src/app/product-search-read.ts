@@ -27,10 +27,11 @@ export class ProductSearchRead {
   private readonly pgc = new KernelPgcSearch();
   private generation = 0;
   private confirmed = true;
-  constructor(private readonly owner: ResourceOwner) {
+  /** `id` names the owner resource; the 综合 rows (ADR-116) use a second reader so they never cancel the grid's reads. */
+  constructor(private readonly owner: ResourceOwner, id = 'product-search-read') {
     const abort = () => this.sessions.invalidate();
     owner.signal.addEventListener('abort', abort, { once: true });
-    owner.add('product-search-read', async () => { owner.signal.removeEventListener('abort', abort); this.sessions.dispose(); await this.cancel(); });
+    owner.add(id, async () => { owner.signal.removeEventListener('abort', abort); this.sessions.dispose(); await this.cancel(); });
   }
   private async cancel(): Promise<void> {
     this.sessions.invalidate();

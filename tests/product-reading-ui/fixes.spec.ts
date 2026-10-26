@@ -8,7 +8,7 @@ test('S1 fix: Left returns to the keyboard from any result row and from 热搜; 
  const errors=await setup(page,false);await search(page);
  await expect(page.locator('[data-focus-id=search-card-4]')).toBeAttached();await page.keyboard.press('ArrowDown');expect(await focused(page)).toBe('search-card-4');await page.keyboard.press('ArrowLeft');expect(await focused(page)).toMatch(/^keyword-/);
  await page.locator('[data-focus-id=search-card-3]').focus();await page.keyboard.press('ArrowRight');expect(await focused(page)).toBe('search-card-3');await page.keyboard.press('ArrowDown');expect(await focused(page)).toBe('search-card-7');
- await page.locator('[data-focus-id=search-type-video]').focus();await page.keyboard.press('ArrowLeft');expect(await focused(page)).toMatch(/^keyword-/);
+ await page.locator('[data-focus-id=search-type-all]').focus();await page.keyboard.press('ArrowLeft');expect(await focused(page)).toMatch(/^keyword-/); // ADR-116: 综合 is the first tab
  await page.locator('[data-focus-id=keyword-clear]').click();await expect(page.locator('[data-focus-id=search-hot]')).toBeVisible();await page.locator('[data-focus-id=search-hot]').focus();await page.keyboard.press('ArrowLeft');expect(await focused(page)).toMatch(/^keyword-/);expect(errors).toEqual([]);
 });
 test('S1 fix: a visible 搜索 button searches the chosen keyword or the typed letters as they are',async({page})=>{
