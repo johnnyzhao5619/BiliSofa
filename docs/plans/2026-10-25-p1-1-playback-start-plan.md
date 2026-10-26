@@ -1,6 +1,6 @@
 # P1-1 播放起播改动方案
 
-2026-10-25。对应[ADR-110](../adr/110-playback-start-prefetch-handoff-and-overlay-lane.md)。状态：**用户确认4项决定（2026-10-25）；P1-1a在0.57.0实现并已签名安装，设备结果见ADR-110“设备结果”；P1-1b在0.59.0实现（未签名/未安装），见ADR-112**。分支`perf/p0-network-kernel`。
+2026-10-25。对应[ADR-110](../adr/110-playback-start-prefetch-handoff-and-overlay-lane.md)。状态：**用户确认4项决定（2026-10-25）；P1-1a在0.57.0实现并已签名安装，设备结果见ADR-110“设备结果”；P1-1b在0.59.0实现并安装，见ADR-112**。分支`perf/p0-network-kernel`。
 
 ## 目标
 
@@ -31,7 +31,7 @@
 
 ## P1-1b 改动清单
 
-对应[ADR-112](../adr/112-parallel-source-checks-and-overlay-binding-reuse.md)，**用户确认4项决定（2026-10-25）；0.59.0已实现（未签名/未安装），见ADR-112“实现”**。上一版概要写的是直接改`vod-api.c`和常驻叠加层Worker；核对代码后改为下表（原因见ADR-112背景）。
+对应[ADR-112](../adr/112-parallel-source-checks-and-overlay-binding-reuse.md)，**用户确认4项决定（2026-10-25）；0.59.0已实现并签名安装，设备结果见ADR-112“设备结果”（B各省约0.5 s，A无可测收益）**。上一版概要写的是直接改`vod-api.c`和常驻叠加层Worker；核对代码后改为下表（原因见ADR-112背景）。
 
 | 范围 | 文件 | 改动 |
 | --- | --- | --- |

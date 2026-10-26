@@ -1,0 +1,198 @@
+{
+  "label": "baseline-0.58.0",
+  "at": "2026-10-26T04:12:13.288Z",
+  "runs": [
+    {
+      "card": 1,
+      "resumeOffered": false,
+      "danmakuSwitched": true,
+      "preferenceSeen": true,
+      "playToSourceMs": 3050,
+      "sourceToBufferMs": 3530,
+      "sourceToFrameMs": 9505,
+      "playToFrameMs": 12555,
+      "frameToDanmakuMs": 3493,
+      "commentsMs": 4027,
+      "stages": [
+        {
+          "atMs": 329,
+          "text": "正在读取视频信息"
+        },
+        {
+          "atMs": 3050,
+          "text": "正在获取播放源"
+        },
+        {
+          "atMs": 6580,
+          "text": "缓冲中"
+        },
+        {
+          "atMs": 12634,
+          "text": "正在读取账号互动状态"
+        }
+      ]
+    },
+    {
+      "card": 2,
+      "resumeOffered": false,
+      "danmakuSwitched": true,
+      "preferenceSeen": true,
+      "playToSourceMs": 3549,
+      "sourceToBufferMs": 2762,
+      "sourceToFrameMs": 6454,
+      "playToFrameMs": 10003,
+      "frameToDanmakuMs": 20243,
+      "commentsMs": 3661,
+      "stages": [
+        {
+          "atMs": 435,
+          "text": "正在读取视频信息"
+        },
+        {
+          "atMs": 3549,
+          "text": "正在获取播放源 · 已自动选择相近的可用画质 / 音轨"
+        },
+        {
+          "atMs": 6311,
+          "text": "缓冲中 · 已自动选择相近的可用画质 / 音轨"
+        },
+        {
+          "atMs": 10003,
+          "text": "已自动选择相近的可用画质 / 音轨 · 正在读取账号互动状态"
+        },
+        {
+          "atMs": 13954,
+          "text": "已自动选择相近的可用画质 / 音轨 · 账号互动状态已读取"
+        }
+      ]
+    },
+    {
+      "card": 3,
+      "resumeOffered": false,
+      "danmakuSwitched": true,
+      "preferenceSeen": true,
+      "playToSourceMs": 3144,
+      "sourceToBufferMs": 1527,
+      "sourceToFrameMs": 7120,
+      "playToFrameMs": 10264,
+      "frameToDanmakuMs": 3239,
+      "commentsMs": 3713,
+      "stages": [
+        {
+          "atMs": 194,
+          "text": "正在读取视频信息"
+        },
+        {
+          "atMs": 3144,
+          "text": "正在获取播放源 · 已自动选择相近的可用画质 / 音轨"
+        },
+        {
+          "atMs": 4671,
+          "text": "缓冲中 · 已自动选择相近的可用画质 / 音轨"
+        },
+        {
+          "atMs": 9321,
+          "text": "已自动选择相近的可用画质 / 音轨 · 正在读取账号互动状态"
+        },
+        {
+          "atMs": 12986,
+          "text": "已自动选择相近的可用画质 / 音轨 · 账号互动状态已读取"
+        }
+      ]
+    },
+    {
+      "card": 4,
+      "resumeOffered": false,
+      "danmakuSwitched": true,
+      "preferenceSeen": true,
+      "playToSourceMs": 2762,
+      "sourceToBufferMs": 1779,
+      "sourceToFrameMs": 6269,
+      "playToFrameMs": 9031,
+      "frameToDanmakuMs": 3351,
+      "commentsMs": 3598,
+      "stages": [
+        {
+          "atMs": 298,
+          "text": "正在读取视频信息"
+        },
+        {
+          "atMs": 2762,
+          "text": "正在获取播放源 · 已自动选择相近的可用画质 / 音轨"
+        },
+        {
+          "atMs": 4541,
+          "text": "缓冲中 · 已自动选择相近的可用画质 / 音轨"
+        },
+        {
+          "atMs": 9258,
+          "text": "已自动选择相近的可用画质 / 音轨 · 正在读取账号互动状态"
+        }
+      ]
+    },
+    {
+      "card": 5,
+      "resumeOffered": false,
+      "danmakuSwitched": true,
+      "preferenceSeen": true,
+      "playToSourceMs": 3040,
+      "sourceToBufferMs": 1085,
+      "sourceToFrameMs": 6723,
+      "playToFrameMs": 9763,
+      "frameToDanmakuMs": 3225,
+      "commentsMs": 4116,
+      "stages": [
+        {
+          "atMs": 223,
+          "text": "正在读取视频信息"
+        },
+        {
+          "atMs": 3040,
+          "text": "正在获取播放源 · 已自动选择相近的可用画质 / 音轨"
+        },
+        {
+          "atMs": 4125,
+          "text": "缓冲中 · 已自动选择相近的可用画质 / 音轨"
+        },
+        {
+          "atMs": 7517,
+          "text": "已自动选择相近的可用画质 / 音轨 · 正在读取账号互动状态"
+        },
+        {
+          "atMs": 11174,
+          "text": "已自动选择相近的可用画质 / 音轨 · 账号互动状态已读取"
+        }
+      ]
+    },
+    {
+      "card": 6,
+      "resumeOffered": false,
+      "danmakuSwitched": true,
+      "preferenceSeen": true,
+      "playToSourceMs": 3152,
+      "sourceToBufferMs": 1373,
+      "sourceToFrameMs": 5112,
+      "playToFrameMs": 8264,
+      "frameToDanmakuMs": 3488,
+      "commentsMs": 3608,
+      "stages": [
+        {
+          "atMs": 211,
+          "text": "正在读取视频信息"
+        },
+        {
+          "atMs": 3152,
+          "text": "正在获取播放源 · 已自动选择相近的可用画质 / 音轨"
+        },
+        {
+          "atMs": 4525,
+          "text": "缓冲中 · 已自动选择相近的可用画质 / 音轨"
+        },
+        {
+          "atMs": 8354,
+          "text": "已自动选择相近的可用画质 / 音轨 · 正在读取账号互动状态"
+        }
+      ]
+    }
+  ]
+}
