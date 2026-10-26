@@ -4,7 +4,7 @@ import { parseSearchRequest, parseSearchResult, type SearchRequest, type SearchR
 import { parseUserSearchRequest, parseUserSearchResult, type UserSearchCard, type UserSearchRequest, type UserSearchResult } from '../../../../packages/contracts/src/user-search.ts';
 import { parsePgcSearchRequest, parsePgcSearchResult, type PgcSearchCard, type PgcSearchRequest, type PgcSearchResult } from '../../../../packages/contracts/src/pgc-search.ts';
 import { parseHotSearchRequest, parseHotSearchResult, type HotSearchRequest, type HotSearchResult } from '../../../../packages/contracts/src/hot-search.ts';
-import type { KernelRequest } from '../../../../packages/contracts/src/public-kernel.ts';
+import { parseVideoViewRequest, parseVideoViewResult, type KernelRequest, type VideoViewRequest, type VideoViewResult } from '../../../../packages/contracts/src/public-kernel.ts';
 import { publicKernel, type PublicKernel } from './public-kernel.ts';
 import { BatchedPages, type BatchRead } from './batched-pages.ts';
 /** ADR-108: anonymous public reads through the resident kernel, with the same `run`/`dispose`
@@ -97,6 +97,10 @@ export class KernelVisitor extends KernelLane<RankingRequest & { operation: 'pub
 }
 export class KernelHotSearch extends CachedLane<HotSearchRequest, HotSearchResult> {
   constructor(kernel?: () => PublicKernel) { super(parseHotSearchRequest, parseHotSearchResult, 300000, undefined, kernel); }
+}
+/** ADR-110: the detail page's parts and facts, reused for ten minutes. */
+export class KernelVideoView extends CachedLane<VideoViewRequest, VideoViewResult> {
+  constructor(kernel?: () => PublicKernel) { super(parseVideoViewRequest, parseVideoViewResult, 600000, (q, r) => r.kind !== 'ok' || r.detail.parts.length > 0 || q.bvid.length === 12, kernel); }
 }
 /** Drops every cached public list (设置 → 清除读取缓存, or after an identity change). */
 export function clearPublicLists(): void { memo.clear(); for (const pages of [popularPages, videoPages, userPages, pgcPages]) pages.invalidate(); }

@@ -7,6 +7,9 @@ import { parsePgcSearchBody } from '../../../packages/bili-client/src/pgc-search
 import { parseHotSearchBody } from '../../../packages/bili-client/src/hot-search.ts';
 import { parsePublicSearchKeys, searchSigningKeyword } from '../../../packages/bili-client/src/search-wbi.ts';
 import { runtimeUserAgent } from '../../../packages/contracts/src/up-archives.ts';
+import { parseVodDetail } from '../../../packages/bili-client/src/vod-catalog.ts';
+import { DomainError } from '../../../packages/contracts/src/index.ts';
+import { VIEW_PARTS } from '../../../packages/contracts/src/public-kernel.ts';
 /** ADR-108: the resident public read kernel. One WASM instance stays loaded; each
  * request reuses its connections. Raw bodies and headers never leave this Worker:
  * only the lane result shape (bounded display data) is posted. */
@@ -17,7 +20,7 @@ interface Native {
   _kernel_begin(operation: number): number; _kernel_stop(): number; _kernel_close(): void;
 }
 const port = globalThis as unknown as { onmessage: ((event: MessageEvent) => void) | null; postMessage(value: KernelEvent): void; importScripts(path: string): void; Module: Record<string, unknown>; navigator?: { userAgent?: unknown } };
-const POPULAR = 1, RANKING = 2, CATEGORY = 3, PGC_RANKING = 4, PGC_INDEX = 5, UP = 6, VISITOR = 7, SEARCH_NAV = 8, SEARCH = 9, HOT = 10;
+const POPULAR = 1, RANKING = 2, CATEGORY = 3, PGC_RANKING = 4, PGC_INDEX = 5, UP = 6, VISITOR = 7, SEARCH_NAV = 8, SEARCH = 9, HOT = 10, VIEW = 11;
 let native: Native | undefined, phase: 'idle' | 'loading' | 'ready' | 'closing' | 'closed' = 'idle';
 let current: { requestId: string; request: KernelRequest; keys?: WbiKeys; fetched?: WbiKeys; step: number; token: number } | undefined, tokens = 0;
 const queued: unknown[] = [];
@@ -27,13 +30,17 @@ function input(value: string): boolean {
   if (!Number.isSafeInteger(at) || at < 0 || cap !== 1024 || at + cap + 1 > n.HEAPU8.length || bytes.length > cap || bytes.includes(0)) return false;
   n.HEAPU8.fill(0, at, at + cap + 1); n.HEAPU8.set(bytes, at); return true;
 }
-const prefix = (r: KernelRequest) => r.operation === 'guest-popular' ? 'guest' : r.operation === 'public-video-search' ? 'search' : r.operation === 'public-user-search' ? 'up' : r.operation === 'public-pgc-search' ? 'pgc' : r.operation === 'public-search-hot' ? 'hot' : 'ranking';
+const prefix = (r: KernelRequest) => r.operation === 'public-video-view' ? 'view' : r.operation === 'guest-popular' ? 'guest' : r.operation === 'public-video-search' ? 'search' : r.operation === 'public-user-search' ? 'up' : r.operation === 'public-pgc-search' ? 'pgc' : r.operation === 'public-search-hot' ? 'hot' : 'ranking';
 /** The existing lane result shape, so the main-thread lane checks it with its own parser. */
 function shape(r: KernelRequest, data: Record<string, unknown>): Record<string, unknown> {
+  // ADR-110: the view keeps its own small shape: an error code, or the detail the page shows.
+  if (r.operation === 'public-video-view') { const { kind, code, detail } = data as { kind: string; code?: string; detail?: unknown }; return { version: 1, scope: r.scope, operation: r.operation, closed: true, kind: kind === 'ok' ? 'ok' : 'error', ...(kind === 'ok' ? { detail } : { code: viewCode(code) }) }; }
   const extra = r.operation === 'public-category-ranking' ? { categoryId: r.categoryId } : r.operation === 'public-pgc-ranking' ? { seasonType: r.seasonType, span: r.span, page: r.page, seasons: [] } : r.operation === 'public-up-archives' ? { mid: r.mid, page: r.page, archives: [] } : {};
   const paged = r.operation === 'guest-popular' || isSearchRequest(r);
   return { version: 1, scope: r.scope, operation: r.operation, closed: true, items: [], ...(paged ? { noMore: true } : {}), ...extra, ...data };
 }
+/** Fixed failure words for the view; transport and HTTP failures are network, cURL 28 a timeout. */
+function viewCode(code: unknown): string { const s = String(code ?? ''); return /^(invalid|cancelled|timeout|network|login|permission|unsupported)$/.test(s) ? s : /transport_28$/.test(s) ? 'timeout' : /invalid_response/.test(s) ? 'invalid' : 'network'; }
 function finish(data: Record<string, unknown>): void {
   const active = current; if (!active) return; current = undefined;
   post({ version: 1, type: 'result', requestId: active.requestId, result: shape(active.request, data), ...(active.fetched ? { keys: active.fetched } : {}) });
@@ -48,6 +55,7 @@ function operation(r: KernelRequest, keys: WbiKeys | undefined): [number, string
   case 'public-up-archives': return [UP, `${r.mid}|${r.page}`];
   case 'public-visitor': return [VISITOR, ''];
   case 'public-search-hot': return [HOT, ''];
+  case 'public-video-view': return [VIEW, r.bvid];
   default:
     if (!keys) return [SEARCH_NAV, ''];
     return [SEARCH, `${r.operation === 'public-pgc-search' ? 2 : r.operation === 'public-user-search' ? 1 : 0}|${r.page}|${keys.img}|${keys.sub}|${Math.floor(Date.now() / 1000)}|${r.keyword}`];
@@ -80,6 +88,13 @@ function responded(token: number): void {
   try {
     if (nav) { issue = 'public_keys'; active.fetched = parsePublicSearchKeys(body(16384)); begin(); return; }
     if (r.operation === 'guest-popular') { const p = parsePopularBody(body(524288), 20); finish({ kind: p.apiCode === 0 ? 'ok' : 'api_error', status, code: p.apiCode === 0 ? 'guest.popular_ok' : 'guest.api_error', ...p }); return; }
+    if (r.operation === 'public-video-view') {
+      try {
+        const d = parseVodDetail(body(4194304), r.bvid).summary;
+        finish({ kind: 'ok', detail: { partCount: d.parts.length, parts: d.parts.slice(0, VIEW_PARTS).map(p => ({ part: p.part, title: p.title, durationMs: p.durationMs })), ...(d.owner ? { owner: d.owner } : {}), ...(d.about ? { about: d.about } : {}) } });
+      } catch (error) { finish({ kind: 'error', code: error instanceof DomainError ? error.code : 'invalid' }); }
+      return;
+    }
     if (r.operation === 'public-search-hot') { const p = parseHotSearchBody(body(65536)); finish({ kind: p.apiCode === 0 ? 'ok' : 'api_error', status, code: p.apiCode === 0 ? 'hot.ok' : 'hot.api_error', ...p }); return; }
     if (isSearchRequest(r)) {
       issue = 'utf8'; const raw = body(524288);

@@ -17,7 +17,6 @@ import { productButton } from './product-frame.ts';
 import { contentLoadFailureText } from './user-messages.ts';
 import { categoryPicker } from './category-picker.ts';
 import { homeShelves } from './product-shelves.ts';
-import type { VodAbout } from '../../../../packages/contracts/src/vod-catalog.ts';
 import { frameBack } from './product-frame.ts';
 export interface HomeSource {
     kind: 'popular' | 'ranking' | 'category' | 'recommend' | 'search';
@@ -39,9 +38,6 @@ export interface HomeServices extends VideoDetailServices {
     feedback: HTMLElement;
     name?: string;
     local?:{play(target:{bvid:string;part:number},position:number):void;openLibrary():void};
-    play(card: PopularCard, position: number): void;
-    playPart?(target: { bvid: string; part: number }, position: number): void;
-    parts?(bvid: string, signal: AbortSignal): Promise<{ items: { part: number; title: string; durationMs: number }[]; about?: VodAbout }>;
     recommend?(page: number, signal: AbortSignal, refresh: boolean): Promise<{
         items: PopularCard[];
         noMore: boolean;

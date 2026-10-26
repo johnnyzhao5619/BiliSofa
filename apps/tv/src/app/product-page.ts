@@ -14,6 +14,7 @@ import type { AppDiagnostics } from './app-diagnostics.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { TvShell } from './tv-shell.ts';
 import { productButton } from './product-frame.ts';
+import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import { clockTime } from '../ui/content-card.ts';
 import { beginResume, takeResume } from './resume-memory.ts';
 import { productHome, type HomeMemory, type HomeServices } from './product-home.ts';
@@ -38,6 +39,8 @@ import { signedPublicReads } from './public-signed.ts';
 import type { PopularCard } from '../../../../packages/contracts/src/index.ts';
 import { openUpPage } from './product-up.ts';
 import { openVideoDetail, type VideoDetailContext } from './product-video-detail.ts';
+import { KernelVideoView } from '../platform/public-lanes.ts';
+import { VodPrefetch } from './vod-prefetch.ts';
 export interface ProductMemory {
     identity: string;
     viewRevision?:number;
@@ -82,14 +85,16 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
         delete memory.catalog;
     }
     if(dependencies.libraryEnabled&&memory.viewRevision!==workspace.viewRevision){memory.viewRevision=workspace.viewRevision;for(const kind of ['watchlater','history','folders']as const){delete memory.library.pages[kind];delete memory.library.anchors[kind];}if(memory.home.source.kind==='recommend')memory.home.source.page=1;for(const entry of [memory.following,memory.catalog])if(entry){entry.pages={};entry.anchors={};}}
-    const play: HomeServices['play'] = (card, position) => { if (owner.signal.aborted)
+    const play: HomeServices['play'] = (card, position, open) => { if (owner.signal.aborted)
         return; if (!vod) {
         feedback.textContent = typeof unavailable==='string'?unavailable:'当前平台缺少可用播放器';
         return;
-    } beginResume(identity); shell.openModal('vod-player', child => vodWorkspace(child, shell, feedback, { bvid: card.bvid, part: 1 }, profile, diagnostics, vod.caps, () => vod.open(), source => createGuestProbePlayer(source.url), queue, false, position), 'vod-toggle'); };
-    const playTarget=(target:{bvid:string;part:number},position:number)=>{if(owner.signal.aborted)return;if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}beginResume(identity);shell.openModal('vod-player',child=>vodWorkspace(child,shell,feedback,target,profile,diagnostics,vod.caps,()=>vod.open(),source=>createGuestProbePlayer(source.url),queue,false,position),'vod-toggle');};
-    // Detail-page part list (ADR-091): one bounded read whose access is closed before any player opens.
-    const parts: HomeServices['parts'] = vod ? async (bvid, signal) => { const access = await vod.open(); try { const detail = (await access.read({ bvid, part: 1 }, signal)).detail; return { items: detail.parts.map(p => ({ part: p.part, title: p.title, durationMs: p.durationMs })), ...(detail.about ? { about: detail.about } : {}), ...(detail.owner ? { owner: detail.owner } : {}) }; } finally { await access.close(); } } : undefined;
+    } beginResume(identity); shell.openModal('vod-player', child => vodWorkspace(child, shell, feedback, { bvid: card.bvid, part: 1 }, profile, diagnostics, vod.caps, open ?? (() => vod.open()), source => createGuestProbePlayer(source.url), queue, false, position), 'vod-toggle'); };
+    const playTarget=(target:{bvid:string;part:number},position:number,open?:()=>Promise<import('../../../../packages/contracts/src/vod-runtime.ts').VodAccess>)=>{if(owner.signal.aborted)return;if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}beginResume(identity);shell.openModal('vod-player',child=>vodWorkspace(child,shell,feedback,target,profile,diagnostics,vod.caps,open??(()=>vod.open()),source=>createGuestProbePlayer(source.url),queue,false,position),'vod-toggle');};
+    // Detail-page parts and facts (ADR-091): ADR-110 reads them through the public kernel's video view, so no playback
+    // module starts for them; the playback read itself is prefetched separately and handed to the player.
+    const view = new KernelVideoView();
+    const parts: HomeServices['parts'] = vod ? async (bvid, signal) => { const r = await view.run({ version: 1, scope: { accountId: 'guest', generation: 1, mediaSessionId: 'detail', requestId: 'view' }, operation: 'public-video-view', bvid }, signal); if (r.kind === 'error') throw new DomainError(r.code); return { items: r.detail.parts, count: r.detail.partCount, ...(r.detail.about ? { about: r.detail.about } : {}), ...(r.detail.owner ? { owner: r.detail.owner } : {}) }; } : undefined;
     // ADR-093 G4: after Home released the player, the first page shown offers to continue that item; it never autoplays.
     const resume = vod ? takeResume(identity) : undefined;
     if (resume) setTimeout(() => { if (owner.signal.aborted || shell.restartRequired) return; shell.openModal('resume-detail', child => {
@@ -99,7 +104,7 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
         const primary = productButton('resume-continue', `继续观看 · ${clockTime(resume.timeMs / 1000)}`, () => go(resume.timeMs)); primary.className = 'tv-primary';
         actions.append(primary, productButton('resume-start', '从头播放', () => go(0))); panel.append(heading, note, actions); return panel;
     }, 'resume-continue'); }, 0);
-    const services: HomeServices = { profile, queue, feedback, play, playPart: playTarget, ...(parts ? { parts } : {}), ...(dependencies.libraryEnabled?{local:{play:playTarget,openLibrary:()=>{memory.library.tab='local';void shell.navigateTop({page:'library'});}}}:{}), ...(state?.kind === 'active' ? { name: state.account.name, recommend: productRecommendations(owner, workspace) } : {}) };
+    const services: HomeServices = { profile, queue, feedback, play, playPart: playTarget, ...(parts ? { parts } : {}), ...(vod ? { prefetch: (query: { bvid: string; part: number }) => new VodPrefetch(query, () => vod.open()) } : {}), ...(dependencies.libraryEnabled?{local:{play:playTarget,openLibrary:()=>{memory.library.tab='local';void shell.navigateTop({page:'library'});}}}:{}), ...(state?.kind === 'active' ? { name: state.account.name, recommend: productRecommendations(owner, workspace) } : {}) };
     // ADR-103: UP pages from the detail page and search; the UP page's own details have no UP action.
     services.openUp = up => { if (!owner.signal.aborted) openUpPage(shell, services, up); };
     // ADR-105: with an active account, the two risk-controlled public lists use its own session (read-only).

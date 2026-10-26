@@ -170,7 +170,8 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     if(queueNavigation)title.textContent=queueNavigation.label+' · '+(catalog?title.textContent:'视频播放');
     timeline.textContent = media ? `${(media.timeMs / 1000).toFixed(1)} / ${(media.durationMs / 1000).toFixed(1)} 秒${preview.targetMs === undefined ? '' : ` · 预览 ${(preview.targetMs / 1000).toFixed(1)} 秒（确认后跳转）`}` : '';
     if (terminal) say(terminal);
-    else if (busy || s?.moving || media?.state === 'loading') say('正在读取所选内容和播放源');
+    // ADR-110: name the stage instead of one line for the whole start.
+    else if (busy || s?.moving || media?.state === 'loading') say(advice && advice.includes('重试') ? advice : !catalog ? '正在读取视频信息' : media?.buffering ? '缓冲中' : '正在获取播放源');
     else if (!started) say('是否继续本分P上次在电视观看的位置？');
     else say(media?.seeking ? '正在跳转' : advice || (media?.state === 'paused' ? '已暂停' : media?.state === 'playing' ? ('') : '正在准备'));
     if (controls.contains(document.activeElement) && (document.activeElement as HTMLButtonElement).disabled && !(instant?.busy&&[like,follow,watch].includes(document.activeElement as HTMLButtonElement))) ((toggle.disabled?wake:toggle)).focus();
@@ -213,7 +214,8 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
         if (owner.signal.aborted || ticket !== epoch) throw new DomainError('cancelled');
         recorder.label({title:result.detail.title,partTitle:result.catalog.item.title});
         catalog = result; choice = value;if(!fallback&&(selected||!profile.readTracks?.()))profile.rememberTracks?.(vodPreference(result.catalog,value));advice=fallback?'已自动选择相近的可用画质 / 音轨':''; update();
-      }, backend, finished, value => { if (value.timeMs > 0) observedMs = value.timeMs; recorder.observe(value); },()=>profile.readTracks?.());
+      }, backend, finished, value => { if (value.timeMs > 0) observedMs = value.timeMs; recorder.observe(value); },()=>profile.readTracks?.(),
+      kind => { if (owner.signal.aborted || ticket !== epoch) return; advice = kind === 'line' ? '已切换备用线路，正在重试' : '已降低画质，正在重试'; update(); });
     }, (outcome, closure, fault) => {
       diagnostics.add('media', closure.closed ? outcome === 'ended' ? 'ended' : 'failed' : 'close_unknown'); if (fault) diagnostics.mediaFailure(fault);
       if (!owner.signal.aborted && ticket === epoch) { if(outcome==='ended'&&closure.closed&&queueNavigation&&continuous&&queueNavigation.next){queueNavigation.next(continuous);return;}
@@ -230,7 +232,11 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     reconnects = plan.attempt; reconnectAt = now; catalog = undefined;
     const items = playlist, index = s.index, kind = sequence, ticket = epoch;
     terminal = ''; advice = `网络波动，正在重新连接…（${plan.attempt}/${RECONNECT_LIMIT}）`; update(); diagnostics.add('media', 'reconnect_scheduled');
-    setTimeout(() => { if (!owner.signal.aborted && ticket === epoch) void restart(items, index, kind, plan.resumeMs); }, plan.delayMs);
+    setTimeout(() => { if (!owner.signal.aborted && ticket === epoch) void (async () => {
+      // ADR-110: a timed-out or poisoned access is closed and replaced; a live one is reused for the fresh read.
+      if (access?.usable?.() === false) { const stale = access; access = undefined; await stale.close().catch(() => {}); try { access = await open(); } catch (error) { if (!owner.signal.aborted && ticket === epoch) { terminal = failure(error); update(); } return; } }
+      if (!owner.signal.aborted && ticket === epoch) await restart(items, index, kind, plan.resumeMs);
+    })(); }, plan.delayMs);
     return true;
   }
   function itemPicker(label: string, entries: VodCollectionEntry[], picked: (index: number, item: VodItem) => Promise<void>, current = -1): void {

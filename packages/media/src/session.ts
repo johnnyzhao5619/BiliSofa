@@ -69,18 +69,27 @@ export class MediaSession {
       // Never open over another session's still-live global decoder.
       if (!backend.closureConfirmed()) throw new DomainError('unknown');
       const player = new PlayerCoordinator(backend, reason => {if(reason==='error')this.capture(this.phase,new DomainError('network'));this.note(reason);}); this.player = player;
-      await player.open(source);
+      // ADR-110: a resume first tries to prepare at its position; a refusal falls back to preparing at 0 and seeking.
+      let startedAt = false;
+      if (this.initialMs && backend.startsAt === true) {
+        try { await player.open(source, this.initialMs); startedAt = true; }
+        catch (error) { if (this.closing || error instanceof DomainError && error.code === 'cancelled') throw error; }
+      }
+      if (!startedAt) await player.open(source);
       if (this.closing) return;
       this.snapshot();
-      if (this.initialMs) {
+      if (this.initialMs && !startedAt) {
         this.phase = 'seek';
         if (this.duration && this.initialMs >= this.duration) throw new DomainError('invalid');
         await player.seek(this.initialMs); if (this.closing) return;
       }
+      // A backend that ignored the position reports a time near 0: one ordinary seek puts the viewer back.
+      let checked = !startedAt;
       this.phase = 'playback';
       if (this.initiallyPaused) player.hold(); else player.play();
       this.timer = setInterval(() => {
         if (this.closing) return;
+        if (!checked && player.timeMs > 0 && !player.seeking) { checked = true; if (player.timeMs < this.initialMs - 5000) void player.seek(this.initialMs).catch(() => {}); }
         this.note('tick');
         if (player.state === 'idle') void this.finish('ended');
         else if (player.state === 'error') {this.capture(this.phase,new DomainError('network'));void this.finish('failed');}

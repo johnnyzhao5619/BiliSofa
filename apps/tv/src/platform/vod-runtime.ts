@@ -57,7 +57,7 @@ export class VodRuntime {
   constructor(capabilities: VodCapabilities, account?: PrivateAccount,
     private readonly createWorker: (path: string) => VodWorkerPort = path => new Worker(path),
     private readonly createChannel: () => { port1: MessagePort; port2: MessagePort } = () => new MessageChannel(),
-    private readonly makeNonce: () => string = nonce, private readonly closeMs = 13000, private readonly readMs = 45000, private readonly seasonId?: string) {
+    private readonly makeNonce: () => string = nonce, private readonly closeMs = 13000, private readonly readMs = 15000, private readonly seasonId?: string) {
     this.owner = vodNonce(makeNonce()); this.capabilities = parseVodCapabilities(capabilities);
     this.account = account === undefined ? undefined : parsePrivateAccount(account);
     if (seasonId !== undefined) pgcId(seasonId);
@@ -216,6 +216,7 @@ export class VodRuntime {
     const active: Active = { transport, stop, fault: () => { unknown = true; done.reject(new DomainError('unknown')); stop(); } };
     this.active = active; return transport;
   }
+  get usable(): boolean { return !this.poisoned && !this.closing; }
   close(): Promise<void> {
     if (!this.closing) {
       this.pending?.reply.reject(new DomainError('cancelled'));
@@ -245,7 +246,8 @@ export function createVodAccess(caps: VodCapabilities, account?: PrivateAccount)
 }
 
 export function createPgcAccess(caps:VodCapabilities,seasonId:string,account?:PrivateAccount):PgcAccess{
-  const runtime=new VodRuntime(caps,account,undefined,undefined,undefined,13000,45000,pgcId(seasonId));
+  // ADR-110: readiness and reads give up after 15 s (was 45 s); a timed-out access is replaced on reconnect.
+  const runtime=new VodRuntime(caps,account,undefined,undefined,undefined,13000,15000,pgcId(seasonId));
   return { ...withOverlays(runtime,account,seasonId),season:signal=>runtime.season(signal)};
 }
 function withOverlays(runtime: VodRuntime, account?: PrivateAccount, seasonId?: string): VodAccess {
@@ -254,7 +256,7 @@ function withOverlays(runtime: VodRuntime, account?: PrivateAccount, seasonId?: 
   const overlayPreferences = new OverlayProfiles(storage).profile(account?.id ?? 'guest');
   return {
     read: async (query, signal) => { current = undefined; await Promise.all([overlays.reset(), comments.reset(), interactions?.reset()]); const result = await runtime.read(query, signal); current = result; return result; },
-    transport: choice => runtime.transport(choice), overlayPreferences,
+    transport: choice => runtime.transport(choice), overlayPreferences, usable: () => runtime.usable,
     ...(interactions ? {interactions:(id:string)=>{if(!current||current.catalog.id!==id)throw new DomainError('cancelled');return interactions.access(current.catalog.item.bvid);}} : {}),
     comments: id => {
       if (!current || current.catalog.id !== id) throw new DomainError('cancelled');

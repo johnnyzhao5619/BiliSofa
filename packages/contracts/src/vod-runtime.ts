@@ -11,6 +11,8 @@ export interface VodAccess {
   read(query: { bvid: string; part: number }, signal: AbortSignal): Promise<VodReadResult>;
   transport(choice: VodChoice): { run(signal: AbortSignal, ready: (source: MediaSource) => void): Promise<void>; close(): Promise<void> };
   close(): Promise<void>;
+  /** ADR-110: false once closed or poisoned, so a prefetched access is never handed to a player in that state. */
+  usable?(): boolean;
   overlays?(catalogId: string): OverlayAccess;
   comments?(catalogId: string): CommentAccess;
   interactions?(catalogId: string): VideoInteractionAccess;

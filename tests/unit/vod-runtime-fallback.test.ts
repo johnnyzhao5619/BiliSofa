@@ -9,13 +9,13 @@ const caps:VodCapabilities={video:['avc','hevc','av1'],audio:['aac','eac3','flac
 const item={bvid:'BV0000000001',part:1,title:'合成',durationMs:90000};
 const result:VodReadResult={detail:{title:'合成',owner:'合成',parts:[item]},catalog:{id:'a'.repeat(32),item,videos:[{key:'v0',quality:80,label:'1080P',codec:'hevc',width:1920,height:1080,fps:60,bandwidth:3000000},{key:'v1',quality:80,label:'1080P',codec:'avc',width:1920,height:1080,fps:30,bandwidth:4000000},{key:'v2',quality:64,label:'720P',codec:'avc',width:1280,height:720,fps:30,bandwidth:2000000}],audios:[{key:'a0',codec:'eac3',label:'EAC3',bandwidth:384000},{key:'a1',codec:'aac',label:'AAC',bandwidth:128000}]}};
 async function until(check:()=>boolean){for(let i=0;i<500;i++){if(check())return;await new Promise(resolve=>setTimeout(resolve,1));}assert.fail('bounded synthetic media observation timed out');}
-function fixture(options:{alwaysFail?:boolean;source?:boolean;unknownClose?:boolean;gate?:Promise<void>;during?:boolean}={}){
- const choices:VodChoice[]=[],selected:VodChoice[]=[],events:string[]=[],outcomes:MediaClosure[]=[];let state='NONE',onTime=(n:number)=>{void n;},onError=()=>{};
+function fixture(options:{alwaysFail?:boolean;source?:boolean;unknownClose?:boolean;gate?:Promise<void>;during?:boolean;networkFails?:number}={}){
+ const choices:VodChoice[]=[],selected:VodChoice[]=[],events:string[]=[],outcomes:MediaClosure[]=[],retries:string[]=[];let state='NONE',onTime=(n:number)=>{void n;},onError=()=>{};
  const actor:VodAccess={read:async()=>result,transport(choice){choices.push(choice);let finish!:()=>void;return {run:async(_signal,ready)=>{events.push('source-'+choices.length);if(options.source)throw new DomainError('permission');ready({kind:'vod',url:'http://127.0.0.1:40324/'+'a'.repeat(32)+'/manifest.mpd'});await new Promise<void>(yes=>{finish=yes;});},close:async()=>{events.push('source-closing');await options.gate;if(options.unknownClose)throw new DomainError('unknown');events.push('source-closed');finish?.();}};},close:async()=>{}};
  const owner=new VodCatalogMedia(actor,item,{catalogId:result.catalog.id,videoKey:'v0',audioKey:'a0'},caps,()=>result,(_r,c)=>selected.push(c),()=>{
-  assert.equal(state,'NONE');return {prepare:async(_s,tick,_end,error)=>{state='READY';onTime=tick;onError=error;events.push('prepare');if(options.alwaysFail||choices.length===1&&!options.during)throw new DomainError('unsupported');},play:()=>{state='PLAYING';events.push('play');},pause:()=>{state='PAUSED';},seek:async ms=>{onTime(ms);},close:()=>{state='NONE';events.push('decoder-closed');},closureConfirmed:()=>state==='NONE',screensaver:()=>{},durationMs:()=>90000,failureReason:()=>options.during?'unsupported':undefined} satisfies OwnedPlayerBackend;
- },(_o,c)=>outcomes.push(c));
- return {owner,choices,selected,events,outcomes,tick:(n:number)=>onTime(n),fail:()=>onError()};
+  assert.equal(state,'NONE');return {prepare:async(_s,tick,_end,error)=>{state='READY';onTime=tick;onError=error;events.push('prepare');if(options.networkFails!==undefined){if(choices.length<=options.networkFails)throw new DomainError('network');}else if(options.alwaysFail||choices.length===1&&!options.during)throw new DomainError('unsupported');},play:()=>{state='PLAYING';events.push('play');},pause:()=>{state='PAUSED';},seek:async ms=>{onTime(ms);},close:()=>{state='NONE';events.push('decoder-closed');},closureConfirmed:()=>state==='NONE',screensaver:()=>{},durationMs:()=>90000,failureReason:()=>options.during?'unsupported':undefined} satisfies OwnedPlayerBackend;
+ },(_o,c)=>outcomes.push(c),undefined,undefined,k=>retries.push(k));
+ return {owner,choices,selected,events,outcomes,retries,tick:(n:number)=>onTime(n),fail:()=>onError()};
 }
 test('F06 real high-codec prepare failure switches to actual AVC/AAC only after both closes, preserving pause/position',async()=>{
  let release!:()=>void;const gate=new Promise<void>(yes=>{release=yes;}),f=fixture({gate});f.owner.start(17000,true);
@@ -29,4 +29,10 @@ test('F06 all failing runtime alternatives stop within four unique pairs; source
 });
 test('F06 Back during failed-source drain cancels the downgrade rather than reviving a new decoder',async()=>{
  let release!:()=>void;const gate=new Promise<void>(yes=>{release=yes;}),f=fixture({gate});f.owner.start();await until(()=>f.events.includes('source-closing'));const closing=f.owner.close();release();assert.ok((await closing).closed);await new Promise(yes=>setTimeout(yes,5));assert.equal(f.choices.length,1);assert.equal(f.outcomes.length,0);
+});
+test('ADR-110 a network failure first retries the same tracks (the bridge avoids the failed host), then a lower quality',async()=>{
+ const f=fixture({networkFails:2});f.owner.start();
+ try{await until(()=>f.choices.length===3&&f.owner.snapshot().state==='playing');
+  assert.deepEqual(f.choices.map(c=>c.videoKey),['v0','v0','v1'],'same quality once, then one step down');assert.deepEqual(f.retries,['line','quality']);assert.equal(f.outcomes.length,0);}
+ finally{await f.owner.close();}
 });

@@ -11,7 +11,7 @@ export class PlayerCoordinator {
   acceptedRate: 1 | 2 | undefined;
   private resumeRate: 1 | 2 | undefined;
   constructor(private readonly backend: PlayerBackend, private readonly terminal?: (reason: 'ended' | 'error') => void) {}
-  async open(source: MediaSource): Promise<void> {
+  async open(source: MediaSource, startMs?: number): Promise<void> {
     this.close();
     const epoch = this.epoch;
     this.kind = source.kind;
@@ -21,7 +21,7 @@ export class PlayerCoordinator {
         if (epoch === this.epoch && Number.isFinite(timeMs) && timeMs >= 0) this.timeMs = timeMs;
       }, () => { if (epoch === this.epoch) { this.notify('ended'); this.close(); } }, () => {
         if (epoch === this.epoch) { this.notify('error'); this.fail(); }
-      });
+      }, ...(startMs === undefined ? [] : [startMs]));
       if (epoch !== this.epoch) throw new DomainError('cancelled');
       if (this.state !== 'preparing') throw new DomainError('network');
       this.state = 'ready';

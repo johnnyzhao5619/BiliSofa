@@ -50,7 +50,9 @@ int main(int argc, char **argv) {
     request(KERNEL_SEARCH, line);
     snprintf(line, sizeof(line), "1|1|%s|%ld|up", KEYS, epoch); request(KERNEL_SEARCH, line);
     snprintf(line, sizeof(line), "2|5|%s|%ld|番剧", KEYS, epoch); request(KERNEL_SEARCH, line);
-    request(KERNEL_HOT, "");
+    request(KERNEL_HOT, ""); request(KERNEL_VIEW, "BV1xx411c7mD");
+  } else if (!strcmp(mode, "viewbig")) {
+    request(KERNEL_VIEW, "BV1xx411c7mD"); request(KERNEL_POPULAR, "1");
   } else if (!strcmp(mode, "invalid")) {
     const char *popular[] = {"", "0", "6", "10", "1&ps=50", "a"};
     for (size_t i = 0; i < sizeof(popular) / sizeof(*popular); i++) if (request(KERNEL_POPULAR, popular[i])) return 6;
@@ -59,7 +61,7 @@ int main(int argc, char **argv) {
     snprintf(line, sizeof(line), "0|6|%s|%ld|page", KEYS, epoch); if (request(KERNEL_SEARCH, line)) return 9;
     snprintf(line, sizeof(line), "0|1|%s|%ld|stale", KEYS, epoch - 120); if (request(KERNEL_SEARCH, line)) return 10;
     snprintf(line, sizeof(line), "0|1|XYZ|%s|%ld|key", "4932caff0ff746eab6f01bf08b70ac45", epoch); if (request(KERNEL_SEARCH, line)) return 11;
-    if (request(0, "") || request(KERNEL_MAX_OPERATION + 1, "")) return 12;
+    if (request(0, "") || request(KERNEL_MAX_OPERATION + 1, "") || request(KERNEL_VIEW, "BV1xx411c7m") || request(KERNEL_VIEW, "av170001") || request(KERNEL_VIEW, "BV1xx411c7mD&x=1")) return 12;
     input(VISITOR_VALUE); if (!kernel_set_visitor() || request(KERNEL_VISITOR, "")) return 13;
     input("bad;visitor"); if (kernel_set_visitor() || catalog_visitor[0]) return 14;
     input("short"); if (kernel_set_agent() || kernel_agent[0]) return 15;
@@ -149,11 +151,13 @@ class PublicKernelTest(unittest.TestCase):
             self.assertIn(f'&page={page}&page_size=20&search_type={kind}&wts=', path); self.assertRegex(path, r'&w_rid=[0-9a-f]{32}$')
         self.assertIn('keyword=%E5%8E%9F%E7%A5%9E%20a%7Cb&', searches[0])
         self.assertEqual(seen[11][:2], ('s.search.bilibili.com', '/main/hotword'))
+        # ADR-110: the public video view only, with the video page as referer.
+        self.assertEqual(seen[12][:2], ('api.bilibili.com', '/x/web-interface/view?bvid=BV1xx411c7mD')); self.assertEqual(seen[12][4], 'https://www.bilibili.com/video/BV1xx411c7mD')
         self.assertTrue(all(host == 'api.bilibili.com' for host, *_ in seen[:11]))
         # ADR-104: the runtime string only on catalog reads; ADR-106: the visitor cookie only on category and UP reads.
         agents = [agent for _, _, agent, _, _ in seen]
-        self.assertEqual(agents, ['BiliSofa-W01-Probe/0.0.15'] + [AGENT] * 6 + ['BiliSofa-W01-Probe/0.0.15'] * 5)
-        self.assertEqual([cookie for *_, cookie, _ in seen], [None, None, COOKIE, None, None, COOKIE] + [None] * 6)
+        self.assertEqual(agents, ['BiliSofa-W01-Probe/0.0.15'] + [AGENT] * 6 + ['BiliSofa-W01-Probe/0.0.15'] * 6)
+        self.assertEqual([cookie for *_, cookie, _ in seen], [None, None, COOKIE, None, None, COOKIE] + [None] * 7)
         self.assertEqual(seen[8][4], 'https://search.bilibili.com/'); self.assertIsNone(seen[0][4])
 
     def test_invalid_arguments_never_reach_the_network(self):
@@ -177,6 +181,12 @@ class PublicKernelTest(unittest.TestCase):
         out, _, _ = self.run_case('body', body=b'x' * 524289)
         _, _, transport, size, reject = out[1].split()
         self.assertNotEqual(transport, '0'); self.assertLessEqual(int(size), 524288); self.assertEqual(reject, '1')
+
+    def test_view_takes_a_body_larger_than_the_list_buffer(self):
+        out, _, _ = self.run_case('viewbig', body=b'{"code":0,"data":{"x":"' + b'y' * 700000 + b'"}}')
+        view, popular = out[1].split(), out[2].split()
+        self.assertEqual(view[1:], ['200', '0', str(700000 + len(b'{"code":0,"data":{"x":""}}')), '0'])
+        self.assertNotEqual(popular[2], '0', 'the 512 KiB list buffer still rejects the same body'); self.assertEqual(popular[4], '1')
 
     def test_close_releases_the_session(self):
         out, _, _ = self.run_case('close')

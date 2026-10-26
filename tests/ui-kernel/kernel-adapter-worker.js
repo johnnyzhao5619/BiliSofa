@@ -13,6 +13,8 @@ onmessage = event => {
   if (v.type === 'close') { if (current) current.worker.terminate(); current = undefined; postMessage({ version: 1, type: 'closed', confirmed: true }); return; }
   if (v.type === 'stop') { if (current && current.id === v.requestId) { current.worker.terminate(); current = undefined; postMessage({ version: 1, type: 'stopped', requestId: v.requestId }); } return; }
   if (v.type !== 'request') return;
+  // ADR-110: the fixtures have no view-only route; answer unsupported so the detail page uses its prefetched read.
+  if (v.request.operation === 'public-video-view') { postMessage({ version: 1, type: 'result', requestId: v.requestId, result: { version: 1, scope: v.request.scope, operation: 'public-video-view', closed: true, kind: 'error', code: 'unsupported' } }); return; }
   const id = v.requestId, identity = v.request.operation === 'identity-verify';
   // ADR-109: an identity check goes to the identity Worker (still packaged for QR login) in its own protocol.
   const worker = new Worker(identity ? 'identity-worker.js' : files[v.request.operation] || 'catalog-worker.js');

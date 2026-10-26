@@ -9,14 +9,19 @@ import { CoverArt } from '../platform/cover-art.ts';
 import { clockTime, viewsText } from '../ui/content-card.ts';
 import { productButton } from './product-frame.ts';
 import { openFullText, needsFullText } from './full-text.ts';
+import type { VodAccess } from '../../../../packages/contracts/src/vod-runtime.ts';
+import type { VodPrefetch } from './vod-prefetch.ts';
 /** Local calendar date of a Unix-seconds timestamp, e.g. 2026-10-23. */
 const dateText = (seconds: number) => { const d = new Date(seconds * 1000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 export interface VideoDetailServices {
     profile: ProfileStore;
     queue: QueueStore;
-    play(card: PopularCard, position: number): void;
-    playPart?(target: { bvid: string; part: number }, position: number): void;
-    parts?(bvid: string, signal: AbortSignal): Promise<{ items: { part: number; title: string; durationMs: number }[]; about?: VodAbout; owner?: string }>;
+    /** `open`, when given, is a detail page's prefetched playback read handed to the player (ADR-110). */
+    play(card: PopularCard, position: number, open?: () => Promise<VodAccess>): void;
+    playPart?(target: { bvid: string; part: number }, position: number, open?: () => Promise<VodAccess>): void;
+    parts?(bvid: string, signal: AbortSignal): Promise<{ items: { part: number; title: string; durationMs: number }[]; count?: number; about?: VodAbout; owner?: string }>;
+    /** ADR-110: starts the playback read for this item while the detail page is shown. */
+    prefetch?(query: { bvid: string; part: number }): VodPrefetch;
     /** 0.51.0 (ADR-103): opens the UP page; absent inside an UP page. */
     openUp?(up: { mid: string; name: string }): void;
     /** 0.51.2 (ADR-105): an UP's uploads with the active account's own session. */
@@ -50,9 +55,12 @@ export function openVideoDetail(owner: ResourceOwner, shell: TvShell, services: 
         const saved = services.profile.readPart(card.bvid, part);
         const at = saved.kind === 'ok' && saved.value && (saved.value.timeMs < card.durationSec * 1000 || (!card.durationSec)) ? saved.value.timeMs : 0;
         let opening = false;
+        // ADR-110: the playback read starts now; Play hands it over, leaving without playing closes it.
+        const prefetch = services.prefetch?.({ bvid: card.bvid, part });
+        if (prefetch) child.add('detail-prefetch', () => prefetch.close());
         const play = (position: number) => { if (opening || child.signal.aborted)
-            return; opening = true; void shell.closeOwnedModal(child).then(() => { if (!owner.signal.aborted && !shell.restartRequired)
-            { if (part > 1) services.playPart!({ bvid: card.bvid, part }, position); else services.play(card, position); } }); };
+            return; opening = true; const handed = prefetch?.adopt({ bvid: card.bvid, part }); void shell.closeOwnedModal(child).then(() => { if (!owner.signal.aborted && !shell.restartRequired)
+            { if (part > 1) services.playPart!({ bvid: card.bvid, part }, position, handed); else services.play(card, position, handed); } }); };
         // ADR-105: close this page, then run an entry action (queue play, reorder, removal).
         const closeThen = (action: () => void) => { if (opening || child.signal.aborted)
             return; opening = true; void shell.closeOwnedModal(child).then(() => { if (!owner.signal.aborted && !shell.restartRequired)
@@ -97,7 +105,7 @@ export function openVideoDetail(owner: ResourceOwner, shell: TvShell, services: 
         // The BV id is a support detail, not viewing information.
         id.hidden = true;
         panel.append(header, actions, result, id);
-        if (services.parts && services.playPart) detailParts(owner, shell, services, child, panel, actions, card, summary, by);
+        if (services.parts && services.playPart) detailParts(owner, shell, services, child, panel, actions, card, summary, by, prefetch);
         return panel;
     }, 'detail-play');
 }
@@ -115,20 +123,26 @@ function detailAbout(shell: TvShell, services: VideoDetailServices, card: Popula
     // Long text is clamped to four lines; the full text opens as its own layer and Back returns here.
     if (needsFullText(text)) actions.append(productButton('detail-description', '简介全文', () => openFullText(shell, 'detail-description', '简介', text)));
 }
-function detailParts(owner: ResourceOwner, shell: TvShell, services: VideoDetailServices, child: ResourceOwner, panel: HTMLElement, actions: HTMLElement, card: PopularCard, summary: HTMLElement, by: HTMLElement): void {
+function detailParts(owner: ResourceOwner, shell: TvShell, services: VideoDetailServices, child: ResourceOwner, panel: HTMLElement, actions: HTMLElement, card: PopularCard, summary: HTMLElement, by: HTMLElement, prefetch?: VodPrefetch): void {
     const row = document.createElement('div'), note = document.createElement('p'), controller = new AbortController();
     row.className = 'tv-detail-parts'; note.className = 'tv-secondary'; note.setAttribute('role', 'status'); note.textContent = '正在读取分P';
-    const pending = services.parts!(card.bvid, controller.signal).then(({ items: list, about, owner: readOwner }) => {
+    // ADR-110: facts come from the public kernel's view; if that read fails, the prefetched playback read has the same facts.
+    const facts = services.parts!(card.bvid, controller.signal).catch(error => {
+        if (!prefetch || controller.signal.aborted) throw error;
+        return prefetch.read().then(({ detail }) => ({ items: detail.parts.map(p => ({ part: p.part, title: p.title, durationMs: p.durationMs })), count: detail.parts.length, ...(detail.about ? { about: detail.about } : {}), ...(detail.owner ? { owner: detail.owner } : {}) }));
+    });
+    const pending = facts.then(({ items: list, count, about, owner: readOwner }) => {
         if (child.signal.aborted) return;
         // ADR-104: an entry from 我的/关注/继续观看 may not know the UP name; the detail read supplies it.
         const named = !card.owner && readOwner ? { ...card, owner: readOwner } : card;
         if (named !== card) by.textContent = [named.owner, by.textContent].filter(Boolean).join(' · ');
         if (about) detailAbout(shell, services, named, child, summary, by, actions, about);
-        if (list.length < 2) { note.textContent = ''; return; }
-        note.textContent = `共 ${list.length}P`;
+        const total = count ?? list.length;
+        if (total < 2) { note.textContent = ''; return; }
+        note.textContent = `共 ${total}P`;
         const buttons = list.slice(0, 48).map(item => {
             const saved = services.profile.readPart(card.bvid, item.part), at = saved.kind === 'ok' && saved.value && saved.value.timeMs < item.durationMs ? saved.value.timeMs : 0;
-            return productButton(`detail-part-${item.part}`, `P${item.part} · ${item.title} · ${clockTime(item.durationMs / 1000)}${at ? ' · 看到 ' + clockTime(at / 1000) : ''}`, () => { void shell.closeOwnedModal(child).then(() => { if (!owner.signal.aborted && !shell.restartRequired) services.playPart!({ bvid: card.bvid, part: item.part }, at); }); });
+            return productButton(`detail-part-${item.part}`, `P${item.part} · ${item.title} · ${clockTime(item.durationMs / 1000)}${at ? ' · 看到 ' + clockTime(at / 1000) : ''}`, () => { void shell.closeOwnedModal(child).then(() => { if (!owner.signal.aborted && !shell.restartRequired) services.playPart!({ bvid: card.bvid, part: item.part }, at, prefetch?.adopt({ bvid: card.bvid, part: item.part })); }); });
         });
         const top = [...actions.querySelectorAll<HTMLButtonElement>('button[data-focus-id]')];
         buttons.forEach((b, i) => { b.dataset.left = buttons[i - 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.right = buttons[i + 1]?.dataset.focusId ?? b.dataset.focusId; b.dataset.up = top[0]?.dataset.focusId ?? b.dataset.focusId; b.dataset.down = b.dataset.focusId; });

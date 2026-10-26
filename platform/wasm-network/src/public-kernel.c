@@ -1,6 +1,6 @@
 /* ADR-108: the resident public read kernel. One WASM instance serves every
  * anonymous list read (popular, rankings, PGC lists, UP uploads, visitor
- * identity, WBI search and hot words) over two long-lived easy handles and one
+ * identity, WBI search, hot words and, since ADR-110, the video view) over two long-lived easy handles and one
  * multi handle, so connections and TLS sessions are reused between requests.
  *
  * The URL builders and argument checks of catalog.c, catalog-up.c, catalog-ua.c,
@@ -41,7 +41,9 @@ static void kernel_capture(const char *url, const char *referer, int range);
 #define KERNEL_PAGE_SIZE 20
 #define KERNEL_MAX_BATCH 5
 #define KERNEL_PROBE_AGENT "BiliSofa-W01-Probe/0.0.15"
-enum { KERNEL_POPULAR = 1, KERNEL_RANKING, KERNEL_CATEGORY, KERNEL_PGC_RANKING, KERNEL_PGC_INDEX, KERNEL_UP, KERNEL_VISITOR, KERNEL_SEARCH_NAV, KERNEL_SEARCH, KERNEL_HOT, KERNEL_MAX_OPERATION = KERNEL_HOT };
+enum { KERNEL_POPULAR = 1, KERNEL_RANKING, KERNEL_CATEGORY, KERNEL_PGC_RANKING, KERNEL_PGC_INDEX, KERNEL_UP, KERNEL_VISITOR, KERNEL_SEARCH_NAV, KERNEL_SEARCH, KERNEL_HOT, KERNEL_VIEW, KERNEL_MAX_OPERATION = KERNEL_VIEW };
+/* ADR-110: a video view (parts, collection) can exceed the shared 512 KiB guest buffer; the playback module allows 4 MiB. */
+#define KERNEL_VIEW_CAP 4194304
 
 static CURL *kernel_api, *kernel_search_host, *kernel_current;
 static CURLM *kernel_multi;
@@ -49,6 +51,9 @@ static struct curl_slist *kernel_accept;
 static int kernel_live, kernel_initialized, kernel_active = -1, kernel_bad_close, kernel_captured;
 static char kernel_input[KERNEL_INPUT_CAP + 1], kernel_url[1024], kernel_referer[64], kernel_agent[401];
 static long kernel_connects;
+static unsigned char kernel_view[KERNEL_VIEW_CAP];
+static size_t kernel_view_size;
+static int kernel_view_last;
 static double kernel_request_until;
 
 static double kernel_now(void) {
@@ -64,6 +69,22 @@ static void kernel_capture(const char *url, const char *referer, int range) {
   if (strlen(url) >= sizeof(kernel_url) || (referer && strlen(referer) >= sizeof(kernel_referer))) return;
   strcpy(kernel_url, url); strcpy(kernel_referer, referer ? referer : "");
   kernel_captured = 1;
+}
+static size_t kernel_view_body(char *data, size_t size, size_t count, void *context) {
+  (void)context;
+  if (size && count > KERNEL_VIEW_CAP / size) { guest_rejection = 1; return 0; }
+  size_t bytes = size * count;
+  if (bytes > KERNEL_VIEW_CAP || kernel_view_size > KERNEL_VIEW_CAP - bytes) { guest_rejection = 1; return 0; }
+  memcpy(kernel_view + kernel_view_size, data, bytes); kernel_view_size += bytes; return bytes;
+}
+/* Only the public view of one validated BV id; never playurl, CDN or player routes. */
+static void kernel_video_view(const char *bvid) {
+  guest_reset(); kernel_view_size = 0;
+  if (!guest_bvid_valid(bvid)) return;
+  char url[96], referer[64];
+  snprintf(url, sizeof(url), "https://api.bilibili.com/x/web-interface/view?bvid=%s", bvid);
+  snprintf(referer, sizeof(referer), "https://www.bilibili.com/video/%s", bvid);
+  kernel_capture(url, referer, 0);
 }
 static int kernel_page(const char *s) {
   size_t n = s ? strlen(s) : 0;
@@ -125,6 +146,7 @@ static int kernel_build(int operation, char *input) {
     if (kernel_fields(input, part, 6) && strlen(part[0]) == 1 && part[0][0] >= '0' && part[0][0] <= '2') kernel_search(part[0][0] - '0', part[1], part[2], part[3], part[4], part[5]);
     break;
   case KERNEL_HOT: if (!*input) search_hot(); break;
+  case KERNEL_VIEW: kernel_video_view(input); break;
   default: break;
   }
   return kernel_captured;
@@ -144,7 +166,7 @@ static void kernel_finish(void) {
   kernel_accept = NULL;
   if (kernel_initialized) curl_global_cleanup();
   kernel_initialized = 0;
-  OPENSSL_cleanse(guest_bytes, sizeof(guest_bytes)); guest_size = 0;
+  OPENSSL_cleanse(guest_bytes, sizeof(guest_bytes)); guest_size = 0; OPENSSL_cleanse(kernel_view, kernel_view_size); kernel_view_size = 0;
   OPENSSL_cleanse(kernel_input, sizeof(kernel_input)); OPENSSL_cleanse(kernel_url, sizeof(kernel_url)); OPENSSL_cleanse(catalog_visitor, sizeof(catalog_visitor));
 #ifdef __EMSCRIPTEN__
   emscripten_cancel_main_loop();
@@ -179,8 +201,8 @@ static int kernel_start(void) {
 }
 KERNEL_EXPORT uintptr_t kernel_input_ptr(void) { return (uintptr_t)kernel_input; }
 KERNEL_EXPORT int kernel_input_capacity(void) { return KERNEL_INPUT_CAP; }
-KERNEL_EXPORT uintptr_t kernel_body_ptr(void) { return guest_response_ptr(); }
-KERNEL_EXPORT unsigned int kernel_body_length(void) { return guest_response_length(); }
+KERNEL_EXPORT uintptr_t kernel_body_ptr(void) { return kernel_view_last ? (uintptr_t)kernel_view : guest_response_ptr(); }
+KERNEL_EXPORT unsigned int kernel_body_length(void) { return kernel_view_last ? (unsigned int)kernel_view_size : guest_response_length(); }
 KERNEL_EXPORT int kernel_http_status(void) { return guest_http_status(); }
 KERNEL_EXPORT int kernel_curl_status(void) { return guest_curl_status(); }
 KERNEL_EXPORT int kernel_reject_reason(void) { return guest_reject_reason(); }
@@ -210,23 +232,24 @@ KERNEL_EXPORT int kernel_begin(int operation) {
   if (!built) { guest_reset(); return 0; }
   int catalog = operation >= KERNEL_RANKING && operation <= KERNEL_VISITOR, visitor = (operation == KERNEL_CATEGORY || operation == KERNEL_UP) && catalog_visitor[0];
   CURL *easy = strncmp(kernel_url, "https://s.search.bilibili.com/", 30) ? kernel_api : kernel_search_host;
-  if (curl_easy_setopt(easy, CURLOPT_URL, kernel_url) != CURLE_OK || curl_easy_setopt(easy, CURLOPT_REFERER, kernel_referer[0] ? kernel_referer : NULL) != CURLE_OK ||
+  int view = operation == KERNEL_VIEW; kernel_view_last = view; if (!view) kernel_view_size = 0;
+  if (curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, view ? kernel_view_body : guest_body) != CURLE_OK || curl_easy_setopt(easy, CURLOPT_URL, kernel_url) != CURLE_OK || curl_easy_setopt(easy, CURLOPT_REFERER, kernel_referer[0] ? kernel_referer : NULL) != CURLE_OK ||
       curl_easy_setopt(easy, CURLOPT_USERAGENT, catalog && kernel_agent[0] ? kernel_agent : KERNEL_PROBE_AGENT) != CURLE_OK ||
       curl_easy_setopt(easy, CURLOPT_COOKIE, visitor ? catalog_visitor : NULL) != CURLE_OK ||
-      curl_easy_setopt(easy, CURLOPT_MAXFILESIZE_LARGE, (curl_off_t)guest_limit) != CURLE_OK || curl_multi_add_handle(kernel_multi, easy) != CURLM_OK) { guest_reset(); return 0; }
+      curl_easy_setopt(easy, CURLOPT_MAXFILESIZE_LARGE, (curl_off_t)(view ? KERNEL_VIEW_CAP : guest_limit)) != CURLE_OK || curl_multi_add_handle(kernel_multi, easy) != CURLM_OK) { guest_reset(); return 0; }
   kernel_current = easy; kernel_active = operation; kernel_request_until = kernel_now() + 9000; return 1;
 }
 /* Cancels only the current transfer; the session, handles and other connections stay. */
 KERNEL_EXPORT int kernel_stop(void) {
   if (!kernel_live || kernel_active < 0) return 0;
-  kernel_detach(); guest_reset(); guest_transport = CURLE_ABORTED_BY_CALLBACK; return 1;
+  kernel_detach(); guest_reset(); kernel_view_size = 0; guest_transport = CURLE_ABORTED_BY_CALLBACK; return 1;
 }
 KERNEL_EXPORT void kernel_close(void) { if (kernel_live) kernel_finish(); }
 static void kernel_tick(void) {
   if (!kernel_live || kernel_active < 0) return;
   double now = kernel_now();
   if (now < 0 || now >= kernel_request_until) {
-    int operation = kernel_active; kernel_detach(); guest_reset(); guest_transport = CURLE_OPERATION_TIMEDOUT;
+    int operation = kernel_active; kernel_detach(); guest_reset(); kernel_view_size = 0; guest_transport = CURLE_OPERATION_TIMEDOUT;
     printf("KERNEL:response:%d\n", operation); fflush(stdout); return;
   }
   int running = 0;

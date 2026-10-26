@@ -3,7 +3,7 @@ from pathlib import Path
 from candidate_native import load_candidate
 import argparse,hashlib,json,re,zipfile,subprocess,xml.etree.ElementTree as ET
 parser=argparse.ArgumentParser(description=__doc__);args=parser.parse_args()
-version='0.56.0'
+version='0.57.0'
 ROOT=Path(__file__).resolve().parents[1];STAGE=ROOT/'dist/bilisofa-app';NATIVE=ROOT/'build/identity'
 subprocess.run(['python3',str(ROOT/'tools/category-data.py'),'--check'],check=True)
 def sha(data):return hashlib.sha256(data).hexdigest()
@@ -31,7 +31,7 @@ if not {'platform/wasm-network/src/'+n for n in ['public-kernel.c','catalog-visi
 for name,h in kernel['files'].items():files['public-kernel/'+name]=checked(kernel_dir/name,h)
 if sha(files['public-kernel/probe.data'])!=kernel['caSha256']:raise SystemExit('Public kernel CA mismatch')
 files['public-kernel/manifest.json']=(kernel_dir/'manifest.json').read_bytes()
-for bad in [b'/x/player/',b'/x/web-interface/view',b'bilivideo',b'/x/passport',b'/qrcode',b'/heartbeat',b'/history/',b'/toview',b'/medialist',b'/fav/',b'/x/v3/',b'/x/space/',b'/x/polymer/',b'feed/rcmd',b'/x/web-interface/coin',b'/x/web-interface/like',b'/pgc/web/follow',b'/x/relation',b'live_room']:
+for bad in [b'/x/player/',b'playurl',b'bilivideo',b'/x/passport',b'/qrcode',b'/heartbeat',b'/history/',b'/toview',b'/medialist',b'/fav/',b'/x/v3/',b'/x/space/',b'/x/polymer/',b'feed/rcmd',b'/x/web-interface/coin',b'/x/web-interface/like',b'/pgc/web/follow',b'/x/relation',b'live_room']:
  if bad in files['public-kernel/probe.wasm']:raise SystemExit('Public kernel unrelated route')
 if any(marker not in files['public-kernel/probe.wasm'] for marker in [b'https://api.bilibili.com/x/web-interface/popular?ps=%d&pn=%d',b'keyword=%s&page=%d&page_size=%d&search_type=%s&wts=%s',b'https://api.bilibili.com/x/web-interface/wbi/search/type?%s&w_rid=%s',b'https://s.search.bilibili.com/main/hotword',b'https://api.bilibili.com/x/frontend/finger/spi',b'KERNEL:closed']):raise SystemExit('Public kernel fixed route missing')
 if b'https://api.bilibili.com/x/web-interface/search/type?' in files['public-kernel/probe.wasm']:raise SystemExit('Public kernel unsigned search forbidden')

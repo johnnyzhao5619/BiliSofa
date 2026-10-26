@@ -12,6 +12,7 @@ export function accountCapability<T extends VodAccess>(access:T,current:()=>bool
     read:(query,signal)=>read(()=>access.read(query,signal)),
     transport:choice=>{assert();const transport=access.transport(choice);return {run:(signal,ready)=>read(()=>transport.run(signal,source=>{if(current())ready(source);})),close:()=>transport.close()};},
     close:()=>access.close(),
+    ...(access.usable?{usable:()=>current()&&access.usable!()}:{}),
     ...(access.interactions?{interactions:(id:string)=>{assert();const lane=access.interactions!(id);return {read:(...args:Parameters<typeof lane.read>)=>read(()=>lane.read(...args)),submit:(...args:Parameters<typeof lane.submit>)=>read(()=>lane.submit(...args)),close:()=>lane.close()};}}:{}),
     ...(access.comments?{comments:(id:string)=>{assert();const lane=access.comments!(id);return {read:(...args:Parameters<typeof lane.read>)=>read(()=>lane.read(...args)),close:()=>lane.close()};}}:{}),
     ...(access.overlays?{overlays:(id:string)=>{assert();const lane=access.overlays!(id);return {identity:lane.identity,read:(...args:Parameters<typeof lane.read>)=>read(()=>lane.read(...args)),close:()=>lane.close()};}}:{}),

@@ -8,18 +8,21 @@ import type {VodMedia} from './vod-playback.ts';
 export function defaultVodChoice(result:VodReadResult,caps:VodCapabilities):VodChoice{return preferredVodChoice(result,caps).choice;}
 /** One item's source authority survives bounded runtime downshifts. Each next
  * pair waits the preceding MediaSession's real dual closure. Source/auth/TLS,
- * control/seek, cancellation and unknown closure never trigger a track retry. */
+ * control/seek, cancellation and unknown closure never trigger a track retry.
+ * ADR-110: a network or timeout failure first retries the same tracks once (the bridge then avoids the failed
+ * host, ADR-102); only after that, or for an unsupported pair, does it move to a lower quality. At most four tries. */
 export class VodCatalogMedia implements VodMedia {
   private readonly controller=new AbortController();
   private media:MediaSession|undefined;private loading:Promise<void>|undefined;private closing:Promise<MediaClosure>|undefined;
-  private reported=false;private attempts=0;private position=0;private paused=false;
+  private reported=false;private attempts=0;private position=0;private paused=false;private lineRetried=false;
   private readonly tried=new Set<string>();
   constructor(private readonly access:VodAccess,private readonly item:Pick<VodItem,'bvid'|'part'>,private readonly choice:VodChoice|undefined,
     private readonly caps:VodCapabilities,private readonly cached:()=>VodReadResult|undefined,
     private readonly selected:(result:VodReadResult,choice:VodChoice,fallback:boolean)=>void,
     private readonly backend:(source:MediaSource)=>OwnedPlayerBackend|undefined,
     private readonly finished:(outcome:MediaOutcome,closure:MediaClosure,failure?:MediaFailure)=>void,
-    private readonly observed?:(value:MediaObservation)=>void,private readonly preferred:()=>VodTrackPreference|undefined=()=>undefined){}
+    private readonly observed?:(value:MediaObservation)=>void,private readonly preferred:()=>VodTrackPreference|undefined=()=>undefined,
+    private readonly retrying?:(kind:'line'|'quality')=>void){}
   start(initialMs=0,paused=false):void {
     if(this.loading||this.closing||!Number.isSafeInteger(initialMs)||initialMs<0||initialMs>86400000||typeof paused!=='boolean')throw new DomainError('invalid');
     this.position=initialMs;this.paused=paused;
@@ -38,8 +41,11 @@ export class VodCatalogMedia implements VodMedia {
     this.attempts++;this.tried.add(`${choice.videoKey}/${choice.audioKey}`);this.selected(result,choice,fallback);
     const media=new MediaSession(this.access.transport(choice),this.backend,(outcome,closure,failure)=>{
       if(this.closing||this.reported||this.media!==media)return;
-      const next=outcome==='failed'&&closure.closed&&closure.decoderClosed&&closure.transportClosed&&this.attempts<4&&failure&&['prepare','playback'].includes(failure.phase)&&['unsupported','network','timeout'].includes(failure.reason)?fallbackVodChoice(result.catalog,choice,this.caps,this.tried):undefined;
-      if(next){try{this.attempt(result,next,true);}catch(error){queueMicrotask(()=>{void this.failed(error);});}return;}
+      const retryable=outcome==='failed'&&closure.closed&&closure.decoderClosed&&closure.transportClosed&&this.attempts<4&&!!failure&&['prepare','playback'].includes(failure.phase);
+      const transient=retryable&&['network','timeout'].includes(failure!.reason);
+      if(transient&&!this.lineRetried){this.lineRetried=true;try{this.attempt(result,choice,false);this.retrying?.('line');}catch(error){queueMicrotask(()=>{void this.failed(error);});}return;}
+      const next=retryable&&(transient||failure!.reason==='unsupported')?fallbackVodChoice(result.catalog,choice,this.caps,this.tried):undefined;
+      if(next){try{this.attempt(result,next,true);this.retrying?.('quality');}catch(error){queueMicrotask(()=>{void this.failed(error);});}return;}
       this.reported=true;this.finished(outcome,closure,failure);
     },13000,value=>{
       // Preserve the last observed position and pause intent when the decoder

@@ -76,7 +76,10 @@ export function parseProbeResult(value: unknown): ProbeResult {
 export interface MediaSource { url: string; kind: 'vod' | 'live'; }
 export type PlayerState = 'idle' | 'preparing' | 'ready' | 'playing' | 'paused' | 'error';
 export interface PlayerBackend {
-  prepare(source: MediaSource, onTime: (timeMs: number) => void, onEnd: () => void, onError: () => void): Promise<void>;
+  /** ADR-110: true only for a backend that honours `startMs` in prepare; others are prepared at 0 and then seek. */
+  readonly startsAt?: boolean;
+  /** `startMs` (ADR-110): prepare at a resume position instead of preparing at 0 and seeking (only when `startsAt`). */
+  prepare(source: MediaSource, onTime: (timeMs: number) => void, onEnd: () => void, onError: () => void, startMs?: number): Promise<void>;
   play(): void;
   pause(): void;
   // A failed seek is retryable only after a finished SDK operation and known

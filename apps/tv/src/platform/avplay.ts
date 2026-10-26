@@ -78,8 +78,11 @@ export class AvplayBackend implements PlayerBackend {
   private pending = new Set<(reason: unknown) => void>();
   private timers = new Set<ReturnType<typeof setTimeout>>();
   constructor(private readonly api: AvplayApi, private readonly saver: ScreenSaverApi, private readonly validateUrl: (url: string) => string, private readonly progressiveBuffering = false, private readonly prebufferSeeking = false, private readonly initialization?: PreparationInitialization) {}
-  prepare(source: MediaSource, onTime: (timeMs: number) => void, onEnd: () => void, onError: () => void): Promise<void> {
-    return this.prepareAt(source, onTime, onEnd, onError);
+  /** ADR-110: PREBUFFER_MODE gives a start position; the restart-seek path already relies on it. */
+  get startsAt(): boolean { return typeof this.api.setStreamingProperty === 'function'; }
+  prepare(source: MediaSource, onTime: (timeMs: number) => void, onEnd: () => void, onError: () => void, startMs?: number): Promise<void> {
+    // ADR-110: a resume opens at its position with PREBUFFER_MODE (the restart-seek path) when the SDK has the property.
+    return this.prepareAt(source, onTime, onEnd, onError, startMs !== undefined && startMs > 0 && this.api.setStreamingProperty ? startMs : undefined);
   }
   private prepareAt(source: MediaSource, onTime: (ms: number) => void, onEnd: () => void, onError: () => void, startMs?: number): Promise<void> {
     this.close();
