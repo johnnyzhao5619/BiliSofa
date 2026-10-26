@@ -105,8 +105,8 @@ function responded(token: number): void {
     const outcome = (apiCode: number) => ({ kind: apiCode === 0 ? 'ok' : 'api_error', status, code: apiCode === 0 ? 'ranking.ok' : 'ranking.api_error', apiCode });
     // ADR-106: only b_3/b_4 leave this Worker; the raw body and any Set-Cookie stay here.
     if (r.operation === 'public-visitor') { const p = parseVisitorBody(raw); finish({ ...outcome(p.apiCode), ...(p.visitor ? { visitorId: p.visitor } : {}) }); return; }
-    if (r.operation === 'public-up-archives') { const p = parseUpArchivesBody(raw); finish({ ...outcome(p.apiCode), archives: p.archives, archivesTotal: p.total }); return; }
-    if (r.operation === 'public-pgc-ranking') { const p = parsePgcRankingBody(raw); finish({ ...outcome(p.apiCode), seasons: p.seasons, ...(r.span === 'all' ? { seasonsMore: p.more } : {}) }); return; }
+    if (r.operation === 'public-up-archives') { const p = parseUpArchivesBody(raw); finish({ ...outcome(p.apiCode), archives: p.archives, archivesTotal: p.total, ...(p.skipped ? { skipped: p.skipped } : {}) }); return; }
+    if (r.operation === 'public-pgc-ranking') { const p = parsePgcRankingBody(raw); finish({ ...outcome(p.apiCode), seasons: p.seasons, ...(r.span === 'all' ? { seasonsMore: p.more } : {}), ...(p.skipped ? { skipped: p.skipped } : {}) }); return; }
     const p = parseRankingBody(raw); finish({ ...outcome(p.apiCode), ...p });
   } catch (error) {
     const valid = status >= 100 && status <= 599 ? status : 0;

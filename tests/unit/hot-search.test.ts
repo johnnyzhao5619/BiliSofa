@@ -10,11 +10,12 @@ test('hot words retain only ranked search terms and ignore remote destinations a
  const list=rows();list[0]!.goto_type=1;assert.equal(parseHotSearchBody(body(list)).items[0]!.rank,2);
  assert.deepEqual(parseHotSearchBody(body([])),{apiCode:0,items:[]});assert.deepEqual(parseHotSearchBody('{"code":-352,"message":"outside"}'),{apiCode:-352,items:[]});
 });
-test('hot words reject oversized, malformed, duplicate or unordered data before display',()=>{
- for(const value of ['{',body('no'),body([...rows(),rows()[0]]),'x'.repeat(65537),'{"code":0.5}'])assert.throws(()=>parseHotSearchBody(value));
- for(const patch of [{keyword:'x'.repeat(33)},{keyword:'x\u0000'},{show_name:'x'.repeat(81)},{show_name:''},{pos:0},{pos:1.5}]){const list=rows();Object.assign(list[0]!,patch);assert.throws(()=>parseHotSearchBody(body(list)));}
- const repeated=rows();repeated[1]!.keyword=repeated[0]!.keyword;assert.throws(()=>parseHotSearchBody(body(repeated)));
- const reversed=rows().reverse();assert.throws(()=>parseHotSearchBody(body(reversed)));
+// ADR-111: a malformed, repeated or out-of-order term is skipped and counted; kept ranks stay the source's.
+test('hot words reject oversized or wholly malformed data and skip single bad, repeated or unordered terms',()=>{
+ for(const value of ['{',body('no'),body([...rows(),rows()[0]]),'x'.repeat(65537),'{"code":0.5}',body([{pos:0}]),body([{pos:1,keyword:'',show_name:'x',goto_type:0}])])assert.throws(()=>parseHotSearchBody(value));
+ for(const patch of [{keyword:'x'.repeat(33)},{keyword:'x\u0000'},{show_name:'x'.repeat(81)},{show_name:''},{pos:0},{pos:1.5}]){const list=rows();Object.assign(list[0]!,patch);const v=parseHotSearchBody(body(list));assert.equal(v.items.length,9);assert.equal(v.items[0]!.rank,2);assert.equal(v.skipped,1);}
+ const repeated=rows();repeated[1]!.keyword=repeated[0]!.keyword;assert.deepEqual(parseHotSearchBody(body(repeated)).items.map(t=>t.rank).slice(0,2),[1,3]);
+ const reversed=parseHotSearchBody(body(rows().reverse()));assert.deepEqual(reversed.items.map(t=>t.rank),[10]);assert.equal(reversed.skipped,9);
 });
 test('hot-search IPC accepts no route, URL, credentials or payload and remains anonymous',()=>{
  const value={version:1,scope,operation:'public-search-hot'};assert.deepEqual(parseHotSearchRequest(value),value);

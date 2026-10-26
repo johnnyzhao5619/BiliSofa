@@ -1,6 +1,7 @@
 import { DomainError, type Scope } from '../../../../packages/contracts/src/index.ts';
 import { isSearchRequest, parseKernelEvent, type KernelEvent, type KernelRequest } from '../../../../packages/contracts/src/public-kernel.ts';
 import { wbiKeys, type WbiKeyStore } from './wbi-keys.ts';
+import { noteListSkips } from './list-skips.ts';
 export interface KernelWorker { postMessage(value: unknown): void; terminate(): void; onmessage: ((event: { data: unknown }) => void) | null; onerror: ((event: unknown) => void) | null; }
 export interface KernelOptions {
   /** The Worker script; the public kernel by default. */
@@ -138,6 +139,7 @@ export class ResidentKernel<Q extends { scope: Scope; operation: string } = Kern
       this.keys.invalidate(); job.retried = true; job.id = this.nextId(); this.queue.unshift(job); this.pump(); return;
     }
     this.failures = [];
+    noteListSkips(event.result);
     this.settle(job, event.result); this.pump();
   }
   private searching(job: Job<Q>): boolean { return this.options.signing !== false && isSearchRequest(job.request as unknown as KernelRequest); }

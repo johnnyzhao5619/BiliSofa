@@ -37,6 +37,12 @@ export function text(value: unknown, max = 128): string {
   }
   return value;
 }
+/** ADR-111: rows a list parser skipped; absent when none. Kept plus skipped never exceeds the source rows. */
+export function skippedCount(value: unknown, rows: number, kept: number): number | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1 || kept + value > rows) throw new DomainError('invalid');
+  return value;
+}
 export function finite(value: unknown, min: number, max: number): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) throw new DomainError('invalid');
   return value;
@@ -163,7 +169,7 @@ export interface PopularRequest { version: 1; scope: Scope; operation: 'guest-po
 export interface PopularResult {
   version: 1; scope: Scope; operation: 'guest-popular'; closed: true;
   kind: 'ok' | 'http_error' | 'api_error' | 'invalid_response' | 'transport_error' | 'cancelled';
-  status: number; apiCode?: number; code: string; items: PopularCard[]; noMore: boolean;
+  status: number; apiCode?: number; code: string; items: PopularCard[]; noMore: boolean; skipped?: number;
 }
 export function popularScope(value: unknown): Scope {
   const raw = record(value), scope = parseScope(value);
@@ -183,10 +189,12 @@ export function parsePopularCard(item: unknown): PopularCard {
 /** `rows` is 4 for a screen page, or BATCH_ROWS for one kernel batch (ADR-108). */
 export function parsePopularResult(value: unknown, rows: 4 | typeof BATCH_ROWS = 4): PopularResult {
   const v = boundedMessage(value, rows === 4 ? 4096 : BATCH_MESSAGE_BYTES), status = finite(v.status, 0, 599);
-  if (v.version !== 1 || v.operation !== 'guest-popular' || v.closed !== true || !Number.isInteger(status) || (status !== 0 && status < 100) || !['ok', 'http_error', 'api_error', 'invalid_response', 'transport_error', 'cancelled'].includes(String(v.kind)) || Object.keys(v).some(k => !['version', 'scope', 'operation', 'closed', 'kind', 'status', 'apiCode', 'code', 'items', 'noMore'].includes(k))) throw new DomainError('invalid');
+  if (v.version !== 1 || v.operation !== 'guest-popular' || v.closed !== true || !Number.isInteger(status) || (status !== 0 && status < 100) || !['ok', 'http_error', 'api_error', 'invalid_response', 'transport_error', 'cancelled'].includes(String(v.kind)) || Object.keys(v).some(k => !['version', 'scope', 'operation', 'closed', 'kind', 'status', 'apiCode', 'code', 'items', 'noMore', 'skipped'].includes(k))) throw new DomainError('invalid');
   if (!Array.isArray(v.items) || v.items.length > rows || typeof v.noMore !== 'boolean' || (v.kind !== 'ok' && v.items.length)) throw new DomainError('invalid');
   const items = v.items.map(parsePopularCard);
   if (new Set(items.map(item => item.bvid)).size !== items.length) throw new DomainError('invalid');
+  const skipped = skippedCount(v.skipped, rows, items.length);
+  if (skipped !== undefined && v.kind !== 'ok') throw new DomainError('invalid');
   const code = text(v.code, 96);
   if (!/^guest\.[a-z0-9_]+$/.test(code)) throw new DomainError('invalid');
   const apiCode = v.apiCode === undefined ? undefined : finite(v.apiCode, -2147483648, 2147483647);
@@ -199,5 +207,5 @@ export function parsePopularResult(value: unknown, rows: 4 | typeof BATCH_ROWS =
   if (v.kind === 'invalid_response' && (apiCode !== undefined || code !== 'guest.invalid_response')) throw new DomainError('invalid');
   if (v.kind === 'transport_error' && (apiCode !== undefined || !/^guest\.(transport_[0-9]{1,3}|native_unavailable)$/.test(code))) throw new DomainError('invalid');
   if (v.kind === 'cancelled' && (status !== 0 || apiCode !== undefined || code !== 'guest.cancelled')) throw new DomainError('invalid');
-  return { version: 1, scope: popularScope(v.scope), operation: 'guest-popular', closed: true, kind: v.kind as PopularResult['kind'], status, ...(apiCode === undefined ? {} : { apiCode }), code, items, noMore: v.noMore };
+  return { version: 1, scope: popularScope(v.scope), operation: 'guest-popular', closed: true, kind: v.kind as PopularResult['kind'], status, ...(apiCode === undefined ? {} : { apiCode }), code, items, noMore: v.noMore, ...(skipped === undefined ? {} : { skipped }) };
 }

@@ -12,7 +12,14 @@ test('F02 guest popular normalizes bounded public fields and does not interpret 
   assert.deepEqual(parsePopularBody('{"code":-101}'), { apiCode: -101, items: [], noMore: true });
   const long = JSON.parse(body()); long.data.list[0].title = '字'.repeat(512); assert.equal(parsePopularBody(JSON.stringify(long)).items[0]!.title.length, 120);
   for (const raw of ['x'.repeat(131073), 'not json', '{"code":0,"data":{"list":[]}}', body(new Array(5).fill(JSON.parse(body()).data.list[0])), body([{}, {}])]) assert.throws(() => parsePopularBody(raw));
-  assert.throws(() => parsePopularBody(body(new Array(2).fill(JSON.parse(body()).data.list[0]))));
+  // ADR-111: one repeated or unreadable row is skipped and counted; durations over 24 h read as unknown (0).
+  const row = JSON.parse(body()).data.list[0];
+  assert.deepEqual(parsePopularBody(body([row, row])), { apiCode: 0, items: [card], noMore: false, skipped: 1 });
+  assert.deepEqual(parsePopularBody(body([row, {}, { ...row, bvid: 'BV0000000002', duration: 166242, title: '换\n行' }])).items.map(c => [c.durationSec, c.title]), [[125, card.title], [0, '换 行']]);
+  assert.equal(parsePopularBody(body([row, { ...row, bvid: 'BV0000000003', owner: { name: '' } }])).skipped, 1);
+  assert.deepEqual(parsePopularResult({ ...result(), skipped: 2 }), { ...result(), skipped: 2 });
+  for (const skipped of [0, 4, 1.5, '1']) assert.throws(() => parsePopularResult({ ...result(), skipped }));
+  assert.throws(() => parsePopularResult({ version: 1, scope, operation: 'guest-popular', closed: true, kind: 'http_error', status: 412, code: 'guest.http_412', items: [], noMore: true, skipped: 1 }));
 });
 test('W01/F02 guest protocol rejects arbitrary URLs, credentials, false HTTP success and unbounded display data', () => {
   const request = { version: 1, scope, operation: 'guest-popular', page: 1 };

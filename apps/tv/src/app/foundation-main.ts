@@ -30,6 +30,7 @@ import { localProfiles } from '../platform/local-profile-store.ts';
 import { searchHistories } from '../platform/search-history-store.ts';
 import { localSettings } from './local-settings.ts';
 import { AppDiagnostics } from './app-diagnostics.ts';
+import { onListSkips } from '../platform/list-skips.ts';
 import { AccountWorkspace } from './account-workspace.ts';
 import { RetainedWrites } from '../../../../packages/bili-client/src/retained-writes.ts';
 import {interactionWrites} from '../platform/interaction-journal.ts';
@@ -62,7 +63,7 @@ const root = document.querySelector<HTMLElement>('#pages')!, overlays = document
 {let notice:ReturnType<typeof setTimeout>|undefined;new MutationObserver(()=>{clearTimeout(notice);const text=feedback.textContent??'';if(text&&!/正在|未确认|扫码|登录|失效|重新打开|权限/.test(text))notice=setTimeout(()=>{if(feedback.textContent===text)feedback.textContent='';},4000);}).observe(feedback,{childList:true,characterData:true,subtree:true});}
 const repository = protectedAccountStore(), login = new LoginCoordinator(repository, () => new IdentityWorkerClient());
 const queues=localQueues();
-const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.57.2'); diagnostics.add('app','started');document.body.classList.add('product-instant');document.body.classList.add('product-stream');
+const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.58.0'); diagnostics.add('app','started'); onListSkips(() => diagnostics.add('app','list_items_skipped'));document.body.classList.add('product-instant');document.body.classList.add('product-stream');
 const histories=searchHistories();
 const writes = new RetainedWrites(writeJournal());
 function writeSummary(id:string){const old=writes.summary(id),video=interactionWrites().summary(id);return old&&video?{total:old.total+video.total,unknown:old.unknown+video.unknown}:undefined;}

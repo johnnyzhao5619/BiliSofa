@@ -1,12 +1,12 @@
 import {optionalQueueBvid} from './local-queue.ts';
-import {parseCoverReference,DomainError,record,finite,text,parseScope,type Scope,type ErrorCode} from './index.ts';
+import {skippedCount,parseCoverReference,DomainError,record,finite,text,parseScope,type Scope,type ErrorCode} from './index.ts';
 import {parsePrivateAccount,type PrivateAccount} from './private-account.ts';
 import type {HistoryQuery,HistoryCard,HistoryPage} from './history-dto.ts';
 export type {HistoryQuery,HistoryCard,HistoryPage};
 export const HISTORY_BUSINESSES=['','archive','pgc','live','article','article-list','cheese'] as const;
 /** Private transport cursor. Never a UI route, stored preference or diagnostic. */
 export interface HistoryCursor {max:string;viewAtSec:number;business:typeof HISTORY_BUSINESSES[number];}
-export interface HistoryBatch {items:HistoryCard[];next?:HistoryCursor;}
+export interface HistoryBatch {items:HistoryCard[];next?:HistoryCursor;skipped?:number;}
 export interface HistoryRequest {version:1;operation:'history-read';scope:Scope;account:PrivateAccount;cursor:HistoryCursor;}
 export type HistoryResult={version:1;operation:'history-read';scope:Scope;closed:true}&({kind:'ok';batch:HistoryBatch}|{kind:'error';code:ErrorCode});
 export function parseHistoryQuery(value:unknown):HistoryQuery{const v=record(value);if(Object.keys(v).some(k=>!['page','refresh'].includes(k))||!Number.isInteger(v.page)||Number(v.page)<1||Number(v.page)>25||('refresh'in v&&(v.refresh!==true||v.page!==1)))throw new DomainError('invalid');return {page:Number(v.page),...(v.refresh===true?{refresh:true}:{})};}
@@ -21,7 +21,7 @@ export function parseHistoryCard(value:unknown):HistoryCard{
  if([viewedAtSec,progressSec,durationSec,part].some(n=>n!==null&&!Number.isInteger(n)))throw new DomainError('invalid');const bvid=optionalQueueBvid(v);return {...(bvid?{bvid}:{}),...(v.cover===undefined?{}:{cover:parseCoverReference(v.cover)}),title:text(v.title,120),kind:v.kind as HistoryCard['kind'],viewedAtSec,progressSec,durationSec,part};
 }
 export function parseHistoryPage(value:unknown):HistoryPage{const v=record(value);if(Object.keys(v).length!==3||Object.keys(v).some(k=>!['page','items','noMore'].includes(k))||!Array.isArray(v.items)||v.items.length>4||typeof v.noMore!=='boolean')throw new DomainError('invalid');return {page:parseHistoryQuery({page:v.page}).page,items:v.items.map(parseHistoryCard),noMore:v.noMore};}
-export function parseHistoryBatch(value:unknown):HistoryBatch{const v=record(value);if(Object.keys(v).some(k=>!['items','next'].includes(k))||!Array.isArray(v.items)||v.items.length>100)throw new DomainError('invalid');const items=v.items.map(parseHistoryCard);if('next'in v){if(!items.length)throw new DomainError('invalid');return {items,next:parseHistoryCursor(v.next)};}return {items};}
+export function parseHistoryBatch(value:unknown):HistoryBatch{const v=record(value);if(Object.keys(v).some(k=>!['items','next','skipped'].includes(k))||!Array.isArray(v.items)||v.items.length>100)throw new DomainError('invalid');const items=v.items.map(parseHistoryCard),skipped=skippedCount(v.skipped,100,items.length),extra=skipped===undefined?{}:{skipped};if('next'in v){if(!items.length)throw new DomainError('invalid');return {items,next:parseHistoryCursor(v.next),...extra};}return {items,...extra};}
 function scoped(value:unknown){const raw=record(value),s=parseScope(value);if(Object.keys(raw).length!==4||!/^bili_[1-9][0-9]{0,15}$/.test(s.accountId))throw new DomainError('invalid');return s;}
 export function parseHistoryRequest(value:unknown):HistoryRequest{const v=record(value);if(Object.keys(v).length!==5||Object.keys(v).some(k=>!['version','operation','scope','account','cursor'].includes(k))||v.version!==1||v.operation!=='history-read')throw new DomainError('invalid');const scope=scoped(v.scope),account=parsePrivateAccount(v.account);if(scope.accountId!==account.id)throw new DomainError('invalid');return {version:1,operation:'history-read',scope,account,cursor:parseHistoryCursor(v.cursor)};}
 export function parseHistoryResult(value:unknown):HistoryResult{

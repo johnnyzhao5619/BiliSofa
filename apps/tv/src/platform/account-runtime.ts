@@ -1,4 +1,5 @@
 import {RecommendationWindow} from '../../../../packages/bili-client/src/recommendations.ts';
+import {noteListSkips} from './list-skips.ts';
 import {parseRecommendationQuery,parseRecommendationRequest,parseRecommendationResult,RecommendationReadError,type RecommendationRequest} from '../../../../packages/contracts/src/recommendations.ts';
 import {DomainError,type Scope} from '../../../../packages/contracts/src/index.ts';
 import {parsePrivateAccount,type PrivateAccount,type AccountRuntime} from '../../../../packages/contracts/src/private-account.ts';
@@ -113,7 +114,7 @@ export function accountRuntime(account:PrivateAccount,kernel=takeAccountKernel()
    const parsed=parsePgcFollowCommand(command),ticket=await acquire(scope,signal);
    const worker=new ScopedGuestWorker<PgcFollowRequest,PgcFollowResult>('pgc-follow-worker.js','pgc-follow',parsePgcFollowRequest,parsePgcFollowResult,40000,12000,(q,r)=>r.kind!=='ok'||r.value.kind===q.command.kind&&(q.command.kind!=='list'||r.value.kind==='list'&&r.value.page.page===q.command.query.page&&r.value.page.type===q.command.query.type));
    const result=await run<PgcFollowRequest,PgcFollowResult>(worker,{version:1,operation:'pgc-follow',scope,account:secret!,command:parsed},signal,ticket);
-   if(result.kind==='error')throw new DomainError(result.code);return result.value;
+   if(result.kind==='error')throw new DomainError(result.code);noteListSkips(result);return result.value;
   },
   async openVod(scope,signal){
    const ticket=await acquire(scope,signal),caps=vodCandidateCapabilities();

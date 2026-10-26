@@ -123,8 +123,8 @@ function responded(token: number): void {
     else if (r.operation === 'follow-updates-read') deliver({ ...ok, batch: parseFollowUpdatesBody(raw, r.offset) });
     else if (r.operation === 'recommendations-read') deliver({ ...ok, batch: parseRecommendationBody(raw, r.account.uid) });
     else if (r.operation === 'identity-verify') deliver(failure(r, 'invalid'));
-    else if (r.command.kind === 'category') { const p = parseRankingBody(raw); deliver(p.apiCode !== 0 ? { ...base(r), kind: 'refused', apiCode: p.apiCode } : { ...base(r), kind: 'category', items: p.items }); }
-    else { const p = parseUpArchivesBody(raw); deliver(p.apiCode !== 0 ? { ...base(r), kind: 'refused', apiCode: p.apiCode } : { ...base(r), kind: 'up', archives: p.archives, total: p.total }); }
+    else if (r.command.kind === 'category') { const p = parseRankingBody(raw); deliver(p.apiCode !== 0 ? { ...base(r), kind: 'refused', apiCode: p.apiCode } : { ...base(r), kind: 'category', items: p.items, ...(p.skipped ? { skipped: p.skipped } : {}) }); }
+    else { const p = parseUpArchivesBody(raw); deliver(p.apiCode !== 0 ? { ...base(r), kind: 'refused', apiCode: p.apiCode } : { ...base(r), kind: 'up', archives: p.archives, total: p.total, ...(p.skipped ? { skipped: p.skipped } : {}) }); }
   } catch (error) {
     const code: ErrorCode = error instanceof DomainError ? error.code : 'invalid';
     // A login refusal from any list means the session must prove its identity again.

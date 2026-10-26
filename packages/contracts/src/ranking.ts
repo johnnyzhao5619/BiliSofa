@@ -1,5 +1,5 @@
 import { parseCategoryId, type CategoryId } from './categories.ts';
-import { DomainError, boundedMessage, finite, popularScope, record, text, parsePopularCard, parseCoverReference, type Scope, type PopularCard, type PopularResult, type CoverReference } from './index.ts';
+import { DomainError, boundedMessage, finite, popularScope, skippedCount, record, text, parsePopularCard, parseCoverReference, type Scope, type PopularCard, type PopularResult, type CoverReference } from './index.ts';
 import { pgcId } from './pgc-season.ts';
 import { parseUpArchiveCard, upMid, upPage, type UpArchiveCard } from './up-archives.ts';
 import { parseVisitorId, visitorArgument, type VisitorId } from './visitor.ts';
@@ -24,6 +24,8 @@ export type PgcRankSpan = 'day3' | 'week' | 'all';
 export type RankingResult = RankingRequest & {
   closed: true;
   kind: PopularResult['kind']; status: number; apiCode?: number; code: string; items: PopularCard[];
+  /** ADR-111: malformed source rows the Worker skipped; absent when none. */
+  skipped?: number;
   /** Only for public-pgc-ranking; `items` is then empty. */
   seasons?: PgcRankCard[];
   /** Index lane only: the service reports another page. */
@@ -61,7 +63,7 @@ export function parseRankingResult(value: unknown): RankingResult {
   try { encoded = JSON.stringify(value); } catch { throw new DomainError('invalid'); }
   if (!encoded || new TextEncoder().encode(encoded).length > 131072) throw new DomainError('invalid');
   const v = record(value), request = parseRankingRequest({version:v.version,scope:v.scope,operation:v.operation,...('categoryId' in v?{categoryId:v.categoryId}:{}),...(v.operation==='public-pgc-ranking'?{seasonType:v.seasonType,span:v.span,page:v.page}:{}),...(v.operation==='public-up-archives'?{mid:v.mid,page:v.page}:{})}), status = finite(v.status, 0, 599), code = text(v.code, 64);
-  if (Object.keys(v).some(k => !['version','scope','operation','categoryId','seasonType','span','page','closed','kind','status','apiCode','code','items','seasons','seasonsMore','mid','archives','archivesTotal','visitorId'].includes(k)) || v.version !== 1 || v.closed !== true || !Number.isInteger(status) || (status !== 0 && status < 100) || !['ok','http_error','api_error','invalid_response','transport_error','cancelled'].includes(String(v.kind))) throw new DomainError('invalid');
+  if (Object.keys(v).some(k => !['version','scope','operation','categoryId','seasonType','span','page','closed','kind','status','apiCode','code','items','seasons','seasonsMore','mid','archives','archivesTotal','visitorId','skipped'].includes(k)) || v.version !== 1 || v.closed !== true || !Number.isInteger(status) || (status !== 0 && status < 100) || !['ok','http_error','api_error','invalid_response','transport_error','cancelled'].includes(String(v.kind))) throw new DomainError('invalid');
   if (!Array.isArray(v.items) || v.items.length > 100 || (v.kind !== 'ok' && v.items.length)) throw new DomainError('invalid');
   const items = v.items.map(parsePopularCard);
   if (new Set(items.map(item => item.bvid)).size !== items.length) throw new DomainError('invalid');
@@ -75,6 +77,8 @@ export function parseRankingResult(value: unknown): RankingResult {
   const archives = up ? (v.archives as unknown[]).map(parseUpArchiveCard) : undefined;
   if (archives && new Set(archives.map(a => a.bvid)).size !== archives.length) throw new DomainError('invalid');
   if (v.archivesTotal !== undefined && (!Number.isSafeInteger(v.archivesTotal) || (v.archivesTotal as number) < 0 || (v.archivesTotal as number) > 10000000)) throw new DomainError('invalid');
+  const skipped = skippedCount(v.skipped, up ? 50 : 100, seasons?.length ?? archives?.length ?? items.length);
+  if (skipped !== undefined && v.kind !== 'ok') throw new DomainError('invalid');
   const visitorOp = request.operation === 'public-visitor';
   if (visitorOp ? items.length || (v.kind === 'ok') !== (v.visitorId !== undefined) : v.visitorId !== undefined) throw new DomainError('invalid');
   const visitorId = v.visitorId === undefined ? undefined : parseVisitorId(v.visitorId);
@@ -86,5 +90,5 @@ export function parseRankingResult(value: unknown): RankingResult {
   if (v.kind === 'invalid_response' && (apiCode !== undefined || code !== 'ranking.invalid_response')) throw new DomainError('invalid');
   if (v.kind === 'transport_error' && (apiCode !== undefined || !/^ranking\.(transport_[0-9]{1,3}|native_unavailable)$/.test(code))) throw new DomainError('invalid');
   if (v.kind === 'cancelled' && (status !== 0 || apiCode !== undefined || code !== 'ranking.cancelled')) throw new DomainError('invalid');
-  return { ...request, closed: true, kind: v.kind as RankingResult['kind'], status, ...(apiCode === undefined ? {} : { apiCode }), code, items, ...(seasons ? { seasons } : {}), ...(v.seasonsMore === undefined ? {} : { seasonsMore: v.seasonsMore as boolean }), ...(archives ? { archives } : {}), ...(v.archivesTotal === undefined ? {} : { archivesTotal: v.archivesTotal as number }), ...(visitorId ? { visitorId } : {}) };
+  return { ...request, closed: true, kind: v.kind as RankingResult['kind'], status, ...(apiCode === undefined ? {} : { apiCode }), code, items, ...(seasons ? { seasons } : {}), ...(v.seasonsMore === undefined ? {} : { seasonsMore: v.seasonsMore as boolean }), ...(archives ? { archives } : {}), ...(v.archivesTotal === undefined ? {} : { archivesTotal: v.archivesTotal as number }), ...(visitorId ? { visitorId } : {}), ...(skipped === undefined ? {} : { skipped }) };
 }

@@ -19,9 +19,16 @@ test('UP parser preserves identity/counts and one full attached card, ignoring l
  assert.equal(parseUserSearchBody(body([{...row(),res:[]}]),1).items[0]!.preview,undefined);
  assert.deepEqual(parseUserSearchBody('{"code":-352}',1),{apiCode:-352,items:[],noMore:true});assert.deepEqual(parseUserSearchBody(body([],{numResults:0,numPages:0}),1),{apiCode:0,items:[],noMore:true});
 });
-test('UP malformed rows, unsafe UID, counts, preview, type and pagination reject with fixed field reasons',()=>{
- for(const[patch,issue]of [[{type:'video'},'type'],[{mid:9007199254740992},'identity'],[{mid:0},'identity'],[{mid:'1'},'identity'],[{fans:'1'},'counts'],[{videos:-1},'counts'],[{uname:''},'text'],[{res:[{...preview(),duration:'2:99'}]},'preview'],[{res:[{...preview(),play:'1万'}]},'preview'],[{res:Array.from({length:4},()=>preview())},'preview']]as const)assert.throws(()=>parseUserSearchBody(body([{...row(),...patch}]),1),e=>e instanceof SearchBodyError&&e.issue===issue);
- assert.throws(()=>parseUserSearchBody(body([row(),row()]),1));assert.throws(()=>parseUserSearchBody(body(),2));assert.throws(()=>parseUserSearchBody('x'.repeat(524289),1));
+// ADR-111: an unusable user row is skipped and counted (a page of only unusable rows still rejects as `rows`);
+// unreadable counts read as 0, an unreadable preview is dropped, a malformed preview time is unknown (0).
+test('UP malformed rows are skipped, unreadable previews dropped, and all-unusable pages or bad pagination reject',()=>{
+ for(const patch of [{type:'video'},{mid:9007199254740992},{mid:0},{mid:'1'},{uname:''}])assert.throws(()=>parseUserSearchBody(body([{...row(),...patch}]),1),e=>e instanceof SearchBodyError&&e.issue==='rows');
+ assert.deepEqual(parseUserSearchBody(body([{...row(),fans:'1',videos:-1}]),1).items.map(c=>[c.fans,c.videos]),[[0,0]]);
+ for(const res of [[{...preview(),bvid:'outside'}],Array.from({length:4},()=>preview()),[{...preview(),title:''}]])assert.equal(parseUserSearchBody(body([{...row(),res}]),1).items[0]!.preview,undefined);
+ assert.deepEqual(parseUserSearchBody(body([{...row(),res:[{...preview(),duration:'2:99',play:'1万'}]}]),1).items[0]!.preview!.durationSec,0);
+ const mixed=parseUserSearchBody(body([row(),row(),{...row(1),type:'video'}]),1);assert.equal(mixed.items.length,1);assert.equal(mixed.skipped,2);
+ assert.equal(parseUserSearchResult({...result(),items:mixed.items,skipped:2}).skipped,2);assert.throws(()=>parseUserSearchResult({...result(),skipped:1}));
+ assert.throws(()=>parseUserSearchBody(body(),2));assert.throws(()=>parseUserSearchBody('x'.repeat(524289),1));
 });
 test('UP four-card worst bounded text and statistics fit existing 4KiB IPC without shortening card titles',()=>{
  const name='中'.repeat(48),title='视'.repeat(120),items=Array.from({length:4},(_,i)=>({uid:String(9007199254740991-i),name,fans:Number.MAX_SAFE_INTEGER,videos:Number.MAX_SAFE_INTEGER,preview:{bvid:'BV'+String(i).padStart(10,'0'),title,owner:name,durationSec:86400,views:Number.MAX_SAFE_INTEGER}}));

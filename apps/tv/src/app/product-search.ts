@@ -12,7 +12,7 @@ import { hotSearch } from './hot-search.ts';
 import { historyPanel } from './search-history.ts';
 import { CoverArt } from '../platform/cover-art.ts';
 import { libraryCard } from '../ui/library-card.ts';
-import { clockTime } from '../ui/content-card.ts';
+import { clockTime, durationText } from '../ui/content-card.ts';
 import { keywordPad } from './keyword-pad.ts';
 import { frameBack } from './product-frame.ts';
 export interface SearchMemory {
@@ -136,7 +136,7 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
           return; const saved = services.queue.add({ bvid: card.bvid, title: card.title }); result.textContent = saved === 'saved' ? '已加入本机队列' : saved === 'full' ? '本机队列已满' : '本机队列保存未确认'; }));
       };
       if (entry.kind === 'video') {
-        description.textContent = `${entry.card.owner} · ${clockTime(entry.card.durationSec)} · 视频首P`;
+        description.textContent = [entry.card.owner, durationText(entry.card.durationSec), '视频首P'].filter(Boolean).join(' · ');
         video(entry.card);
       }
       if (entry.kind === 'up') {
@@ -217,7 +217,7 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
       noMore = result.noMore;
       const rendered=result.items.map((entry, i) => {
         const title = entry.kind === 'up' ? entry.card.name : entry.card.title;
-        const subtitle = entry.kind === 'video' ? `${entry.card.owner} · ${clockTime(entry.card.durationSec)}` : entry.kind === 'up' ? `${entry.card.videos} 投稿 · ${entry.card.fans} 粉丝` : `${entry.card.category || '番剧影视'} · ${entry.card.status || '更新未提供'}`;
+        const subtitle = entry.kind === 'video' ? [entry.card.owner, durationText(entry.card.durationSec)].filter(Boolean).join(' · ') : entry.kind === 'up' ? `${entry.card.videos} 投稿 · ${entry.card.fans} 粉丝` : `${entry.card.category || '番剧影视'} · ${entry.card.status || '更新未提供'}`;
         const cover = entry.kind === 'video' ? entry.card.cover : undefined;
         return libraryCard({ id: 'search-card-' + (feed?(page-1)*4+i:i), title, subtitle, badge: type === 'up' ? 'UP主' : type === 'pgc' ? '番剧影视' : '视频', ...(cover ? { cover } : {}) }, owner.signal, () => detail(entry), art);
       });

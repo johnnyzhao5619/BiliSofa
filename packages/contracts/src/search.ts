@@ -1,4 +1,4 @@
-import { DomainError, BATCH_MESSAGE_BYTES, BATCH_ROWS, boundedMessage, finite, popularScope, parsePopularCard, type Scope, type PopularCard, type PopularResult } from './index.ts';
+import { DomainError, BATCH_MESSAGE_BYTES, BATCH_ROWS, boundedMessage, finite, popularScope, parsePopularCard, skippedCount, type Scope, type PopularCard, type PopularResult } from './index.ts';
 export function parseSearchKeyword(value: unknown): string {
   if(typeof value!=='string' || !value.length || value.trim()!==value || Array.from(value).length>32 || new TextEncoder().encode(value).length>128 || /[\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value))throw new DomainError('invalid');
   return value;
@@ -6,7 +6,7 @@ export function parseSearchKeyword(value: unknown): string {
 export interface SearchRequest { version:1; scope:Scope; operation:'public-video-search'; keyword:string; page:number; }
 export const SEARCH_RESPONSE_ISSUES=['body','json','envelope','pagination','rows','type','identity','duration','views','text','native','utf8','public_keys','signing_keyword','counts','preview','metadata','score','state'] as const;
 export type SearchResponseIssue=typeof SEARCH_RESPONSE_ISSUES[number];
-export interface SearchResult { version:1; scope:Scope; operation:'public-video-search'; closed:true; kind:PopularResult['kind']; status:number; apiCode?:number; code:string; items:PopularCard[]; noMore:boolean; }
+export interface SearchResult { version:1; scope:Scope; operation:'public-video-search'; closed:true; kind:PopularResult['kind']; status:number; apiCode?:number; code:string; items:PopularCard[]; noMore:boolean; skipped?:number; }
 export function parseSearchRequest(value:unknown):SearchRequest {
   const v=boundedMessage(value),page=finite(v.page,1,25);
   if(Object.keys(v).length!==5 || Object.keys(v).some(k=>!['version','scope','operation','keyword','page'].includes(k)) || v.version!==1 || v.operation!=='public-video-search' || !Number.isInteger(page))throw new DomainError('invalid');
@@ -25,13 +25,18 @@ export function parseSearchOutcome(v:Record<string,unknown>,prefix:'search'|'up'
   if(v.kind==='cancelled'&&(status!==0||apiCode!==undefined||v.code!==prefix+'.cancelled'))throw new DomainError('invalid');
   return {kind:v.kind as SearchResult['kind'],status,...(apiCode===undefined?{}:{apiCode}),code:v.code};
 }
+/** ADR-111: rows a search parser skipped; only on an ok page. */
+export function searchSkipped(v:Record<string,unknown>,rows:number,kept:number):number|undefined {
+  const skipped=skippedCount(v.skipped,rows,kept);if(skipped!==undefined&&v.kind!=='ok')throw new DomainError('invalid');return skipped;
+}
 /** `rows` is 4 for a screen page, or BATCH_ROWS for one kernel batch (ADR-108). */
 export function parseSearchResult(value:unknown,rows:4|typeof BATCH_ROWS=4):SearchResult {
   const v=boundedMessage(value,rows===4?4096:BATCH_MESSAGE_BYTES),outcome=parseSearchOutcome(v,'search');
-  if(Object.keys(v).some(k=>!['version','scope','operation','closed','kind','status','apiCode','code','items','noMore'].includes(k))||v.version!==1||v.operation!=='public-video-search'||v.closed!==true)throw new DomainError('invalid');
+  if(Object.keys(v).some(k=>!['version','scope','operation','closed','kind','status','apiCode','code','items','noMore','skipped'].includes(k))||v.version!==1||v.operation!=='public-video-search'||v.closed!==true)throw new DomainError('invalid');
   if(!Array.isArray(v.items)||v.items.length>rows||typeof v.noMore!=='boolean'||v.kind!=='ok'&&(v.items.length||!v.noMore))throw new DomainError('invalid');
   const items=v.items.map(parsePopularCard);if(new Set(items.map(v=>v.bvid)).size!==items.length)throw new DomainError('invalid');
-  return {version:1,scope:popularScope(v.scope),operation:'public-video-search',closed:true,...outcome,items,noMore:v.noMore};
+  const skipped=searchSkipped(v,rows,items.length);
+  return {version:1,scope:popularScope(v.scope),operation:'public-video-search',closed:true,...outcome,items,noMore:v.noMore,...(skipped===undefined?{}:{skipped})};
 }
 /** Detail is taken only from a checked terminal frame, never outside messages. */
 export class SearchReadError extends DomainError {

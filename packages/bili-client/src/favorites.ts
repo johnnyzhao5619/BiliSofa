@@ -1,6 +1,7 @@
 import {publicArtwork} from './public-artwork.ts';
 import {DomainError,record,finite,text} from '../../contracts/src/index.ts';
-import {parseFavoriteFoldersBatch,parseFavoriteItemsPage,type FavoriteFoldersBatch,type FavoriteItemsPage,type FavoriteItemsQuery} from '../../contracts/src/favorites.ts';
+import {eachRow,line} from './list-rows.ts';
+import {parseFavoriteFoldersBatch,parseFavoriteItem,parseFavoriteItemsPage,type FavoriteFoldersBatch,type FavoriteItemsPage,type FavoriteItemsQuery} from '../../contracts/src/favorites.ts';
 function body(raw:string){if(new TextEncoder().encode(raw).length>524288)throw new DomainError('invalid');let root:Record<string,unknown>;try{root=record(JSON.parse(raw));}catch{throw new DomainError('invalid');}const code=finite(root.code,-2147483648,2147483647);if(!Number.isInteger(code))throw new DomainError('invalid');if(code!==0)throw new DomainError(code===-101?'login':code===-403?'permission':'network');return root.data;}
 const title=(v:unknown)=>v===undefined||v===''?'未提供标题':text(v,512).slice(0,120);
 /** Official header navigation is a bounded window; count disagreement is not hidden. */
@@ -13,7 +14,8 @@ export function parseFavoriteItemsBody(raw:string,query:FavoriteItemsQuery,rows:
  // Null is a legitimate empty terminal representation, never a substitute for missing content.
  const list=data.media_list===null&&!data.has_more&&offset>=total?[]:data.media_list;
  if(!Array.isArray(list)||list.length>rows)throw new DomainError('invalid');
- const items=list.map(raw=>{const v=record(raw);if(v.pages!==undefined&&v.pages!==null&&(!Array.isArray(v.pages)||v.pages.length>10000))throw new DomainError('invalid');const cover=publicArtwork(v.cover);return {...(cover?{cover}:{}),...(v.type===2&&typeof v.bv_id==='string'&&/^BV[A-Za-z0-9]{10}$/.test(v.bv_id)?{bvid:v.bv_id}:{}),title:title(v.title),kind:v.type===2?'ugc':[24,42].includes(Number(v.type))?'pgc':v.type===25?'course':'unknown',providedParts:Array.isArray(v.pages)?v.pages.length:0};});
- if(!items.length&&data.has_more)throw new DomainError('invalid');
- return parseFavoriteItemsPage({...query,items,total,noMore:!data.has_more||offset+items.length>=total},rows);
+ // ADR-111: an unreadable row is skipped and counted; paging counts source rows, not the kept ones.
+ const {items,skipped}=eachRow(list,raw=>{const v=record(raw);const cover=publicArtwork(v.cover);return parseFavoriteItem({...(cover?{cover}:{}),...(v.type===2&&typeof v.bv_id==='string'&&/^BV[A-Za-z0-9]{10}$/.test(v.bv_id)?{bvid:v.bv_id}:{}),title:line(v.title,120)||'未提供标题',kind:v.type===2?'ugc':[24,42].includes(Number(v.type))?'pgc':v.type===25?'course':'unknown',providedParts:Array.isArray(v.pages)&&v.pages.length<=10000?v.pages.length:0});});
+ if(!list.length&&data.has_more)throw new DomainError('invalid');
+ return parseFavoriteItemsPage({...query,items,total,noMore:!data.has_more||offset+list.length>=total,...(skipped?{skipped}:{})},rows);
 }

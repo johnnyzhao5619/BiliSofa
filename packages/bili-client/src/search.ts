@@ -1,5 +1,6 @@
 import {publicArtwork} from './public-artwork.ts';
 import { DomainError, finite, record, text, type PopularCard } from '../../contracts/src/index.ts';
+import { clockSeconds, eachRow, line } from './list-rows.ts';
 import type { SearchResponseIssue } from '../../contracts/src/search.ts';
 /** A fixed field category, never outside text, data values or parser messages. */
 export class SearchBodyError extends DomainError {
@@ -10,7 +11,7 @@ export function searchTitle(value:unknown):string {
   return text(value,1024).replace(/<em class="keyword">|<\/em>/g,'').slice(0,120);
 }
 /** `rows` is the requested page_size: 4, or 20 for an ADR-108 kernel batch (pages 1-5). */
-export function parseSearchBody(raw:string,page:number,rows:4|20=4):{apiCode:number;items:PopularCard[];noMore:boolean} {
+export function parseSearchBody(raw:string,page:number,rows:4|20=4):{apiCode:number;items:PopularCard[];noMore:boolean;skipped?:number} {
   let issue:SearchResponseIssue='body';
   try {
   if(!Number.isInteger(page)||page<1||page>(rows===4?10:5)||new TextEncoder().encode(raw).length>524288)throw new DomainError('invalid');
@@ -29,21 +30,19 @@ export function parseSearchBody(raw:string,page:number,rows:4|20=4):{apiCode:num
   const seen=new Set<string>();
   // Video search mixes in other row kinds (e.g. paid courses, type "ketang", without a BV id).
   // They are skipped, not fatal: failing the page made common short keywords look empty.
-  const items=list.filter(item=>{issue='rows';const v=record(item);issue='type';if(typeof v.type!=='string'||!/^[a-z_]{1,32}$/.test(v.type))throw new DomainError('invalid');return v.type==='video';}).map(item=>{
-    issue='rows';const v=record(item);
-    issue='identity';const bvid=text(v.bvid,12);
-    if(!/^BV[A-Za-z0-9]{10}$/.test(bvid)||seen.has(bvid))throw new DomainError('invalid');seen.add(bvid);
-    issue='duration';const duration=text(v.duration,10);
-    // Official search SSR uses both 5:8 and 5:08. Seconds remain strictly 0–59.
-    if(!/^\d{1,4}:[0-5]?\d$/.test(duration))throw new DomainError('invalid');
-    const [minutes,seconds]=duration.split(':').map(Number),durationSec=minutes!*60+seconds!;
-    if(durationSec>86400)throw new DomainError('invalid');
-    issue='views';const views=finite(v.play,0,Number.MAX_SAFE_INTEGER);
-    if(!Number.isInteger(views))throw new DomainError('invalid');
-    issue='text';
-    const title=searchTitle(v.title);if(!title.length)throw new DomainError('invalid');
-    const cover=publicArtwork(v.pic);return {bvid,title,owner:text(v.author,128).slice(0,48),durationSec,views,...(cover?{cover}:{})};
+  // ADR-111: a row with an unreadable type, identity or title is skipped and counted; a malformed or
+  // over-24-h duration shows as unknown (0); unreadable views show as none.
+  let malformed=0;
+  const videos=list.filter(item=>{const v=item!==null&&typeof item==='object'?item as Record<string,unknown>:undefined;if(!v||typeof v.type!=='string'||!/^[a-z_]{1,32}$/.test(v.type)){malformed++;return false;}return v.type==='video';});
+  if(malformed&&malformed===list.length)throw new DomainError('invalid');
+  const {items,skipped}=eachRow(videos,item=>{
+    const v=record(item),bvid=v.bvid;
+    if(typeof bvid!=='string'||!/^BV[A-Za-z0-9]{10}$/.test(bvid)||seen.has(bvid))return undefined;
+    const title=searchTitle(line(v.title,1024)),owner=line(v.author,48);if(!title.length||!owner)return undefined;seen.add(bvid);
+    const views=Number.isSafeInteger(v.play)&&(v.play as number)>=0?v.play as number:0;
+    const cover=publicArtwork(v.pic);return {bvid,title,owner,durationSec:clockSeconds(v.duration),views,...(cover?{cover}:{})};
   });
-  return {apiCode,items,noMore:page>=Math.min(pages,rows===4?10:5)||list.length===0};
+  issue='rows';
+  return {apiCode,items,noMore:page>=Math.min(pages,rows===4?10:5)||list.length===0,...(skipped+malformed?{skipped:skipped+malformed}:{})};
   } catch { throw new SearchBodyError(issue); }
 }

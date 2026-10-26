@@ -30,7 +30,7 @@ export function userSearch(owner:ResourceOwner,shell:TvShell,initialKeyword:stri
       const counts=document.createElement('p');counts.textContent=`UID ${card.uid} · ${card.videos} 投稿 · ${card.fans} 粉丝`;
       const close=button('user-summary-back','返回UP搜索结果',()=>{void shell.back();});
       const note=document.createElement('p');note.textContent=card.preview?'搜索附带的视频预览':'这次搜索没有附带视频预览';detail.append(heading,counts,close,note);
-      if(card.preview){const preview=card.preview;detail.append(button('user-preview-'+preview.bvid,`${preview.title} · ${preview.durationSec} 秒`,()=>{if(!detailOwner.signal.aborted)play(preview);}));}
+      if(card.preview){const preview=card.preview;detail.append(button('user-preview-'+preview.bvid,`${preview.title}${preview.durationSec>0?` · ${preview.durationSec} 秒`:''}`,()=>{if(!detailOwner.signal.aborted)play(preview);}));}
       return detail;
     });
   }

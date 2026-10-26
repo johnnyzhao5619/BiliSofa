@@ -15,10 +15,13 @@ test('F05 history cursor is canonical bounded private state, never arbitrary URL
  for(const bad of [{...q,scope:{...scope,accountId:'guest'}},{...q,scope:{...scope,accountId:'bili_456'}},{...q,cookie:'synthetic'}])assert.throws(()=>parseHistoryRequest(bad));
  for(const bad of [{page:26},{page:2,refresh:true},{page:1,refresh:false},{page:1,cursor}])assert.throws(()=>parseHistoryQuery(bad));
 });
-test('F05 history normalizes source progress/types only, emptiness is terminal; stalled/unsafe cursor and bad raw data are rejected',()=>{
+test('F05 history normalizes source progress/types only, emptiness is terminal; stalled/unsafe cursor and wholly bad raw data are rejected',()=>{
  const parsed=parseHistoryBody(body(),parseHistoryCursor(initial));assert.equal(parsed.items.length,6);assert.equal(parsed.items[0]!.progressSec,-1);assert.deepEqual(parsed.next,cursor);assert.doesNotMatch(JSON.stringify(parsed),/outside|oid/);
  const mixed=parseHistoryBody(JSON.stringify({code:0,data:{list:[row(1,'live'),row(1,'article-list'),row(1,'cheese'),row(1,'other')],cursor:{max:'9',view_at:1700000000,business:'article-list'}}}),parseHistoryCursor(initial));assert.deepEqual(mixed.items.map(c=>c.kind),['live','article','course','unknown']);assert.equal(mixed.items[0]!.progressSec,null);assert.deepEqual(parseHistoryBody('{"code":0,"data":{"list":[]}}',parseHistoryCursor(initial)),{items:[]});
- for(const bad of ['x',' '.repeat(524289),body(101),body(2,{max:0,view_at:0,business:''}),JSON.stringify({code:0,data:{list:[{...row(0),progress:-2}],cursor:{max:1,view_at:1,business:'archive'}}})])assert.throws(()=>parseHistoryBody(bad,parseHistoryCursor(initial)));
+ for(const bad of ['x',' '.repeat(524289),body(101),body(2,{max:0,view_at:0,business:''}),JSON.stringify({code:0,data:{list:[{...row(0),view_at:-1}],cursor:{max:1,view_at:1,business:'archive'}}})])assert.throws(()=>parseHistoryBody(bad,parseHistoryCursor(initial)));
+ // ADR-111: unreadable progress or duration reads as not provided; an unreadable row is skipped and counted.
+ const loose=parseHistoryBody(JSON.stringify({code:0,data:{list:[{...row(0),progress:-2,duration:900000},{...row(1),view_at:-1}],cursor:{max:1,view_at:1,business:'archive'}}}),parseHistoryCursor(initial));
+ assert.deepEqual(loose.items.map(c=>[c.progressSec,c.durationSec]),[[null,null]]);assert.equal(loose.skipped,1);
  assert.throws(()=>parseHistoryBody('{"code":-101}',parseHistoryCursor(initial)),{code:'login'});
 });
 test('F05 history result rejects credentials, excess batch size and unconfirmed closure',()=>{

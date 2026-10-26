@@ -1,4 +1,4 @@
-import { DomainError, parseScope, parsePopularCard, type Scope, type ErrorCode } from './index.ts';
+import { DomainError, parseScope, parsePopularCard, skippedCount, type Scope, type ErrorCode } from './index.ts';
 import type { PublicReadCommand, PublicReadResult } from './public-read-types.ts';
 import { vodKeys } from './vod-catalog.ts';
 import { parsePrivateAccount, type PrivateAccount } from './private-account.ts';
@@ -28,16 +28,18 @@ export function parsePublicReadResult(raw: unknown): PublicReadResult {
   if (v.version !== 1 || v.operation !== 'public-read' || v.closed !== true) throw new DomainError('invalid');
   const int = (n: unknown, min: number, max: number) => { if (!Number.isSafeInteger(n) || (n as number) < min || (n as number) > max) throw new DomainError('invalid'); return n as number; };
   if (v.kind === 'category') {
-    vodKeys(v, ['version', 'operation', 'scope', 'closed', 'kind', 'items']);
+    vodKeys(v, ['version', 'operation', 'scope', 'closed', 'kind', 'items', ...(v.skipped === undefined ? [] : ['skipped'])]);
     if (!Array.isArray(v.items) || v.items.length > 100) throw new DomainError('invalid');
     const items = v.items.map(parsePopularCard); if (new Set(items.map(i => i.bvid)).size !== items.length) throw new DomainError('invalid');
-    return { ...base, kind: 'category', items };
+    const skipped = skippedCount(v.skipped, 100, items.length);
+    return { ...base, kind: 'category', items, ...(skipped === undefined ? {} : { skipped }) };
   }
   if (v.kind === 'up') {
-    vodKeys(v, ['version', 'operation', 'scope', 'closed', 'kind', 'archives', 'total']);
+    vodKeys(v, ['version', 'operation', 'scope', 'closed', 'kind', 'archives', 'total', ...(v.skipped === undefined ? [] : ['skipped'])]);
     if (!Array.isArray(v.archives) || v.archives.length > 50) throw new DomainError('invalid');
     const archives = v.archives.map(parseUpArchiveCard); if (new Set(archives.map(a => a.bvid)).size !== archives.length) throw new DomainError('invalid');
-    return { ...base, kind: 'up', archives, total: int(v.total, 0, 10000000) };
+    const skipped = skippedCount(v.skipped, 50, archives.length);
+    return { ...base, kind: 'up', archives, total: int(v.total, 0, 10000000), ...(skipped === undefined ? {} : { skipped }) };
   }
   if (v.kind === 'refused') {
     vodKeys(v, ['version', 'operation', 'scope', 'closed', 'kind', ...(v.apiCode === undefined ? [] : ['apiCode']), ...(v.http === undefined ? [] : ['http'])]);

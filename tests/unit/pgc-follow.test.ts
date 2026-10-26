@@ -11,8 +11,12 @@ test('F17 short and empty pages disable next even if remote total was changed co
  for(const list of [[],[row(1),row(2),row(3)]])assert.equal(parsePgcFollowBody(JSON.stringify({code:0,data:{total:10,list}}),{type:1,page:1}).noMore,true);
  assert.equal(parsePgcFollowBody(JSON.stringify({code:0,data:{total:4,list:[1,2,3,4].map(row)}}),{type:1,page:1}).noMore,true);
 });
-test('F17 list rejects duplicate/missing IDs, excessive data, wrong envelopes and API failures',()=>{
- for(const data of [{total:1,list:[{...row(1),season_id:0}]},{total:2,list:[row(1),row(1)]},{total:5,list:[1,2,3,4,5].map(row)},{total:-1,list:[]},{total:1,list:[{...row(1),title:''}]}])assert.throws(()=>parsePgcFollowBody(JSON.stringify({code:0,data}),{type:1,page:1}));
+test('F17 list rejects all-unusable rows, excessive data, wrong envelopes and API failures; single bad rows are skipped',()=>{
+ for(const data of [{total:1,list:[{...row(1),season_id:0}]},{total:5,list:[1,2,3,4,5].map(row)},{total:-1,list:[]},{total:1,list:[{...row(1),title:''}]}])assert.throws(()=>parsePgcFollowBody(JSON.stringify({code:0,data}),{type:1,page:1}));
+ // ADR-111: a repeated or unreadable season is skipped and counted; it still counts toward a full page of four.
+ const loose=parsePgcFollowBody(JSON.stringify({code:0,data:{total:9,list:[row(1),row(1),{...row(3),title:''},row(4)]}}),{type:1,page:1});
+ assert.deepEqual(loose.items.map(e=>e.seasonId),['1','4']);assert.equal(loose.skipped,2);assert.equal(loose.noMore,false);assert.deepEqual(parsePgcFollowPage(loose),loose);
+ assert.throws(()=>parsePgcFollowPage({...loose,skipped:1}));
  assert.throws(()=>parsePgcFollowBody('{"code":-101}',{type:1,page:1}),{code:'login'});assert.throws(()=>parsePgcFollowBody('{"code":-403}',{type:1,page:1}),{code:'permission'});assert.throws(()=>parsePgcFollowBody(' '.repeat(4194305),{type:1,page:1}));
 });
 test('F17 commands/results never admit arbitrary URLs, CSRF, caller UIDs or unacknowledged cleanup',()=>{

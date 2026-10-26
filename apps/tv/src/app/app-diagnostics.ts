@@ -1,13 +1,13 @@
 import { parseMediaFailure, type MediaFailure } from '../../../../packages/contracts/src/media-failure.ts';
 const AREAS = ['app','account','local','media','cast','lifecycle','pgc'] as const;
-const CODES = ['media_keys_registered','media_keys_unavailable','started','verified','cancelled','removed','suspended','resumed','read_unavailable','read_corrupt','read_future','save_confirmed','save_unconfirmed','deleted','delete_unconfirmed','ended','failed','closed','close_unknown','seek_zero','seek_nonzero','startup_aligned','seek_completed','source_changed','autoplay_started','seek_target_hit','seek_target_missed','seek_current_position','follow_confirmed','follow_read_failed','follow_journal_unwritable','follow_unauthenticated','follow_write_failed','follow_write_rejected','follow_readback_mismatch','reconnect_scheduled'] as const;
+const CODES = ['media_keys_registered','media_keys_unavailable','started','verified','cancelled','removed','suspended','resumed','read_unavailable','read_corrupt','read_future','save_confirmed','save_unconfirmed','deleted','delete_unconfirmed','ended','failed','closed','close_unknown','seek_zero','seek_nonzero','startup_aligned','seek_completed','source_changed','autoplay_started','seek_target_hit','seek_target_missed','seek_current_position','follow_confirmed','follow_read_failed','follow_journal_unwritable','follow_unauthenticated','follow_write_failed','follow_write_rejected','follow_readback_mismatch','reconnect_scheduled','list_items_skipped'] as const;
 export type DiagnosticArea = typeof AREAS[number];
 export type DiagnosticCode = typeof CODES[number];
 export interface DiagnosticFact { sequence: number; area: DiagnosticArea; code: DiagnosticCode; mediaFailure?: MediaFailure; }
 /** Process-local whitelist only: no user IDs, titles, BVs, IPs, paths, URLs,
  * player positions, arbitrary errors or native payloads can enter the report. */
 export class AppDiagnostics {
-  constructor(private readonly build: string = 'U5-0.57.2'){}
+  constructor(private readonly build: string = 'U5-0.58.0'){}
   private sequence = 0;
   private facts: DiagnosticFact[] = [];
   add(area: DiagnosticArea, code: DiagnosticCode): void {

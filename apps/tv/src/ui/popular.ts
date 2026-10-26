@@ -77,7 +77,7 @@ export class PopularView {
     const item = this.items[index]; if (!item || this.busy) return;
     this.selected = index; this.sourceButton.hidden = this.playButton.hidden = false; this.render();
     for (let i = 0; i < this.cards.length; i++) this.cards[i]!.setAttribute('aria-pressed', String(i === index));
-    this.detail.textContent = `${item.title}\nUP主：${item.owner} · 时长 ${Math.floor(item.durationSec / 60)}分${item.durationSec % 60}秒 · 播放 ${item.views.toLocaleString()}\n${item.bvid} · 可检查首 P 的游客播放数据与两轨范围请求；可选择播放首P。`;
+    this.detail.textContent = `${item.title}\nUP主：${item.owner}${item.durationSec > 0 ? ` · 时长 ${Math.floor(item.durationSec / 60)}分${item.durationSec % 60}秒` : ''} · 播放 ${item.views.toLocaleString()}\n${item.bvid} · 可检查首 P 的游客播放数据与两轨范围请求；可选择播放首P。`;
   }
   private hideForPlayback(): void {
     this.session.invalidate(); this.modal.hidden = true; this.root.inert = false; this.focus.leaveModal(this.root);
@@ -118,7 +118,7 @@ export class PopularView {
     this.controls[2]!.disabled = this.busy;
     for (let i = 0; i < this.cards.length; i++) {
       const card = this.cards[i]!, item = this.items[i]; card.hidden = !item; card.disabled = this.busy;
-      card.textContent = item ? `${item.title}\n${item.owner} · ${Math.floor(item.durationSec / 60)}:${String(item.durationSec % 60).padStart(2, '0')}` : '';
+      card.textContent = item ? `${item.title}\n${item.owner}${item.durationSec > 0 ? ` · ${Math.floor(item.durationSec / 60)}:${String(item.durationSec % 60).padStart(2, '0')}` : ''}` : '';
       card.setAttribute('aria-pressed', String(i === this.selected));
       const self = card.dataset.focusId!;
       card.dataset.left = i % 2 ? this.cards[i - 1]!.dataset.focusId! : self;

@@ -13,10 +13,13 @@ test('F05 private IPC binds account/scope/page, returns only bounded display DTO
  const page=parseWatchLaterBody(raw(),1),result={version:1,operation:'watch-later-read',scope,closed:true,kind:'ok',page};assert.equal(parseWatchLaterResult(result).kind,'ok');
  for(const v of [{...result,closed:false},{...result,account},{...result,page:{...page,cookie:'synthetic'}},{...result,page:{...page,items:Array(5).fill({title:'合成',kind:'ugc',availability:'available',partCount:1})}}])assert.throws(()=>parseWatchLaterResult(v));
 });
-test('F05 current official watch-later fields distinguish invalid/deleted/unknown cards and discard IDs/URLs',()=>{
+test('F05 current official watch-later fields distinguish invalid/deleted/unknown cards and discard IDs/URLs; unreadable rows are skipped',()=>{
  const page=parseWatchLaterBody(raw([{is_pgc:0,arc_info:{title:'<img src=x>合成',state:0,pages:[{}],cookie:'synthetic'},url:'https://outside.invalid/'},{is_pgc:1,arc_info:{title:'已失效',state:-4,pages:[]}},{arc_info:null}]),1);
  assert.deepEqual(page.items.map(c=>c.availability),['available','unavailable','unknown']);assert.equal(page.items[0]!.title,'<img src=x>合成');assert.equal(page.items[1]!.kind,'pgc');assert.equal(page.items[2]!.title,'未提供标题');assert.doesNotMatch(JSON.stringify(page),/cookie|outside.invalid/);assert.equal(parseWatchLaterPage(page).items.length,3);
- for(const input of ['x',' '.repeat(524289),raw(Array(5).fill({})),raw([{is_pgc:5}]),raw([{arc_info:{state:1.5}}]),JSON.stringify({code:0,data:{list:[],count:0,has_more:'false'}})])assert.throws(()=>parseWatchLaterBody(input,1));
+ for(const input of ['x',' '.repeat(524289),raw(Array(5).fill({})),raw([5]),JSON.stringify({code:0,data:{list:[],count:0,has_more:'false'}})])assert.throws(()=>parseWatchLaterBody(input,1));
+ // ADR-111: unreadable flags read as unknown; a row that is not an object is skipped and counted.
+ const loose=parseWatchLaterBody(raw([{is_pgc:5},{arc_info:{state:1.5,title:'换\n行'}},5]),1);
+ assert.deepEqual(loose.items.map(c=>[c.kind,c.availability,c.title]),[['unknown','unknown','未提供标题'],['unknown','unknown','换 行']]);assert.equal(loose.skipped,1);assert.equal(parseWatchLaterPage(loose).skipped,1);
  assert.throws(()=>parseWatchLaterBody('{"code":-101}',1),{code:'login'});assert.throws(()=>parseWatchLaterBody('{"code":-352}',1),{code:'network'});
 });
 test('F05 runtime owns private payload; cancelling stops only that transfer on the account kernel, and close closes the kernel',async()=>{

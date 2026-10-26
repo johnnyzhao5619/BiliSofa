@@ -72,7 +72,7 @@ export function guestHome(owner: ResourceOwner, shell: TvShell, feedback: HTMLEl
       if (owner.signal.aborted) return;
       page = target; status.textContent = result.items.length ? `${isRanking()?'排行榜快照 · ':''}第 ${page} 页` : '暂无内容';
       result.items.forEach((card, index) => {
-        const node = button('popular-' + card.bvid, `${isRanking()?`第 ${(page-1)*4+index+1} 名 · `:''}${card.title} · ${card.owner} · ${card.durationSec} 秒`, () => play(card));
+        const node = button('popular-' + card.bvid, `${isRanking()?`第 ${(page-1)*4+index+1} 名 · `:''}${card.title} · ${card.owner}${card.durationSec > 0 ? ` · ${card.durationSec} 秒` : ''}`, () => play(card));
         // Fixed two-column grid: boundaries stay put, vertical movement keeps column.
         const id = (i: number) => 'popular-' + result.items[i]!.bvid;
         node.dataset.left = id(index % 2 ? index - 1 : index);

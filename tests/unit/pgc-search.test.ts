@@ -17,9 +17,14 @@ test('PGC actual public row shape normalizes bounded summary without episodes, f
  const optional=parsePgcSearchBody(body([{type:'media_bangumi',season_id:1,title:'未提供元数据'}]),1).items[0]!;assert.deepEqual(optional,{seasonId:'1',title:'未提供元数据',category:'',region:'',tags:'',status:''});
  assert.deepEqual(parsePgcSearchBody('{"code":-352}',1),{apiCode:-352,items:[],noMore:true});assert.deepEqual(parsePgcSearchBody(body([],{numResults:0,numPages:0}),1),{apiCode:0,items:[],noMore:true});
 });
-test('PGC fixed format errors distinguish identity, metadata, rating and pagination without outside values',()=>{
- for(const[patch,issue]of [[{type:'video'},'type'],[{season_id:'28747'},'identity'],[{season_id:9007199254740992},'identity'],[{season_id:0},'identity'],[{title:''},'text'],[{areas:['outside']},'metadata'],[{index_show:'x\noutside'},'metadata'],[{media_score:{score:'9.7'}},'score'],[{media_score:{score:11}},'score']]as const)assert.throws(()=>parsePgcSearchBody(body([{...row(),...patch}]),1),e=>e instanceof SearchBodyError&&e.issue===issue);
- assert.throws(()=>parsePgcSearchBody(body([row(),row()]),1));assert.throws(()=>parsePgcSearchBody(body(),2));assert.throws(()=>parsePgcSearchBody('x'.repeat(524289),1));
+// ADR-111: an unusable season row is skipped and counted (only unusable rows still reject as `rows`);
+// unreadable labels are left empty and an unreadable score is left out.
+test('PGC unusable rows are skipped, unreadable metadata dropped, all-unusable pages and bad pagination reject',()=>{
+ for(const patch of [{type:'video'},{season_id:'28747'},{season_id:9007199254740992},{season_id:0},{title:''}])assert.throws(()=>parsePgcSearchBody(body([{...row(),...patch}]),1),e=>e instanceof SearchBodyError&&e.issue==='rows');
+ const card=parsePgcSearchBody(body([{...row(),areas:['outside'],index_show:'x\noutside',media_score:{score:11}}]),1).items[0]!;
+ assert.deepEqual([card.region,card.status,card.score],['','x outside',undefined]);assert.equal(parsePgcSearchBody(body([{...row(),media_score:{score:'9.7'}}]),1).items[0]!.score,undefined);
+ const mixed=parsePgcSearchBody(body([row(),row(),{...row(1),type:'video'}]),1);assert.equal(mixed.items.length,1);assert.equal(mixed.skipped,2);
+ assert.throws(()=>parsePgcSearchBody(body(),2));assert.throws(()=>parsePgcSearchBody('x'.repeat(524289),1));
 });
 test('PGC full four-card summary and maximum valid scope fit unchanged 4KiB IPC',()=>{
  const items=Array.from({length:4},(_,i)=>({seasonId:String(9007199254740991-i),title:'中'.repeat(120),category:'类'.repeat(16),region:'地'.repeat(32),tags:'材'.repeat(32),status:'更'.repeat(48),score:9.999999999999998}));const v={...result(),scope:{...scope,generation:Number.MAX_SAFE_INTEGER,mediaSessionId:'x'.repeat(64),requestId:'y'.repeat(64)},items};assert.ok(new TextEncoder().encode(JSON.stringify(v)).length<=4096);assert.equal(parsePgcSearchResult(v).items[0]!.title,items[0]!.title);

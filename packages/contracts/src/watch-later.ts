@@ -1,5 +1,5 @@
 import {optionalQueueBvid} from './local-queue.ts';
-import {parseCoverReference,DomainError,record,text,finite,parseScope,type Scope,type ErrorCode} from './index.ts';
+import {parseCoverReference,DomainError,record,text,finite,parseScope,skippedCount,type Scope,type ErrorCode} from './index.ts';
 import {parsePrivateAccount,type PrivateAccount} from './private-account.ts';
 import type { WatchLaterQuery, WatchLaterCard, WatchLaterPage } from './watch-later-dto.ts';
 export type { WatchLaterQuery, WatchLaterCard, WatchLaterPage };
@@ -8,12 +8,14 @@ export type WatchLaterResult = {version:1;operation:'watch-later-read';scope:Sco
 export function parseWatchLaterQuery(value:unknown):WatchLaterQuery{
  const v=record(value);if(Object.keys(v).length!==1||!Number.isInteger(v.page)||Number(v.page)<1||Number(v.page)>25)throw new DomainError('invalid');return {page:Number(v.page)};
 }
+/** One watch-later card; the Worker's body parser skips a row this rejects (ADR-111). */
+export function parseWatchLaterCard(raw:unknown):WatchLaterCard{const c=record(raw);if(Object.keys(c).length!==(4+(c.bvid===undefined?0:1)+(c.cover===undefined?0:1))||Object.keys(c).some(k=>!['title','kind','availability','partCount','bvid','cover'].includes(k))||!['ugc','pgc','unknown'].includes(String(c.kind))||!['available','unavailable','unknown'].includes(String(c.availability)))throw new DomainError('invalid');const partCount=finite(c.partCount,0,10000);if(!Number.isInteger(partCount))throw new DomainError('invalid');const bvid=optionalQueueBvid(c);return {...(bvid?{bvid}:{}),...(c.cover===undefined?{}:{cover:parseCoverReference(c.cover)}),title:text(c.title,120),kind:c.kind as WatchLaterCard['kind'],availability:c.availability as WatchLaterCard['availability'],partCount};}
 export function parseWatchLaterPage(value:unknown,rows:4|20=4):WatchLaterPage{
  const v=record(value),query=parseWatchLaterQuery({page:v.page});
- if(Object.keys(v).length!==4||Object.keys(v).some(k=>!['page','items','noMore','total'].includes(k))||!Array.isArray(v.items)||v.items.length>rows||typeof v.noMore!=='boolean')throw new DomainError('invalid');
+ if(Object.keys(v).length!==(v.skipped===undefined?4:5)||Object.keys(v).some(k=>!['page','items','noMore','total','skipped'].includes(k))||!Array.isArray(v.items)||v.items.length>rows||typeof v.noMore!=='boolean')throw new DomainError('invalid');
  const total=finite(v.total,0,Number.MAX_SAFE_INTEGER);if(!Number.isInteger(total))throw new DomainError('invalid');
- const items=v.items.map(raw=>{const c=record(raw);if(Object.keys(c).length!==(4+(c.bvid===undefined?0:1)+(c.cover===undefined?0:1))||Object.keys(c).some(k=>!['title','kind','availability','partCount','bvid','cover'].includes(k))||!['ugc','pgc','unknown'].includes(String(c.kind))||!['available','unavailable','unknown'].includes(String(c.availability)))throw new DomainError('invalid');const partCount=finite(c.partCount,0,10000);if(!Number.isInteger(partCount))throw new DomainError('invalid');const bvid=optionalQueueBvid(c);return {...(bvid?{bvid}:{}),...(c.cover===undefined?{}:{cover:parseCoverReference(c.cover)}),title:text(c.title,120),kind:c.kind as WatchLaterCard['kind'],availability:c.availability as WatchLaterCard['availability'],partCount};});
- return {...query,items,noMore:v.noMore,total};
+ const items=v.items.map(parseWatchLaterCard),skipped=skippedCount(v.skipped,rows,items.length);
+ return {...query,items,noMore:v.noMore,total,...(skipped===undefined?{}:{skipped})};
 }
 function scoped(value:unknown):Scope{const raw=record(value),s=parseScope(value);if(Object.keys(raw).length!==4||!/^bili_[1-9][0-9]{0,15}$/.test(s.accountId))throw new DomainError('invalid');return s;}
 export function parseWatchLaterRequest(value:unknown):WatchLaterRequest{
