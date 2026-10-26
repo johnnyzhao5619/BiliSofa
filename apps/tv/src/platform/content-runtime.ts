@@ -60,7 +60,7 @@ export class PublicContentRuntime implements ContentRuntime {
       if(query.route==='ranking'){
         // ADR-117: paced like the category lists; 刷新 drops the reused list but never the pause.
         const signed=this.signed.ranking,lane=signed?'account':'guest';
-        if('refresh' in query && query.refresh){forgetPaced('all',lane);this.ranking.invalidate({version:1,scope:task.scope,operation:'public-ranking'});}
+        if('refresh' in query && query.refresh)forgetPaced('all',lane);
         const items=await pacedRead('all',lane,'ranking',async()=>{
           if(signed) return signed(task.signal);
           const r=await this.ranking.run({version:1,scope:task.scope,operation:'public-ranking'},task.signal);

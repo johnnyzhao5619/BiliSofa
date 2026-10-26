@@ -13,7 +13,6 @@ export function interactionVideo(raw:string,bvid:string):Pick<InteractionState,'
 }
 export function interactionLike(raw:string):boolean{return flag(record(interactionRoot(raw).data).like);}
 export function interactionCoins(raw:string):number{return vodInteger(record(interactionRoot(raw).data).coin,0,2);}
-export function interactionRelation(raw:string):{liked:boolean;coins:number}{return{liked:interactionLike(raw),coins:interactionCoins(raw)};}
 export function interactionFollow(raw:string,ownerId:string):{followed:boolean;followMode:number}{
  const v=record(interactionRoot(raw).data);interactionId(ownerId);const attr=vodInteger(v.attribute,0,128);
  if(![0,1,2,6,128].includes(attr))throw new DomainError('unsupported');

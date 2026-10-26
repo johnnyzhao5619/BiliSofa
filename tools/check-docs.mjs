@@ -30,8 +30,9 @@ function rules(path, text) {
     if (/^\| [^|]*前一安装版/m.test(text)) problems.push(`${path}: previous-install history row; it belongs in SIGNING_DEVICE_RECORD.md`);
   }
   if (path === 'docs/TEST_REPORT.md') {
-    // A candidate is a build not yet signed or installed; a closed experiment that keeps "候选" in its name is history.
-    for (const heading of text.match(/^## .*$/gm) ?? []) if (!/^## (已安装|.*候选（[^）]*未签名\/未部署)/.test(heading)) problems.push(`${path}: section "${heading}" is neither the installed build nor an open candidate (候选（…未签名/未部署）)`);
+    // A candidate is a build not yet installed (unsigned, or signed and waiting for an install authorization);
+    // a closed experiment that keeps "候选" in its name is history.
+    for (const heading of text.match(/^## .*$/gm) ?? []) if (!/^## (已安装|.*候选（[^）]*(未签名|已签名)\/未部署)/.test(heading)) problems.push(`${path}: section "${heading}" is neither the installed build nor an open candidate (候选（…未签名/未部署） or 候选（…已签名/未部署）)`);
     if ((text.match(/^## 已安装/gm) ?? []).length > 1) problems.push(`${path}: more than one installed-build section`);
   }
   if (path === 'README.md') {
@@ -85,6 +86,8 @@ function selfTest() {
     ['docs/IMPLEMENTATION_STATUS.md', good + '\n' + '字'.repeat(BUDGET['docs/IMPLEMENTATION_STATUS.md']), 1],
     ['docs/PRODUCT_CLOSURE.md', '# 收口\n\n**用户当前要求先不部署。**\n', 1],
     ['docs/TEST_REPORT.md', '# 报告\n\n摘要。\n\n## 已安装1.0.0\n\n## 1.1.0候选（未签名/未部署）\n', 0],
+    ['docs/TEST_REPORT.md', '# 报告\n\n摘要。\n\n## 已安装1.0.0\n\n## 1.1.0候选（已签名/未部署）\n', 0],
+    ['docs/TEST_REPORT.md', '# 报告\n\n摘要。\n\n## 已安装1.0.0\n\n## 1.1.0候选（已签名）\n', 1],
     ['docs/TEST_REPORT.md', '# 报告\n\n摘要。\n\n## 已安装1.0.0\n\n## R07小数倍速候选（不接入生产）\n', 1],
     ['README.md', '# 应用\n\n## 当前状态\n\n已安装工件为1.0.0，见[ADR-1](docs/adr/1.md)。\n\n## 其他\n', 0],
     ['README.md', '# 应用\n\n## 当前状态\n\n' + '[a](docs/adr/1.md)[b](docs/adr/2.md)[c](docs/adr/3.md)[d](docs/adr/4.md)' + '\n', 1],

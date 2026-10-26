@@ -78,9 +78,9 @@ export class KernelPgcSearch extends BatchedLane<PgcSearchRequest, PgcSearchCard
   constructor(kernel?: () => PublicKernel) { super(parsePgcSearchRequest, value => parsePgcSearchResult(value), value => parsePgcSearchResult(value, BATCH_ROWS), pgcPages, 'pgc.ok', kernel); }
 }
 const only = <O extends RankingRequest['operation']>(operation: O) => (value: unknown) => { const q = parseRankingRequest(value); if (q.operation !== operation) throw new DomainError('invalid'); return q as RankingRequest & { operation: O }; };
-/** 全站排行 (100 cards): reused for five minutes so the home shelf and its full grid share one read. */
-export class KernelRanking extends CachedLane<RankingRequest & { operation: 'public-ranking' }, RankingResult> {
-  constructor(kernel?: () => PublicKernel) { super(only('public-ranking'), parseRankingResult, 300000, (_q, r) => r.operation === 'public-ranking', kernel); }
+/** 全站排行 (100 cards), anonymous. Reuse and pause come from the runtime's paced read (ADR-117), shared by the home shelf and its full grid. */
+export class KernelRanking extends KernelLane<RankingRequest & { operation: 'public-ranking' }, RankingResult> {
+  constructor(kernel?: () => PublicKernel) { super(only('public-ranking'), parseRankingResult, (_q, r) => r.operation === 'public-ranking', kernel); }
 }
 /** Category reads are paced and reused by public-lists (ADR-105); this lane adds nothing on top. */
 export class KernelCategoryRanking extends KernelLane<RankingRequest & { operation: 'public-category-ranking' }, RankingResult> {

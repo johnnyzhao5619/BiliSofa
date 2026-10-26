@@ -1,6 +1,6 @@
 import { DomainError, type Scope } from '../../../../packages/contracts/src/index.ts';
 import { parseIdentityEvent, parseIdentityRequest, type IdentityEvent, type IdentityRequest, type LoginDisplay, type LoginExchange } from '../../../../packages/contracts/src/identity.ts';
-import { parsePrivateAccount, type AccountIdentity, type AccountRuntime, type PrivateAccount } from '../../../../packages/contracts/src/private-account.ts';
+import { parsePrivateAccount, type AccountIdentity, type PrivateAccount } from '../../../../packages/contracts/src/private-account.ts';
 export interface IdentityPort { onmessage: ((event: MessageEvent) => void) | null; onerror: ((event: ErrorEvent) => void) | null; postMessage(value: unknown): void; terminate(): void; }
 let sequence = 0;
 /** One Worker/native lifetime per exchange. Errors without closure poison it. */
@@ -71,8 +71,4 @@ export class IdentityWorkerClient implements LoginExchange {
     try { this.worker.postMessage({ version: 1, operation: 'identity', scope: this.request!.scope, control: 'stop' }); } catch { this.fail(); }
     return this.closure;
   }
-}
-export function identityRuntime(account: PrivateAccount): AccountRuntime {
-  let value: PrivateAccount | undefined = parsePrivateAccount(account); const client = new IdentityWorkerClient();
-  return { verify: signal => { if (!value) return Promise.reject(new DomainError('cancelled')); return client.verify(value, signal); }, close: () => { value = undefined; return client.close(); } };
 }

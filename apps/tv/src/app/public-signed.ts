@@ -35,4 +35,3 @@ export function signedPublicReads(workspace: AccountWorkspace) {
     },
   };
 }
-export type SignedPublicReads = ReturnType<typeof signedPublicReads>;

@@ -4,6 +4,7 @@
 
 | 工件 | 当前结论 |
 | --- | --- |
+| 0.65.1 多余代码清理（ADR-117） | **已签名，未安装**（安装需另行授权）；未签名`dd778893…b783`，签名`16e6a879…f878`（证书预检PASS，权限不变）；行为与0.65.0相同 |
 | 0.65.0 全站排行本人会话、风控提示与首页依次读取（ADR-117） | **已签名并升级安装/启动（平台确认，不清数据）**；未签名`9b3f89e5…c82d`，签名`f83e83e5…f84c`（证书预检PASS，权限不变）；账号内核新增一条固定只读路由；设备验证见[证据](design/evidence/2026-10-26-p2b-device/README.md) |
 | 0.64.1 加载中的货架行可越过（ADR-116） | **已签名并升级安装/启动（平台确认，不清数据）**；未签名`54b7e4a6…436a`，签名`81f9632d…b6f2`（证书预检PASS，权限不变）；设备验证见[证据](design/evidence/2026-10-26-p2b-device/README.md) |
 | 0.64.0 首页快照、分区直达与搜索综合（ADR-116） | **已签名并升级安装/启动（平台确认，不清数据）**；未签名`0dba7d8d…7523`，签名`bbd6f27b…9691`（证书预检PASS，权限不变）；原生与Worker与0.63.0逐字节相同；设备验证见[证据](design/evidence/2026-10-26-p2b-device/README.md) |
@@ -45,6 +46,6 @@
 | 0.38.0冻结 | 倍速USER PASS；关注invalid/点赞-403/互动慢/跳动缺图未通过；[用户事实](design/evidence/2026-10-22-direct/USER_ACCEPTANCE.md) |
 | 0.37.0及以前冻结 | 原最小通过组与失败保持；不覆盖原工件或把旧UI通过扩展为新设备通过 |
 
-当前安装为0.65.0（见表首行）。各版本均未卸载或清数据，未执行代理账号POST。已签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。单一产品构建（ADR-107）输出`dist/bilisofa-app`；原生打包目录：`vod/`←`build/vod-failover`，`vod-api/`、`pgc-read/`←各自的`-failover`目录（0.63.0起与0.58.0逐字节相同，ADR-115），`overlay-read/`←`build/overlay-read-subtitle`，`pgc-follow/`←`build/pgc-follow-status`，公共与账号只读内核←`build/public-kernel`、`build/account-read-kernel`（ADR-108），完整对照见[工具说明](../tools/README.md)。本机只保留当前与上一版未签名包。
+当前安装为0.65.0（表首行0.65.1已签名、未安装）。各版本均未卸载或清数据，未执行代理账号POST。已签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。单一产品构建（ADR-107）输出`dist/bilisofa-app`；原生打包目录：`vod/`←`build/vod-failover`，`vod-api/`、`pgc-read/`←各自的`-failover`目录（0.63.0起与0.58.0逐字节相同，ADR-115），`overlay-read/`←`build/overlay-read-subtitle`，`pgc-follow/`←`build/pgc-follow-status`，公共与账号只读内核←`build/public-kernel`、`build/account-read-kernel`（ADR-108），完整对照见[工具说明](../tools/README.md)。本机只保留当前与上一版未签名包。
 
 [当前验收](CURRENT_DEVICE_TEST.md) · [0.38.0原记录](archive/2026-10-22-direct-038/SIGNING_DEVICE_RECORD.md)
