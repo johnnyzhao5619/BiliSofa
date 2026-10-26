@@ -1,6 +1,7 @@
 import type {ResourceOwner} from './resource-owner.ts';
 import {clockTime} from '../ui/content-card.ts';
 import {productButton} from './product-frame.ts';
+import {setAttr,setData,setHidden,setText} from '../ui/dom-write.ts';
 export const ICONS={
   play:'M7 4v16l13-8Z',pause:'M7 4h3v16H7zM14 4h3v16h-3z',previous:'M6 5v14M19 5 9 12l10 7Z',next:'M18 5v14M5 5l10 7-10 7Z',
   parts:'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',danmaku:'M3 5h18v11H8l-4 3v-3H3zM7 9h6M7 12h9',subtitles:'M3 5h18v14H3zM7 11h4M13 11h4M7 15h10',
@@ -92,26 +93,27 @@ export class PlayerPresentation {
   }
   update(timeMs:number,durationMs:number,seekable:boolean,badge:string):void{
     if(this.owner.signal.aborted)return;
-    this.seekable=seekable&&durationMs>0;this.seek.setAttribute('aria-disabled',String(!this.seekable));this.badge.textContent=badge;
+    // Called every 200 ms (P1-2b): attributes and text are written only when they change.
+    this.seekable=seekable&&durationMs>0;setAttr(this.seek,'aria-disabled',String(!this.seekable));setText(this.badge,badge);
     const duration=Math.max(0,durationMs),actual=Math.max(0,Math.min(duration,timeMs)),target=this.intent.target();
-    this.progress.max=duration||1;this.progress.value=actual;this.marker.hidden=target===undefined||!duration;if(target!==undefined)this.marker.style.left=Math.min(100,100*target/(duration||1))+'%';
-    this.seek.setAttribute('aria-valuemin','0');this.seek.setAttribute('aria-valuemax',String(Math.floor(duration/1000)));this.seek.setAttribute('aria-valuenow',String(Math.floor((target??actual)/1000)));this.seek.setAttribute('aria-valuetext',`${target===undefined?'已播放':'预览'}${clockTime((target??actual)/1000)}，总时长${clockTime(duration/1000)}`);
+    if(this.progress.max!==(duration||1))this.progress.max=duration||1;if(this.progress.value!==actual)this.progress.value=actual;setHidden(this.marker,target===undefined||!duration);if(target!==undefined){const left=Math.min(100,100*target/(duration||1))+'%';if(this.marker.style.left!==left)this.marker.style.left=left;}
+    setAttr(this.seek,'aria-valuemin','0');setAttr(this.seek,'aria-valuemax',String(Math.floor(duration/1000)));setAttr(this.seek,'aria-valuenow',String(Math.floor((target??actual)/1000)));setAttr(this.seek,'aria-valuetext',`${target===undefined?'已播放':'预览'}${clockTime((target??actual)/1000)}，总时长${clockTime(duration/1000)}`);
     const delta=target===undefined?0:target-actual;
-    this.timer.textContent=`${clockTime(actual/1000)} / ${clockTime(duration/1000)}${target===undefined?'':' · 预览 '+clockTime(target/1000)+(this.options.openSettings?`（${delta<0?'-':'+'}${clockTime(Math.abs(delta)/1000)}）`:' · 确认后跳转')}`;
+    setText(this.timer,`${clockTime(actual/1000)} / ${clockTime(duration/1000)}${target===undefined?'':' · 预览 '+clockTime(target/1000)+(this.options.openSettings?`（${delta<0?'-':'+'}${clockTime(Math.abs(delta)/1000)}）`:' · 确认后跳转')}`);
     this.render();
   }
   private render():void{
-    this.secondary.hidden=!this.expanded;this.more.setAttribute('aria-expanded',String(this.expanded));if(!this.options.openSettings)this.more.textContent=this.expanded?'收起更多':'更多';
+    setHidden(this.secondary,!this.expanded);setAttr(this.more,'aria-expanded',String(this.expanded));if(!this.options.openSettings)setText(this.more,this.expanded?'收起更多':'更多');
     const buttons=(row:HTMLElement)=>[...row.querySelectorAll<HTMLButtonElement>('button[data-focus-id]')].filter(b=>!b.hidden);
     // Lead choices (resume/from start) sit above the primary row and must stay in the remote path.
     const leading=this.lead?buttons(this.lead):[];
     // Quick-row proxies mirror their originals' label and state on every render.
-    this.quickRow.hidden=!this.quickOpen;
-    for(const b of [...this.quickRow.querySelectorAll<HTMLButtonElement>('button[data-source]')]){const source=this.panel.ownerDocument.querySelector<HTMLButtonElement>(`[data-focus-id="${b.dataset.source}"]`);if(!source)continue;b.disabled=source.disabled;if(!b.dataset.fixed)setLabel(b,source.getAttribute('aria-label')??source.textContent??'');const pressed=source.getAttribute('aria-pressed');if(pressed===null)b.removeAttribute('aria-pressed');else b.setAttribute('aria-pressed',pressed);}
+    setHidden(this.quickRow,!this.quickOpen);
+    for(const b of [...this.quickRow.querySelectorAll<HTMLButtonElement>('button[data-source]')]){const source=this.panel.ownerDocument.querySelector<HTMLButtonElement>(`[data-focus-id="${b.dataset.source}"]`);if(!source)continue;if(b.disabled!==source.disabled)b.disabled=source.disabled;if(!b.dataset.fixed)setLabel(b,source.getAttribute('aria-label')??source.textContent??'');setAttr(b,'aria-pressed',source.getAttribute('aria-pressed')??undefined);}
     const rows=[...(leading.length?[leading]:[]),buttons(this.primary),...(this.quickOpen?[buttons(this.quickRow)]:[])],extra=this.expanded?buttons(this.secondary):[];
     for(let i=0;i<extra.length;i+=4)rows.push(extra.slice(i,i+4));
     const nearest=(row:HTMLButtonElement[]|undefined,index:number)=>row?.map((b,i)=>({b,d:Math.abs(i-index)})).filter(item=>!item.b.disabled).sort((a,b)=>a.d-b.d)[0]?.b.dataset.focusId;
-    this.seek.dataset.left=this.seek.dataset.right='player-timeline';this.seek.dataset.up='player-timeline';this.seek.dataset.down=nearest(rows[0],0)??'player-more';
-    rows.forEach((items,r)=>items.forEach((b,i)=>{if(b.disabled)return;b.dataset.left=items.slice(0,i).reverse().find(n=>!n.disabled)?.dataset.focusId??b.dataset.focusId;b.dataset.right=items.slice(i+1).find(n=>!n.disabled)?.dataset.focusId??b.dataset.focusId;b.dataset.up=nearest(rows[r-1],i)??'player-timeline';b.dataset.down=nearest(rows[r+1],i)??b.dataset.focusId;}));
+    for(const side of ['left','right','up'])setData(this.seek,side,'player-timeline');setData(this.seek,'down',nearest(rows[0],0)??'player-more');
+    rows.forEach((items,r)=>items.forEach((b,i)=>{if(b.disabled)return;setData(b,'left',items.slice(0,i).reverse().find(n=>!n.disabled)?.dataset.focusId??b.dataset.focusId);setData(b,'right',items.slice(i+1).find(n=>!n.disabled)?.dataset.focusId??b.dataset.focusId);setData(b,'up',nearest(rows[r-1],i)??'player-timeline');setData(b,'down',nearest(rows[r+1],i)??b.dataset.focusId);}));
   }
 }

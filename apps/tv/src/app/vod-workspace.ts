@@ -1,5 +1,6 @@
 import {PlayerInteractions,actionValue} from './player-interactions.ts';
 import {PlayerPresentation,ICONS,setLabel,setIcon} from './player-presentation.ts';
+import {setAttr,setDisabled,setHidden,setText} from '../ui/dom-write.ts';
 import {rememberResume,forgetResume} from './resume-memory.ts';
 import {SeekGesture} from '../../../../packages/media/src/seek-acceleration.ts';
 import {Countdown,nextUpIndex} from '../../../../packages/media/src/next-up.ts';
@@ -102,7 +103,7 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   danmaku.hidden = !overlays;
   const next = button('vod-next', '下一P', () => { if(queueNavigation){queueNavigation.next?.(continuous);return;}const s = player?.snapshot(); if (s) { const i = s.index + 1 < s.length ? s.index + 1 : 0; void withResume(playlist[i]!, position => select(i, position)); } });
   // The workspace chains the next item itself after a countdown (ADR-090), so the player never sequences.
-  const continuousButton = button('vod-continuous', '连播：关闭', () => { continuous = !continuous; if (!queueNavigation && profile.rememberContinuous?.(continuous) !== 'saved') feedback.textContent = '连播设置本次已生效，保存未确认'; if (!continuous) clearNextUp(); player?.mode(false, repeat); update(); });
+  const continuousButton = button('vod-continuous', '连播：关闭', () => { continuous = !continuous; if (!queueNavigation && profile.rememberContinuous?.(continuous) !== 'saved') feedback.textContent = '连播设置本次已生效，可能未保存；下次播放时请再确认'; if (!continuous) clearNextUp(); player?.mode(false, repeat); update(); });
   const repeatButton = button('vod-repeat', '循环：关闭', () => { repeat = repeat === 'off' ? 'one' : repeat === 'one' ? queueNavigation?'off':'all' : 'off'; player?.mode(false, repeat); update(); });
   const rate = button('vod-rate', '倍速：1×', () => {
     ratePicker();return;
@@ -150,28 +151,28 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     if (owner.signal.aborted) return;
     const s = player?.snapshot(), media = s?.media, available = !busy && !s?.moving && !s?.stopped && !!media && !media.seeking && ['playing', 'paused'].includes(media.state);
     const preparing = !!media && !s?.stopped && ['idle', 'preparing', 'ready'].includes(media.state);
-    for (const control of [toggle, earlier, later, tracks, overlaySettings, comments, interactions, like, follow, watch, parts, collection, next, rate]) control.disabled = !available;
-    interactions.disabled ||= !access?.interactions||false;
-    interactions.textContent='收藏夹';interactions.title=access?.interactions?'读取当前账号实际状态，选择后预览确认':'请先在管理账号中使用已保存账号';
+    // P1-2b (ADR-113 #5): this runs every 200 ms; each control is written only when its value changes.
+    for (const control of [toggle, tracks, overlaySettings, comments]) setDisabled(control, !available);
+    setDisabled(earlier, !available || !media?.durationMs); setDisabled(later, !available || !media?.durationMs);
+    setText(interactions,'收藏夹');setAttr(interactions,'title',access?.interactions?'读取当前账号实际状态，选择后预览确认':'请先在管理账号中使用已保存账号');
     if(actionCatalog!==(catalog?.catalog.id??'')){actionCatalog=catalog?.catalog.id??'';quickValues={};instant?.bind(actionCatalog);}
     if(instant&&available&&access?.interactions)instant.preload();
-    interactions.disabled ||= !!instant?.busy;
-    for(const b of [like,follow,watch])b.hidden=preview.targetMs!==undefined||!access?.interactions;
-    rate.hidden=preview.targetMs!==undefined;
-    for(const [b,kind,label,on]of [[like,'like','点赞','已点赞'],[follow,'follow','关注UP','已关注UP'],[watch,'watch-later','稍后再看','已加入稍后再看']]as const){b.disabled=!available||!access?.interactions||!!instant?.busy&&!instant.snapshot;const value=instant?actionValue(instant.snapshot,kind):quickValues[kind];b.setAttribute('aria-busy',String(instant?.busy??false));b.setAttribute('aria-disabled',String(b.disabled||instant?.busy||false));setLabel(b,value===true?on:instant&&false&&typeof value!=='boolean'?'核对'+label:label);if(typeof value==='boolean')b.setAttribute('aria-pressed',String(value));else b.removeAttribute('aria-pressed');}
-    earlier.disabled ||= !media?.durationMs; later.disabled ||= !media?.durationMs;
-    collection.disabled ||= !catalog?.detail.collection?.entries.length;
-    parts.disabled ||= (catalog?.detail.parts.length ?? 0) < 2;
-    next.disabled ||= queueNavigation?!queueNavigation.next:!s || s.index + 1 >= s.length && repeat !== 'all';
-    rate.disabled ||= media?.state !== 'playing' || !caps.rates.includes(2);
-    commit.disabled = cancel.disabled = !available || preview.targetMs === undefined;
-    continuousButton.disabled = repeatButton.disabled = !started || busy || s?.restartRequired === true;
-    enqueue.disabled = !queue || !s || busy; if(s)enqueue.textContent=`加入本机队列 · P${s.item.part}`; replay.hidden = !s?.stopped || terminal !== '播放结束' || s.restartRequired;
-    continuousButton.textContent = `连播：${continuous ? '开启' : '关闭'}`; repeatButton.textContent = `循环：${repeat === 'one' ? '单项' : repeat === 'all' ? '列表' : '关闭'}`;
-    rate.textContent = `倍速：${media?.acceptedRate ?? 1}×`;
-    if (catalog) title.textContent = `${catalog.detail.title} · ${episodeMode ? s?.item.title ?? catalog.catalog.item.title : `P${s?.item.part ?? catalog.catalog.item.part}`}`;
-    if(queueNavigation)title.textContent=queueNavigation.label+' · '+(catalog?title.textContent:'视频播放');
-    timeline.textContent = media ? `${(media.timeMs / 1000).toFixed(1)} / ${(media.durationMs / 1000).toFixed(1)} 秒${preview.targetMs === undefined ? '' : ` · 预览 ${(preview.targetMs / 1000).toFixed(1)} 秒（确认后跳转）`}` : '';
+    setDisabled(interactions, !available || !access?.interactions || !!instant?.busy);
+    for(const b of [like,follow,watch])setHidden(b,preview.targetMs!==undefined||!access?.interactions);
+    setHidden(rate,preview.targetMs!==undefined);
+    for(const [b,kind,label,on]of [[like,'like','点赞','已点赞'],[follow,'follow','关注UP','已关注UP'],[watch,'watch-later','稍后再看','已加入稍后再看']]as const){setDisabled(b,!available||!access?.interactions||!!instant?.busy&&!instant.snapshot);const value=instant?actionValue(instant.snapshot,kind):quickValues[kind];setAttr(b,'aria-busy',String(instant?.busy??false));setAttr(b,'aria-disabled',String(b.disabled||instant?.busy||false));setLabel(b,value===true?on:label);setAttr(b,'aria-pressed',typeof value==='boolean'?String(value):undefined);}
+    setDisabled(collection, !available || !catalog?.detail.collection?.entries.length);
+    setDisabled(parts, !available || (catalog?.detail.parts.length ?? 0) < 2);
+    setDisabled(next, !available || (queueNavigation?!queueNavigation.next:!s || s.index + 1 >= s.length && repeat !== 'all'));
+    setDisabled(rate, !available || media?.state !== 'playing' || !caps.rates.includes(2));
+    for (const b of [commit, cancel]) setDisabled(b, !available || preview.targetMs === undefined);
+    for (const b of [continuousButton, repeatButton]) setDisabled(b, !started || busy || s?.restartRequired === true);
+    setDisabled(enqueue, !queue || !s || busy); if(s)setText(enqueue,`加入本机队列 · P${s.item.part}`); setHidden(replay, !s?.stopped || terminal !== '播放结束' || s.restartRequired);
+    setText(continuousButton, `连播：${continuous ? '开启' : '关闭'}`); setText(repeatButton, `循环：${repeat === 'one' ? '单项' : repeat === 'all' ? '列表' : '关闭'}`);
+    setText(rate, `倍速：${media?.acceptedRate ?? 1}×`);
+    {let heading = catalog ? `${catalog.detail.title} · ${episodeMode ? s?.item.title ?? catalog.catalog.item.title : `P${s?.item.part ?? catalog.catalog.item.part}`}` : title.textContent ?? '';
+    if(queueNavigation)heading=queueNavigation.label+' · '+(catalog?heading:'视频播放');setText(title, heading);}
+    setText(timeline, media ? `${(media.timeMs / 1000).toFixed(1)} / ${(media.durationMs / 1000).toFixed(1)} 秒${preview.targetMs === undefined ? '' : ` · 预览 ${(preview.targetMs / 1000).toFixed(1)} 秒（确认后跳转）`}` : '');
     if (terminal) say(terminal);
     // ADR-110: name the stage instead of one line for the whole start. A player that exists but has not
     // shown a frame (idle/preparing/ready) is buffering. The fallback note has its own slot, so account
@@ -180,14 +181,14 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     else if (!started) say('是否继续本分P上次在电视观看的位置？');
     else say(media?.seeking ? '正在跳转' : join(note, advice) || (media?.state === 'paused' ? '已暂停' : media?.state === 'playing' ? ('') : '正在准备'));
     if (controls.contains(document.activeElement) && (document.activeElement as HTMLButtonElement).disabled && !(instant?.busy&&[like,follow,watch].includes(document.activeElement as HTMLButtonElement))) ((toggle.disabled?wake:toggle)).focus();
-    commit.hidden=cancel.hidden=preview.targetMs===undefined;presentation?.update(media?.timeMs??0,media?.durationMs??0,!!available,episodeMode?'番剧影视':catalog?.detail.owner??'');
+    for (const b of [commit, cancel]) setHidden(b, preview.targetMs===undefined);presentation?.update(media?.timeMs??0,media?.durationMs??0,!!available,episodeMode?'番剧影视':catalog?.detail.owner??'');
     if(defaultFocusPending&&available&&!panel.inert){defaultFocusPending=false;const active=document.activeElement as HTMLElement|null;if(active===document.body||active===wake||active?.dataset.focusId==='player-timeline'||active===toggle)toggle.focus();}
-    hide.disabled = !available;
+    setDisabled(hide, !available);
     {
       const playing = media?.state === 'playing', on = !!overlays?.danmakuEnabled();
       setLabel(toggle, playing ? '暂停' : '播放'); setIcon(toggle, playing ? ICONS.pause : ICONS.play);
-      setLabel(danmaku, on ? '弹幕 开' : '弹幕 关'); danmaku.setAttribute('aria-pressed', String(on));
-      previous.disabled = !available || !s || s.index === 0;
+      setLabel(danmaku, on ? '弹幕 开' : '弹幕 关'); setAttr(danmaku, 'aria-pressed', String(on));
+      setDisabled(previous, !available || !s || s.index === 0);
     }
     controlLayer?.update(media?.state === 'playing', !started || busy || !!instant?.busy || !!terminal || !!s?.moving || !!media?.seeking || !!media?.buffering || media?.state === 'loading' || media?.state === 'error' || media?.state === 'closed' || !!presentation?.moreOpen || preview.targetMs!==undefined || !!startOver);
     // The start-over offer appears with the first frame, not with the start command.

@@ -27,15 +27,8 @@ import { hotSearch } from './hot-search.ts';
 import { historyPanel } from './search-history.ts';
 import { userSearch } from './user-search.ts';
 import { pgcSearch } from './pgc-search.ts';
-import { localBookmarks } from './local-bookmarks.ts';
-import { localQueue } from './local-queue.ts';
-import { followUpdates } from './follow-updates.ts';
-import { pgcFollowList } from './pgc-follow-list.ts';
 import { pgcFollows } from './pgc-follows.ts';
 import { productSeason } from './product-season.ts';
-import { watchLater } from './watch-later.ts';
-import { cloudHistory } from './cloud-history.ts';
-import { favorites } from './favorites.ts';
 import { vodWorkspace } from './vod-workspace.ts';
 import { createGuestProbePlayer } from '../platform/samsung.ts';
 import { signedPublicReads } from './public-signed.ts';
@@ -137,37 +130,8 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
         return productHome(owner, shell, services, memory.search, { remember: keyword => { history.remember(keyword); }, tools: accepted => { const tools = document.createElement('div'); tools.className = 'tv-search-actions'; tools.append(productButton('search-input', '输入关键词', () => { shell.openModal('search-keyword', child => searchKeyword(child, shell, accepted), 'keyword-key-a'); }), productButton('search-hot', '热搜', () => { shell.openModal('search-hot', child => hotSearch(child, shell, accepted), 'hot-back'); }), productButton('search-history', '搜索历史', () => { shell.openModal('search-history', child => historyPanel(child, shell, history, accepted), 'history-back'); }), productButton('search-up', '搜索UP主', () => { shell.openModal('up-keyword', child => searchKeyword(child, shell, keyword => { if (!owner.signal.aborted)
                 shell.openModal('user-search', nested => userSearch(nested, shell, keyword, history, diagnostics, feedback, card => play(card, 0)), 'user-search-back'); }, 'UP主'), 'keyword-key-a'); }), productButton('search-pgc', '搜索番剧影视', () => { shell.openModal('pgc-keyword', child => searchKeyword(child, shell, keyword => { if (!owner.signal.aborted)
                 shell.openModal('pgc-search', nested => pgcSearch(nested, shell, keyword, history, diagnostics, feedback, openSeason), 'pgc-search-back'); }, '番剧'), 'keyword-key-a'); })); return tools; } });
-    title.textContent = route.page === 'following' ? '关注' : route.page === 'catalog' ? '番剧影视' : route.page === 'library' ? '我的' : '投屏';
-    const actions = document.createElement('div');
-    actions.className = 'tv-destination-actions';
-    section.append(actions);
-    const privateAction = (id: string, label: string, open: (child: ResourceOwner) => HTMLElement, focus: string) => { const b = productButton(id, label, () => { if (!owner.signal.aborted)
-        shell.openModal(id, open, focus); }); b.disabled = state?.kind !== 'active'; actions.append(b); };
-    if (route.page === 'following') {
-        privateAction('follow-updates-open', '查看关注更新', child => followUpdates(child, shell, workspace), 'follow-updates-back');
-        privateAction('pgc-list-open', '我的追番 / 追剧', child => pgcFollowList(child, shell, pgcFollows(child, workspace), card => openSeason(card)), 'pgc-list-back');
-    }
-    if (route.page === 'catalog') {
-        actions.append(productButton('catalog-search', '搜索番剧影视', () => { shell.openModal('catalog-keyword', child => searchKeyword(child, shell, keyword => { if (!owner.signal.aborted)
-            shell.openModal('pgc-search', nested => pgcSearch(nested, shell, keyword, history, diagnostics, feedback, openSeason), 'pgc-search-back'); }, '番剧'), 'keyword-key-a'); }));
-        privateAction('pgc-list-open', '我的追番 / 追剧', child => pgcFollowList(child, shell, pgcFollows(child, workspace), card => openSeason(card)), 'pgc-list-back');
-    }
-    if (route.page === 'library') {
-        actions.append(productButton('local-queue-open', '本机播放队列', () => { shell.openModal('local-queue', child => localQueue(child, shell, queue, profile, diagnostics, feedback, vod, unavailable), 'queue-back'); }), productButton('local-records-open', '本机观看记录', () => { shell.openModal('local-records', child => localBookmarks(child, shell, profile, queue), 'bookmarks-back'); }));
-        privateAction('watch-later-open', '稍后再看', child => watchLater(child, shell, workspace, queue), 'watch-later-back');
-        privateAction('cloud-history-open', '云端历史', child => cloudHistory(child, shell, workspace, queue), 'cloud-history-back');
-        privateAction('favorite-folders-open', '收藏夹', child => favorites(child, shell, workspace, queue), 'favorite-folders-back');
-    }
-    if (route.page === 'cast') {
-        {const local=profile.read();return productCast(owner,shell,feedback,local.kind==='ok'?local.value.preferences.jumpSeconds:10,diagnostics);}
-    }
-    if (state?.kind !== 'active' && (route.page === 'following' || route.page === 'library' || route.page === 'catalog')) {
-        const note = document.createElement('p');
-        note.className = 'tv-status';
-        note.textContent = '登录后可查看账号内容，本机记录与搜索仍可使用';
-        section.append(note);
-        actions.append(productButton('destination-account', '登录与账号', () => { void shell.navigateTop({ page: 'account' }); }));
-    }
+    // Every other destination returned above; 投屏 is the last one here.
+    if (route.page === 'cast') {const local=profile.read();return productCast(owner,shell,feedback,local.kind==='ok'?local.value.preferences.jumpSeconds:10,diagnostics);}
     return section;
 }
 function holdHint(identity: string, owner: ResourceOwner): void {

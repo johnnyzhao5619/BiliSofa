@@ -2,11 +2,11 @@ import type {ResourceOwner} from './resource-owner.ts';
 import type {TvShell} from './tv-shell.ts';
 import type {AccountWorkspace} from './account-workspace.ts';
 import {productButton} from './product-frame.ts';
-/** Existing QR/store/removal handlers retain their owner; only presentation changes. */
+/** Existing QR/store/removal handlers retain their owner; only presentation changes. Since P1-2b (ADR-113 #4) this is
+ * Settings' first group: no page title of its own, and Left returns to the group's button. */
 export function productAccount(owner:ResourceOwner,shell:TvShell,legacy:HTMLElement,workspace:AccountWorkspace):HTMLElement {
   // Guests start on sign-in; a signed-in viewer starts on the current account.
   legacy.className='tv-account';legacy.dataset.initialFocusId=workspace.state.kind==='active'?'account-details-open':'add-account';
-  const title=legacy.querySelector('h1')!;title.textContent='账号';
   const summary=document.createElement('p');summary.className='tv-eyebrow';summary.textContent=workspace.state.kind==='active'?'当前身份：'+workspace.state.account.name:'当前为游客，公开内容与本机队列仍可使用';
   const layout=document.createElement('div');layout.className='tv-account-layout';
   const saved=document.createElement('section'),login=document.createElement('section');saved.className=login.className='tv-account-card';
@@ -20,7 +20,7 @@ export function productAccount(owner:ResourceOwner,shell:TvShell,legacy:HTMLElem
   if(workspace.state.kind!=='active'&&add.disabled)legacy.dataset.initialFocusId='product-account-library';
   if(workspace.recovery){loginHeading.textContent='更新登录会话';add.textContent='重新扫码并返回原页面';legacy.dataset.initialFocusId='guest';}
   const note=document.createElement('p');note.textContent=(workspace.recovery?'请使用原来的账号扫码。本机队列、续播、设置与未确认操作记录会保留；不会自动播放或重发操作。':'')+'用官方哔哩哔哩 App 扫码并在手机确认。凭据只保存在电视保护存储；返回或Home会取消本次扫码。';
-  login.append(loginHeading,note,add,status,canvas);layout.append(saved,login);legacy.replaceChildren(title,summary,layout);
+  login.append(loginHeading,note,add,status,canvas);layout.append(saved,login);legacy.replaceChildren(summary,layout);
   function wire():void {
     const rows=[...list.children] as HTMLElement[];
     const activeId=workspace.state.kind==='active'?workspace.state.account.id:undefined;
@@ -29,8 +29,8 @@ export function productAccount(owner:ResourceOwner,shell:TvShell,legacy:HTMLElem
     rows.forEach(row=>{row.hidden=row!==chosen;row.className='tv-account-saved';});
     const left=[...saved.querySelectorAll<HTMLButtonElement>('button[data-focus-id]:not(:disabled)')].filter(b=>!b.closest('[hidden]'));
     const right=[add].filter(b=>!b.disabled);
-    left.forEach((b,i)=>{b.dataset.left='nav-account';b.dataset.right=right[0]?.dataset.focusId??b.dataset.focusId;b.dataset.up=left[i-1]?.dataset.focusId??b.dataset.focusId;b.dataset.down=left[i+1]?.dataset.focusId??b.dataset.focusId;});
-    add.dataset.left=left[0]?.dataset.focusId??'nav-account';add.dataset.right=add.dataset.focusId;add.dataset.up=add.dataset.down=add.dataset.focusId;
+    left.forEach((b,i)=>{b.dataset.left='settings-section-account';b.dataset.right=right[0]?.dataset.focusId??b.dataset.focusId;b.dataset.up=left[i-1]?.dataset.focusId??b.dataset.focusId;b.dataset.down=left[i+1]?.dataset.focusId??b.dataset.focusId;});
+    add.dataset.left=left[0]?.dataset.focusId??'settings-section-account';add.dataset.right=add.dataset.focusId;add.dataset.up=add.dataset.down=add.dataset.focusId;
   }
   const observer=new MutationObserver(wire);observer.observe(list,{childList:true,subtree:true});observer.observe(add,{attributes:true,attributeFilter:['disabled']});owner.add('account-layout',()=>observer.disconnect());wire();return legacy;
 }

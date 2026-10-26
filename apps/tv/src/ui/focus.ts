@@ -3,15 +3,18 @@ export class FocusRouter {
   private root: HTMLElement;
   constructor(private readonly document: Document, root: HTMLElement) { this.root = root; }
   targets(): HTMLElement[] {
-    return [...this.root.querySelectorAll<HTMLElement>('[data-focus-id]')].filter(el =>
-      !el.closest('[hidden], [inert]') && !el.matches(':disabled') && el.getClientRects().length > 0);
+    return [...this.root.querySelectorAll<HTMLElement>('[data-focus-id]')].filter(el => this.usable(el));
   }
+  private usable(el: HTMLElement): boolean { return !el.closest('[hidden], [inert]') && !el.matches(':disabled') && el.getClientRects().length > 0; }
   initial(id?: string): void {
     const targets = this.targets();
     (targets.find(el => el.dataset.focusId === id) ?? targets[0])?.focus();
   }
   move(direction: 'left' | 'right' | 'up' | 'down'): void {
     const active = this.document.activeElement as HTMLElement | null;
+    // P1-2b (ADR-113 #5): an explicit neighbour is looked up by id; only geometric moves scan and measure the whole layer.
+    const named = active && this.root.contains(active) && active.dataset.focusId && this.usable(active) ? active.dataset[direction] : undefined;
+    if (named) { [...this.root.querySelectorAll<HTMLElement>(`[data-focus-id="${CSS.escape(named)}"]`)].find(el => this.usable(el))?.focus(); return; }
     const targets = this.targets();
     if (!active || !targets.includes(active)) { this.initial(); return; }
     const explicit = active.dataset[direction];

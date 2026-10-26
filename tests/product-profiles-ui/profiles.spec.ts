@@ -28,7 +28,7 @@ test('ADR-099 choosing an account verifies it, closes the chooser and is remembe
 });
 test('ADR-099 Back on the chooser keeps the guest and reads nothing private',async({page})=>{
  const errors=await launch(page);await expect(chooser(page)).toBeVisible();await page.keyboard.press('Escape');
- await expect(chooser(page)).toHaveCount(0);await page.locator('[data-focus-id=nav-account]').click();await expect(page.locator('#pages')).toContainText('使用 合成101');expect(errors).toEqual([]);
+ await expect(chooser(page)).toHaveCount(0);await page.locator('[data-focus-id=nav-settings]').click();await expect(page.locator('#pages')).toContainText('使用 合成101');expect(errors).toEqual([]);
 });
 test('ADR-099 without saved accounts a one-time welcome offers sign-in or guest; guest is not asked again',async({page})=>{
  const errors=await launch(page,{accounts:0,welcome:true});await expect(chooser(page).locator('h1')).toHaveText('欢迎使用 BiliSofa');

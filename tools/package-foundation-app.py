@@ -3,7 +3,7 @@ from pathlib import Path
 from candidate_native import load_candidate
 import argparse,hashlib,json,re,zipfile,subprocess,xml.etree.ElementTree as ET
 parser=argparse.ArgumentParser(description=__doc__);args=parser.parse_args()
-version='0.61.1'
+version='0.62.0'
 ROOT=Path(__file__).resolve().parents[1];STAGE=ROOT/'dist/bilisofa-app';NATIVE=ROOT/'build/identity'
 subprocess.run(['python3',str(ROOT/'tools/category-data.py'),'--check'],check=True)
 def sha(data):return hashlib.sha256(data).hexdigest()

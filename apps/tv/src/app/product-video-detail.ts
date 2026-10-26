@@ -81,7 +81,7 @@ export function openVideoDetail(owner: ResourceOwner, shell: TvShell, services: 
         result.setAttribute('role', 'status');
         if (options.enqueue !== false)
             actions.append(productButton('detail-enqueue', part > 1 ? `加入本机队列 · P${part}` : '加入本机队列 · 首P', () => { if (child.signal.aborted)
-                return; const outcome = services.queue.add(part > 1 ? { bvid: card.bvid, part, title: card.title } : { bvid: card.bvid, title: card.title }); result.textContent = outcome === 'saved' ? '已加入本机队列' : outcome === 'full' ? '本机队列已满' : `本机队列保存未确认（${outcome}）`; }));
+                return; const outcome = services.queue.add(part > 1 ? { bvid: card.bvid, part, title: card.title } : { bvid: card.bvid, title: card.title }); result.textContent = outcome === 'saved' ? '已加入本机队列' : outcome === 'full' ? '本机队列已满' : '本机队列可能未保存，请到“我的”查看队列'; }));
         if (options.extra) actions.append(...options.extra(child, closeThen));
         const id = document.createElement('p');
         id.className = 'tv-secondary';

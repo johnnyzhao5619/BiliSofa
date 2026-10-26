@@ -12,10 +12,6 @@ import { LoginCoordinator } from '../../../../packages/bili-client/src/login.ts'
 import { protectedAccountStore } from '../platform/private-account-store.ts';
 import { IdentityWorkerClient } from '../platform/identity-worker.ts';
 import { accountRuntime, prewarmAccountKernel, dropWarmAccountKernel } from '../platform/account-runtime.ts';
-import { followUpdates } from './follow-updates.ts';
-import { cloudHistory } from './cloud-history.ts';
-import { favorites } from './favorites.ts';
-import { watchLater } from './watch-later.ts';
 import { exitApplication, isBack, mediaCommand, registerMediaKeys } from '../platform/samsung.ts';
 import {productButton} from './product-frame.ts';
 import {rateProbe} from './rate-probe.ts';
@@ -36,7 +32,7 @@ import { RetainedWrites } from '../../../../packages/bili-client/src/retained-wr
 import {interactionWrites} from '../platform/interaction-journal.ts';
 import { writeJournal } from '../platform/write-journal.ts';
 import { createVodAccess, createPgcAccess } from '../platform/vod-runtime.ts';
-import { vodCandidateCapabilities,vodRuntimeStatus,createGuestProbePlayer,createLiveRelayPlayer } from '../platform/samsung.ts';
+import { vodRuntimeStatus,createLiveRelayPlayer } from '../platform/samsung.ts';
 import {createLiveAccess} from '../platform/live-runtime.ts';
 import {accountLiveAccess} from './account-live.ts';
 import {liveWorkspace} from './live-workspace.ts';
@@ -45,8 +41,6 @@ import type {OpenLive} from './live-reader.ts';
 import type {ResourceOwner} from './resource-owner.ts';
 import type {VodCapabilities} from '../../../../packages/contracts/src/vod-catalog.ts';
 import {pgcFollows} from './pgc-follows.ts';
-import {pgcFollowList} from './pgc-follow-list.ts';
-import {pgcSeasonWorkspace} from './pgc-season.ts';
 import type { VodAccess, PgcAccess } from '../../../../packages/contracts/src/vod-runtime.ts';
 document.body.classList.add('product-ui');
 document.body.classList.add('product-browse');
@@ -63,7 +57,7 @@ const root = document.querySelector<HTMLElement>('#pages')!, overlays = document
 {let notice:ReturnType<typeof setTimeout>|undefined;new MutationObserver(()=>{clearTimeout(notice);const text=feedback.textContent??'';if(text&&!/正在|未确认|扫码|登录|失效|重新打开|权限/.test(text))notice=setTimeout(()=>{if(feedback.textContent===text)feedback.textContent='';},4000);}).observe(feedback,{childList:true,characterData:true,subtree:true});}
 const repository = protectedAccountStore(), login = new LoginCoordinator(repository, () => new IdentityWorkerClient());
 const queues=localQueues();
-const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.61.1'); diagnostics.add('app','started'); onListSkips(() => diagnostics.add('app','list_items_skipped'));document.body.classList.add('product-instant');document.body.classList.add('product-stream');
+const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.62.0'); diagnostics.add('app','started'); onListSkips(() => diagnostics.add('app','list_items_skipped'));document.body.classList.add('product-instant');document.body.classList.add('product-stream');
 const histories=searchHistories();
 const writes = new RetainedWrites(writeJournal());
 function writeSummary(id:string){const old=writes.summary(id),video=interactionWrites().summary(id);return old&&video?{total:old.total+video.total,unknown:old.unknown+video.unknown}:undefined;}
@@ -125,12 +119,13 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
       const candidate=value as VodAccess;if(!candidate||typeof candidate.read!=='function'||typeof candidate.transport!=='function'||typeof candidate.close!=='function')throw new DomainError('invalid');return candidate;
     });
   };
-  if (route.page === 'settings') {const view=localSettings(owner, shell, profile, diagnostics, () => state?.kind === 'active' ? writeSummary(state.account.id) : 'guest',history,state?.kind==='active'?()=>{shell.openModal('read-cache-clear',child=>readCacheClear(child,shell,workspace),'cache-keep');}:undefined,queue,()=>{void shell.navigateTop({page:'home'});});const probeDevice=vodRuntimeStatus(),probeCaps=probeDevice?.kind==='available'?probeDevice.capabilities:undefined;
+  // ADR-113 #4 (P1-2b): the account lives in Settings as its first group; the account route opens Settings on it.
+  if (route.page === 'settings' || route.page === 'account') {const view=localSettings(owner, shell, profile, diagnostics, () => state?.kind === 'active' ? writeSummary(state.account.id) : 'guest',history,state?.kind==='active'?()=>{shell.openModal('read-cache-clear',child=>readCacheClear(child,shell,workspace),'cache-keep');}:undefined,queue,()=>{void shell.navigateTop({page:'home'});});const probeDevice=vodRuntimeStatus(),probeCaps=probeDevice?.kind==='available'?probeDevice.capabilities:undefined;
     // R07 rate probe (ADR-095) lives in 帮助与诊断 and only runs when the viewer starts it.
     const probe=probeCaps?productButton('settings-rate-probe','倍速探查（诊断）',()=>{if(!owner.signal.aborted)shell.openModal('rate-probe',child=>rateProbe(child,shell,probeCaps,()=>openVodAccess(probeCaps),profile),'rate-probe-start');}):undefined;
-    return wrap(productSettings(owner,shell,view,localOverlayPreferences(state?.kind==='active'?state.account.id:'guest'),probe,lastFailureNote(diagnostics.lastMediaFailure()),visitorSettings(owner)));}
-  const section = document.createElement('section'), title = document.createElement('h1'); title.textContent = route.page === 'account' ? '账号管理' : 'BiliSofa'; section.append(title);
-  if (route.page !== 'account') {
+    const account=accountView();
+    return wrap(productSettings(owner,shell,view,localOverlayPreferences(state?.kind==='active'?state.account.id:'guest'),probe,lastFailureNote(diagnostics.lastMediaFailure()),visitorSettings(owner),{node:account,open:route.page==='account'}));}
+  {
     const device=vodRuntimeStatus(),caps=device?.kind==='available'?device.capabilities:undefined;
     const unavailable=device?.kind==='unavailable'?'当前平台缺少可用播放器（media.player_api_missing），请核对平台API':false;
     const liveOpen:OpenLive=async(media,signal)=>{
@@ -144,6 +139,8 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
     const vod=caps?{caps,open:()=>openVodAccess(caps),openPgc:(seasonId:string)=>openPgcMedia(seasonId,caps),...(openInteractions?{interactions:openInteractions}:{}),playLive:(card:import('../../../../packages/contracts/src/live-search.ts').LiveSearchCard)=>playLive({roomId:card.roomId,title:card.title,owner:card.owner,category:card.category,state:card.state}),...(state?.kind==='active'?{follows:(child:ResourceOwner)=>pgcFollows(child,workspace)}:{})}:undefined;
     return wrap(productPage(owner,shell,route,productMemory,{profile,queue,history,feedback,diagnostics,workspace,unavailable,vod,libraryEnabled:true,discoveryEnabled:true,collectionsEnabled:true}));
   }
+  function accountView():HTMLElement {
+  const section = document.createElement('section');
   const status = document.createElement('p'); status.setAttribute('role', 'status'); status.textContent = '正在读取电视保存的账号';
   const canvas = document.createElement('canvas'); canvas.hidden = true; canvas.setAttribute('aria-label', '哔哩哔哩登录二维码');
   const list = document.createElement('div'); list.className = 'account-list';
@@ -171,16 +168,10 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
   };
   owner.add('login-exchange', async () => { if (!(await login.close()).closed) throw new DomainError('unknown'); });
   owner.add('qr-canvas', () => { clearQr(canvas); canvas.hidden = true; });
-  const watch=button('watch-later-open','稍后再看 · 只读',()=>{shell.openModal('watch-later',modalOwner=>watchLater(modalOwner,shell,workspace,queue),'watch-later-back');});watch.disabled=state?.kind!=='active';
-  const cloud=button('cloud-history-open','云端历史 · 只读',()=>{shell.openModal('cloud-history',modalOwner=>cloudHistory(modalOwner,shell,workspace,queue),'cloud-history-back');});cloud.disabled=state?.kind!=='active';
-  const fav=button('favorite-folders-open','收藏夹 · 只读',()=>{shell.openModal('favorite-folders',modalOwner=>favorites(modalOwner,shell,workspace,queue),'favorite-folders-back');});fav.disabled=state?.kind!=='active';
-  const updates=button('follow-updates-open','关注更新 · 只读',()=>{shell.openModal('follow-updates',modalOwner=>followUpdates(modalOwner,shell,workspace),'follow-updates-back');});updates.disabled=state?.kind!=='active';
   const details=button('account-details-open','当前账号详情',()=>{if(!owner.signal.aborted&&state?.kind==='active')shell.openModal('account-details',modalOwner=>accountDetails(modalOwner,shell,state.account,state.profile),'account-details-back');});details.disabled=state?.kind!=='active';
-  section.append(details,watch,cloud,fav,updates);
-  const pgcCaps=vodCandidateCapabilities();
-  if(pgcCaps){const follows=button('pgc-follow-list-open','我的追番 / 追剧',()=>{shell.openModal('pgc-follow-list',child=>pgcFollowList(child,shell,pgcFollows(child,workspace),card=>{shell.openModal('pgc-season',seasonOwner=>pgcSeasonWorkspace(seasonOwner,shell,profile,diagnostics,feedback,pgcCaps,()=>openPgcMedia(card.seasonId,pgcCaps),source=>createGuestProbePlayer(source.url),actionOwner=>pgcFollows(actionOwner,workspace),'返回追番 / 追剧列表'),'pgc-season-back');}),'pgc-list-back');});follows.disabled=state?.kind!=='active';section.append(follows);}
+  section.append(details);
   if(state?.kind==='active')section.append(button('renew-account','重新扫码更新此会话',()=>{void workspace.prepareRenewal().catch(error=>{feedback.textContent=message(error);});}));
-  section.append(add, button('guest', '使用游客身份', () => { void use(); }), button('account-back', '返回', () => { void shell.back(); }), status, canvas, list);
+  section.append(add, button('guest', '使用游客身份', () => { void use(); }), status, canvas, list);
   void repository.list().then(accounts => {
     if (owner.signal.aborted) return;
     add.disabled = false;if(renewal&&(document.activeElement as HTMLElement|null)?.dataset.focusId==='guest')add.focus(); status.textContent = renewal?'登录需要更新，请用原账号扫码；成功后返回原页面':accounts.length ? '请选择账号；使用前会重新核对身份' : '尚未保存账号';
@@ -189,21 +180,22 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
       row.append(button('use-' + account.id, `使用 ${account.name}`, () => { void use(account.id); }), button('remove-' + account.id, `移除 ${account.name}`, () => {
         shell.openModal('remove-account', () => {
           const modal = document.createElement('section'), heading = document.createElement('h2'); heading.id = 'remove-title'; heading.textContent = `从电视移除 ${account.name} 及本地设置、续播、队列？`; modal.setAttribute('aria-labelledby', heading.id); modal.append(heading);
-          const retained = document.createElement('p'); retained.textContent = '搜索历史和本机队列也会清除；防重复写操作记录会保留'; modal.append(retained);
+          const retained = document.createElement('p'); retained.textContent = '搜索历史和本机队列也会清除'; modal.append(retained);
           modal.append(button('keep-account', '保留账号', () => { void shell.back(); }), button('confirm-remove', '确认移除', () => {
             void (async () => {
               await shell.back(); await workspace.select(); forgetProfile(account.id);
               const removed = profiles.profile(account.id).clear(); diagnostics.add('local',removed === 'deleted' ? 'deleted' : 'delete_unconfirmed');
               const searchRemoved=histories.profile(account.id).clear(),queueRemoved=queues.profile(account.id).clear();
               if (removed !== 'deleted'||searchRemoved!=='deleted'||queueRemoved!=='deleted') { feedback.textContent = '本地记录清除未确认，账号已保留，可重试移除'; await shell.navigate({ page: 'account' }); return; }
-              await workspace.remove(account.id); diagnostics.add('account','removed'); feedback.textContent = '该账号及设置、续播、队列已移除；防重复写操作记录已保留'; await shell.navigate({ page: 'account' });
+              await workspace.remove(account.id); diagnostics.add('account','removed'); feedback.textContent = '该账号及设置、续播、队列已移除'; await shell.navigate({ page: 'account' });
             })().catch(e => { feedback.textContent = message(e); });
           })); return modal;
         });
       })); list.append(row);
     }
   }).catch(error => { if (!owner.signal.aborted) status.textContent = message(error); });
-  return wrap(productAccount(owner,shell,section,workspace));
+  return productAccount(owner,shell,section,workspace);
+  }
 }, isBack, () => {
   if (shell.restartRequired) { exitApplication(); return; }
   shell.openModal('exit', () => {

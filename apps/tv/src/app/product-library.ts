@@ -61,7 +61,7 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
   heading.id=folder?'library-folder-title':'library-page-title';panel.setAttribute('aria-labelledby',heading.id);
   const note = document.createElement('p');
   note.className = 'tv-eyebrow';
-  note.textContent = folder ? '账号收藏 · 只读' : '本机记录与账号片库';
+  note.textContent = folder ? '账号收藏' : '本机记录与账号片库';
   const filters = document.createElement('div');
   filters.className = 'tv-filters tv-library-tabs';
   const status = document.createElement('p');
@@ -88,7 +88,7 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
     void read(currentPage - 1); }), next = button('next', '下一页', () => { if (!next.disabled)
     void read(currentPage + 1); });
   const continuous = button('continuous', '播完自动下一项', () => { const value = services.queue.read(); if (value.kind === 'ok') {
-    services.feedback.textContent = services.queue.continuous(!value.value.continuous) === 'saved' ? '连播设置已保存' : '连播设置保存未确认';
+    services.feedback.textContent = services.queue.continuous(!value.value.continuous) === 'saved' ? '连播设置已保存' : '连播设置可能未保存，可再切换一次';
     void read(currentPage);
   } });
   continuous.setAttribute('role', 'switch');
@@ -141,7 +141,7 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
         const index = current.kind === 'ok' ? current.value.items.findIndex(item => queueItemKey(item) === queueItemKey(entry.queued!)) : -1;
         for (const [direction, label] of [[-1, '上移'], [1, '下移']] as const) {
           const move = productButton('library-detail-move-' + (direction === -1 ? 'up' : 'down'), label, () => { if (child.signal.aborted)
-            return; const outcome = services.queue.move(entry.queued!.bvid, direction, queuePart(entry.queued!)); services.feedback.textContent = outcome === 'saved' ? '队列顺序已保存' : '顺序保存未确认'; closeThen(() => { const data = services.queue.read(), at = data.kind === 'ok' ? data.value.items.findIndex(item => queueItemKey(item) === queueItemKey(entry.queued!)) : -1; void read(at >= 0 ? Math.floor(at / 4) + 1 : currentPage, false, entry.id); }); });
+            return; const outcome = services.queue.move(entry.queued!.bvid, direction, queuePart(entry.queued!)); services.feedback.textContent = outcome === 'saved' ? '队列顺序已保存' : '顺序可能未保存，请重新打开队列核对'; closeThen(() => { const data = services.queue.read(), at = data.kind === 'ok' ? data.value.items.findIndex(item => queueItemKey(item) === queueItemKey(entry.queued!)) : -1; void read(at >= 0 ? Math.floor(at / 4) + 1 : currentPage, false, entry.id); }); });
           move.disabled = index < 0 || direction === -1 && index === 0 || direction === 1 && (current.kind !== 'ok' || index >= current.value.items.length - 1);
           out.push(move);
         }
@@ -280,7 +280,7 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
         items = data.items;
         page = data.page;
         noMore = data.noMore;
-        note = '账号只读' + (data.note ? ' · ' + data.note : '');
+        note = data.note ? '账号片库 · ' + data.note : '账号片库';
       }
       if (owner.signal.aborted || generation !== ticket)
         return;

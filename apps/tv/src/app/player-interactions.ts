@@ -28,9 +28,9 @@ export class PlayerInteractions{
   const task=Promise.resolve().then(async()=>{
    await this.closeAccess();if(!alive())return;const access=this.open(source);this.access=access;
    const s=await access.read(abort.signal,kind??'toolbar');if(!alive())return;this.snapshot=this.merge(s,kind);
-   if(!kind){for(const action of s.reconciled??[])if(action!=='favorite')this.unknown.add(action);this.message=s.blocked?'旧操作未确认，写入已锁定':['like','follow','watch-later'].some(k=>s.unavailable?.[k as PlayerAction])?'部分互动状态暂未读取，可独立核对':'账号互动状态已读取';return;}
-   if(this.unknown.has(kind)||s.reconciled?.includes(kind)){this.unknown.delete(kind);this.message=`仅回查${names[kind]}：${actionValue(s,kind)===null?'状态未确认':actionValue(s,kind)?'已设置':'未设置'}，未重复提交；如需更改请再次点击`;return;}
-   const value=actionValue(s,kind);if(s.blocked||typeof value!=='boolean'){this.message=s.blocked?'旧操作未确认，写入已锁定；不会自动重发':`${names[kind]}状态暂未读取，本次未提交；可再次点击只读核对`;return;}
+   if(!kind){for(const action of s.reconciled??[])if(action!=='favorite')this.unknown.add(action);this.message=s.blocked?'上次操作结果未知，暂不提交新操作':['like','follow','watch-later'].some(k=>s.unavailable?.[k as PlayerAction])?'部分互动状态暂未读取，可独立核对':'账号互动状态已读取';return;}
+   if(this.unknown.has(kind)||s.reconciled?.includes(kind)){this.unknown.delete(kind);this.message=`仅回查${names[kind]}：${actionValue(s,kind)===null?'状态未知':actionValue(s,kind)?'已设置':'未设置'}，未重复提交；如需更改请再次点击`;return;}
+   const value=actionValue(s,kind);if(s.blocked||typeof value!=='boolean'){this.message=s.blocked?'上次操作结果未知，暂不提交新操作，也不会自动重发':`${names[kind]}状态暂未读取，本次未提交；可再次点击核对`;return;}
    if(typeof previous!=='boolean'||previous!==value){this.message=`${names[kind]}状态已更新，本次仅核对；请按当前按钮状态操作`;return;}
    this.message=`正在${value?'取消':'设置'}${names[kind]}`;this.changed();
    // This explicit button press is the grant for this reversible operation.
