@@ -1,6 +1,6 @@
 # P1-1 播放起播改动方案
 
-2026-10-25。对应[ADR-110](../adr/110-playback-start-prefetch-handoff-and-overlay-lane.md)。状态：**用户确认4项决定（2026-10-25）；P1-1a在0.57.0实现并已签名安装，设备结果见ADR-110“设备结果”；P1-1b未开始**。分支`perf/p0-network-kernel`。
+2026-10-25。对应[ADR-110](../adr/110-playback-start-prefetch-handoff-and-overlay-lane.md)。状态：**用户确认4项决定（2026-10-25）；P1-1a在0.57.0实现并已签名安装，设备结果见ADR-110“设备结果”；P1-1b在0.59.0实现（未签名/未安装），见ADR-112**。分支`perf/p0-network-kernel`。
 
 ## 目标
 
@@ -29,13 +29,31 @@
 | `apps/tv/src/app/vod-workspace.ts` | 分阶段状态文字 |
 | 测试 | 交接、续播起播、降级顺序、超时后重连的单元测试；合成UI补三条规格；公共内核主机测试补view路由 |
 
-## P1-1b 改动清单（概要）
+## P1-1b 改动清单
 
-- `platform/wasm-network/src/vod-api.c`：第二个CDN句柄，两项来源检查并行，主机测试补并行用例。
-- `overlay-read.c`、`overlay-native-api.ts`、`overlay-runtime.ts`、`packages/contracts/src/overlay-read.ts`：
-  - 目标增加可选`aid/cid`，有就跳过nav/view；
-  - 叠加层客户端改为每次播放一个常驻Worker。
-- `comments-native-api.ts`：复用aid。
+对应[ADR-112](../adr/112-parallel-source-checks-and-overlay-binding-reuse.md)，**用户确认4项决定（2026-10-25）；0.59.0已实现（未签名/未安装），见ADR-112“实现”**。上一版概要写的是直接改`vod-api.c`和常驻叠加层Worker；核对代码后改为下表（原因见ADR-112背景）。
+
+| 范围 | 文件 | 改动 |
+| --- | --- | --- |
+| 原生：成对检查 | `platform/wasm-network/src/vod-source-pair.h`（新）、`vod-api-failover.c`、`pgc-read-failover.c` | 两个带各自状态的CDN句柄挂在同一multi；自带tick（没有成对检查时退回`vod_tick`）；一行完成信号加按轨导出；`vod-api.c`不改 |
+| 链接与打包 | `tools/link-vod-api-failover.py`、PGC对应脚本、`tools/package-foundation-app.py` | 新构建目录；路由扫描与Akamai规则照旧；只有`vod-api/`、`pgc-read/`的原生资源变化 |
+| JS：检查与主备 | `platform/wasm-network/src/vod-native-api.ts`、`vod-source-owner.ts`、`pgc-native-api.ts` | `inspect`改为一次成对检查；`VodCheckError`可标明两轨；只重查失败轨，两轨都失败一起切换 |
+| 私有绑定 | `packages/bili-client/src/vod-catalog.ts`、`packages/contracts/src/overlay-binding.ts`、`vod-source-owner.ts` | 私有目录保留aid；绑定增加`aid`与本次签名盐；评论也取得绑定 |
+| 叠加层 | `platform/wasm-network/src/overlay-native-api.ts`、`overlay-worker.ts` | 有完整绑定时跳过nav/view/season，签名被拒时退回重读一次；缺字段时走旧路径 |
+| 评论 | `platform/wasm-network/src/comments-native-api.ts`、`apps/tv/src/platform/comments-runtime.ts`、`vod-runtime.ts` | 评论读取接收绑定端口，跳过nav/view |
+| 版本 | 配置、打包、签名、部署脚本与诊断构建号 | 0.59.0 |
+| 测试 | `tests/native/vod-api.test.py`与夹具、`source-failover.test.py`；单元`vod-native-api`、`vod-source-owner`、`vod-source-failover`、`overlay-read`、`comments`；打包负例 | 见ADR-112“验收与证据” |
+
+不做：常驻叠加层Worker（需要新的原生会话，测量后再定）、调整叠加层读取顺序、修改`vod-api.c`。
+
+估算约2.5天：原生成对检查与主机测试1天，JS主备与绑定1天，测试、打包、装机半天。
+
+### 需要你确认的决定
+
+1. 成对检查以新头文件实现，只重新链接`vod-api`与`pgc-read`两个模块，`vod-api.c`不动？
+2. 失败时只重查失败的那一轨，两轨都失败一起切换，每轨仍最多切换一次？
+3. aid、cid与签名盐只经私有绑定端口交接（修订ADR-110第8项“`OverlayTarget`加aid/cid”的写法），叠加层与评论有完整绑定时跳过nav/view/season？
+4. 常驻叠加层Worker这一批先不做，测量后再定？
 
 ## 设备测量（每批后）
 

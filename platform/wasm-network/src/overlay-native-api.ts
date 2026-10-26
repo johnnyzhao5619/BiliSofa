@@ -6,9 +6,18 @@ import { parseVodDetail, resolveVodPart } from '../../../packages/bili-client/sr
 import { parsePgcSeasonBody } from '../../../packages/bili-client/src/pgc-season.ts';
 import { decodeDanmakuSegment, parsePlayerMetadata, parseSubtitleBody } from '../../../packages/bili-client/src/overlay-data.ts';
 import { VodNativeApi } from './vod-native-api.ts';
+import { boundVideo, type PrivateOverlayBinding } from '../../../packages/contracts/src/overlay-binding.ts';
+import { parsePrivateAccount } from '../../../packages/contracts/src/private-account.ts';
 export class OverlayNativeApi extends VodNativeApi {
-  read(rawTarget: OverlayTarget, rawCommand: OverlayCommand, signal: AbortSignal, expectedCid: string, account?: PrivateAccount): Promise<OverlayValue> {
+  /** ADR-112: with a full binding (AID, CID and the playback read's salts) only the wanted request is made; if that
+   * fails for any reason other than cancel or login, the read runs once more the old way (nav, then view). */
+  async read(rawTarget: OverlayTarget, rawCommand: OverlayCommand, signal: AbortSignal, expected: string | PrivateOverlayBinding, account?: PrivateAccount): Promise<OverlayValue> {
     const target = parseOverlayTarget(rawTarget), command = parseOverlayCommand(rawCommand);
+    const expectedCid = typeof expected === 'string' ? expected : expected.cid, bound = typeof expected === 'string' ? undefined : boundVideo(expected);
+    if (bound) {
+      try { return await this.direct(signal, account, () => this.fetch(target, command, signal, bound.cid, bound.aid, bound.keys)); }
+      catch (error) { if (signal.aborted || !(error instanceof DomainError) || ['cancelled', 'login', 'unknown'].includes(error.code)) throw error; }
+    }
     return this.authorized(signal, account, async (identity, keys) => {
       let episodeCid: string | undefined;
       if (target.seasonId) {
@@ -25,21 +34,32 @@ export class OverlayNativeApi extends VodNativeApi {
         cid = episodeCid;
       } else { const detail = parseVodDetail(raw, target.bvid); if (!identity && !detail.guestAllowed) throw new DomainError('permission'); cid = resolveVodPart(detail, target.part).cid; }
       if (cid !== expectedCid) throw new DomainError('cancelled');
-      const signature = `${keys.img}|${keys.sub}|${Math.floor(Date.now() / 1000)}`;
-      if (command.kind === 'danmaku') {
-        await this.request(6, `${cid}|${aid}|${command.segment}|${signature}`, signal);
-        const n = this.native, at = n._vod_body_ptr(), length = n._vod_body_length();
-        try {
-          if (!Number.isSafeInteger(at) || at < 0 || !Number.isSafeInteger(length) || length < 0 || length > 4194304 || at + length > n.HEAPU8.length) throw new DomainError('invalid');
-          return { kind: 'danmaku', items: decodeDanmakuSegment(n.HEAPU8.subarray(at, at + length)) };
-        } finally { n._vod_response_clear(); }
-      }
-      await this.request(4, `${target.bvid}|${cid}|${signature}`, signal);
-      const metadata = parsePlayerMetadata(this.json(), { bvid: target.bvid, cid, aid });
-      if (command.kind === 'metadata') return { kind: 'metadata', tracks: metadata.tracks.map(t => t.summary), loginRequired: metadata.loginRequired };
-      const track = metadata.tracks.find(t => t.summary.key === command.track.key && t.summary.language === command.track.language && t.summary.label === command.track.label && t.summary.automatic === command.track.automatic);
-      if (!track) throw new DomainError(metadata.loginRequired ? 'login' : 'cancelled');
-      await this.request(5, track.url, signal); return { kind: 'subtitles', cues: parseSubtitleBody(this.json()) };
+      return this.fetch(target, command, signal, cid, aid, keys);
     });
+  }
+  /** One native batch with the account's jar imported and no nav: the binding already carries what nav and view gave. */
+  private direct<T>(signal: AbortSignal, value: PrivateAccount | undefined, work: () => Promise<T>): Promise<T> {
+    const account = value === undefined ? undefined : parsePrivateAccount(value);
+    return this.batch(signal, async () => {
+      if (account && (account.expiresAt <= Date.now() || !this.importJar(account))) throw new DomainError('login');
+      return work();
+    });
+  }
+  private async fetch(target: OverlayTarget, command: OverlayCommand, signal: AbortSignal, cid: string, aid: string, keys: { img: string; sub: string }): Promise<OverlayValue> {
+    const signature = `${keys.img}|${keys.sub}|${Math.floor(Date.now() / 1000)}`;
+    if (command.kind === 'danmaku') {
+      await this.request(6, `${cid}|${aid}|${command.segment}|${signature}`, signal);
+      const n = this.native, at = n._vod_body_ptr(), length = n._vod_body_length();
+      try {
+        if (!Number.isSafeInteger(at) || at < 0 || !Number.isSafeInteger(length) || length < 0 || length > 4194304 || at + length > n.HEAPU8.length) throw new DomainError('invalid');
+        return { kind: 'danmaku', items: decodeDanmakuSegment(n.HEAPU8.subarray(at, at + length)) };
+      } finally { n._vod_response_clear(); }
+    }
+    await this.request(4, `${target.bvid}|${cid}|${signature}`, signal);
+    const metadata = parsePlayerMetadata(this.json(), { bvid: target.bvid, cid, aid });
+    if (command.kind === 'metadata') return { kind: 'metadata', tracks: metadata.tracks.map(t => t.summary), loginRequired: metadata.loginRequired };
+    const track = metadata.tracks.find(t => t.summary.key === command.track.key && t.summary.language === command.track.language && t.summary.label === command.track.label && t.summary.automatic === command.track.automatic);
+    if (!track) throw new DomainError(metadata.loginRequired ? 'login' : 'cancelled');
+    await this.request(5, track.url, signal); return { kind: 'subtitles', cues: parseSubtitleBody(this.json()) };
   }
 }

@@ -76,3 +76,14 @@ test('W04 failed next read invalidates former catalog, and future cancellation c
   const read = g.owner.read({ bvid, part: 2 }); await new Promise(resolve => setImmediate(resolve)); const close = g.owner.close(); complete(catalog(time + 3600000));
   await assert.rejects(read, { code: 'cancelled' }); await close;
 });
+test('ADR-112 the private binding carries the read\'s AID and salts only when both are known', async () => {
+  const salts = { img: 'c'.repeat(32), sub: 'd'.repeat(32) }, full = catalog(time + 3600000);
+  const withAid = fixture([{ ...full, detail: { ...full.detail, aid: '987654321' }, keys: salts } as ReturnType<typeof catalog>]);
+  const read = await withAid.owner.read({ bvid, part: 2 });
+  assert.deepEqual(withAid.owner.overlayBinding(read.catalog.id), { version: 1, kind: 'overlay-binding', bvid, part: 2, cid: '222', aid: '987654321', ...salts });
+  assert.ok(!JSON.stringify(read).includes('987654321') && !JSON.stringify(read).includes(salts.img), 'the public result never carries them');
+  for (const partial of [{ ...full, keys: salts }, { ...full, detail: { ...full.detail, aid: '987654321' } }]) {
+    const f = fixture([partial as ReturnType<typeof catalog>]), r = await f.owner.read({ bvid, part: 2 });
+    assert.deepEqual(f.owner.overlayBinding(r.catalog.id), { version: 1, kind: 'overlay-binding', bvid, part: 2, cid: '222' });
+  }
+});

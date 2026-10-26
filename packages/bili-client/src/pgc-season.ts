@@ -3,7 +3,7 @@ import { pgcId, pgcRawId, parsePgcSeason, type PgcEpisode, type PgcRestriction, 
 import { vodBvid, vodInteger, type VodItem } from '../../contracts/src/vod-catalog.ts';
 import { parseVodPlayback, type PrivateVodCatalog, type PrivateVodDetail } from './vod-catalog.ts';
 import { publicArtwork } from './public-artwork.ts';
-export interface PrivatePgcEpisode { key: string; episodeId: string; cid: string; item: VodItem; allowed: boolean; }
+export interface PrivatePgcEpisode { key: string; episodeId: string; cid: string; item: VodItem; allowed: boolean; aid?: string; }
 export interface PrivatePgcSeason { summary: PgcSeason; episodes: PrivatePgcEpisode[]; }
 export class PgcApiError extends DomainError { constructor(readonly apiCode: number) { super([-101, -102].includes(apiCode) ? 'login' : [-10403, 10015001, 10015002].includes(apiCode) ? 'permission' : 'network'); } }
 function envelope(raw: string): Record<string, unknown> {
@@ -52,7 +52,8 @@ export function parsePgcSeasonBody(raw: string, seasonId: string, authenticated:
       let binding: PrivatePgcEpisode | undefined;
       try {
         const bvid = vodBvid(e.bvid), cid = pgcRawId(e.cid), durationMs = vodInteger(e.duration, 1, 86400000);
-        binding = { key, episodeId, cid, item: { bvid, part: 1, title: title.slice(0, 120), durationMs }, allowed: !['region', 'unavailable', 'drm'].includes(restriction) && (authenticated || restriction === 'none') };
+        const aid = typeof e.aid === 'number' && Number.isSafeInteger(e.aid) && e.aid > 0 ? String(e.aid) : undefined;
+        binding = { key, episodeId, cid, item: { bvid, part: 1, title: title.slice(0, 120), durationMs }, allowed: !['region', 'unavailable', 'drm'].includes(restriction) && (authenticated || restriction === 'none'), ...(aid ? { aid } : {}) };
       } catch { restriction = 'unavailable'; }
       const previous = summaries.get(key), oldBinding = bindings.get(key);
       if (previous && (JSON.stringify(oldBinding) !== JSON.stringify(binding) || previous.restriction !== restriction)) throw new DomainError('invalid');
@@ -89,7 +90,7 @@ export function pgcVodDetail(season: PrivatePgcSeason, episode: PrivatePgcEpisod
   const byKey = new Map(season.summary.episodes.map(e => [e.key, e]));
   const entries = group.episodes.map(key => byKey.get(key)!).map(e => ({ title: e.title.slice(0,120), ...(e.item ? { item: { ...e.item } } : {}) }));
   return { summary: { title: season.summary.title, owner: '番剧 / 影视', parts: [{ ...episode.item }], collection: { title: season.summary.title, entries } },
-    parts: [{ cid: episode.cid, item: { ...episode.item } }], guestAllowed: season.summary.episodes.find(e => e.key === episode.key)?.restriction === 'none' };
+    parts: [{ cid: episode.cid, item: { ...episode.item } }], guestAllowed: season.summary.episodes.find(e => e.key === episode.key)?.restriction === 'none', ...(episode.aid ? { aid: episode.aid } : {}) };
 }
 export function parsePgcPlaybackBody(raw: string, episode: PrivatePgcEpisode, id: string, now = Date.now()): PrivateVodCatalog {
   if (!episode.allowed) throw new DomainError('permission');

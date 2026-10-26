@@ -40,7 +40,7 @@ port.onmessage = event => {
       if (complete || !active) return;
       api = new OverlayNativeApi(port.Module!);
       const request = active;
-      void bound.then(value => api!.read(request.target, request.command, controller.signal, value.cid, request.account)).then(value => finish(value), error => finish(undefined, error));
+      void bound.then(value => api!.read(request.target, request.command, controller.signal, value, request.account)).then(value => finish(value), error => finish(undefined, error));
     },
     print(line: unknown) { api?.receive(line); }, printErr() {}, onAbort: fault, locateFile: (name: string) => 'overlay-read/' + name,
   } as unknown as Native;

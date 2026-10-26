@@ -86,3 +86,38 @@ test('ADR-102 帮助与诊断 evidence keeps fixed fields, avoids failed classes
   assert.equal(bridgeEvidence().failovers, 2); assert.equal(avoidMask(), cdnClassBit('akamai') | cdnClassBit('upos') | cdnClassBit('edge'));
   resetSourceStep(); assert.equal(bridgeEvidence().step, undefined); assert.equal(bridgeEvidence().failovers, 2, 'counts last the run');
 });
+
+/** ADR-112 native boundary: unchecked tracks are checked together; every failed track is named, passed totals are kept. */
+function pairOwner(failing: RegExp) {
+  const rounds: string[][] = [], codes: string[] = []; let reads = 0;
+  const detail = { guestAllowed: true, parts: [part], summary: { title: '合成', owner: '合成', parts: [part.item] } } as unknown as PrivateVodDetail;
+  const api: VodReadApi = { async catalog(_b, _p, nonce) { return { detail, catalog: parseVodPlayback(raw(deadline + 600 * reads++), part, nonce, now) }; },
+    async inspect(plan: PrivateVodPlan, _signal, known = {}) {
+      const checks: string[] = [], totals = { ...known }, failures: { track: 0 | 1; code: 'network'; http: number; transport: number }[] = [];
+      for (const [i, t] of [plan.video, plan.audio].entries()) {
+        if ((i ? totals.audio : totals.video) !== undefined) continue;
+        checks.push(new URL(t.url).hostname);
+        if (failing.test(t.url)) failures.push({ track: i ? 1 : 0, code: 'network', http: 504, transport: 0 }); else if (i) totals.audio = 32000; else totals.video = 160000;
+      }
+      rounds.push(checks);
+      if (failures.length) { const f = failures[0]!; throw new VodCheckError('network', f.track, 504, 0, failures, totals); }
+      return { video: totals.video!, audio: totals.audio! };
+    }, async close() {} };
+  let n = 0;
+  return { o: new VodSourceOwner(api, caps, undefined, () => String(n++ % 10).repeat(32), () => now, code => codes.push(code)), rounds, codes };
+}
+test('ADR-112 only the failed track is checked again; the passed track keeps its total', async () => {
+  const f = pairOwner(/mirrorcosov\.bilivideo\.com\/upgcxcode\/audio/), offer = await attach(f as unknown as ReturnType<typeof owner>);
+  assert.deepEqual(f.rounds, [[cosov, cosov], [akam]], 'the second round checks the audio backup only');
+  assert.equal(offer.video, at(cosov, 'video')); assert.equal(offer.audio, at(akam, 'audio'));
+  assert.deepEqual(f.codes, ['check_audio_primary_upos_504_0', 'check_audio_moved_upos']);
+});
+test('ADR-112 both tracks failing move to their backups together, in one more round; each moves at most once', async () => {
+  const f = pairOwner(/mirrorcosov/), offer = await attach(f as unknown as ReturnType<typeof owner>);
+  assert.deepEqual(f.rounds, [[cosov, cosov], [akam, akam]]);
+  assert.equal(offer.video, at(akam, 'video')); assert.equal(offer.audio, at(akam, 'audio'));
+  assert.deepEqual(f.codes, ['check_video_primary_upos_504_0', 'check_audio_primary_upos_504_0', 'check_video_moved_upos', 'check_audio_moved_upos']);
+  const g = pairOwner(/mirror/);
+  await assert.rejects(attach(g as unknown as ReturnType<typeof owner>), (e: unknown) => e instanceof VodCheckError && e.failures.length === 2);
+  assert.equal(g.rounds.length, 2, 'no third round after both backups failed');
+});

@@ -12,13 +12,14 @@ export class CommentsRuntime {
  private generation=0;private revision=0;private request=0;private poisoned=false;private closed=false;private queued=0;
  private worker:ScopedGuestWorker<CommentRequest,CommentResult>|undefined;private tail:Promise<unknown>=Promise.resolve();
  constructor(account?:PrivateAccount,private readonly limits={readMs:45000,closeMs:13000}){this.account=account===undefined?undefined:parsePrivateAccount(account);}
- access(value:string):CommentAccess {
+ /** ADR-112: `binding` gives each read a private port to the playing item's source Worker (AID, salts). */
+ access(value:string,binding?:()=>MessagePort):CommentAccess {
   const bvid=vodBvid(value),generation=this.generation;let revision=++this.revision,sort:CommentSort='hot',roots:PrivateComment[]=[],pages:PrivateComment[][]=[],ended=false,closed=false,offset='',limited=false;
   const offsets=new Set<string>(['']),seen=new Set<string>();let replyKey='',replyPages:PrivateComment[][]=[],replyEnded=false,replyLimited=false,replyClosed=false,replySourcePage=0;const replySeen=new Set<string>();
   const clearReplies=()=>{replyKey='';replyPages=[];replyEnded=replyLimited=replyClosed=false;replySourcePage=0;replySeen.clear();};
   const alive=(signal:AbortSignal)=>{if(this.closed||this.poisoned||generation!==this.generation||signal.aborted)throw new DomainError(this.poisoned?'unknown':'cancelled');};
   const read=async(command:CommentCommand,signal:AbortSignal):Promise<CommentBatch>=>{
-   alive(signal);const worker=new ScopedGuestWorker<CommentRequest,CommentResult>('comments-worker.js','comments-read',parseCommentRequest,parseCommentResult,this.limits.readMs,this.limits.closeMs,(q,r)=>r.kind!=='ok'||r.batch.kind===q.command.kind);this.worker=worker;
+   alive(signal);const worker=new ScopedGuestWorker<CommentRequest,CommentResult>('comments-worker.js','comments-read',parseCommentRequest,parseCommentResult,this.limits.readMs,this.limits.closeMs,(q,r)=>r.kind!=='ok'||r.batch.kind===q.command.kind,false,8,false,()=>false,binding?()=>{try{return [binding()];}catch{return [];}}:undefined);this.worker=worker;
    try{const result=await worker.run({version:1,operation:'comments-read',scope:{accountId:this.account?.id??'guest',generation,mediaSessionId:'comments_lane',requestId:`comments_${++this.request}`},bvid,command,...(this.account?{account:this.account}:{})},signal);alive(signal);if(result.kind==='error')throw new DomainError(result.code);return result.batch;}
    finally{try{await worker.dispose();}catch{this.poisoned=true;throw new DomainError('unknown');}finally{if(this.worker===worker)this.worker=undefined;}}
   };

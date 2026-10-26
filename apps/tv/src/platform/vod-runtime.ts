@@ -260,7 +260,7 @@ function withOverlays(runtime: VodRuntime, account?: PrivateAccount, seasonId?: 
     ...(interactions ? {interactions:(id:string)=>{if(!current||current.catalog.id!==id)throw new DomainError('cancelled');return interactions.access(current.catalog.item.bvid);}} : {}),
     comments: id => {
       if (!current || current.catalog.id !== id) throw new DomainError('cancelled');
-      const bound = comments.access(current.catalog.item.bvid);
+      const bound = comments.access(current.catalog.item.bvid, () => runtime.overlayPort(id));
       return { read: (query, signal) => { if (!current || current.catalog.id !== id) return Promise.reject(new DomainError('cancelled')); return bound.read(query, signal); }, close: () => bound.close() };
     },
     overlays: id => {

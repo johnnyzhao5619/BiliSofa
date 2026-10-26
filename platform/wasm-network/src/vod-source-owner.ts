@@ -8,12 +8,13 @@ import { resolveVodTracks, type PrivateVodCatalog, type PrivateVodDetail } from 
 import { vodBridgeMetadata } from '../../../packages/media/src/vod-mpd.ts';
 import { vodCdnClass, vodCdnHost } from '../../../packages/bili-client/src/vod-cdn.ts';
 import { cdnClassBit } from '../../../packages/contracts/src/cdn-failover.ts';
-import { VodCheckError } from './vod-native-api.ts';
+import { VodCheckError, type VodCheckFailure } from './vod-native-api.ts';
 import type { PrivateOverlayBinding } from '../../../packages/contracts/src/overlay-binding.ts';
 
 export interface VodReadApi {
-  catalog(bvid: string, part: number, id: string, signal: AbortSignal, account?: PrivateAccount): Promise<{ detail: PrivateVodDetail; catalog: PrivateVodCatalog }>;
-  inspect(plan: PrivateVodPlan, signal: AbortSignal): Promise<VodSourceTotals>;
+  /** `keys` are the WBI salts of this read's nav (ADR-112); a source without them keeps overlays on their own nav. */
+  catalog(bvid: string, part: number, id: string, signal: AbortSignal, account?: PrivateAccount): Promise<{ detail: PrivateVodDetail; catalog: PrivateVodCatalog; keys?: { img: string; sub: string } }>;
+  inspect(plan: PrivateVodPlan, signal: AbortSignal, known?: Partial<VodSourceTotals>): Promise<VodSourceTotals>;
   close(): Promise<void>;
 }
 /** This DTO is legal only on the source-to-bridge private MessagePort. With ADR-101 it also names each
@@ -23,7 +24,7 @@ interface Lease { id: string; choice: VodChoice; plan: PrivateVodPlan; metadata?
 type Track = PrivateVodPlan['video'];
 /** ADR-102: put a track's backup first (the source check and the bridge then start there). */
 function swapped(t: Track): Track { return t.alternate ? { ...t, url: t.alternate, alternate: t.url } : t; }
-function checkCode(track: 0 | 1, position: 'primary' | 'backup', url: string, error: VodCheckError): string {
+function checkCode(track: 0 | 1, position: 'primary' | 'backup', url: string, error: Pick<VodCheckFailure, 'code' | 'http' | 'transport'>): string {
   return `check_${track ? 'audio' : 'video'}_${position}_${vodCdnClass(url)}_${error.code === 'timeout' ? 'timeout' : `${error.http}_${error.transport}`}`;
 }
 function identityVideo(c: PrivateVodCatalog, i: number): string {
@@ -39,7 +40,7 @@ function identityAudio(c: PrivateVodCatalog, i: number): string {
 export class VodSourceOwner {
   private account: PrivateAccount | undefined;
   private readonly capabilities: VodCapabilities;
-  private cache: { detail: PrivateVodDetail; catalog: PrivateVodCatalog } | undefined;
+  private cache: { detail: PrivateVodDetail; catalog: PrivateVodCatalog; keys?: { img: string; sub: string } } | undefined;
   private lease: Lease | undefined;
   private work: Promise<unknown> | undefined;
   private controller: AbortController | undefined;
@@ -73,8 +74,9 @@ export class VodSourceOwner {
   overlayBinding(catalogId: string): PrivateOverlayBinding {
     vodNonce(catalogId);
     if (this.poisoned || this.closing || !this.cache || this.cache.catalog.summary.id !== catalogId) throw new DomainError(this.poisoned ? 'unknown' : 'cancelled');
-    const item = this.cache.catalog.summary.item;
-    return { version: 1, kind: 'overlay-binding', bvid: item.bvid, part: item.part, cid: this.cache.catalog.cid };
+    const item = this.cache.catalog.summary.item, { detail, keys } = this.cache;
+    // ADR-112: the AID and salts this read already verified let overlays and comments skip nav/view.
+    return { version: 1, kind: 'overlay-binding', bvid: item.bvid, part: item.part, cid: this.cache.catalog.cid, ...(detail.aid && keys ? { aid: detail.aid, img: keys.img, sub: keys.sub } : {}) };
   }
   async read(value: unknown): Promise<VodReadResult> {
     const query = vodReadQuery(value);
@@ -136,19 +138,22 @@ export class VodSourceOwner {
     const one = (t: Track) => t.alternate && avoided(t.url) && !avoided(t.alternate) ? swapped(t) : t;
     return { ...plan, video: one(plan.video), audio: one(plan.audio) };
   }
-  /** Source check with per-track failover: a network/timeout on a track's first line retries once on its backup. */
+  /** Source check with per-track failover: a network/timeout on a track's first line retries once on its backup.
+   * ADR-112: only the failed tracks are checked again; both failing move together, each at most once. */
   private async inspectOrdered(plan: PrivateVodPlan, signal: AbortSignal, generation: number): Promise<{ plan: PrivateVodPlan; totals: VodSourceTotals }> {
-    const flipped = [false, false];
+    const flipped = [false, false]; let known: Partial<VodSourceTotals> = {};
     for (;;) {
-      try { return { plan, totals: await this.api.inspect(plan, signal) }; }
+      try { return { plan, totals: await this.api.inspect(plan, signal, known) }; }
       catch (error) {
         if (!(error instanceof VodCheckError)) throw error;
-        const index = error.track, track = index ? plan.audio : plan.video;
-        this.report(checkCode(index, flipped[index] ? 'backup' : 'primary', track.url, error));
-        if (!track.alternate || flipped[index]) throw error;
-        this.check(signal, generation);
-        flipped[index] = true; this.report(`check_${index ? 'audio' : 'video'}_moved_${vodCdnClass(track.url)}`);
-        plan = index ? { ...plan, audio: swapped(plan.audio) } : { ...plan, video: swapped(plan.video) };
+        const at = (index: 0 | 1) => index ? plan.audio : plan.video;
+        for (const f of error.failures) this.report(checkCode(f.track, flipped[f.track] ? 'backup' : 'primary', at(f.track).url, f));
+        if (error.failures.some(f => !at(f.track).alternate || flipped[f.track])) throw error;
+        this.check(signal, generation); known = error.known;
+        for (const f of error.failures) {
+          flipped[f.track] = true; this.report(`check_${f.track ? 'audio' : 'video'}_moved_${vodCdnClass(at(f.track).url)}`);
+          plan = f.track ? { ...plan, audio: swapped(plan.audio) } : { ...plan, video: swapped(plan.video) };
+        }
       }
     }
   }

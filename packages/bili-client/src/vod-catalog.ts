@@ -8,7 +8,9 @@ export type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-pr
 
 export interface PrivateVodPart { item: VodItem; cid: string; }
 /** These objects belong to the media Worker, never to a page or ordinary store. */
-export interface PrivateVodDetail { summary: VodDetail; parts: PrivateVodPart[]; guestAllowed: boolean; }
+export interface PrivateVodDetail { summary: VodDetail; parts: PrivateVodPart[]; guestAllowed: boolean;
+  /** ADR-112: the video's AID, kept privately so overlays and comments need not read view again. */
+  aid?: string; }
 export interface PrivateVodCatalog {
   summary: VodCatalog;
   cid: string;
@@ -79,7 +81,9 @@ export function parseVodDetail(raw: string, bvid: string): PrivateVodDetail {
     }
     summary.collection = { title: caption(season.title, 120), entries };
   }
-  return { summary, parts, guestAllowed };
+  // An unreadable AID only means overlays and comments read view themselves, as before.
+  const aid = typeof d.aid === 'number' && Number.isSafeInteger(d.aid) && d.aid > 0 ? String(d.aid) : undefined;
+  return { summary, parts, guestAllowed, ...(aid ? { aid } : {}) };
 }
 export function resolveVodPart(detail: PrivateVodDetail, part: number): PrivateVodPart {
   vodInteger(part, 1, 10000);

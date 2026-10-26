@@ -9,6 +9,12 @@ static CURLMcode fixture_remove(CURLM *multi, CURL *easy) {
 #define VOD_API_NO_MAIN
 #if defined(BILISOFA_PUBLIC_FIXTURE)
 #include "public-read.c"
+#elif defined(BILISOFA_SOURCE_PAIR_FIXTURE) && defined(BILISOFA_PGC_FIXTURE)
+#define VOD_PAIR_NO_MAIN
+#include "pgc-read-pair.c"
+#elif defined(BILISOFA_SOURCE_PAIR_FIXTURE)
+#define VOD_PAIR_NO_MAIN
+#include "vod-api-pair.c"
 #elif defined(BILISOFA_SOURCE_FAILOVER_FIXTURE) && defined(BILISOFA_PGC_FIXTURE)
 #include "pgc-read-failover.c"
 #elif defined(BILISOFA_SOURCE_FAILOVER_FIXTURE)
@@ -46,7 +52,7 @@ int main(int argc, char **argv) {
     char url[256]; long long deadline = (long long)time(NULL) + 3600;
     snprintf(url, sizeof(url), "https://upos-hz-mirrorakam.akamaized.net/a.m4s?deadline=%lld", deadline); strcpy(vod_input, url);
     int accepted = vod_begin(3); vod_finish();
-#ifdef BILISOFA_SOURCE_FAILOVER_FIXTURE
+#if defined(BILISOFA_SOURCE_FAILOVER_FIXTURE) || defined(BILISOFA_SOURCE_PAIR_FIXTURE)
     if (!accepted) return 24;
 #else
     if (accepted) return 25;

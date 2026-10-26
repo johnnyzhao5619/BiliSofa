@@ -87,3 +87,7 @@ test('F06 public detail rejects private/foreign fields and capability filtering 
   assert.equal(vodChoiceSupported(catalog, choice, { ...caps, qualities: [16] }), false);
   assert.equal(vodChoiceSupported(catalog, choice, { ...caps, maxFps: 24 }), false);
 });
+test('ADR-112 the private detail keeps the source AID when it is a safe positive integer, and only then', () => {
+  assert.equal(parseVodDetail(JSON.stringify({ ...detail(), data: { ...detail().data, aid: 987654321 } }), bvid).aid, '987654321');
+  for (const aid of [undefined, 0, -1, '987654321', 1.5, 9007199254740992]) assert.equal(parseVodDetail(JSON.stringify({ ...detail(), data: { ...detail().data, aid } }), bvid).aid, undefined);
+});

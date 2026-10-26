@@ -1,4 +1,5 @@
 import { DomainError } from '../../packages/contracts/src/index.ts';
+import { parsePrivateOverlayBinding } from '../../packages/contracts/src/overlay-binding.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeDanmakuSegment, parsePlayerMetadata, parseSubtitleBody, subtitleSource } from '../../packages/bili-client/src/overlay-data.ts';
@@ -38,15 +39,17 @@ test('W05 read contracts reject caller URLs/credentials, source spoofing and mis
   for (const bad of [{ ...request, target: { bvid, part: 2, url } }, { ...request, account }, { ...request, command: { kind: 'danmaku', segment: 0 } }, { ...request, command: { kind: 'subtitles', track: { ...track, url } } }]) assert.throws(() => parseOverlayRequest(bad));
   assert.throws(() => parseOverlayCommand({ kind: 'send', content: 'forbidden' })); assert.throws(() => parseOverlayResult({ version: 1, operation: request.operation, scope: request.scope, closed: false, kind: 'error', code: 'unknown' }));
 });
-function fixture(option: 'normal' | 'mismatch' | 'hold' | 'unknown' = 'normal') {
-  const heap = new Uint8Array(2097152), calls: number[] = [], inputs: string[] = []; let api!: OverlayNativeApi, length = 0, authenticated = false;
+function fixture(option: 'normal' | 'mismatch' | 'hold' | 'unknown' | 'refuse-once' | 'signed-out' = 'normal') {
+  const heap = new Uint8Array(2097152), calls: number[] = [], inputs: string[] = []; let api!: OverlayNativeApi, length = 0, authenticated = false, refused = false;
   const native: VodApiNative = { HEAPU8: heap, callMain() { api.receive('VODAPI:ready'); }, _vod_input_ptr: () => 0, _vod_input_capacity: () => 4096, _vod_body_ptr: () => 8192, _vod_body_length: () => length, _vod_http_status: () => 200, _vod_curl_status: () => 0, _vod_import_cookies() { authenticated = true; heap.fill(0, 0, 4097); return 1; }, _vod_response_clear() { heap.fill(0, 8192); length = 0; }, _vod_source_total: () => 0, _vod_source_valid: () => 0,
     _vod_begin(operation) {
       const end = heap.indexOf(0); inputs.push(new TextDecoder().decode(heap.subarray(0, end))); calls.push(operation); if (option === 'hold') return 1;
       const m = metadata(operation === 4 ? Number(inputs.at(-1)!.split('|')[1]) : 222);
       const data = operation === 0 ? { code: authenticated ? 0 : -101, data: { isLogin: authenticated, ...(authenticated ? { mid: option === 'mismatch' ? 202 : 101 } : {}), wbi_img: { img_url: 'https://i0.hdslb.com/bfs/wbi/' + 'a'.repeat(32) + '.png', sub_url: 'https://i0.hdslb.com/bfs/wbi/' + 'b'.repeat(32) + '.png' } } } : operation === 1 ? { code: 0, data: { bvid, aid: 123, cid: 111, state: 0, title: '合成', owner: { name: '合成' }, rights: { pay: 0, ugc_pay: 0, is_stein_gate: 0 }, pages: [{ cid: 111, page: 1, from: 'vupload', part: '1', duration: 20 }, { cid: 222, page: 2, from: 'vupload', part: '2', duration: 20 }] } } : operation === 4 ? m : { body: [{ from: 1, to: 2, content: '<img src=x>' }] };
       const season = { code: 0, result: { season_id: 123, title: '合成季', evaluate: '简介', user_status: { login: authenticated ? 1 : 0, area_limit: 0, follow: 0 }, new_ep: { desc: '第1集' }, episodes: [{ id: 11, ep_id: 11, cid: 111, bvid, title: '1', long_title: '第1集', badge: '', status: 2, duration: 20000, rights: { area_limit: 0 }, showDrmLoginDialog: false, is_view_hide: false }] } };
-      const body = operation === 6 ? new Uint8Array(element(1, '123')) : new TextEncoder().encode(JSON.stringify(operation === 7 ? season : data)); heap.set(body, 8192); length = body.length; api.receive('VODAPI:response:' + operation); return 1;
+      // ADR-112: a signature refusal (-352) once, or a lost login (-101) on the bound request.
+      const refusal = operation === 4 && (option === 'signed-out' || option === 'refuse-once' && !refused) ? (refused = true, { code: option === 'signed-out' ? -101 : -352 }) : undefined;
+      const body = operation === 6 ? new Uint8Array(element(1, '123')) : new TextEncoder().encode(JSON.stringify(refusal ?? (operation === 7 ? season : data))); heap.set(body, 8192); length = body.length; api.receive('VODAPI:response:' + operation); return 1;
     }, _vod_stop() { authenticated = false; heap.fill(0); length = 0; api.receive(option === 'unknown' ? 'VODAPI:unclosed' : 'VODAPI:closed'); },
   }; api = new OverlayNativeApi(native, 40); return { api, calls, inputs, heap };
 }
@@ -77,4 +80,23 @@ test('S3 (0.47.2) AI subtitle files are bare ids under /bfs/ai_subtitle/; one un
   const value = parsePlayerMetadata(JSON.stringify({ code: 0, data: { bvid, aid: 123, cid: 222, subtitle: { subtitles: rows } } }), { bvid, cid: '222', aid: '123' });
   assert.deepEqual(value.tracks.map(t => [t.summary.key, t.summary.language]), [['s0', 'ai-zh'], ['s2', 'zh-CN']]);
   assert.throws(() => parsePlayerMetadata(JSON.stringify({ code: 0, data: { bvid, aid: 123, cid: 222, subtitle: { subtitles: [rows[1]] } } }), { bvid, cid: '222', aid: '123' }), (e: unknown) => e instanceof DomainError && e.code === 'unsupported');
+});
+
+const bound = { version: 1 as const, kind: 'overlay-binding' as const, bvid, part: 2, cid: '222', aid: '123', img: 'a'.repeat(32), sub: 'b'.repeat(32) };
+test('ADR-112 a full binding skips nav and view: danmaku and metadata send only their own request', async () => {
+  const f = fixture(); const result = await f.api.read({ bvid, part: 2 }, { kind: 'danmaku', segment: 2 }, new AbortController().signal, bound);
+  assert.deepEqual(f.calls, [6]); assert.match(f.inputs[0]!, new RegExp(`^222\\|123\\|2\\|${'a'.repeat(32)}\\|${'b'.repeat(32)}\\|`)); assert.equal(result.kind === 'danmaku' ? result.items.length : -1, 1); assert.ok(f.heap.every(v => v === 0));
+  const m = fixture(); assert.equal((await m.api.read({ bvid, part: 2 }, { kind: 'metadata' }, new AbortController().signal, bound, account)).kind, 'metadata'); assert.deepEqual(m.calls, [4]);
+  const pgc = fixture(); await pgc.api.read({ bvid, part: 1, seasonId: '123' }, { kind: 'danmaku', segment: 1 }, new AbortController().signal, { ...bound, part: 1, cid: '111' }); assert.deepEqual(pgc.calls, [6], 'no season or view read either');
+});
+test('ADR-112 a refused bound read runs once more the old way; a lost login or a binding without salts does not', async () => {
+  const f = fixture('refuse-once'); assert.equal((await f.api.read({ bvid, part: 2 }, { kind: 'metadata' }, new AbortController().signal, bound, account)).kind, 'metadata'); assert.deepEqual(f.calls, [4, 0, 1, 4]);
+  const out = fixture('signed-out'); await assert.rejects(out.api.read({ bvid, part: 2 }, { kind: 'metadata' }, new AbortController().signal, bound, account)); assert.deepEqual(out.calls, [4]);
+  const old = fixture(); await old.api.read({ bvid, part: 2 }, { kind: 'danmaku', segment: 2 }, new AbortController().signal, { version: 1, kind: 'overlay-binding', bvid, part: 2, cid: '222' }); assert.deepEqual(old.calls, [0, 1, 6]);
+});
+test('ADR-112 the binding carries AID and both salts together or not at all, each in its fixed format', () => {
+  assert.deepEqual(parsePrivateOverlayBinding(bound, { bvid, part: 2 }), bound);
+  for (const bad of [{ ...bound, img: undefined }, { ...bound, aid: '0123' }, { ...bound, sub: 'B'.repeat(32) }, { ...bound, aid: 123 }, { ...bound, url: 'https://outside.invalid/' }])
+    assert.throws(() => parsePrivateOverlayBinding(JSON.parse(JSON.stringify(bad)), { bvid, part: 2 }));
+  assert.throws(() => parsePrivateOverlayBinding(bound, { bvid, part: 1 }));
 });

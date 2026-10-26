@@ -2,6 +2,16 @@
 
 2026-10-25；只保留已安装包与未部署候选的结果。历史版本的分层结果在各自证据README，逐版本结论见[签名与部署记录](SIGNING_DEVICE_RECORD.md)。
 
+## 0.59.0候选（ADR-112 P1-1b，未签名/未部署）
+
+| 层次 | 实际结果 |
+| --- | --- |
+| 单元/合同 | 774/774（新增`source-pair.test.ts`、`comments-binding.test.ts`与主备、叠加层、绑定、aid用例） |
+| 原生主机 | `source-pair` 32/32（继承VOD/PGC读通道与Akamai检查＋成对检查：两条各700 ms的检查总耗时低于1.3 s、按轨结果、单轨失败、非范围响应、忙时拒绝、取消、超时、目的地）；`source-failover` 37/37、`vod-api` 10/10、`overlay-read` 8/8、`comments-read` 8/8 |
+| 合成UI | 101/101 |
+| 包 | 负例12/12（新增：缺少成对检查的源模块不打包）；未签名WGT `016615d2…17ee`；与已安装0.58.0相比，56个原生文件中只有`vod-api/`、`pgc-read/`的manifest/probe.js/probe.wasm变化 |
+| 用户 | 未签名、未安装 |
+
 ## 已安装0.58.0（ADR-111列表逐卡容错；含0.57.x起播改进）
 
 | 层次 | 实际结果 |
