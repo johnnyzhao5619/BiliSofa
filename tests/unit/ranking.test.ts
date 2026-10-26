@@ -13,8 +13,8 @@ test('W03 ranking response preserves 100 service-ordered safe cards; raw body st
  const parsed=parseRankingBody(body());assert.equal(parsed.items.length,100);assert.equal(parsed.items[99]!.bvid,'BV0000000099');
  const r={...rawCard(0),title:'<script>不会执行</script>'};assert.equal(parseRankingBody(JSON.stringify({code:0,data:{list:[r]}})).items[0]!.title,r.title);
  for(const raw of [body(101),'[]','{}','invalid',' '.repeat(524289),JSON.stringify({code:0,data:{list:[{},{bvid:'x'}]}})])assert.throws(()=>parseRankingBody(raw));
- // ADR-111: a repeated row is skipped and counted; a fractional or over-24-h duration is unknown (0).
- assert.deepEqual(parseRankingBody(JSON.stringify({code:0,data:{list:[rawCard(0),rawCard(0),{...rawCard(1),duration:1.5},{...rawCard(2),duration:166242}]}})).items.map(c=>c.durationSec),[80,0,0]);
+ // ADR-111: a repeated row is skipped and counted; a fractional or over-seven-day duration is unknown (0, ADR-115).
+ assert.deepEqual(parseRankingBody(JSON.stringify({code:0,data:{list:[rawCard(0),rawCard(0),{...rawCard(1),duration:1.5},{...rawCard(2),duration:700000}]}})).items.map(c=>c.durationSec),[80,0,0]);
  assert.equal(parseRankingBody(JSON.stringify({code:0,data:{list:[rawCard(0),rawCard(0)]}})).skipped,1);
  assert.deepEqual(parseRankingBody('{"code":-101}'),{apiCode:-101,items:[]});
 });

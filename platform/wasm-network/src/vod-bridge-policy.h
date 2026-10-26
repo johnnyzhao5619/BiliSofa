@@ -2,6 +2,8 @@
  * Metadata and the two sources are Worker-owned, never HTTP/parent arguments. */
 #ifndef BILISOFA_VOD_BRIDGE_POLICY_H
 #define BILISOFA_VOD_BRIDGE_POLICY_H
+/* ADR-115: media up to seven days (packages/contracts/src/media-limits.ts); below the 32-bit unsigned limit. */
+#define VOD_MAX_MEDIA_MS 604800000U
 static unsigned long long vod_totals[2];
 static char vod_metadata[384];
 static int vod_codec(const char *codec, int audio) {
@@ -19,7 +21,7 @@ static int vod_manifest(const char *metadata) {
   if (!metadata || strlen(metadata) >= sizeof(canonical) ||
       sscanf(metadata, "%u,%u,%u,%u,%u,%u,%u,%u,%u,%13llu,%13llu,%64[A-Za-z0-9.],%15[A-Za-z0-9.-]%n",
              &ms, &w, &h, &vb, &ab, &vi, &vx, &ai, &ax, &vt, &at, vc, ac, &end) != 13 || metadata[end]) return 0;
-  if (!ms || ms > 86400000 || !w || w > 16384 || !h || h > 8640 || !vb || vb > 200000000 || !ab || ab > 16000000 ||
+  if (!ms || ms > VOD_MAX_MEDIA_MS || !w || w > 16384 || !h || h > 8640 || !vb || vb > 200000000 || !ab || ab > 16000000 ||
       vi < 8 || vx <= vi || vx > 16777216 || ai < 8 || ax <= ai || ax > 16777216 || vt <= vx || at <= ax ||
       vt > 1099511627776ULL || at > 1099511627776ULL || !vod_codec(vc, 0) || !vod_codec(ac, 1)) return 0;
   int size = snprintf(canonical, sizeof(canonical), "%u,%u,%u,%u,%u,%u,%u,%u,%u,%llu,%llu,%s,%s", ms, w, h, vb, ab, vi, vx, ai, ax, vt, at, vc, ac);

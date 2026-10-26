@@ -26,7 +26,7 @@ static int overlay_wbi(int operation, char *input, char *url, size_t capacity) {
   char *parts[6] = { input }; int fields = 1, expected = operation == 4 ? 5 : 6;
   for (char *p = input; *p; p++) if (*p == '|') { if (fields >= expected) return 0; *p = 0; parts[fields++] = p + 1; }
   if (fields != expected) return 0;
-  if (operation == 4 ? (!guest_bvid_valid(parts[0]) || !guest_cid_valid(parts[1])) : (!guest_cid_valid(parts[0]) || !guest_cid_valid(parts[1]) || !*parts[2] || strlen(parts[2]) > 3 || strspn(parts[2], "0123456789") != strlen(parts[2]) || atoi(parts[2]) < 1 || atoi(parts[2]) > 240 || parts[2][0] == '0')) return 0;
+  if (operation == 4 ? (!guest_bvid_valid(parts[0]) || !guest_cid_valid(parts[1])) : (!guest_cid_valid(parts[0]) || !guest_cid_valid(parts[1]) || !*parts[2] || strlen(parts[2]) > 4 || strspn(parts[2], "0123456789") != strlen(parts[2]) || atoi(parts[2]) < 1 || atoi(parts[2]) > 1680 /* ADR-115: seven days of six-minute segments */ || parts[2][0] == '0')) return 0;
   int key_at = operation == 4 ? 2 : 3;
   if (strlen(parts[key_at]) != 32 || strlen(parts[key_at + 1]) != 32 || strspn(parts[key_at], "0123456789abcdef") != 32 || strspn(parts[key_at + 1], "0123456789abcdef") != 32 || strlen(parts[key_at + 2]) != 10 || strspn(parts[key_at + 2], "0123456789") != 10) return 0;
   long long epoch = strtoll(parts[key_at + 2], NULL, 10), now = (long long)time(NULL);

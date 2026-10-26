@@ -27,6 +27,7 @@ import { VodControls } from './vod-controls.ts';
 import { playbackFailureText } from './user-messages.ts';
 import { RECONNECT_LIMIT, reconnectPlan } from './reconnect-policy.ts';
 import { clockTime } from '../ui/content-card.ts';
+import { MAX_MEDIA_MS } from '../../../../packages/contracts/src/media-limits.ts';
 function button(id: string, label: string, action: () => void): HTMLButtonElement {
   const b = document.createElement('button'); b.dataset.focusId = id; b.textContent = label; b.addEventListener('click', action); return b;
 }
@@ -38,7 +39,7 @@ const AUTO_SEEK_MS = 1200;
 export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTMLElement, query: { bvid: string; part: number },
   profile: ProfileStore, diagnostics: AppDiagnostics, caps: VodCapabilities, open: () => Promise<VodAccess>,
   backend: (source: MediaSource) => OwnedPlayerBackend | undefined, queue?: QueueStore, episodeMode = false, initialPosition?:number, queueNavigation?:{label:string;continuous:boolean;next?:(continuous:boolean)=>void}): HTMLElement {
-  if(initialPosition!==undefined&&(!Number.isSafeInteger(initialPosition)||initialPosition<0||initialPosition>86400000))throw new DomainError('invalid');
+  if(initialPosition!==undefined&&(!Number.isSafeInteger(initialPosition)||initialPosition<0||initialPosition>MAX_MEDIA_MS))throw new DomainError('invalid');
   const panel = document.createElement('section'); panel.className = 'media-panel vod-panel';
   const title = document.createElement('h2'), timeline = document.createElement('p'), status = document.createElement('p'), controls = document.createElement('div'), resume = document.createElement('div');
   timeline.setAttribute('role', 'timer'); status.setAttribute('role', 'status'); status.textContent = '正在读取视频详情和可用轨道'; title.textContent = '视频播放';

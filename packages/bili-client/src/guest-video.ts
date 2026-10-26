@@ -1,5 +1,6 @@
 import { DomainError, finite, record, text } from '../../contracts/src/index.ts';
 import type { GuestVideoDetail, GuestVideoPlan, GuestTrack } from '../../contracts/src/guest-video.ts';
+import { MAX_MEDIA_MS, MAX_MEDIA_SECONDS } from '../../contracts/src/media-limits.ts';
 export type { GuestVideoDetail, GuestVideoPlan, GuestTrack } from '../../contracts/src/guest-video.ts';
 export class GuestVideoError extends Error { constructor(readonly reason: 'api_error' | 'unsupported' | 'expired_source' | 'duration_mismatch' | 'cdn_unavailable') { super(reason); } }
 function body(raw: string, limit = 131072): Record<string, unknown> {
@@ -18,7 +19,7 @@ export function parseGuestVideoDetail(raw: string, bvid: string): GuestVideoDeta
   if (!Array.isArray(d.pages) || !d.pages.length || d.pages.length > 100) throw new DomainError('invalid');
   const first = record(d.pages[0]), cid = integer(first.cid, 1, Number.MAX_SAFE_INTEGER);
   if (first.page !== 1 || first.from !== 'vupload' || d.cid !== cid) throw new GuestVideoError('unsupported');
-  return { bvid, cid: String(cid), title: text(d.title, 512).slice(0, 120), owner: text(record(d.owner).name, 128).slice(0, 48), durationSec: integer(first.duration, 1, 86400), pages: d.pages.length };
+  return { bvid, cid: String(cid), title: text(d.title, 512).slice(0, 120), owner: text(record(d.owner).name, 128).slice(0, 48), durationSec: integer(first.duration, 1, MAX_MEDIA_SECONDS), pages: d.pages.length };
 }
 // This policy is deliberately narrower than all Bilibili CDNs. Every primary or
 // backup must pass the same destination policy. URLs stay inside the Worker.
@@ -61,7 +62,7 @@ function track(value: unknown, kind: 'video' | 'audio', now: number): { track: G
 export function parseGuestVideoPlan(raw: string, detail: GuestVideoDetail, now = Date.now()): GuestVideoPlan {
   const d = body(raw), dash = record(d.dash);
   if (d.quality !== 16 || d.is_preview || d.drm_tech_type || d.durl || !Array.isArray(dash.video) || !Array.isArray(dash.audio) || dash.video.length > 32 || dash.audio.length > 16) throw new GuestVideoError('unsupported');
-  const durationSec = finite(dash.duration, 1, 86400), time = finite(d.timelength, 1, 86400000);
+  const durationSec = finite(dash.duration, 1, MAX_MEDIA_SECONDS), time = finite(d.timelength, 1, MAX_MEDIA_MS);
   if (Math.abs(durationSec - detail.durationSec) > 3 || Math.abs(time / 1000 - durationSec) > 3) throw new GuestVideoError('duration_mismatch');
   const v = dash.video.filter(v => { const r = record(v); return r.id === 16 && /^avc1\./.test(String(r.codecs)); });
   const a = dash.audio.filter(v => record(v).id === 30216);

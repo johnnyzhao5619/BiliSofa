@@ -1,6 +1,7 @@
 import { DomainError, type ErrorCode, type MediaSource } from '../../../../packages/contracts/src/index.ts';
 import { isPlaybackRate, type PlaybackRate } from '../../../../packages/contracts/src/playback-rate.ts';
 import type { OwnedPlayerBackend } from '../../../../packages/media/src/session.ts';
+import { MAX_MEDIA_MS, MAX_MEDIA_SECONDS } from '../../../../packages/contracts/src/media-limits.ts';
 
 /** A composition root must arbitrate this claim with ALL decoder backends.
  * The candidate is intentionally not wired into the installed AVPlay factory. */
@@ -61,7 +62,7 @@ export class ElementVideoBackend implements OwnedPlayerBackend {
       };
       listen('timeupdate', () => {
         const time = video.currentTime * 1000;
-        if (Number.isFinite(time) && time >= 0 && time <= 86400000) onTime(Math.round(time));
+        if (Number.isFinite(time) && time >= 0 && time <= MAX_MEDIA_MS) onTime(Math.round(time));
       });
       listen('ended', () => { this.buffering = false; onEnd(); });
       listen('error', () => this.fail(video.error?.code === 4 ? 'unsupported' : 'network'));
@@ -69,7 +70,7 @@ export class ElementVideoBackend implements OwnedPlayerBackend {
       listen('playing', () => { this.buffering = false; });
       listen('canplay', () => { this.buffering = false; });
       const prepared = this.wait(video, epoch, 'loadedmetadata', () => {
-        if (video.currentSrc !== source.url || !Number.isFinite(video.duration) || video.duration <= 0 || video.duration > 86400 || video.readyState < 1) throw new DomainError('invalid');
+        if (video.currentSrc !== source.url || !Number.isFinite(video.duration) || video.duration <= 0 || video.duration > MAX_MEDIA_SECONDS || video.readyState < 1) throw new DomainError('invalid');
         this.duration = Math.round(video.duration * 1000); this.state = 'ready'; return true;
       });
       // Attach before loading so the media has a visible owner. Layout belongs

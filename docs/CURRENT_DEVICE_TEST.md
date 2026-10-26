@@ -1,6 +1,6 @@
 # 当前验收安排
 
-2026-10-26；**当前没有待执行的设备测试组。** 已安装0.62.0（[ADR-113 P1-2b](adr/113-direct-play-quick-settings-and-navigation-trim.md)，[设备证据](design/evidence/2026-10-26-p1-2b/README.md)：账号并入设置，实看通过，按键响应与0.61.1持平）。断网换线路与降级、超时重连、后台恢复耗时、1080P播放门槛、一天的-352计数由用户决定标记为已完成（2026-10-26，未取得设备证据）；HDR暂无需求。0.51.3及更早版本的验收结论保持（U5集中验收V1–V6 USER PASS，[报告](acceptance/2026-10-23-u5-final/REPORT.md)）。
+2026-10-26；**当前没有待执行的设备测试组。** 已安装0.63.0（[ADR-115](adr/115-serial-source-check-and-long-videos.md)，[设备证据](design/evidence/2026-10-26-p1-1c/README.md)：起播与0.62.0持平；超过24小时的视频待遇到时验证）。断网换线路与降级、超时重连、后台恢复耗时、1080P播放门槛、一天的-352计数由用户决定标记为已完成（2026-10-26，未取得设备证据）；HDR暂无需求。0.51.3及更早版本的验收结论保持（U5集中验收V1–V6 USER PASS，[报告](acceptance/2026-10-23-u5-final/REPORT.md)）。
 
 - [当前实施状态](IMPLEMENTATION_STATUS.md)：已安装包与未部署候选分开记录。
 - [唯一收口台账](PRODUCT_CLOSURE.md)：R01–R15剩余项与U5最终T1–T8矩阵。

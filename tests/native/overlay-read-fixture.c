@@ -12,8 +12,12 @@ int main(int argc, char **argv) {
   if (!strcmp(mode, "bounds")) {
     const char *bad[] = { "http://aisubtitle.hdslb.com/bfs/subtitle/a.json", "https://127.0.0.1/bfs/subtitle/a.json", "https://aisubtitle.hdslb.com.outside.invalid/bfs/subtitle/a.json", "https://a@aisubtitle.hdslb.com/bfs/subtitle/a.json", "https://aisubtitle.hdslb.com:443/bfs/subtitle/a.json", "https://aisubtitle.hdslb.com/bfs/subtitle/../subtitle/a.json", "https://aisubtitle.hdslb.com/bfs/subtitle/%2e/a.json", "https://aisubtitle.hdslb.com/bfs/subtitle/a.json#x", "https://aisubtitle.hdslb.com/bfs/subtitle/a", "https://aisubtitle.hdslb.com/bfs/ai_subtitle/", "https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/", "https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/a%2e", "https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/../a" };
     for (unsigned i = 0; i < sizeof(bad) / sizeof(bad[0]); i++) { strcpy(vod_input, bad[i]); if (vod_begin(5)) return 2; }
-    const char *pairs[] = { "1|1|0|a|b|1", "1|1|241|a|b|1", "1|1|01|a|b|1", "1|1|2|a|b|1", "https://outside.invalid|1|2|a|b|1" };
+    const char *pairs[] = { "1|1|0|a|b|1", "1|1|1681|a|b|1", "1|1|10000|a|b|1", "1|1|01|a|b|1", "1|1|2|a|b|1", "https://outside.invalid|1|2|a|b|1" };
     for (unsigned i = 0; i < sizeof(pairs) / sizeof(pairs[0]); i++) { strcpy(vod_input, pairs[i]); if (vod_begin(6)) return 3; }
+    /* ADR-115: seven days of six-minute segments; 1680 is the last one that signs, 1681 does not. */
+    { const char *keys = "0123456789abcdef0123456789abcdef|fedcba9876543210fedcba9876543210"; char in[160], url[1024];
+      snprintf(in, sizeof(in), "1|1|1680|%s|%lld", keys, (long long)time(NULL)); if (!overlay_wbi(6, in, url, sizeof(url)) || !strstr(url, "segment_index=1680&")) return 17;
+      snprintf(in, sizeof(in), "1|1|1681|%s|%lld", keys, (long long)time(NULL)); if (overlay_wbi(6, in, url, sizeof(url))) return 18; }
     const char *good[] = { "https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/11337264110548526470449592b2aa?auth_key=1-synthetic-0-synthetic", "https://aisubtitle.hdslb.com/bfs/subtitle/a.json?auth_key=synthetic" };
     for (unsigned i = 0; i < sizeof(good) / sizeof(good[0]); i++) if (!overlay_subtitle_url(good[i])) return 6;
     if (vod_begin(2) || vod_begin(3) || vod_begin(8)) return 4;

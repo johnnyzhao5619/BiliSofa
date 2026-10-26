@@ -9,6 +9,7 @@ import { MediaOverlayView } from '../ui/media-overlays.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import type { TvShell } from './tv-shell.ts';
 import { searchKeyword } from './search-keyword.ts';
+import { MAX_DANMAKU_SEGMENT } from '../../../../packages/contracts/src/media-limits.ts';
 
 /** Optional reads never control or close the decoder. The media page provides
  * actual snapshots; the shell remains the only keyboard/focus owner. */
@@ -88,7 +89,7 @@ export class VodOverlays {
   private error(label: string, error: unknown): string { const code = error instanceof DomainError ? error.code : 'invalid'; return code === 'unsupported' ? `${label}读取失败：字幕文件地址格式暂不支持（overlay.unsupported），不影响播放` : `${label}读取失败（overlay.${code}），可手动重读，不影响播放`; }
   private ensureSegment(time: number, duration: number): void {
     if (!this.source || this.reading || this.owner.signal.aborted || !this.preferences.danmaku.enabled) return;
-    const segment = Math.min(240, Math.floor(time / 360000) + 1), last = Math.min(240, Math.ceil(duration / 360000));
+    const segment = Math.min(MAX_DANMAKU_SEGMENT, Math.floor(time / 360000) + 1), last = Math.min(MAX_DANMAKU_SEGMENT, Math.ceil(duration / 360000));
     if (this.windowSegment !== segment) { this.windowSegment = segment; this.applyDanmaku(segment); }
     const wanted = !this.cache.has(segment) ? segment : time % 360000 < 8000 && segment > 1 && !this.cache.has(segment - 1) ? segment - 1 : (segment * 360000 - time < 15000 && segment < last && !this.cache.has(segment + 1) ? segment + 1 : undefined);
     if (!wanted || this.failed.has(wanted)) return;

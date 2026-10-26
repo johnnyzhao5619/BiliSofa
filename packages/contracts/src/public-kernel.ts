@@ -5,6 +5,7 @@ import { parseSearchRequest, type SearchRequest } from './search.ts';
 import { parseUserSearchRequest, type UserSearchRequest } from './user-search.ts';
 import { parsePgcSearchRequest, type PgcSearchRequest } from './pgc-search.ts';
 import { parseHotSearchRequest, type HotSearchRequest } from './hot-search.ts';
+import { MAX_MEDIA_MS } from './media-limits.ts';
 /** ADR-110: the public video view behind the detail page (parts and facts); never playurl, player or CDN. */
 export interface VideoViewRequest { version: 1; scope: Scope; operation: 'public-video-view'; bvid: string; }
 export interface VideoViewDetail { partCount: number; parts: { part: number; title: string; durationMs: number }[]; owner?: string; about?: VodAbout; }
@@ -25,7 +26,7 @@ export function parseVideoViewResult(value: unknown): VideoViewResult {
   if (v.kind !== 'ok' || Object.keys(v).length !== 6) throw new DomainError('invalid');
   const d = record(v.detail), keys = ['partCount', 'parts', 'owner', 'about'];
   if (Object.keys(d).some(k => !keys.includes(k)) || !Number.isSafeInteger(d.partCount) || Number(d.partCount) < 1 || Number(d.partCount) > 10000 || !Array.isArray(d.parts) || !d.parts.length || d.parts.length > Math.min(VIEW_PARTS, Number(d.partCount))) throw new DomainError('invalid');
-  const parts = d.parts.map(raw => { const p = record(raw); if (Object.keys(p).length !== 3 || !Number.isSafeInteger(p.part) || Number(p.part) < 1 || Number(p.part) > 10000 || !Number.isSafeInteger(p.durationMs) || Number(p.durationMs) < 0 || Number(p.durationMs) > 86400000) throw new DomainError('invalid'); return { part: Number(p.part), title: text(p.title, 120), durationMs: Number(p.durationMs) }; });
+  const parts = d.parts.map(raw => { const p = record(raw); if (Object.keys(p).length !== 3 || !Number.isSafeInteger(p.part) || Number(p.part) < 1 || Number(p.part) > 10000 || !Number.isSafeInteger(p.durationMs) || Number(p.durationMs) < 0 || Number(p.durationMs) > MAX_MEDIA_MS) throw new DomainError('invalid'); return { part: Number(p.part), title: text(p.title, 120), durationMs: Number(p.durationMs) }; });
   return { ...base, kind: 'ok', detail: { partCount: Number(d.partCount), parts, ...(d.owner === undefined ? {} : { owner: text(d.owner, 48) }), ...(d.about === undefined ? {} : { about: parseVodAbout(d.about) }) } };
 }
 /** ADR-108: one request to the resident public kernel. `page` is the upstream batch (1-5, 20 rows). */

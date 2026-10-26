@@ -65,7 +65,7 @@
      - `vod-catalog.ts`、`guest-video.ts`、`public-kernel.ts`的分P时长；
      - `local-profile.ts`、`overlay-read.ts`、`cast-receiver.ts`。
    - 已知后果：这样的视频在列表里显示为“时长未知”，但打开详情、播放仍会失败，与今天一样。这要单独出ADR并在电视上验证（AVPlay对超长DASH的处理、本机进度记录的上限）。
-   - **用户决定（2026-10-26）：超过24小时的视频应能播放。** 待单独出ADR实现上述各处上限的放宽，并在电视上验证；尚未实施。
+   - **用户决定（2026-10-26）：超过24小时的视频应能播放。** 由[ADR-115](115-serial-source-check-and-long-videos.md)实现（0.63.0，上限7天）；设备验证待做。
 
 ## 实现（0.58.0）
 

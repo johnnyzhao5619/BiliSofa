@@ -1,6 +1,7 @@
 import { DomainError, type MediaSource, type PlayerBackend, type PlayerState, type ErrorCode } from '../../contracts/src/index.ts';
 import { PlayerCoordinator } from './player.ts';
 import { parseMediaFailure, type MediaFailure, type MediaFailurePhase } from '../../contracts/src/media-failure.ts';
+import { MAX_MEDIA_MS } from '../../contracts/src/media-limits.ts';
 export interface OwnedPlayerBackend extends PlayerBackend { closureConfirmed(): boolean; durationMs?(): number; bufferingActive?(): boolean; failureReason?(): ErrorCode | undefined; }
 /** Terminal completion and close both require the transport's actual native ACK. */
 export interface MediaTransport {
@@ -39,7 +40,7 @@ export class MediaSession {
   }
   snapshot(): MediaSnapshot {
     if (!this.duration && this.player && !this.closing && !this.player.seeking && ['ready','playing','paused'].includes(this.player.state)) {
-      try { const n = this.backend?.durationMs?.(); if (Number.isSafeInteger(n) && n! > 0 && n! <= 86400000) this.duration = n!; } catch { /* Cached duration remains honest while unavailable. */ }
+      try { const n = this.backend?.durationMs?.(); if (Number.isSafeInteger(n) && n! > 0 && n! <= MAX_MEDIA_MS) this.duration = n!; } catch { /* Cached duration remains honest while unavailable. */ }
     }
     let recovery: 'source-range-retry'|undefined;
     if(!this.ready&&!this.closing){try{if(this.transport.recovery?.()==='source-range-retry')recovery='source-range-retry';}catch{/* Advisory state cannot prevent cleanup. */}}
@@ -47,7 +48,7 @@ export class MediaSession {
     return { state: this.closed ? 'closed' : this.closing ? 'closing' : this.player?.state ?? 'loading', timeMs: this.player?.timeMs ?? 0, durationMs: this.duration, seeking: this.player?.seeking ?? false, ...(buffering ? { buffering: true } : {}), ...(this.player?.acceptedRate !== undefined ? { acceptedRate: this.player.acceptedRate } : {}),...(this.failure?{failure:{...this.failure}}:{}),...(recovery?{recovery}:{}) };
   }
   start(initialMs = 0, paused = false): void {
-    if (!Number.isSafeInteger(initialMs) || initialMs < 0 || initialMs > 86400000 || typeof paused !== 'boolean') throw new DomainError('invalid');
+    if (!Number.isSafeInteger(initialMs) || initialMs < 0 || initialMs > MAX_MEDIA_MS || typeof paused !== 'boolean') throw new DomainError('invalid');
     if (this.started || this.closing) throw new DomainError('invalid');
     this.started = true; this.initialMs = initialMs; this.initiallyPaused = paused;
     // Invocation is deferred so an owner can register cleanup before transport entry.

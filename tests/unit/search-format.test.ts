@@ -5,13 +5,13 @@ import {parseSearchResult,SEARCH_RESPONSE_ISSUES} from '../../packages/contracts
 const row={type:'video',bvid:'BV0000000000',title:'合成视频',author:'合成UP',duration:'5:8',play:10};
 const data={page:1,pagesize:4,numPages:1,numResults:1,result:[row]};
 const body=(patch:Record<string,unknown>={})=>JSON.stringify({code:0,data:{...data,result:[{...row,...patch}]}});
-test('W03 search parses official unpadded seconds; malformed or over-24-h times read as unknown (ADR-111)',()=>{
+test('W03 search parses official unpadded seconds; malformed or over-seven-day times read as unknown (ADR-111/115)',()=>{
  for(let seconds=0;seconds<60;seconds++){
   assert.equal(parseSearchBody(body({duration:'5:'+seconds}),1).items[0]!.durationSec,300+seconds);
   assert.equal(parseSearchBody(body({duration:'5:'+String(seconds).padStart(2,'0')}),1).items[0]!.durationSec,300+seconds);
  }
- assert.equal(parseSearchBody(body({duration:'1440:0'}),1).items[0]!.durationSec,86400);
- for(const duration of ['5:60','5:99','5:008','5:','5:-1','5:1.5','5:1x','5: 8','5:8 ','1:2:3','1440:1','99999:1',308])assert.equal(parseSearchBody(body({duration}),1).items[0]!.durationSec,0);
+ assert.equal(parseSearchBody(body({duration:'1440:0'}),1).items[0]!.durationSec,86400);assert.equal(parseSearchBody(body({duration:'1440:1'}),1).items[0]!.durationSec,86401);assert.equal(parseSearchBody(body({duration:'10080:0'}),1).items[0]!.durationSec,604800);
+ for(const duration of ['5:60','5:99','5:008','5:','5:-1','5:1.5','5:1x','5: 8','5:8 ','1:2:3','10080:1','99999:1',308])assert.equal(parseSearchBody(body({duration}),1).items[0]!.durationSec,0);
 });
 test('W03 search malformed fields retain fixed categories without leaking outside values',()=>{
  // ADR-111: row-level problems only fail the page when every row is unusable, reported as `rows`.

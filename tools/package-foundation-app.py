@@ -3,7 +3,7 @@ from pathlib import Path
 from candidate_native import load_candidate
 import argparse,hashlib,json,re,zipfile,subprocess,xml.etree.ElementTree as ET
 parser=argparse.ArgumentParser(description=__doc__);args=parser.parse_args()
-version='0.62.0'
+version='0.63.0'
 ROOT=Path(__file__).resolve().parents[1];STAGE=ROOT/'dist/bilisofa-app';NATIVE=ROOT/'build/identity'
 subprocess.run(['python3',str(ROOT/'tools/category-data.py'),'--check'],check=True)
 def sha(data):return hashlib.sha256(data).hexdigest()
@@ -75,7 +75,7 @@ required['video-interactions']=[b'/x/web-interface/archive/relation?aid=%s',b'/x
 required['comments-read']=[b'/x/v2/reply/wbi/main?%s&w_rid=%s',b'mode=%s&oid=%s&pagination_str=%s&plat=1&seek_rpid=0&type=1&web_location=1315875&wts=%s',b'/x/v2/reply/reply?oid=%s&pn=%s&ps=10&root=%s&type=1']
 for folder,markers in required.items():
  # 0.47.2 packages the relinked overlay module; earlier frozen folders stay untouched. 0.50.3 packages the failover bridge; 0.50.4 the failover source modules.
- directory=ROOT/'build'/('vod-api-pair' if folder=='vod-api' else 'pgc-read-pair' if folder=='pgc-read' else 'vod-failover' if folder=='vod' else 'overlay-read-subtitle' if folder=='overlay-read' else 'pgc-follow-status' if folder=='pgc-follow' else folder);path=directory/'manifest.json';module=json.loads(path.read_text())
+ directory=ROOT/'build'/('vod-api-failover' if folder=='vod-api' else 'pgc-read-failover' if folder=='pgc-read' else 'vod-failover' if folder=='vod' else 'overlay-read-subtitle' if folder=='overlay-read' else 'pgc-follow-status' if folder=='pgc-follow' else folder);path=directory/'manifest.json';module=json.loads(path.read_text())
  if module['schema']!=1 or module['libraryBuild']!=native['libraryBuild'] or module['caSha256']!=native['caSha256'] or set(module['files'])!={'probe.js','probe.wasm','probe.data'}:raise SystemExit('W04 native provenance mismatch: '+folder)
  for name,h in module['sourceInputs'].items():checked(ROOT/name,h)
  for name,h in module['files'].items():files[folder+'/'+name]=checked(directory/name,h)
@@ -92,8 +92,6 @@ for folder,markers in required.items():
  if folder=='vod' and module.get('policy',{}).get('cumulativeProbeQuotas') is not False:raise SystemExit('W04 bridge still has probe quotas')
  if folder=='vod' and (module.get('policy',{}).get('failoverPerTrack')!=1 or b'BRIDGE:failover:%d' not in data or b'mirrorakam.akamaized.net' not in data):raise SystemExit('0.50.3 bridge failover missing')
  if folder in ['vod-api','pgc-read'] and (b'mirrorakam.akamaized.net' not in data or 'upos-<label>-mirrorakam.akamaized.net' not in module.get('policy',{}).get('sourceCheckHosts',[])):raise SystemExit('0.50.4 source check failover missing: '+folder)
- # ADR-112: the source modules check video and audio in parallel.
- if folder in ['vod-api','pgc-read'] and (b'VODAPI:pair' not in data or 'vod-source-pair.h' not in ' '.join(module.get('sourceInputs',{}))):raise SystemExit('ADR-112 parallel source check missing: '+folder)
  files[folder+'/manifest.json']=path.read_bytes();w04_manifests[folder]=sha(path.read_bytes())
 xml=ET.fromstring(files['config.xml']);ns={'w':'http://www.w3.org/ns/widgets','t':'http://tizen.org/ns/widgets'};app=xml.find('t:application',ns)
 if app.attrib['id']!='BiliSofa01.TV' or app.attrib['package']!='BiliSofa01' or xml.attrib['version']!=version or xml.find('w:content',ns).attrib['src']!='index.html':raise SystemExit('Foundation identity mismatch')

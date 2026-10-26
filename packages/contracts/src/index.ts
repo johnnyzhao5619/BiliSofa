@@ -1,3 +1,4 @@
+import { MAX_MEDIA_SECONDS } from './media-limits.ts';
 export type Evidence = 'source' | 'desktop' | 'emulator' | 'device';
 export type Verdict = 'PASS' | 'FAIL' | 'BLOCKED' | 'UNVERIFIED';
 export interface Scope {
@@ -182,7 +183,7 @@ export function parsePopularRequest(value: unknown): PopularRequest {
   return { version: 1, scope: popularScope(v.scope), operation: 'guest-popular', page };
 }
 export function parsePopularCard(item: unknown): PopularCard {
-  const card = record(item), bvid = text(card.bvid, 12), title = text(card.title, 120), owner = text(card.owner, 48), durationSec = finite(card.durationSec, 0, 86400), views = finite(card.views, 0, Number.MAX_SAFE_INTEGER);
+  const card = record(item), bvid = text(card.bvid, 12), title = text(card.title, 120), owner = text(card.owner, 48), durationSec = finite(card.durationSec, 0, MAX_MEDIA_SECONDS), views = finite(card.views, 0, Number.MAX_SAFE_INTEGER);
   if (Object.keys(card).length !== (card.cover===undefined?5:6) || Object.keys(card).some(k => !['bvid', 'title', 'owner', 'durationSec', 'views','cover'].includes(k)) || !/^BV[A-Za-z0-9]{10}$/.test(bvid) || !Number.isInteger(durationSec) || !Number.isInteger(views)) throw new DomainError('invalid');
   return { bvid, title, owner, durationSec, views,...(card.cover===undefined?{}:{cover:parseCoverReference(card.cover)}) };
 }

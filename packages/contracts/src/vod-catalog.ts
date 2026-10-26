@@ -1,4 +1,5 @@
 import { DomainError, record, text, parseCoverReference, type CoverReference } from './index.ts';
+import { MAX_MEDIA_MS } from './media-limits.ts';
 export const VOD_RATES=[1,2] as const;
 export type VodRate=typeof VOD_RATES[number];
 export type RepeatMode='off'|'one'|'all';
@@ -38,7 +39,7 @@ export function parseVodTrackPreference(value:unknown):VodTrackPreference {
  if(!['avc','hevc','av1'].includes(String(v.videoCodec))||!['aac','eac3','flac'].includes(String(v.audioCodec)))throw new DomainError('invalid');
  return {quality:vodInteger(v.quality,1,127),videoCodec:v.videoCodec as VideoCodec,videoBandwidth:vodInteger(v.videoBandwidth,1,200000000),audioCodec:v.audioCodec as AudioCodec,audioBandwidth:vodInteger(v.audioBandwidth,1,16000000)};
 }
-export function parseVodItem(value:unknown):VodItem{const v=record(value);vodKeys(v,['bvid','part','title','durationMs']);return {bvid:vodBvid(v.bvid),part:vodInteger(v.part,1,10000),title:text(v.title,120),durationMs:vodInteger(v.durationMs,1,86400000)};}
+export function parseVodItem(value:unknown):VodItem{const v=record(value);vodKeys(v,['bvid','part','title','durationMs']);return {bvid:vodBvid(v.bvid),part:vodInteger(v.part,1,10000),title:text(v.title,120),durationMs:vodInteger(v.durationMs,1,MAX_MEDIA_MS)};}
 export function vodItemKey(value:Pick<VodItem,'bvid'|'part'>):string{return `${vodBvid(value.bvid)}:p${vodInteger(value.part,1,10000)}`;}
 export function parseVodChoice(value:unknown):VodChoice{const v=record(value);vodKeys(v,['catalogId','videoKey','audioKey']);if(typeof v.catalogId!=='string'||!/^[a-f0-9]{32}$/.test(v.catalogId)||typeof v.videoKey!=='string'||!/^v[0-9]{1,3}$/.test(v.videoKey)||typeof v.audioKey!=='string'||!/^a[0-9]{1,2}$/.test(v.audioKey))throw new DomainError('invalid');return {catalogId:v.catalogId,videoKey:v.videoKey,audioKey:v.audioKey};}
 export function parseVodCatalog(value:unknown):VodCatalog{

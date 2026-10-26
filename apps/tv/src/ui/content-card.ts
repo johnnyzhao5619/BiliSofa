@@ -7,7 +7,16 @@ export function viewsText(views: number): string {
     const unit = (value: number, suffix: string) => `${value.toFixed(1).replace(/\.0$/, '')}${suffix}`;
     return views >= 1e8 ? unit(views / 1e8, '亿') : views >= 1e4 ? unit(views / 1e4, '万') : String(Math.floor(views));
 }
-export function clockTime(seconds: number): string { return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`; }
+/** 75 → 1:15; ADR-115: an hour or more is h:mm:ss (4530 → 1:15:30, 90000 → 25:00:00). */
+export function clockTime(seconds: number): string {
+    const total = Math.max(0, Math.floor(seconds)), hours = Math.floor(total / 3600), pad = (n: number) => String(n).padStart(2, '0');
+    return hours ? `${hours}:${pad(Math.floor(total % 3600 / 60))}:${pad(total % 60)}` : `${Math.floor(total / 60)}:${pad(total % 60)}`;
+}
+/** The spoken form of a length: 4530 → 1小时15分30秒. */
+export function spokenLength(seconds: number): string {
+    const total = Math.max(0, Math.floor(seconds)), hours = Math.floor(total / 3600);
+    return `${hours ? hours + '小时' : ''}${Math.floor(total % 3600 / 60)}分${total % 60}秒`;
+}
 /** ADR-111: 0 is an unknown duration (over 24 h or unreadable at the source); show nothing for it. */
 export function durationText(seconds: number): string { return seconds > 0 ? clockTime(seconds) : ''; }
 /** `hold` (ADR-113) makes OK held for 0.5 s open the card's menu; the short press stays `choose`. */
@@ -31,7 +40,7 @@ export function contentCard(card: PopularCard, id: string, art: CoverArt, signal
     const author = document.createElement('span');
     author.className = 'tv-card-author';
     author.textContent = card.views > 0 ? `${card.owner} · ${viewsText(card.views)}播放` : card.owner;
-    button.setAttribute('aria-label', `${card.title}，${card.owner}${card.durationSec > 0 ? `，${Math.floor(card.durationSec / 60)}分${card.durationSec % 60}秒` : ''}`);
+    button.setAttribute('aria-label', `${card.title}，${card.owner}${card.durationSec > 0 ? `，${spokenLength(card.durationSec)}` : ''}`);
     button.append(picture, title, author);
     button.onclick = () => { if (!signal.aborted)
         choose(); };

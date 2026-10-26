@@ -5,6 +5,7 @@ import {parseVodReadResult,type VodAccess,type VodReadResult} from '../../contra
 import {MediaSession,type MediaClosure,type MediaObservation,type MediaOutcome,type MediaSnapshot,type OwnedPlayerBackend} from './session.ts';
 import type {MediaFailure} from '../../contracts/src/media-failure.ts';
 import type {VodMedia} from './vod-playback.ts';
+import { MAX_MEDIA_MS } from '../../contracts/src/media-limits.ts';
 export function defaultVodChoice(result:VodReadResult,caps:VodCapabilities):VodChoice{return preferredVodChoice(result,caps).choice;}
 /** One item's source authority survives bounded runtime downshifts. Each next
  * pair waits the preceding MediaSession's real dual closure. Source/auth/TLS,
@@ -24,7 +25,7 @@ export class VodCatalogMedia implements VodMedia {
     private readonly observed?:(value:MediaObservation)=>void,private readonly preferred:()=>VodTrackPreference|undefined=()=>undefined,
     private readonly retrying?:(kind:'line'|'quality')=>void){}
   start(initialMs=0,paused=false):void {
-    if(this.loading||this.closing||!Number.isSafeInteger(initialMs)||initialMs<0||initialMs>86400000||typeof paused!=='boolean')throw new DomainError('invalid');
+    if(this.loading||this.closing||!Number.isSafeInteger(initialMs)||initialMs<0||initialMs>MAX_MEDIA_MS||typeof paused!=='boolean')throw new DomainError('invalid');
     this.position=initialMs;this.paused=paused;
     this.loading=Promise.resolve().then(async()=>{
       if(this.closing)return;

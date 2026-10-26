@@ -1,4 +1,5 @@
 import { DomainError, boundedMessage, finite, parseScope, record, text, type Scope } from './index.ts';
+import { MAX_MEDIA_SECONDS } from './media-limits.ts';
 export interface GuestVideoRequest { version: 1; scope: Scope; operation: 'guest-video-source' | 'guest-video-play'; bvid: string; }
 export interface GuestVideoSummary { bvid: string; title: string; owner: string; durationSec: number; pages: number; width: number; height: number; videoCodec: string; audioCodec: string; }
 export interface GuestVideoResult { version: 1; scope: Scope; operation: 'guest-video-source'; closed: true; code: string; summary?: GuestVideoSummary; }
@@ -19,7 +20,7 @@ export function parseGuestVideoResult(value: unknown): GuestVideoResult {
   if (v.version !== 1 || v.operation !== 'guest-video-source' || v.closed !== true || Object.keys(v).some(k => !['version', 'scope', 'operation', 'closed', 'code', 'summary'].includes(k)) || !/^ugc\.(source_ranges_ok|cancelled|native_unavailable|(?:view|playurl|video|audio)_(?:invalid_response|response_too_large|headers_too_large|unsupported|expired_source|duration_mismatch|cdn_unavailable|transport_[0-9]{1,3}|http_[1-5][0-9]{2}|api_error|range_invalid))$/.test(code)) throw new DomainError('invalid');
   let summary: GuestVideoSummary | undefined;
   if (code === 'ugc.source_ranges_ok') {
-    const s = record(v.summary), bvid = text(s.bvid, 12), title = text(s.title, 120), owner = text(s.owner, 48), durationSec = finite(s.durationSec, 1, 86400), pages = finite(s.pages, 1, 100), width = finite(s.width, 1, 640), height = finite(s.height, 1, 640);
+    const s = record(v.summary), bvid = text(s.bvid, 12), title = text(s.title, 120), owner = text(s.owner, 48), durationSec = finite(s.durationSec, 1, MAX_MEDIA_SECONDS), pages = finite(s.pages, 1, 100), width = finite(s.width, 1, 640), height = finite(s.height, 1, 640);
     if (Object.keys(s).length !== 9 || !/^BV[A-Za-z0-9]{10}$/.test(bvid) || ![pages, width, height].every(Number.isInteger) || !/^avc1\.[a-fA-F0-9]{6}$/.test(String(s.videoCodec)) || s.audioCodec !== 'mp4a.40.2') throw new DomainError('invalid');
     summary = { bvid, title, owner, durationSec, pages, width, height, videoCodec: String(s.videoCodec), audioCodec: s.audioCodec };
   } else if (v.summary !== undefined) throw new DomainError('invalid');

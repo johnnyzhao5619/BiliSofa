@@ -1,4 +1,5 @@
 import { DomainError, finite, record, text, parseCoverReference, type CoverReference } from './index.ts';
+import { MAX_MEDIA_SECONDS } from './media-limits.ts';
 /** UP主页·投稿 (ADR-103): official web series search with empty keywords: newest first, fixed 30 per page, at most 50 pages. */
 export const UP_ARCHIVE_PAGE=30, UP_ARCHIVE_PAGES=50;
 /** One public upload of an UP; the page supplies the owner name it already shows. */
@@ -14,7 +15,7 @@ export function upPage(value: unknown): number {
 export function parseUpArchiveCard(value: unknown): UpArchiveCard {
   const v = record(value);
   if (Object.keys(v).some(k => !['bvid', 'title', 'durationSec', 'views', 'publishedAt', 'cover'].includes(k))) throw new DomainError('invalid');
-  const bvid = text(v.bvid, 12), durationSec = finite(v.durationSec, 0, 86400), views = finite(v.views, 0, Number.MAX_SAFE_INTEGER);
+  const bvid = text(v.bvid, 12), durationSec = finite(v.durationSec, 0, MAX_MEDIA_SECONDS), views = finite(v.views, 0, Number.MAX_SAFE_INTEGER);
   if (!/^BV[A-Za-z0-9]{10}$/.test(bvid) || !Number.isInteger(durationSec) || !Number.isInteger(views)) throw new DomainError('invalid');
   if (v.publishedAt !== undefined && (!Number.isSafeInteger(v.publishedAt) || (v.publishedAt as number) < 1 || (v.publishedAt as number) >= 4102444800)) throw new DomainError('invalid');
   return { bvid, title: text(v.title, 120), durationSec, views, ...(v.publishedAt === undefined ? {} : { publishedAt: v.publishedAt as number }), ...(v.cover === undefined ? {} : { cover: parseCoverReference(v.cover) }) };

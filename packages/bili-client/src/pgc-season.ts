@@ -1,8 +1,9 @@
 import { DomainError, record } from '../../contracts/src/index.ts';
 import { pgcId, pgcRawId, parsePgcSeason, type PgcEpisode, type PgcRestriction, type PgcSeason } from '../../contracts/src/pgc-season.ts';
 import { vodBvid, vodInteger, type VodItem } from '../../contracts/src/vod-catalog.ts';
-import { parseVodPlayback, type PrivateVodCatalog, type PrivateVodDetail } from './vod-catalog.ts';
+import { mediaLength, parseVodPlayback, type PrivateVodCatalog, type PrivateVodDetail } from './vod-catalog.ts';
 import { publicArtwork } from './public-artwork.ts';
+import { MAX_MEDIA_MS } from '../../contracts/src/media-limits.ts';
 export interface PrivatePgcEpisode { key: string; episodeId: string; cid: string; item: VodItem; allowed: boolean; aid?: string; }
 export interface PrivatePgcSeason { summary: PgcSeason; episodes: PrivatePgcEpisode[]; }
 export class PgcApiError extends DomainError { constructor(readonly apiCode: number) { super([-101, -102].includes(apiCode) ? 'login' : [-10403, 10015001, 10015002].includes(apiCode) ? 'permission' : 'network'); } }
@@ -51,7 +52,7 @@ export function parsePgcSeasonBody(raw: string, seasonId: string, authenticated:
       let restriction: PgcRestriction = restricted ? 'region' : hidden ? 'unavailable' : drm ? 'drm' : code === 2 ? 'none' : code === 13 ? 'member' : badge === '付费' ? 'purchase' : 'unknown';
       let binding: PrivatePgcEpisode | undefined;
       try {
-        const bvid = vodBvid(e.bvid), cid = pgcRawId(e.cid), durationMs = vodInteger(e.duration, 1, 86400000);
+        const bvid = vodBvid(e.bvid), cid = pgcRawId(e.cid), durationMs = mediaLength(e.duration, MAX_MEDIA_MS);
         const aid = typeof e.aid === 'number' && Number.isSafeInteger(e.aid) && e.aid > 0 ? String(e.aid) : undefined;
         binding = { key, episodeId, cid, item: { bvid, part: 1, title: title.slice(0, 120), durationMs }, allowed: !['region', 'unavailable', 'drm'].includes(restriction) && (authenticated || restriction === 'none'), ...(aid ? { aid } : {}) };
       } catch { restriction = 'unavailable'; }

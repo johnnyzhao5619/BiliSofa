@@ -2,6 +2,7 @@ import { parsePartResumePoint, type LocalWrite, type ProfileStore } from '../../
 import type { MediaObservation } from '../../../../packages/media/src/session.ts';
 import type { AppDiagnostics } from './app-diagnostics.ts';
 import {labelText, type ResumeLabelText} from '../../../../packages/contracts/src/resume-label.ts';
+import { MAX_MEDIA_MS } from '../../../../packages/contracts/src/media-limits.ts';
 /** Holds the page's fixed partition; no mutable global selected-account lookup.
  * Flushes synchronously before teardown and refuses all observations after close. */
 export class LocalPlayback {
@@ -22,7 +23,7 @@ export class LocalPlayback {
     if (value.reason === 'close' || value.reason === 'error') this.closed = true;
     let result: LocalWrite | undefined;
     if (value.reason === 'ended') { this.closed = true; if (value.timeMs > 0 && value.durationMs > 0) result = this.store.forgetPart(this.bvid, this.part); }
-    else if (value.timeMs >= 3000 && value.durationMs > value.timeMs && value.durationMs <= 86400000) {
+    else if (value.timeMs >= 3000 && value.durationMs > value.timeMs && value.durationMs <= MAX_MEDIA_MS) {
       const now = this.clock();
       if (!Number.isSafeInteger(now) || now < 1 || now > 1000000000000000) return;
       if (value.reason === 'tick' && (now - this.savedAt < 5000 || value.timeMs === this.savedMs)) return;

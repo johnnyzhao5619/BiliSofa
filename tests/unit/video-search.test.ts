@@ -24,10 +24,10 @@ test('W03 public search strips only known highlight tags and parses minutes/seco
  assert.deepEqual(parseSearchBody('{"code":0,"data":{"page":1,"pagesize":4,"numResults":0,"numPages":0}}',1),{apiCode:0,items:[],noMore:true});
 });
 // 0.47.2: a well-formed other row kind (live/ketang) is skipped. ADR-111: a malformed row is skipped and counted;
-// a page whose every row is malformed still rejects; a malformed or over-24-h time reads as unknown (0).
+// a page whose every row is malformed still rejects; a malformed or over-seven-day time reads as unknown (0, ADR-115).
 test('W03 search parser rejects mismatched pages, all-malformed rows and oversized response; single bad rows are skipped',()=>{
  for(const raw of [body(2),body(1,[{...row(),type:7 as unknown as string}]),body(1,[{...row(),type:'<b>live'}]),body(1,[{...row(),bvid:'outside'}]),body(1,Array.from({length:5},(_,i)=>row(i))),' '.repeat(524289),'{}'])assert.throws(()=>parseSearchBody(raw,1));
- const mixed=parseSearchBody(body(1,[row(0),row(0),{...row(1),type:7 as unknown as string},{...row(2),duration:'9999:59',play:'123' as unknown as number}]),1);
+ const mixed=parseSearchBody(body(1,[row(0),row(0),{...row(1),type:7 as unknown as string},{...row(2),duration:'10080:1',play:'123' as unknown as number}]),1);
  assert.deepEqual(mixed.items.map(c=>[c.bvid,c.durationSec,c.views]),[['BV0000000000',754,123],['BV0000000002',0,0]]);assert.equal(mixed.skipped,2);
  assert.equal(parseSearchBody(body(1,[{...row(),duration:'1:99'}]),1).items[0]!.durationSec,0);
  assert.equal(parseSearchResult({...result(),items:mixed.items,skipped:2}).skipped,2);assert.throws(()=>parseSearchResult({...result(),skipped:4}));

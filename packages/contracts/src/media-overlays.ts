@@ -2,6 +2,7 @@ import { DomainError, finite, record, text } from './index.ts';
 import { localOwner } from './local-profile.ts';
 
 import type { OverlayBinding, OverlayPreferences, SubtitleCue } from './overlay-dto.ts';
+import { MAX_MEDIA_MS } from './media-limits.ts';
 export type { OverlayBinding, OverlayPreferences, SubtitleCue } from './overlay-dto.ts';
 function keys(value: Record<string, unknown>, allowed: readonly string[]): void {
   if (Object.keys(value).length !== allowed.length || Object.keys(value).some(k => !allowed.includes(k))) throw new DomainError('invalid');
@@ -25,7 +26,7 @@ export function parseSubtitleCues(value: unknown): SubtitleCue[] {
   const ids = new Set<string>(); let total = 0;
   return value.map(item => {
     const v = record(item); keys(v, ['id', 'startMs', 'endMs', 'content']);
-    const id = text(v.id, 96), startMs = finite(v.startMs, 0, 86400000), endMs = finite(v.endMs, 0, 86400000), content = subtitleText(v.content);
+    const id = text(v.id, 96), startMs = finite(v.startMs, 0, MAX_MEDIA_MS), endMs = finite(v.endMs, 0, MAX_MEDIA_MS), content = subtitleText(v.content);
     total += content.length;
     if (ids.has(id) || endMs <= startMs || total > 2097152) throw new DomainError('invalid'); ids.add(id);
     return { id, startMs, endMs, content };

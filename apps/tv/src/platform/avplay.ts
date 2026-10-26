@@ -1,4 +1,5 @@
 import { DomainError, type MediaSource, type PlayerBackend, type ErrorCode } from '../../../../packages/contracts/src/index.ts';
+import { MAX_MEDIA_MS } from '../../../../packages/contracts/src/media-limits.ts';
 
 export interface AvplayApi {
   getState(): 'NONE' | 'IDLE' | 'READY' | 'PLAYING' | 'PAUSED';
@@ -237,7 +238,7 @@ export class AvplayBackend implements PlayerBackend {
   }
   durationMs(): number {
     if (this.pending.size || this.prebufferComplete) return 0;
-    try { const n = this.api.getDuration?.(); return typeof n === 'number' && Number.isFinite(n) && n > 0 && n <= 86400000 ? Math.floor(n) : 0; } catch { return 0; }
+    try { const n = this.api.getDuration?.(); return typeof n === 'number' && Number.isFinite(n) && n > 0 && n <= MAX_MEDIA_MS ? Math.floor(n) : 0; } catch { return 0; }
   }
   trackSummary(): string {
     try {

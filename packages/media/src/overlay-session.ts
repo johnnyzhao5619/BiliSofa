@@ -2,6 +2,7 @@ import { DomainError, finite, type ErrorCode } from '../../contracts/src/index.t
 import { overlayDefaults, parseOverlayBinding, parseOverlayPreferences, parseSubtitleCues, type OverlayBinding, type OverlayPreferences, type SubtitleCue } from '../../contracts/src/media-overlays.ts';
 import { parseDanmaku, type Danmaku } from './danmaku.ts';
 import { OverlayTimeline, parseSubtitle } from './timeline.ts';
+import { MAX_MEDIA_MS } from '../../contracts/src/media-limits.ts';
 
 export interface OverlayViewport { width: number; height: number; }
 export interface OverlayText { id: string; content: string; color: number; x: number; y: number; width: number; }
@@ -94,8 +95,8 @@ export class OverlaySession {
     this.layout = layout; this.layoutKey = key;
   }
   frame(timeMs: number, state: 'playing' | 'paused' | 'seeking' | 'loading' | 'ended' | 'error' | 'closed', view: OverlayViewport, motionTimeMs = timeMs): OverlayFrame {
-    finite(timeMs, 0, 86400000); viewport(view);
-    finite(motionTimeMs, 0, 86400000);
+    finite(timeMs, 0, MAX_MEDIA_MS); viewport(view);
+    finite(motionTimeMs, 0, MAX_MEDIA_MS);
     if (!['playing', 'paused', 'seeking', 'loading', 'ended', 'error', 'closed'].includes(state)) throw new DomainError('invalid');
     const preferences = parseOverlayPreferences(this.preferences), danmaku: OverlayText[] = [];
     if (this.closed || !this.binding || !['playing', 'paused'].includes(state)) return { danmaku, subtitles: [], preferences };

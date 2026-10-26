@@ -2,6 +2,7 @@ import type {VodTrackPreference} from './vod-catalog.ts';
 import type {ResumeLabel, ResumeLabelRead} from './resume-label.ts';
 import { DomainError, record } from './index.ts';
 import { parseAccountId } from './private-account.ts';
+import { MAX_MEDIA_MS } from './media-limits.ts';
 export interface PlaybackPreferences { resumePrompt: boolean; jumpSeconds: 5 | 10 | 30; }
 export interface ResumePoint { bvid: string; part: 1; timeMs: number; durationMs: number; updatedAt: number; }
 export interface PartResumePoint extends Omit<ResumePoint, 'part'> { part: number; }
@@ -54,7 +55,7 @@ export function parsePreferences(value: unknown): PlaybackPreferences {
 }
 export function parseResumePoint(value: unknown): ResumePoint {
   const v = record(value);
-  if (Object.keys(v).length !== 5 || Object.keys(v).some(k => !['bvid','part','timeMs','durationMs','updatedAt'].includes(k)) || typeof v.bvid !== 'string' || !/^BV[A-Za-z0-9]{10}$/.test(v.bvid) || v.part !== 1 || ![v.timeMs,v.durationMs,v.updatedAt].every(Number.isSafeInteger) || Number(v.durationMs) < 1 || Number(v.durationMs) > 86400000 || Number(v.timeMs) < 1 || Number(v.timeMs) >= Number(v.durationMs) || Number(v.updatedAt) < 1 || Number(v.updatedAt) > 1000000000000000) throw new DomainError('invalid');
+  if (Object.keys(v).length !== 5 || Object.keys(v).some(k => !['bvid','part','timeMs','durationMs','updatedAt'].includes(k)) || typeof v.bvid !== 'string' || !/^BV[A-Za-z0-9]{10}$/.test(v.bvid) || v.part !== 1 || ![v.timeMs,v.durationMs,v.updatedAt].every(Number.isSafeInteger) || Number(v.durationMs) < 1 || Number(v.durationMs) > MAX_MEDIA_MS || Number(v.timeMs) < 1 || Number(v.timeMs) >= Number(v.durationMs) || Number(v.updatedAt) < 1 || Number(v.updatedAt) > 1000000000000000) throw new DomainError('invalid');
   return { bvid: v.bvid, part: 1, timeMs: Number(v.timeMs), durationMs: Number(v.durationMs), updatedAt: Number(v.updatedAt) };
 }
 export function parseLocalProfile(raw: string): LocalProfile {

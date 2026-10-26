@@ -4,6 +4,7 @@ import { pgcId } from './pgc-season.ts';
 import { parsePrivateAccount, type PrivateAccount } from './private-account.ts';
 import { parseSubtitleCues } from './media-overlays.ts';
 import type { OverlayCommand, OverlayDanmaku, OverlayTarget, OverlayValue, SubtitleTrack } from './overlay-dto.ts';
+import { MAX_DANMAKU_SEGMENT, MAX_MEDIA_MS } from './media-limits.ts';
 export type { OverlayAccess, OverlayCommand, OverlayDanmaku, OverlayTarget, OverlayValue, SubtitleTrack } from './overlay-dto.ts';
 export interface OverlayRequest { version: 1; operation: 'media-overlay-read'; scope: Scope; target: OverlayTarget; command: OverlayCommand; account?: PrivateAccount; }
 export type OverlayResult = { version: 1; operation: 'media-overlay-read'; scope: Scope; closed: true } & ({ kind: 'ok'; value: OverlayValue } | { kind: 'error'; code: ErrorCode });
@@ -20,7 +21,7 @@ export function parseOverlayCommand(value: unknown): OverlayCommand {
   const v = record(value);
   if (v.kind === 'metadata') { vodKeys(v, ['kind']); return { kind: 'metadata' }; }
   if (v.kind === 'subtitles') { vodKeys(v, ['kind', 'track']); return { kind: 'subtitles', track: parseSubtitleTrack(v.track) }; }
-  if (v.kind === 'danmaku') { vodKeys(v, ['kind', 'segment']); return { kind: 'danmaku', segment: vodInteger(v.segment, 1, 240) }; }
+  if (v.kind === 'danmaku') { vodKeys(v, ['kind', 'segment']); return { kind: 'danmaku', segment: vodInteger(v.segment, 1, MAX_DANMAKU_SEGMENT) }; }
   throw new DomainError('invalid');
 }
 export function parseOverlayDanmaku(value: unknown): OverlayDanmaku[] {
@@ -28,7 +29,7 @@ export function parseOverlayDanmaku(value: unknown): OverlayDanmaku[] {
   const ids = new Set<string>(); let total = 0;
   return value.map(raw => {
     const v = record(raw); vodKeys(v, ['id', 'timeMs', 'mode', 'color', 'content']); const id = text(v.id, 128), content = text(v.content, 512);
-    if (ids.has(id) || !['scroll', 'top', 'bottom'].includes(String(v.mode)) || typeof v.timeMs !== 'number' || !Number.isFinite(v.timeMs) || v.timeMs < 0 || v.timeMs > 86400000 || (total += content.length) > 2097152) throw new DomainError('invalid');
+    if (ids.has(id) || !['scroll', 'top', 'bottom'].includes(String(v.mode)) || typeof v.timeMs !== 'number' || !Number.isFinite(v.timeMs) || v.timeMs < 0 || v.timeMs > MAX_MEDIA_MS || (total += content.length) > 2097152) throw new DomainError('invalid');
     ids.add(id); return { id, timeMs: v.timeMs, mode: v.mode as OverlayDanmaku['mode'], color: vodInteger(v.color, 0, 0xffffff), content };
   }).sort((a, b) => a.timeMs - b.timeMs);
 }

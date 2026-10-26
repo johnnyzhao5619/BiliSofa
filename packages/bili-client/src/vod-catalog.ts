@@ -4,6 +4,13 @@ import { GuestVideoError } from './guest-video.ts';
 import { vodCdnPair } from './vod-cdn.ts';
 import { publicArtwork } from './public-artwork.ts';
 import type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-private.ts';
+import { MAX_MEDIA_MS, MAX_MEDIA_SECONDS } from '../../contracts/src/media-limits.ts';
+/** ADR-115: a whole-number length over the bound is a video this app does not play ('unsupported', shown as out of
+ * range), not malformed data; anything else out of range stays 'invalid'. */
+export function mediaLength(value: unknown, max: number): number {
+  if (typeof value === 'number' && Number.isSafeInteger(value) && value > max) throw new DomainError('unsupported');
+  return vodInteger(value, 1, max);
+}
 export type { PrivateVodTrack, PrivateVodPlan } from '../../contracts/src/vod-private.ts';
 
 export interface PrivateVodPart { item: VodItem; cid: string; }
@@ -50,7 +57,7 @@ export function parseVodDetail(raw: string, bvid: string): PrivateVodDetail {
     const p = record(rawPart), part = vodInteger(p.page, 1, 10000);
     if (part !== index + 1 || p.from !== 'vupload') throw new GuestVideoError('unsupported');
     const cid = String(vodInteger(p.cid, 1, Number.MAX_SAFE_INTEGER));
-    return { cid, item: { bvid, part, title: caption(p.part, 120), durationMs: vodInteger(p.duration, 1, 86400) * 1000 } };
+    return { cid, item: { bvid, part, title: caption(p.part, 120), durationMs: mediaLength(p.duration, MAX_MEDIA_SECONDS) * 1000 } };
   });
   if (new Set(parts.map(p => p.cid)).size !== parts.length || String(d.cid) !== parts[0]!.cid) throw new DomainError('invalid');
   const guestAllowed = rights.pay === 0 && rights.ugc_pay === 0 && !['arc_pay', 'ugc_pay_preview', 'movie'].some(k => optionalFlag(rights[k])) &&
@@ -71,7 +78,7 @@ export function parseVodDetail(raw: string, bvid: string): PrivateVodDetail {
         let item: VodItem | undefined;
         try {
           const entryBvid = vodBvid(episode.bvid), arc = record(episode.arc);
-          const durationMs = vodInteger(arc.duration, 1, 86400) * 1000;
+          const durationMs = mediaLength(arc.duration, MAX_MEDIA_SECONDS) * 1000;
           if (seen.has(entryBvid)) throw new DomainError('invalid');
           item = { bvid: entryBvid, part: 1, title: entryTitle, durationMs };
           seen.add(entryBvid);
@@ -131,7 +138,7 @@ export function parseVodPlayback(raw: string, part: PrivateVodPart, catalogId: s
   const d = data(raw), dash = record(d.dash);
   if (d.is_preview || d.drm_tech_type || d.durl) throw new GuestVideoError('unsupported');
   if (!Array.isArray(dash.video) || !dash.video.length || dash.video.length > 256 || !Array.isArray(dash.audio) || dash.audio.length > 64) throw new DomainError('invalid');
-  const durationMs = vodInteger(d.timelength, 1, 86400000), dashDuration = dash.duration;
+  const durationMs = mediaLength(d.timelength, MAX_MEDIA_MS), dashDuration = dash.duration;
   if (typeof dashDuration !== 'number' || !Number.isFinite(dashDuration) || Math.abs(dashDuration * 1000 - durationMs) > 3000 || Math.abs(durationMs - part.item.durationMs) > 3000) throw new GuestVideoError('duration_mismatch');
   const formats = d.support_formats;
   if (formats !== undefined && (!Array.isArray(formats) || formats.length > 128)) throw new DomainError('invalid');

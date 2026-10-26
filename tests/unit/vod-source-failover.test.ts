@@ -87,7 +87,7 @@ test('ADR-102 帮助与诊断 evidence keeps fixed fields, avoids failed classes
   resetSourceStep(); assert.equal(bridgeEvidence().step, undefined); assert.equal(bridgeEvidence().failovers, 2, 'counts last the run');
 });
 
-/** ADR-112 native boundary: unchecked tracks are checked together; every failed track is named, passed totals are kept. */
+/** ADR-112 owner rule, kept by ADR-115: every failed track is named, passed totals are kept, only failed tracks move. */
 function pairOwner(failing: RegExp) {
   const rounds: string[][] = [], codes: string[] = []; let reads = 0;
   const detail = { guestAllowed: true, parts: [part], summary: { title: '合成', owner: '合成', parts: [part.item] } } as unknown as PrivateVodDetail;

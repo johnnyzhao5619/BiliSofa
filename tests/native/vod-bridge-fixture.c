@@ -31,6 +31,10 @@ int main(int argc, char **argv) {
     if (sizeof(bridge_clients) > 1048576) return 4;
     strcpy(bridge_token, "0123456789abcdef0123456789abcdef");
     if (!vod_manifest(metadata)) return 5;
+    /* ADR-115: 25 hours and seven days pass, one millisecond more does not. */
+    if (!vod_manifest("90000000,1920,1080,5000000,192000,31,9437184,31,6144,12582920,12582920,avc1.640028,ec-3") ||
+        !vod_manifest("604800000,1920,1080,5000000,192000,31,9437184,31,6144,12582920,12582920,avc1.640028,ec-3") ||
+        vod_manifest("604800001,1920,1080,5000000,192000,31,9437184,31,6144,12582920,12582920,avc1.640028,ec-3") || !vod_manifest(metadata)) return 5;
     char malformed[512]; snprintf(malformed, sizeof(malformed), "0%s", metadata);
     if (vod_manifest(malformed) || vod_manifest("7200000,1920,1080,5000000,192000,31,9437184,31,6144,12582920,12582920,avc1.640028,mp4a.40.2\"<>")) return 6;
     if (!vod_codec("hev1.1.6.L150.90", 0) || !vod_codec("av01.0.08M.08", 0) || vod_codec("avc1.bad", 0) || vod_codec("ec-3\"", 1)) return 7;

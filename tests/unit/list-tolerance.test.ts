@@ -17,14 +17,15 @@ test('ADR-111 row tool: bad or empty rows are skipped and counted, an all-bad li
  assert.deepEqual(eachRow([],()=>1),{items:[],skipped:0});
  assert.throws(()=>eachRow([1,2],()=>{throw new DomainError('invalid');}),{code:'invalid'});
  assert.throws(()=>eachRow([1],()=>{throw new TypeError('bug');}),TypeError);
- assert.deepEqual([seconds(183),seconds(0),seconds(86400),seconds(86401),seconds(166242),seconds(1.5),seconds(-1),seconds('80')],[183,0,86400,0,0,0,0,0]);
- assert.deepEqual([clockSeconds('5:8'),clockSeconds('1440:0'),clockSeconds('1440:1'),clockSeconds('1:99'),clockSeconds(308)],[308,86400,0,0,0]);
+ // ADR-115: the bound is seven days (604800 s); longer is unknown.
+ assert.deepEqual([seconds(183),seconds(0),seconds(86400),seconds(86401),seconds(166242),seconds(604800),seconds(604801),seconds(1.5),seconds(-1),seconds('80')],[183,0,86400,86401,166242,604800,0,0,0,0]);
+ assert.deepEqual([clockSeconds('5:8'),clockSeconds('1440:0'),clockSeconds('1440:1'),clockSeconds('10080:0'),clockSeconds('10080:1'),clockSeconds('1:99'),clockSeconds(308)],[308,86400,86401,604800,0,0,0]);
  assert.deepEqual([line(' 换\n行\t ',120),line('字'.repeat(130),120).length,line(7,10),line(null,10)],['换 行',120,'','']);
 });
 
-test('ADR-111 recommendation regression: a 46-hour video no longer fails the batch; it shows with an unknown duration',()=>{
- const batch=parseRecommendationBody(feed([video(1),video(2,166242),video(3)]),'123');
- assert.deepEqual(batch.items.map(c=>c.durationSeconds),[183,0,183]);assert.equal(batch.skipped,undefined);
+test('ADR-111/115 recommendation: a 46-hour video shows its length; one over seven days shows unknown; neither fails the batch',()=>{
+ const batch=parseRecommendationBody(feed([video(1),video(2,166242),video(3),video(4,700000)]),'123');
+ assert.deepEqual(batch.items.map(c=>c.durationSeconds),[183,166242,183,0]);assert.equal(batch.skipped,undefined);
  const scope={accountId:'bili_123',generation:1,mediaSessionId:'recommend',requestId:'r1'};
  assert.deepEqual(parseRecommendationResult({version:1,operation:'recommendations-read',scope,closed:true,kind:'ok',batch}).kind,'ok');
 });
@@ -53,7 +54,7 @@ test('ADR-111 favorites and follow updates: a bad row is skipped and counted; pa
 });
 
 test('ADR-111 UP archives keep skipping unusable rows, now counted, and an all-unusable page is invalid',()=>{
- const row=(i:number)=>({bvid:'BV'+String(i).padStart(10,'0'),title:'合成投稿',duration:166242,stat:{view:1}});
+ const row=(i:number)=>({bvid:'BV'+String(i).padStart(10,'0'),title:'合成投稿',duration:700000,stat:{view:1}});
  const p=parseUpArchivesBody(JSON.stringify({code:0,data:{archives:[row(1),row(1),{bvid:'x'}],page:{total:3}}}));
  assert.deepEqual(p.archives.map(a=>a.durationSec),[0]);assert.equal(p.skipped,2);
  assert.throws(()=>parseUpArchivesBody(JSON.stringify({code:0,data:{archives:[{bvid:'x'}],page:{total:1}}})));
@@ -68,5 +69,5 @@ test('ADR-111 diagnostics hear about skipped rows wherever a result carries them
 });
 
 test('ADR-111 an unknown (0) duration shows nothing; a real one keeps the clock format',()=>{
- assert.deepEqual([durationText(0),durationText(183),durationText(86400)],['','3:03','1440:00']);
+ assert.deepEqual([durationText(0),durationText(183),durationText(86400)],['','3:03','24:00:00']);
 });

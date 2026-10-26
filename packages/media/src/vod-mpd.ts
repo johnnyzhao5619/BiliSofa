@@ -2,6 +2,7 @@ import { DomainError } from '../../contracts/src/index.ts';
 import { vodInteger } from '../../contracts/src/vod-catalog.ts';
 import type { PrivateVodPlan, PrivateVodTrack, VodSourceTotals } from '../../contracts/src/vod-private.ts';
 import { guestBridgeManifestUrl } from './guest-mpd.ts';
+import { MAX_MEDIA_MS } from '../../contracts/src/media-limits.ts';
 
 function ranges(track: PrivateVodTrack, total: number): { init: number; end: number } {
   vodInteger(total, 512, 1099511627776);
@@ -18,7 +19,7 @@ export function vodBridgeMetadata(plan: PrivateVodPlan, totals: VodSourceTotals)
   if (!/^avc1\.[a-fA-F0-9]{6}$/.test(video.codec) && !/^(?:hev1|hvc1|av01)\.[A-Za-z0-9.]{1,59}$/.test(video.codec) ||
       !['mp4a.40.2', 'ec-3', 'fLaC'].includes(audio.codec)) throw new DomainError('invalid');
   const v = ranges(video, totals.video), a = ranges(audio, totals.audio);
-  return [vodInteger(plan.durationMs, 1, 86400000), vodInteger(video.width, 1, 16384), vodInteger(video.height, 1, 8640),
+  return [vodInteger(plan.durationMs, 1, MAX_MEDIA_MS), vodInteger(video.width, 1, 16384), vodInteger(video.height, 1, 8640),
     vodInteger(video.bandwidth, 1, 200000000), vodInteger(audio.bandwidth, 1, 16000000), v.init, v.end, a.init, a.end,
     totals.video, totals.audio, video.codec, audio.codec].join(',');
 }

@@ -7,7 +7,7 @@ export interface DiagnosticFact { sequence: number; area: DiagnosticArea; code: 
 /** Process-local whitelist only: no user IDs, titles, BVs, IPs, paths, URLs,
  * player positions, arbitrary errors or native payloads can enter the report. */
 export class AppDiagnostics {
-  constructor(private readonly build: string = 'U5-0.62.0'){}
+  constructor(private readonly build: string = 'U5-0.63.0'){}
   private sequence = 0;
   private facts: DiagnosticFact[] = [];
   add(area: DiagnosticArea, code: DiagnosticCode): void {
