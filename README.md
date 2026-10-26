@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-已安装工件为0.65.0。近期改动见[ADR-108](docs/adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)至[ADR-117](docs/adr/117-ranking-session-refusal-and-row-order.md)及各自的设备证据，逐版本结论见[签名工件](docs/SIGNING_DEVICE_RECORD.md)。0.45.0–0.51.3各批所请求组USER PASS（前端三批、详情与番剧页、追番、热门番剧筛选、启动账号选择、播放中断重连与CDN/来源主备切换、UP主页投稿、登录与游客状态下的分区），U5集中验收V1–V6全部USER PASS（[报告](docs/acceptance/2026-10-23-u5-final/REPORT.md)），此前投屏/F11等所请求组保持；不等于完整产品通过。
+已安装工件为0.65.1。近期改动见[ADR-108](docs/adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)至[ADR-117](docs/adr/117-ranking-session-refusal-and-row-order.md)及各自的设备证据，逐版本结论见[签名工件](docs/SIGNING_DEVICE_RECORD.md)。0.45.0–0.51.3各批所请求组USER PASS（前端三批、详情与番剧页、追番、热门番剧筛选、启动账号选择、播放中断重连与CDN/来源主备切换、UP主页投稿、登录与游客状态下的分区），U5集中验收V1–V6全部USER PASS（[报告](docs/acceptance/2026-10-23-u5-final/REPORT.md)），此前投屏/F11等所请求组保持；不等于完整产品通过。
 
 R07小数倍速按本机设备限制关闭（[ADR-097](docs/adr/097-fractional-rates-device-limited.md)），生产保持1×/2×。图文/关注动态仍BLOCKED，HDR暂无需求，超过24小时的视频待设备验证；完整v1.0.0仍未完成，剩余门槛见[收口台账](docs/PRODUCT_CLOSURE.md)。
 

@@ -1,0 +1,10 @@
+{"who":"account","how":"still","okAt":2571,"popular":true,"popularAt":4412,"focusAt":null,"ranked":true,"rows":"为你推荐:4/0:: | 热门视频:8/0:: | 排行榜:12/0:: | 分区:0/0::"}
+{"t":937,"dir":"focus","to":""}
+{"t":2497,"w":1,"dir":"out","type":"request","op":"identity-verify"}
+{"t":4061,"w":1,"dir":"in","type":"result","op":"identity-verify","kind":"ok"}
+{"t":4069,"dir":"focus","to":"loading-back"}
+{"t":4218,"dir":"focus","to":"home-resume-BV*-p1"}
+{"t":4226,"w":1,"dir":"out","type":"request","op":"recommendations-read"}
+{"t":4881,"w":1,"dir":"in","type":"result","op":"recommendations-read","kind":"ok"}
+{"t":4904,"w":1,"dir":"out","type":"request","op":"public-read"}
+{"t":5610,"w":1,"dir":"in","type":"result","op":"public-read","kind":"ranking"}
