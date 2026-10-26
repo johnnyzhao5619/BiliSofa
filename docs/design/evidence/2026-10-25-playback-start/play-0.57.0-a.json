@@ -1,0 +1,37 @@
+{
+  "label": "candidate-0.57.0",
+  "at": "2026-10-26T00:44:08.439Z",
+  "runs": {
+    "immediate": {
+      "detailOpenMs": 268,
+      "dwellMs": 0,
+      "playToFirstFrameMs": 10211,
+      "cardToFirstFrameMs": 10479,
+      "firstFrameToDanmakuMs": 3681,
+      "resumeOffered": false,
+      "danmakuSwitchedOn": true,
+      "stageTextSeen": true
+    },
+    "dwell3s": {
+      "detailOpenMs": 209,
+      "dwellMs": 3000,
+      "playToFirstFrameMs": 24547,
+      "cardToFirstFrameMs": 27756,
+      "firstFrameToDanmakuMs": 2647,
+      "resumeOffered": false,
+      "danmakuSwitchedOn": true,
+      "stageTextSeen": true
+    },
+    "resume": {
+      "detailOpenMs": 96,
+      "dwellMs": 0,
+      "playToFirstFrameMs": 8296,
+      "cardToFirstFrameMs": 8392,
+      "firstFrameToDanmakuMs": 3667,
+      "resumeOffered": true,
+      "danmakuSwitchedOn": true,
+      "startPositionMs": 15112,
+      "stageTextSeen": true
+    }
+  }
+}

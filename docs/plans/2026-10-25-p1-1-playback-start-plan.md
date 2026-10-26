@@ -1,6 +1,6 @@
 # P1-1 播放起播改动方案
 
-2026-10-25。对应[ADR-110](../adr/110-playback-start-prefetch-handoff-and-overlay-lane.md)。状态：**用户确认4项决定（2026-10-25）；P1-1a在0.57.0实现（未签名/未安装），见ADR-110“P1-1a实现”；P1-1b未开始**。分支`perf/p0-network-kernel`。
+2026-10-25。对应[ADR-110](../adr/110-playback-start-prefetch-handoff-and-overlay-lane.md)。状态：**用户确认4项决定（2026-10-25）；P1-1a在0.57.0实现并已签名安装，设备结果见ADR-110“设备结果”；P1-1b未开始**。分支`perf/p0-network-kernel`。
 
 ## 目标
 

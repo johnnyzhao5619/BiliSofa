@@ -1,0 +1,9 @@
+{
+  "label": "baseline-0.56.0, three earlier rounds before the script switched danmaku on (first frame only; the account keeps danmaku off)",
+  "note": "copied from the console output of playback.mjs; firstFrameToDanmakuMs is null because no danmaku was drawn",
+  "rounds": [
+    { "immediate": { "playToFirstFrameMs": 10869, "resumeOffered": false }, "dwell3s": { "playToFirstFrameMs": 9276, "resumeOffered": false }, "resume": { "playToFirstFrameMs": 11392, "resumeOffered": true, "startPositionMs": 45118 } },
+    { "immediate": { "playToFirstFrameMs": 8672, "resumeOffered": false }, "dwell3s": { "playToFirstFrameMs": 7651, "resumeOffered": false }, "resume": { "playToFirstFrameMs": 10404, "resumeOffered": true, "startPositionMs": 45085 } },
+    { "immediate": { "playToFirstFrameMs": 9488, "resumeOffered": false }, "dwell3s": { "playToFirstFrameMs": 8318, "resumeOffered": false }, "resume": { "playToFirstFrameMs": 10216, "resumeOffered": true, "startPositionMs": 45104 } }
+  ]
+}

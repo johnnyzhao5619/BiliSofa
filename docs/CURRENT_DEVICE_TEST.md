@@ -1,6 +1,6 @@
 # 当前验收安排
 
-2026-10-25；**当前没有待执行的设备测试组。** 已安装0.56.0（[ADR-109](adr/109-cover-cache-single-account-verification-and-lifecycle-measurement.md)，[设备证据](design/evidence/2026-10-25-lifecycle/README.md)）。仍OPEN：后台恢复耗时（需不依赖调试连接的测量方法）、1080P播放门槛、日常使用一天后的-352计数。0.51.3及更早版本的验收结论保持（U5集中验收V1–V6 USER PASS，[报告](acceptance/2026-10-23-u5-final/REPORT.md)）。
+2026-10-25；**当前没有待执行的设备测试组。** 已安装0.57.0（[ADR-110](adr/110-playback-start-prefetch-handoff-and-overlay-lane.md)，[设备证据](design/evidence/2026-10-25-playback-start/README.md)）。仍OPEN：断网时换线路与降级、超时后重连（未在设备上制造故障）、后台恢复耗时（需不依赖调试连接的测量方法）、1080P播放门槛、日常使用一天后的-352计数。0.51.3及更早版本的验收结论保持（U5集中验收V1–V6 USER PASS，[报告](acceptance/2026-10-23-u5-final/REPORT.md)）。
 
 - [当前实施状态](IMPLEMENTATION_STATUS.md)：已安装包与未部署候选分开记录。
 - [唯一收口台账](PRODUCT_CLOSURE.md)：R01–R15剩余项与U5最终T1–T8矩阵。

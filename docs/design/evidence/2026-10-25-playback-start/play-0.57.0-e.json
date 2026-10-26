@@ -1,0 +1,67 @@
+{
+  "label": "candidate-0.57.0",
+  "at": "2026-10-26T00:51:27.427Z",
+  "runs": {
+    "immediate": {
+      "detailOpenMs": 121,
+      "dwellMs": 0,
+      "playToFirstFrameMs": 8607,
+      "cardToFirstFrameMs": 8728,
+      "firstFrameToDanmakuMs": 3806,
+      "resumeOffered": true,
+      "danmakuSwitchedOn": true,
+      "stageTextSeen": true,
+      "stages": [
+        {
+          "atMs": 3171,
+          "text": "正在获取播放源"
+        },
+        {
+          "atMs": 4959,
+          "text": "已自动选择相近的可用画质 / 音轨"
+        }
+      ]
+    },
+    "dwell3s": {
+      "detailOpenMs": 169,
+      "dwellMs": 3000,
+      "playToFirstFrameMs": 4806,
+      "cardToFirstFrameMs": 7975,
+      "firstFrameToDanmakuMs": 4353,
+      "resumeOffered": true,
+      "danmakuSwitchedOn": true,
+      "stageTextSeen": true,
+      "stages": [
+        {
+          "atMs": 780,
+          "text": "正在获取播放源"
+        },
+        {
+          "atMs": 1338,
+          "text": "已自动选择相近的可用画质 / 音轨"
+        }
+      ]
+    },
+    "resume": {
+      "detailOpenMs": 92,
+      "dwellMs": 0,
+      "playToFirstFrameMs": 6842,
+      "cardToFirstFrameMs": 6934,
+      "firstFrameToDanmakuMs": 3540,
+      "resumeOffered": true,
+      "danmakuSwitchedOn": true,
+      "startPositionMs": 40206,
+      "stageTextSeen": true,
+      "stages": [
+        {
+          "atMs": 3336,
+          "text": "正在获取播放源"
+        },
+        {
+          "atMs": 3760,
+          "text": "已自动选择相近的可用画质 / 音轨"
+        }
+      ]
+    }
+  }
+}

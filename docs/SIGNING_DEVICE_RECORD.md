@@ -4,6 +4,7 @@
 
 | 工件 | 当前结论 |
 | --- | --- |
+| 0.57.0 详情页预读交接与续播从位置起播（ADR-110 P1-1a） | **已签名并升级安装/启动（平台确认，不清数据）**；签名`3635ca96…7866`（证书预检PASS，权限不变）；设备对比见[证据](design/evidence/2026-10-25-playback-start/README.md) |
 | 0.56.0 封面跨页保留与身份只核对一次（ADR-109） | **已签名并升级安装/启动（平台确认，不清数据）**；签名`3fceda36…fcb5`（证书预检PASS，权限不变）；0.55.0未签名、未部署；设备对比见[证据](design/evidence/2026-10-25-lifecycle/README.md) |
 | 0.54.0 常驻公共与账号只读内核（ADR-108） | **已签名并升级安装/启动（平台确认，不清数据）**；签名`515a6229…29dd`（证书预检PASS，权限不变）；0.52.0、0.53.0未签名、未部署；设备对比与门槛见[证据](design/evidence/2026-10-25-network-kernel/README.md) |
 | 0.51.3 游客访客标识、设置中清除与登录提示 | **已签名并升级安装/启动（平台确认，不清数据）**；签名`19ac5ad3…3c5f`（证书预检PASS，权限不变）；本机`/tmp/sdb.log`归root所有、SDB无法写日志，后台服务启动后随即退出（推断与此有关），改为前台运行SDB服务后连接；升级安装/启动platformSuccess（一次，不清数据）；源码归档`aaddfb3d…759a`；ADR-106；原生仅`catalog/`的manifest、probe.js与wasm（`build/catalog-visitor`），其余69个原生资源与0.51.2逐字节一致；游客V1g、清除访客标识、登录状态回归 USER PASS；[hash/源码/验证](design/evidence/2026-10-23-up-fix3/README.md) |
