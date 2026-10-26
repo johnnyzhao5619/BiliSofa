@@ -46,4 +46,4 @@
 
 生成物只在ignored `build/`、`dist/`、`.local/`；私密签名、目标和会话在仓库外。依赖版本/来源/许可见[第三方声明](../THIRD_PARTY_NOTICES.md)，命令见[开发说明](DEVELOPMENT.md)。[原结构过程](archive/2026-10-19-process-records/PROJECT_STRUCTURE.md)保留追溯。
 
-R07新候选：`apps/tv/src/platform/element-video.ts`、`packages/contracts/src/playback-rate.ts`及`tests/media-element/`，见[ADR-086](adr/086-fractional-rate-element-candidate.md)。尚未在生产入口导入/选择，未打包或部署；当前保持0.43.0冻结。
+R07小数倍速按[ADR-097](adr/097-fractional-rates-device-limited.md)不接入生产；`apps/tv/src/platform/element-video.ts`、`packages/contracts/src/playback-rate.ts`与`tests/media-element/`保留为诊断探查代码（[ADR-086](adr/086-fractional-rate-element-candidate.md)）。

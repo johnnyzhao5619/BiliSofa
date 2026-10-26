@@ -7,18 +7,8 @@
 | 对象 | 当前事实 | 证据 |
 | --- | --- | --- |
 | 已安装0.63.0 | [ADR-115](adr/115-serial-source-check-and-long-videos.md)：来源检查改回0.58.0的逐项检查（`vod-api/`、`pgc-read/`与0.58.0逐字节相同）；媒体时长上限7天（列表、详情、播放器、叠加层、本机记录与`vod/`、`overlay-read/`原生），超过时提示超出范围；一小时以上显示`h:mm:ss`；投屏仍限24小时。设备：起播卡片到首帧8.4–9.6 s／7.4–8.0 s（0.62.0为8.1–11.1 s，另有一次17.4 s未查）；**超过24小时的视频未在设备上验证**（用户未找到，先跳过）。含0.62.0的账号并入设置与更早改动 | [设备证据](design/evidence/2026-10-26-p1-1c/README.md) |
-| 0.52.0候选（未签名/未部署） | [ADR-107](adr/107-single-product-build.md)：版本链收敛为单一产品构建（37个变体开关按当前值折叠、旧分支删除；构建/打包/签名/部署无变体参数；合成UI收敛为`playwright.app.config.ts`，旧套件归档）；行为等同0.51.3，原生模块逐字节一致。本地737单元/100条合成UI/11包负例通过；未签名WGT `f37077d0…c73e` | [证据](design/evidence/2026-10-24-single-build/README.md) |
-| 0.51.2（USER证据来源） | ADR-105：登录时分区排行与UP投稿用本人会话读取并节制请求；**V1 USER PASS（登录状态）、V2②补 USER PASS、导航与UP主页回归 USER PASS** | [证据](design/evidence/2026-10-23-up-fix2/README.md) |
-| 0.51.0–0.51.1（USER证据来源） | ADR-103/104：**V2① PASS、V2③ PASS、搜索视频与首页详情一致 PASS、导航 PASS、关注页直达卡 PASS、稍后再看/云端历史/收藏完整详情 PASS**；V1与继续观看/队列详情转ADR-105 | [证据](design/evidence/2026-10-23-up-fix/README.md) |
-| 0.50.4（USER证据来源） | ADR-102来源检查主备切换与运行内避开；**P4⁗ USER PASS**（伍六七之玄武国篇前三集） | [证据](design/evidence/2026-10-23-source-failover/README.md) |
-| 0.50.1（USER证据来源） | ADR-099文末：启动选择页改为整页产品样式；“帮助与诊断”顶部显示最近一次播放失败；**P1′ USER PASS**；P4′失败摘要network、时好时坏 → ADR-100 | [证据](design/evidence/2026-10-23-profiles-fix/README.md) |
-| 0.43.0（USER证据来源） | Android所请求首投/非零定位/暂停继续/回0停止、iPhone首投/声画时间/停止，以及F11关注切换恢复、收藏取消/增删恢复、Back/Home均USER PASS；点赞/稍后再看继承已有结果 | [冻结包/源码回执](design/evidence/2026-10-22-cast-clock/receipt.json)、[投屏分项](design/evidence/2026-10-22-cast-clock/USER_ACCEPTANCE.md)、[F11](design/evidence/2026-10-22-cast-clock/F11_ACCEPTANCE_READY.md) |
-| 0.44.0（USER证据来源） | ADR-087三项修正；仅6个UI输入相对0.43.0变化，原生模块不变，R07适配器不在包内；升级安装/启动获平台确认；**M1回复全文（UGC/番剧楼中楼）与M2默认画质USER PASS**（[用户结果](design/evidence/2026-10-22-acceptance-fix/USER_ACCEPTANCE.md)）；0.43.0既有USER PASS组因相关源码未变而继承 | [回执与本地验证](design/evidence/2026-10-22-acceptance-fix/README.md) |
-| R07小数倍速（设备限制） | HTML video适配器/固定小数倍速合同及相关检查已实现；**按ADR-097不接入生产**：本机video仅0.5×/0.75×可用、0.25×停住、快档约1.1–1.2×封顶；只保留诊断探查。生产AVPlay/菜单仍只提供1×/2× | [ADR-086](adr/086-fractional-rate-element-candidate.md)、[候选分层结果](design/evidence/2026-10-22-element-candidate/README.md) |
 
-R07候选（ADR-086）本地：strict/边界293模块通过；DOM关闭修正前全量687项通过，修正后针对性20项通过，当前全量未重跑。真实桌面MP4台架0.25/0.5/0.75/1×通过；1.25×有效窗口不足中止（退出1），其余三档及真实DASH未执行，无电视小数倍速/人工声音通过。
-
-已签名包不覆盖；构建为单一产品构建（ADR-107），新版本只提升`foundation-config.xml`中的版本号，本机仅保留0.51.2起的构建目录；账号/本机数据与旧unknown写日志保留、不重放。签名/部署按版本取得用户授权（升级安装，不清数据）；Git只在用户要求时提交/推送。
+已签名包不覆盖；构建为单一产品构建（ADR-107），新版本只提升`foundation-config.xml`中的版本号，本机只保留当前与上一版未签名包；账号/本机数据与旧unknown写日志保留、不重放。签名/部署按版本取得用户授权（升级安装，不清数据）；Git只在用户要求时提交/推送。
 
 ## 工作包
 
@@ -44,7 +34,7 @@ R07候选（ADR-086）本地：strict/边界293模块通过；DOM关闭修正前
 | F03 搜索 | 首字母候选、四类搜索、热搜、历史开关/清空/重开最小组通过；0.47一页式搜索、选词即搜、“搜索”键与课程行跳过（ADR-092/094）S1 USER PASS | 最终错误/会话集成矩阵 |
 | F04 动态/UP | UP搜索/摘要/预览、关注更新导航最小组通过；UP主页·投稿（ADR-103/105）V2与回归USER PASS | 图文/关注动态BLOCKED（K2） |
 | F05 私人内容/队列 | 稍后再看、云端历史、收藏只读；旧首P队列/私人列表入队USER PASS；0.27.0逐P队列所请求A–D USER PASS，未分列可选项不外推 | 完整类型/权限、完整连续自然结束设备矩阵 |
-| F06 播放控制 | 0.21.1 A/B所请求控制、轨道、分P/记录/结束策略USER PASS；0.21.3缺4K自动回退1080P高码率播放USER PASS；0.45媒体键/隐藏态直达（ADR-088）R1–R6、0.46长按加速/连播倒计时（ADR-090）P3/P4 USER PASS | 小数倍速仅有未集成/未部署候选（ADR-086）；无样本合集/源失效及完整媒体矩阵 |；小数倍速按本机设备限制记录（ADR-097），非PASS、保留候选代码
+| F06 播放控制 | 0.21.1 A/B所请求控制、轨道、分P/记录/结束策略USER PASS；0.21.3缺4K自动回退1080P高码率播放USER PASS；0.45媒体键/隐藏态直达（ADR-088）R1–R6、0.46长按加速/连播倒计时（ADR-090）P3/P4 USER PASS | 小数倍速按本机设备限制不接入生产（ADR-097），非PASS，诊断探查代码保留；无样本合集/源失效及完整媒体矩阵 |
 | F07 续播/接续 | 本地首P及0.27.0所请求P2队列续播组USER PASS；0.47 Home返回续看与连播偏好（ADR-093）S4/S5 USER PASS | 云进度用户要求跳过；双向接续未完成 |
 | F08 弹幕 | 真实读取/绘制/过滤/设置A–D及0.22.1滚动连续性所请求组USER PASS；0.46一键开关、0.47左右调值与独立“弹幕设置”（ADR-090/093）USER PASS | 完整性能仍未覆盖 |
 | F09 字幕 | 真实读取/多行/偏移/语言设置A–D及0.22.1控制层/字幕空间所请求组USER PASS；0.47字幕设置独立面板与状态、AI字幕无扩展名地址（ADR-093/094）S3 USER PASS | 完整轨道/语言样本不外推 |
@@ -56,7 +46,7 @@ R07候选（ADR-086）本地：strict/边界293模块通过；DOM关闭修正前
 | F15 评论回复只读 | 与F10合并；0.23.0所请求组USER PASS，无编辑/发送/删除范围 | 最终矩阵交W07 |
 | F16 弹幕只读 | 与F08/F18合并；无编辑/发送范围 | 点播随F08验收；直播部分按ADR-068排除 |
 | F17 番剧/影视 | 0.21.1 C详情/选集/播放、私人只读USER PASS；追番增删/持久回查候选；0.49产品番剧页、一键追番与热门番剧，0.49.1真实追番增删USER PASS | 完整权益/失效恢复 |
-| F18 直播 | 旧浏览USER PASS/实播USER FAIL保留；最新用户要求直播不做（ADR-068） | 当前交付EXCLUDED，非PASS；0.34.0源码统一隐藏入口，待TV确认，保留源码/历史 |
+| F18 直播 | 旧浏览USER PASS/实播USER FAIL保留；最新用户要求直播不做（ADR-068） | 当前交付EXCLUDED，非PASS；入口已隐藏（R02 USER PASS，0.51.3 V6），保留源码/历史 |
 | F19 高画质/HDR | 720P投屏元数据；0.21.3用户报告标称4K 3108×2160/25.253fps及1080P高码率1920×1080/24fps播放/回退正常；本轮再次报告4K播放成功（无新增参数） | 独立decoder尺寸核对、HDR及完整权益/其他设备矩阵；无偏好默认画质改为AVC≤1080P最高档，0.44.0 M2 USER PASS |
 | F20 官方投屏 | 旧官方三端最小链路、Android分P/PGC样本及关电脑运行通过；0.25.0 iPhone所请求A–D USER PASS | 0.43 Android所请求组已通过；当前iPad/PGC及未注明双机信息待补；非直播完整内容矩阵、连续/快速换源、争用/断连；直播分支按ADR-068排除 |
 
@@ -69,4 +59,4 @@ R07候选（ADR-086）本地：strict/边界293模块通过；DOM关闭修正前
 - 旧全局联网故障已恢复，但根因未确认；不将诊断补丁说成根因修复。
 - W04历史出口保留，直播当前范围由ADR-068排除；其余门槛不自动关闭。后续按ADR-070完整模块统一实施，不逐入口/控件部署，不重复已通过的无影响项目。真实账号写入仍须具体授权。
 
-过程记录见[历史归档](archive/2026-10-19-process-records/README.md)、[2026-10-23归档](archive/2026-10-23-superseded/README.md)与[W01–W06阶段记录](archive/2026-10-24-phase-records/README.md)；本页只维护当前结论，不追加逐轮日志，逐版本记录在[签名与部署记录](SIGNING_DEVICE_RECORD.md)。本页形状由`tools/check-docs.mjs`机器门禁强制（见[开发与部署](DEVELOPMENT.md)）。
+过程记录见[历史归档](archive/2026-10-19-process-records/README.md)、[2026-10-23归档](archive/2026-10-23-superseded/README.md)、[W01–W06阶段记录](archive/2026-10-24-phase-records/README.md)与[台账清理归档](archive/2026-10-26-ledger-cleanup/README.md)，全部归档见[归档索引](archive/README.md)；本页只维护当前结论，不追加逐轮日志，逐版本记录在[签名与部署记录](SIGNING_DEVICE_RECORD.md)。本页形状由`tools/check-docs.mjs`机器门禁强制（见[开发与部署](DEVELOPMENT.md)）。

@@ -1,6 +1,6 @@
 import {defineConfig} from '@playwright/test';
 import {buildSync} from 'esbuild';
-// The kept product synthetic UI suites against the single build (dist/bilisofa-app); superseded suites live in tests/archive.
+// The kept product synthetic UI suites against the single build (dist/bilisofa-app); superseded suites were removed (see git history).
 const root=process.env.BILISOFA_PROBE_ROOT??'dist/bilisofa-app';process.env.BILISOFA_TEST_ROOT=root;
 // ADR-108: the kernel test adapter forwards to the per-request lane Workers, which the package no longer carries;
 // they are bundled from source here and served beside the build (tests only).

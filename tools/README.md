@@ -1,17 +1,42 @@
 # Development tools
 
-Build/type/test/unsigned packaging tools are executable. `build.mjs` bundles only original local probe resources and records source hashes; `package.py` creates a deterministic unsigned WGT; `verify-package.py` checks package identity/entry/hash and private-file boundaries. `native-probe.py` separately checks C syntax or invokes an explicit Samsung compiler with a CA bundle. No command implicitly signs, installs, connects a TV or publishes.
+These run on the development computer. No command implicitly signs, installs, connects a TV or publishes; signing and deployment are separate explicit commands.
 
-These tools run on the development computer. Shipped local probe resources need no dev server; actual installation/independent cold-start acceptance is still unverified. See docs/DEVELOPMENT.md and docs/archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md.
+## Product build (ADR-107)
 
-`python3 tools/sign-probe.py basic` (or `native`) explicitly uses the user's BiliSofa profile and writes signed packages/logs outside the repository. It rejects the SDK default Distributor, expired/not-yet-valid embedded certificates, non-Samsung leaf issuers and altered packaged resources. It does not change profiles, accept passwords, install or run a package. Certificate date/issuer checks do not establish chain trust; the TV must accept the signature separately.
+| Step | Command | Tool |
+| --- | --- | --- |
+| Stage the app | `npm run build:app` | `build-foundation-app.mjs` → `dist/bilisofa-app` |
+| Unsigned WGT | `npm run package:app` | `package-foundation-app.py` (checks every native module's source digests, required markers and the 0.58.0-identical source modules) |
+| Sign | `npm run sign:app` | `sign-foundation-app.py` |
+| Install/launch | `npm run deploy:app` | `deploy-foundation-app.py` |
+| Synthetic UI | `npm run test:ui:app` | `playwright.app.config.ts`, served by `serve.mjs` |
+| Gates | `npm run check` | `check-boundaries.mjs`, `check-docs.mjs` (with `--self-test`) |
 
-`media-probe.py generate/check` prepares/checks original synthetic media with host ffmpeg/ffprobe, no downloads/accounts/deployment. `collect-probe.py collect` explicitly reads the single private authorized target fixed diagnostic route, without proxy/redirect, with bounds and the shared TS schema + expected source match; it is never an account/network proxy. Internal `BILISOFA_PROBE_AUTORUN=1` only enables one guest/synthetic run at startup (0.0.9 also writes/reads/removes one owned nonsecret KeyManager value); default build remains manual, mode is verified in package metadata. Native packaging checks exact CA/media data layout and embedded fixture provenance.
+`sign-foundation-app.py` uses the user's BiliSofa profile and writes signed packages and logs outside the repository (`~/.local/share/BiliSofa`). It rejects the SDK default Distributor, expired or not-yet-valid embedded certificates, non-Samsung leaf issuers and altered packaged resources. It does not change profiles, accept passwords, install or run a package. Certificate date/issuer checks do not establish chain trust; the TV must accept the signature separately.
 
-`initials-data.py` checks the pinned AOSP dictionary/notice and derives local search-word data (no downloads in build). Basic/native packaging and signing reject data/notice/provenance mismatches. Search word queries run in a separate local Worker; no Bilibili search request, comment/danmaku authoring or credential operation is added.
+## Native modules
 
+Each packaged module has one link script that writes `build/<folder>` with a manifest of its source digests:
 
-`npm run test:native:cast-source`：HOST mock-cURL策略、512byte范围回调、TLS/redirect选项与取消/未知清理的13项测试（含候选确认、私有转移与失效），不访问网络，不是TV/CDN证明。0.0.25 native源码校验覆盖新增probe-cast-source.h在内的八个C文件；修改任何一个须实际SDK重编译。
+| Folder | Script |
+| --- | --- |
+| `identity` | `link-identity.py` |
+| `public-kernel`, `account-read-kernel` | `link-public-kernel.py`, `link-account-read-kernel.py` |
+| `vod-failover` | `link-vod-bridge-failover.py` (with `vod-bridge-source.py`, `vod-bridge-failover-source.py`) |
+| `vod-api-failover`, `pgc-read-failover` | `link-vod-api-failover.py`, `link-pgc-read-failover.py` |
+| `overlay-read-subtitle`, `pgc-follow-status` | `link-overlay-read.py --out build/overlay-read-subtitle`, `link-pgc-follow.py --out build/pgc-follow-status` (without `--out` they write older folders that are no longer packaged; the scripts are themselves source inputs of these modules, so they stay unchanged) |
+| `comments-read`, `video-interactions` | `link-comments-read.py`, `link-video-interactions.py` |
+| `cast-product` | `link-cast-product.py` (with `cast-product-source.py`) |
+| `live-read`, `live-product` | `link-live-read.py`, `link-live-product.py` (live is outside the current delivery, ADR-068) |
+| `network-candidate` | `build-network-candidate.py`, `link-network-candidate.py`, `candidate_native.py` |
 
+Host native tests (`tests/native/*.test.py`) compile the C sources against fixtures; `build-host-network-fixture.py` prepares the host libraries they use.
 
-0.0.26 W01/F20内部候选：增加电视确认后独立MP4声画样本，仍未接受官方手机媒体/控制会话；详见docs/adr/006-cast-approved-candidate-playback-probe.md（docs内路径为adr/...）。只复用原有桥/cURL/AVPlay与自有MIT代码，未增加依赖/权限/外部服务、未复制协议实现或官方客户端身份。新增_cast_media_begin导出必须实际SDK重编译并通过package gate；已验证源仅native临时保留60秒，确认后最长3分钟。
+## Data and media
+
+`initials-data.py` checks the pinned AOSP dictionary and notice and derives the local search-word data; `category-data.py` the category list. `media-probe.py generate/check` prepares and checks original synthetic media with host ffmpeg/ffprobe, no downloads, accounts or deployment.
+
+## Retained research probes
+
+The W01/W02 network, account-validation and live probes keep their own chain for reproducing their evidence: `build.mjs`, `build-network-probe.mjs`, `package-network-probe.py`, `verify-network-probe.py`, `link-live-probe.py`, `package-live-probe.py`, `verify-live-probe.py`. They are not part of the product build.

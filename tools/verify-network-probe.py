@@ -3,10 +3,6 @@ from pathlib import Path
 import hashlib, json, zipfile, xml.etree.ElementTree as ET, subprocess, sys
 ROOT=Path(__file__).resolve().parents[1]
 with zipfile.ZipFile(ROOT/'dist/BiliSofa-W01-network-unsigned.wgt') as initial:
- if json.loads(initial.read('build.json'))['version']=='0.0.18':
-  raise SystemExit(subprocess.run([sys.executable,str(ROOT/'tools/verify-observed-progress.py')]).returncode)
- if json.loads(initial.read('build.json'))['version']=='0.0.17':
-  raise SystemExit(subprocess.run([sys.executable,str(ROOT/'tools/verify-rate-probe.py')]).returncode)
  if json.loads(initial.read('build.json'))['version'] in ['0.0.14','0.0.15','0.0.16']:
   raise SystemExit(subprocess.run([sys.executable,str(ROOT/'tools/verify-live-probe.py')]).returncode)
 subprocess.run(['python3',str(ROOT/'tools/build-network-candidate.py'),'check'],check=True)

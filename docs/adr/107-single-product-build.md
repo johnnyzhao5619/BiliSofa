@@ -13,7 +13,7 @@
   - 以“旧行为”为默认值的参数一并收敛：CDN/来源主备切换始终开启（`parseVodPlayback`、`VodSourceOwner`、`vodCdnPair`不再接受关闭参数）；详情始终保留UP编号；诊断构建标签为单一值。
 - **构建**：`tools/build-foundation-app.mjs`只有一个输出`dist/bilisofa-app`。`config.xml`、`index.html`与基础样式改为静态源文件（`apps/tv/foundation-config.xml`、`apps/tv/public/app.html`、`apps/tv/public/app-base.css`），取自0.51.3构建输出，逐字节一致（`config.xml`仅版本号不同）。
 - **打包/签名/部署**：去掉全部变体参数；版本取自配置文件。私密签名/部署记录按版本命名（`signed-app-<版本>-manifest.json`等），不改写更早版本的记录。
-- **测试**：合成UI收敛为`playwright.app.config.ts`（`npm run test:ui:app`）。按“对冻结0.51.3是否通过”逐个规格文件分类：通过的保留，失败的（等待已被取代的旧网格、旧面板或旧设置页）移入`tests/archive`；打包负例收敛为`tests/native/app-packaging.test.py`。
+- **测试**：合成UI收敛为`playwright.app.config.ts`（`npm run test:ui:app`）。按“对冻结0.51.3是否通过”逐个规格文件分类：通过的保留，失败的（等待已被取代的旧网格、旧面板或旧设置页）移入`tests/archive`（2026-10-26清理时删除，见git历史）；打包负例收敛为`tests/native/app-packaging.test.py`。
 - **原生**：已不被当前包使用的链接脚本（catalog、catalog-up、catalog-ua、pgc-read、vod-api、vod-bridge）删除；冻结的C源码保留，较新的入口仍原样包含它们。
 - **版本**：收敛后的构建编为0.52.0，行为等同0.51.3，原生模块逐字节一致。签名、部署与真机验收另需授权。
 - **CI**：GitHub Actions只保留手动触发；检查在本地运行。

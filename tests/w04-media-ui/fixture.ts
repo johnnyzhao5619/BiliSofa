@@ -13,7 +13,7 @@ export async function setup(page: Page, start = true, device: 'package'|'denied'
   await page.route('**/pgc-read/probe.js',route=>route.fulfill({contentType:'text/javascript',body:rawApi.replace('__PGC__','1')}));
   await page.route('**/search/manifest.json',route=>route.fulfill({contentType:'application/json',body:'{}'}));
   await page.route('**/search/probe.js',route=>route.fulfill({contentType:'text/javascript',body:search}));
-  const productInfoDeclared=/<tizen:privilege\s+name="http:\/\/developer\.samsung\.com\/privilege\/productinfo"\s*\/>/.test(readFileSync((process.env.BILISOFA_TEST_ROOT??'dist/w04-app')+'/config.xml','utf8'));
+  const productInfoDeclared=/<tizen:privilege\s+name="http:\/\/developer\.samsung\.com\/privilege\/productinfo"\s*\/>/.test(readFileSync((process.env.BILISOFA_TEST_ROOT??'dist/bilisofa-app')+'/config.xml','utf8'));
   // 0.50.0 (ADR-099): suites start as a guest who already dismissed the first-run welcome; chooser specs clear this.
   await page.addInitScript(()=>{try{if(localStorage.getItem('bilisofa.launch-guest.v1')===null&&!sessionStorage.getItem('fixture.welcome'))localStorage.setItem('bilisofa.launch-guest.v1','1');}catch{}});
   await page.addInitScript(({productInfoDeclared,device,tickCadenceMs})=>{

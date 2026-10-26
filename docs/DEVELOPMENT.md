@@ -21,6 +21,8 @@ npm run test:package:app
 
 提交前自检：`npm run check`、`npm test`，均在本地运行。GitHub Actions（`.github/workflows/ci.yml`）只保留手动触发，推送和PR不会启动它；推送的最新提交仍带`[skip ci]`。文档门禁限制状态页的体积与形状（单一已安装行、无前一安装版历史行、开头段落≤400字、不写带日期的“用户要求先不…”边界、仓库内相对链接可达），**本条由机器门禁强制**：状态页每次只多写一点历史，单次看不出问题，纯文档约定没有任何东西会因此变红；历史记入[签名与部署记录](SIGNING_DEVICE_RECORD.md)、证据README或`docs/archive`。
 
+2026-10-26起文档门禁另外检查四件事，**本条由机器门禁强制**：状态页、README、收口台账、签名记录页脚与当前验收写的已安装版本必须一致；测试报告只留已安装节与“候选（未签名/未部署）”节，已关闭的旧候选不算候选；README“当前状态”一节≤1200字、ADR链接≤3个，不写逐版本日志；`docs/plans`下不留状态写着“已实现/已安装”的方案（移入`docs/archive/<日期>-plans/`）。这几类漂移每次只多一点、各页单独看都对，纯文档约定没有任何东西会因此变红，所以交给`npm run check`。
+
 ## 已配置工具
 
 | 工具 | 项目记录 |
@@ -61,6 +63,6 @@ npm run native:live-product
 
 私密文件默认在`~/.local/share/BiliSofa/`；SDK、缓存、构建和诊断生成物在ignored目录。证书/会话/地址不进入源码、CI、公开日志或包。当前包身份/hash见[签名部署](SIGNING_DEVICE_RECORD.md)，证书建立见[指南](SAMSUNG_CERTIFICATE_GUIDE.md)。
 
-旧W01探针使用`build/package/package:native`等独立命令；仅复现历史证据时查[探针指南](archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md)和[环境归档](archive/2026-10-19-process-records/DEVELOPMENT.md)，不把它们当作当前产品包入口。CI仅有workflow配置，未运行hosted CI或发布。
+旧W01探针的打包命令已删除；仅复现历史证据时查[探针指南](archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md)、[环境归档](archive/2026-10-19-process-records/DEVELOPMENT.md)与git历史，它们不是当前产品包入口。CI仅有workflow配置，未运行hosted CI或发布。
 
 
