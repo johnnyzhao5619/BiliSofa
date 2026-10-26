@@ -43,7 +43,7 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   timeline.setAttribute('role', 'timer'); status.setAttribute('role', 'status'); status.textContent = '正在读取视频详情和可用轨道'; title.textContent = '视频播放';
   let access: VodAccess | undefined, catalog: VodReadResult | undefined, choice: VodChoice | undefined, player: VodPlayback | undefined;
   let defaultFocusPending=true;
-  let playlist: VodItem[] = [], sequence = 'parts', busy = true, started = false, epoch = 0, continuous = queueNavigation?.continuous??(profile.readContinuous?.() ?? true), repeat: RepeatMode = 'off', terminal = '', advice = '', reconnects = 0, reconnectAt = -Infinity, observedMs = 0;
+  let playlist: VodItem[] = [], sequence = 'parts', busy = true, started = false, epoch = 0, continuous = queueNavigation?.continuous??(profile.readContinuous?.() ?? true), repeat: RepeatMode = 'off', terminal = '', advice = '', note = '', reconnects = 0, reconnectAt = -Infinity, observedMs = 0;
   const settings = profile.read(), jump = settings.kind === 'ok' ? settings.value.preferences.jumpSeconds : 10;
   const preview = new SeekPreview(() => player?.snapshot().media?.durationMs ?? 0, () => player?.snapshot().media?.timeMs ?? 0);
   const opening = Promise.resolve().then(open).then(value => { access = value; return value; }); void opening.catch(() => {});
@@ -55,7 +55,7 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   const overlays = new VodOverlays(owner, shell, panel, () => ({ ...(access ? { access } : {}), ...(catalog ? { catalog } : {}), ...(player?.snapshot().media ? { media: player.snapshot().media! } : {}) }));
   const back = button('vod-back', '返回原卡', () => { void shell.closeOwnedModal(owner); });
   back.hidden=true;
-  const toggle = button('vod-toggle', '暂停 / 继续', () => { advice = ''; player?.toggle(); });
+  const toggle = button('vod-toggle', '暂停 / 继续', () => { advice = note = ''; player?.toggle(); });
   const earlier = button('vod-earlier', `预览后退 ${jump} 秒`, () => { preview.move(-jump * 1000); update(); });
   earlier.hidden=true;
   const later = button('vod-later', `预览前进 ${jump} 秒`, () => { preview.move(jump * 1000); update(); });
@@ -124,7 +124,7 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   wake.setAttribute('aria-label', '播放控制已隐藏，按确认或方向键显示；返回离开播放');
   let presentation:PlayerPresentation|undefined;
   const canHide = () => preview.targetMs===undefined && !presentation?.moreOpen && !busy && !terminal && !!player && !player.snapshot().moving && !player.snapshot().media?.seeking && !player.snapshot().media?.buffering && ['playing', 'paused'].includes(player.snapshot().media?.state ?? '');
-  const controlLayer = overlays ? new VodControls(owner, panel, content, wake, canHide, { toggle: () => { if (toggle.disabled || !player) return false; advice = ''; player.toggle(); update(); return true; }, seek: directSeek }) : undefined;
+  const controlLayer = overlays ? new VodControls(owner, panel, content, wake, canHide, { toggle: () => { if (toggle.disabled || !player) return false; advice = note = ''; player.toggle(); update(); return true; }, seek: directSeek }) : undefined;
   // Back already hides the layer; the extra button only cost a focus stop.
   const hide = button('vod-hide-controls', '隐藏控制栏', () => { controlLayer?.hide(); }); hide.hidden = true;
   toggle.dataset.ariaFixed = '1'; toggle.setAttribute('aria-label', '暂停 / 继续'); overlaySettings.textContent = '字幕'; overlaySettings.dataset.ariaFixed = '1'; overlaySettings.setAttribute('aria-label', '字幕设置'); interactions.textContent = '收藏夹';
@@ -140,10 +140,11 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
       if (command === 'forward' || command === 'rewind') { if (!panel.inert && directSeek(command === 'forward' ? 1 : -1)) controlLayer?.reveal('player-timeline'); return true; }
       const state = player?.snapshot().media?.state;
       if (toggle.disabled || !player || command === 'play' && state !== 'paused' || command === 'pause' && state !== 'playing') return true;
-      advice = ''; player.toggle(); if (state === 'playing') controlLayer?.reveal(); update(); return true;
+      advice = note = ''; player.toggle(); if (state === 'playing') controlLayer?.reveal(); update(); return true;
     } });
   // Rewriting an unchanged live region makes Voice Guide repeat it every tick.
   function say(text: string): void { if (status.textContent !== text) status.textContent = text; }
+  function join(...parts: string[]): string { return parts.filter(Boolean).join(' · '); }
   function update(): void {
     if (owner.signal.aborted) return;
     const s = player?.snapshot(), media = s?.media, available = !busy && !s?.moving && !s?.stopped && !!media && !media.seeking && ['playing', 'paused'].includes(media.state);
@@ -172,10 +173,11 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     timeline.textContent = media ? `${(media.timeMs / 1000).toFixed(1)} / ${(media.durationMs / 1000).toFixed(1)} 秒${preview.targetMs === undefined ? '' : ` · 预览 ${(preview.targetMs / 1000).toFixed(1)} 秒（确认后跳转）`}` : '';
     if (terminal) say(terminal);
     // ADR-110: name the stage instead of one line for the whole start. A player that exists but has not
-    // shown a frame (idle/preparing/ready) is buffering; the fallback note returns once playback starts.
-    else if (busy || s?.moving || media?.state === 'loading' || preparing) say(advice && advice.includes('重试') ? advice : !catalog ? '正在读取视频信息' : media?.buffering || preparing ? '缓冲中' : '正在获取播放源');
+    // shown a frame (idle/preparing/ready) is buffering. The fallback note has its own slot, so account
+    // interaction messages sit beside it instead of replacing it.
+    else if (busy || s?.moving || media?.state === 'loading' || preparing) say(advice && advice.includes('重试') ? advice : join(!catalog ? '正在读取视频信息' : media?.buffering || preparing ? '缓冲中' : '正在获取播放源', note));
     else if (!started) say('是否继续本分P上次在电视观看的位置？');
-    else say(media?.seeking ? '正在跳转' : advice || (media?.state === 'paused' ? '已暂停' : media?.state === 'playing' ? ('') : '正在准备'));
+    else say(media?.seeking ? '正在跳转' : join(note, advice) || (media?.state === 'paused' ? '已暂停' : media?.state === 'playing' ? ('') : '正在准备'));
     if (controls.contains(document.activeElement) && (document.activeElement as HTMLButtonElement).disabled && !(instant?.busy&&[like,follow,watch].includes(document.activeElement as HTMLButtonElement))) ((toggle.disabled?wake:toggle)).focus();
     commit.hidden=cancel.hidden=preview.targetMs===undefined;presentation?.update(media?.timeMs??0,media?.durationMs??0,!!available,episodeMode?'番剧影视':catalog?.detail.owner??'');
     if(defaultFocusPending&&available&&!panel.inert){defaultFocusPending=false;const active=document.activeElement as HTMLElement|null;if(active===document.body||active===wake||active?.dataset.focusId==='player-timeline'||active===toggle)toggle.focus();}
@@ -200,7 +202,7 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   }
   async function select(index: number, position = 0): Promise<void> {
     if (!player || busy || owner.signal.aborted) return;
-    busy = true; terminal = advice = ''; preview.cancel(); update();
+    busy = true; terminal = advice = note = ''; preview.cancel(); update();
     try { await player.select(index, position); } catch (error) { if (!owner.signal.aborted) terminal = failure(error); }
     finally { busy = false; update(); }
   }
@@ -209,13 +211,13 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     busy = true; preview.cancel(); const ticket = ++epoch;
     if (player && !(await player.close()).closed) { terminal = failure(new DomainError('unknown')); busy = false; update(); return; }
     if (owner.signal.aborted || ticket !== epoch) return;
-    playlist = items; sequence = kind; terminal = advice = ''; started = true; resume.replaceChildren(); observedMs = position;
+    playlist = items; sequence = kind; terminal = advice = note = ''; started = true; resume.replaceChildren(); observedMs = position;
     player = new VodPlayback(playlist, index, (item, selected, finished) => {
       const recorder = new LocalPlayback(profile, item.bvid, diagnostics, () => { feedback.textContent = '本地续播保存未确认，可在设置中核查'; }, undefined, item.part);
       return new VodCatalogMedia(access!, item, selected, caps, () => catalog, (result, value, fallback) => {
         if (owner.signal.aborted || ticket !== epoch) throw new DomainError('cancelled');
         recorder.label({title:result.detail.title,partTitle:result.catalog.item.title});
-        catalog = result; choice = value;if(!fallback&&(selected||!profile.readTracks?.()))profile.rememberTracks?.(vodPreference(result.catalog,value));advice=fallback?'已自动选择相近的可用画质 / 音轨':''; update();
+        catalog = result; choice = value;if(!fallback&&(selected||!profile.readTracks?.()))profile.rememberTracks?.(vodPreference(result.catalog,value));note=fallback?'已自动选择相近的可用画质 / 音轨':'';advice=''; update();
       }, backend, finished, value => { if (value.timeMs > 0) observedMs = value.timeMs; recorder.observe(value); },()=>profile.readTracks?.(),
       kind => { if (owner.signal.aborted || ticket !== epoch) return; advice = kind === 'line' ? '已切换备用线路，正在重试' : '已降低画质，正在重试'; update(); });
     }, (outcome, closure, fault) => {
