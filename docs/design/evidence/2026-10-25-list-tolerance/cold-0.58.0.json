@@ -1,0 +1,1342 @@
+[
+ {
+  "run": 1,
+  "pickedMs": 2903,
+  "outcome": {
+   "atMs": 5516,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 593,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1682,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2774,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2999,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 3000,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 4589,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4692,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5298,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 2,
+  "pickedMs": 3300,
+  "outcome": {
+   "atMs": 5418,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 504,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2006,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 3215,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 3216,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 3217,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4541,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4615,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5264,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 3,
+  "pickedMs": 2920,
+  "outcome": {
+   "atMs": 4961,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 519,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1659,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2846,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2848,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2849,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4154,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4221,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4825,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 4,
+  "pickedMs": 2781,
+  "outcome": {
+   "atMs": 5009,
+   "cards": 4,
+   "unknownTime": 1,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 561,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1465,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2680,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2682,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2683,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4096,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4164,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4845,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 5,
+  "pickedMs": 2854,
+  "outcome": {
+   "atMs": 5013,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 531,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1527,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2762,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2764,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2765,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4153,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4221,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4850,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 6,
+  "pickedMs": 2907,
+  "outcome": {
+   "atMs": 4962,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 507,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1639,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2805,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2807,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2808,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4083,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4159,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4777,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 7,
+  "pickedMs": 2878,
+  "outcome": {
+   "atMs": 5260,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 526,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1551,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2770,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2772,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2773,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4346,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4428,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5067,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 8,
+  "pickedMs": 2766,
+  "outcome": {
+   "atMs": 5059,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 578,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1633,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2605,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2851,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2852,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 4150,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4219,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4807,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 9,
+  "pickedMs": 2616,
+  "outcome": {
+   "atMs": 4810,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 526,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1435,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2496,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2498,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2499,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 3888,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 3971,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4614,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 10,
+  "pickedMs": 2930,
+  "outcome": {
+   "atMs": 5107,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 520,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1542,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2825,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2827,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2828,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4215,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4281,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4914,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 11,
+  "pickedMs": 2653,
+  "outcome": {
+   "atMs": 5090,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 531,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1591,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2804,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2805,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2953,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4185,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4251,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4883,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 12,
+  "pickedMs": 2833,
+  "outcome": {
+   "atMs": 4985,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 524,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1552,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2747,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2749,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2750,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4118,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4188,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4825,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 13,
+  "pickedMs": 2730,
+  "outcome": {
+   "atMs": 4894,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 528,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1479,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2639,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2641,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2642,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4034,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4105,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4737,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 14,
+  "pickedMs": 2924,
+  "outcome": {
+   "atMs": 5104,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 530,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1502,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2851,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2853,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2855,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4237,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4311,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4943,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 15,
+  "pickedMs": 2722,
+  "outcome": {
+   "atMs": 4788,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 539,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1531,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2633,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2635,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2636,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 3964,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4052,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4653,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 16,
+  "pickedMs": 2724,
+  "outcome": {
+   "atMs": 5173,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 624,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1632,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2632,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2868,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2869,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 4228,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4306,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4903,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 17,
+  "pickedMs": 3007,
+  "outcome": {
+   "atMs": 5225,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 573,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1650,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2920,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2921,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2923,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4349,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4439,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5042,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 18,
+  "pickedMs": 3059,
+  "outcome": {
+   "atMs": 5448,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 597,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1673,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2963,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2966,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2967,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4543,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4612,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5273,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 19,
+  "pickedMs": 2997,
+  "outcome": {
+   "atMs": 5212,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 613,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1693,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2898,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2900,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2901,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4261,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4331,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4989,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 20,
+  "pickedMs": 3078,
+  "outcome": {
+   "atMs": 5403,
+   "cards": 4,
+   "unknownTime": 0,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 662,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1669,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2974,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2976,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2977,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4519,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4588,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5218,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ }
+]

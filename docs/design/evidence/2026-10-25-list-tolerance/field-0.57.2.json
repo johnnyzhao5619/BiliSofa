@@ -1,0 +1,131 @@
+[
+ {
+  "run": 1,
+  "outcome": {
+   "cards": 4,
+   "code": ""
+  },
+  "found": []
+ },
+ {
+  "run": 2,
+  "outcome": {
+   "cards": 4,
+   "code": ""
+  },
+  "found": []
+ },
+ {
+  "run": 3,
+  "outcome": {
+   "cards": 4,
+   "code": ""
+  },
+  "found": []
+ },
+ {
+  "run": 4,
+  "outcome": {
+   "cards": 4,
+   "code": ""
+  },
+  "found": []
+ },
+ {
+  "run": 5,
+  "outcome": {
+   "cards": 4,
+   "code": ""
+  },
+  "found": []
+ },
+ {
+  "run": 6,
+  "outcome": {
+   "cards": 4,
+   "code": ""
+  },
+  "found": []
+ },
+ {
+  "run": 7,
+  "outcome": {
+   "cards": 4,
+   "code": ""
+  },
+  "found": []
+ },
+ {
+  "run": 8,
+  "outcome": {
+   "cards": 4,
+   "code": ""
+  },
+  "found": []
+ },
+ {
+  "run": 9,
+  "outcome": {
+   "cards": 4,
+   "code": ""
+  },
+  "found": []
+ },
+ {
+  "run": 10,
+  "outcome": {
+   "cards": 4,
+   "code": ""
+  },
+  "found": []
+ },
+ {
+  "run": 11,
+  "outcome": {
+   "cards": 0,
+   "code": "invalid"
+  },
+  "found": [
+   {
+    "exception": "DomainError: invalid",
+    "stack": [
+     "integer2",
+     "parseRecommendationCard",
+     "parseRecommendationBody",
+     "responded",
+     ""
+    ],
+    "fields": {
+     "bvid": {
+      "type": "string",
+      "len": 12,
+      "ctrl": [],
+      "bvOk": true
+     },
+     "title": {
+      "type": "string",
+      "len": 72,
+      "ctrl": []
+     },
+     "author": {
+      "type": "string",
+      "len": 10,
+      "ctrl": []
+     },
+     "durationSeconds": {
+      "type": "number",
+      "num": 166242
+     },
+     "reason": {
+      "type": "string",
+      "len": 0,
+      "ctrl": []
+     },
+     "cover": {
+      "type": "object"
+     }
+    }
+   }
+  ]
+ }
+]

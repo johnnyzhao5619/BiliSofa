@@ -1,0 +1,956 @@
+[
+ {
+  "run": 1,
+  "pickedMs": 3054,
+  "outcome": {
+   "atMs": 5464,
+   "cards": 0,
+   "code": "invalid"
+  },
+  "frames": [
+   {
+    "t": 542,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1515,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2958,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2961,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2961,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4436,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4517,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5146,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "error",
+    "code": "invalid",
+    "detail": "recommend.invalid"
+   }
+  ],
+  "exceptions": [
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "DomainError: cancelled",
+    "f": [
+     "leave@:4602:14",
+     "abort@:4542:69",
+     "abort@:4840:74",
+     "invalidate@:448:49"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13870:26",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "WebAPIException",
+    "f": [
+     "KeyManager.getData@:1:2529",
+     "raw@:13859:19",
+     "@:13878:30",
+     "entries@:13869:22"
+    ]
+   },
+   {
+    "d": "DomainError: invalid",
+    "f": [
+     "readRecommendations@:16118:15"
+    ]
+   },
+   {
+    "d": "DomainError: invalid",
+    "f": [
+     "read@:477:9"
+    ]
+   },
+   {
+    "d": "DomainError: invalid",
+    "f": [
+     "read@:19696:51"
+    ]
+   }
+  ]
+ },
+ {
+  "run": 2,
+  "pickedMs": 3039,
+  "outcome": {
+   "atMs": 5254,
+   "cards": 4,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 630,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1746,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 3019,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 3021,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 3022,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4381,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4448,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5084,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 3,
+  "pickedMs": 2890,
+  "outcome": {
+   "atMs": 5406,
+   "cards": 4,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 624,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1754,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2794,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 3006,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 3007,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 4461,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4531,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5186,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 4,
+  "pickedMs": 3025,
+  "outcome": {
+   "atMs": 5244,
+   "cards": 4,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 515,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1541,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2836,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2838,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2839,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4329,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4412,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5032,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 5,
+  "pickedMs": 2852,
+  "outcome": {
+   "atMs": 5309,
+   "cards": 4,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 543,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1559,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2747,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2973,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2974,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 4405,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4490,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5122,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 6,
+  "pickedMs": 3201,
+  "outcome": {
+   "atMs": 5373,
+   "cards": 4,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 514,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1653,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 3109,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 3111,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 3112,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4488,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4573,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 5205,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 7,
+  "pickedMs": 3055,
+  "outcome": {
+   "atMs": 5140,
+   "cards": 4,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 549,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1695,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2960,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2961,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2962,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 4261,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4327,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4933,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ },
+ {
+  "run": 8,
+  "pickedMs": 2756,
+  "outcome": {
+   "atMs": 4823,
+   "cards": 4,
+   "code": ""
+  },
+  "frames": [
+   {
+    "t": 544,
+    "w": "public-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 1552,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "boot"
+   },
+   {
+    "t": 2671,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 2673,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "identity-verify"
+   },
+   {
+    "t": 2675,
+    "w": "public-kernel-worker.js",
+    "dir": "in",
+    "type": "ready"
+   },
+   {
+    "t": 3968,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "identity-verify",
+    "kind": "ok"
+   },
+   {
+    "t": 4036,
+    "w": "account-read-kernel-worker.js",
+    "dir": "out",
+    "type": "request",
+    "op": "recommendations-read"
+   },
+   {
+    "t": 4639,
+    "w": "account-read-kernel-worker.js",
+    "dir": "in",
+    "type": "result",
+    "op": "recommendations-read",
+    "kind": "ok"
+   }
+  ],
+  "exceptions": 45
+ }
+]

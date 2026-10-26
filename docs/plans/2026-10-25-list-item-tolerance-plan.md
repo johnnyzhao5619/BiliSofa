@@ -1,6 +1,6 @@
 # 列表逐卡容错改动方案
 
-2026-10-25。对应[ADR-111](../adr/111-list-item-tolerance-and-unknown-duration.md)。状态：**用户确认4项决定（2026-10-25）；0.58.0已实现（未签名/未安装），见ADR-111“实现”**。分支`perf/p0-network-kernel`，实现后为0.58.0。
+2026-10-25。对应[ADR-111](../adr/111-list-item-tolerance-and-unknown-duration.md)。状态：**用户确认4项决定（2026-10-25）；0.58.0已实现并签名安装，设备结果见ADR-111“设备结果”**。分支`perf/p0-network-kernel`，实现后为0.58.0。
 
 ## 目标
 
