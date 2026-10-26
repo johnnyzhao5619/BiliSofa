@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test';
 import {setup} from '../w04-media-ui/fixture.ts';
+import {openDetail} from './polish-helpers.ts';
 test('ADR-091 home opens on shelves with play counts; a failed row is isolated with its own retry; Down keeps the nearest column',async({page})=>{
  const errors=await setup(page,false);const first=page.locator('[data-focus-id^=shelf-popular-]').first();await expect(first).toBeFocused();
  await expect(first).toContainText('播放');await expect(page.locator('.tv-grid')).toBeHidden();
@@ -18,7 +19,7 @@ test('ADR-091 a focused card lifts, except when reduced motion is requested',asy
  expect(await first.evaluate(n=>getComputedStyle(n).transform)).toBe('none');expect(errors).toEqual([]);
 });
 test('ADR-091 full-page detail shows play count and a part list; choosing P2 starts that part',async({page})=>{
- const errors=await setup(page,false);await page.locator('[data-focus-id^=shelf-popular-]').first().click();await expect(page.locator('.tv-detail.tv-detail-page')).toBeVisible();
+ const errors=await setup(page,false);await openDetail(page,page.locator('[data-focus-id^=shelf-popular-]').first());await expect(page.locator('.tv-detail.tv-detail-page')).toBeVisible();
  await expect(page.locator('.tv-detail-page')).toContainText('播放');const parts=page.locator('.tv-detail-parts button');await expect(parts).toHaveCount(2);
  await page.keyboard.press('ArrowDown');await expect(parts.first()).toBeFocused();await parts.nth(1).click();await expect(page.getByRole('button',{name:'暂停 / 继续',exact:true})).toBeEnabled();await expect(page.locator('.tv-player-title')).toContainText('P2');expect(errors).toEqual([]);
 });

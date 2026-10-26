@@ -1,3 +1,4 @@
+import { holdable, type HoldHandlers } from './hold.ts';
 import type { PopularCard } from '../../../../packages/contracts/src/index.ts';
 import type { CoverArt } from '../platform/cover-art.ts';
 /** 12345 → 1.2万, 230000000 → 2.3亿; whole numbers below ten thousand. */
@@ -9,7 +10,8 @@ export function viewsText(views: number): string {
 export function clockTime(seconds: number): string { return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`; }
 /** ADR-111: 0 is an unknown duration (over 24 h or unreadable at the source); show nothing for it. */
 export function durationText(seconds: number): string { return seconds > 0 ? clockTime(seconds) : ''; }
-export function contentCard(card: PopularCard, id: string, art: CoverArt, signal: AbortSignal, choose: () => void): HTMLButtonElement {
+/** `hold` (ADR-113) makes OK held for 0.5 s open the card's menu; the short press stays `choose`. */
+export function contentCard(card: PopularCard, id: string, art: CoverArt, signal: AbortSignal, choose: () => void, hold?: HoldHandlers): HTMLButtonElement {
     const button = document.createElement('button');
     button.className = 'tv-card';
     button.dataset.focusId = id;
@@ -33,6 +35,8 @@ export function contentCard(card: PopularCard, id: string, art: CoverArt, signal
     button.append(picture, title, author);
     button.onclick = () => { if (!signal.aborted)
         choose(); };
+    if (hold)
+        holdable(button, hold);
     if (card.cover)
         art.attach(card.cover,button,signal,url => { if (signal.aborted)
             return; const image = document.createElement('img'); image.alt = ''; image.src = url; image.width = 800; image.height = 450; picture.prepend(image); fallback.hidden = true; });

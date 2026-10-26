@@ -1,9 +1,11 @@
+import type { HoldHandlers } from '../ui/hold.ts';
 import type { ProfileStore } from '../../../../packages/contracts/src/local-profile.ts';
 import type { QueueStore } from '../../../../packages/contracts/src/local-queue.ts';
 import type { ResourceOwner } from './resource-owner.ts';
 import { localCards, type LocalCard } from './product-local.ts';
 import { libraryCard } from '../ui/library-card.ts';
-export function productContinuing(owner: ResourceOwner, profile: ProfileStore, queue: QueueStore, select: (card: LocalCard) => void): {
+/** `actions` (ADR-113): a record's short press and hold; without it, `select` keeps the old local panel. */
+export function productContinuing(owner: ResourceOwner, profile: ProfileStore, queue: QueueStore, select: (card: LocalCard) => void, actions?: (card: LocalCard) => { choose(): void; hold: HoldHandlers }): {
   node: HTMLElement;
   refresh(): void;
   first(): string | undefined;
@@ -37,7 +39,7 @@ export function productContinuing(owner: ResourceOwner, profile: ProfileStore, q
     }
     node.hidden = !data.items.length;
     status.textContent = data.namesUnavailable ? '部分名称暂不可读，续播位置仍保留' : '';
-    const buttons = data.items.map(card => libraryCard({ id: 'home-' + card.id, title: card.title, subtitle: card.subtitle, badge: `P${card.point.part}`, progress: card.point }, owner.signal, () => select(card)));
+    const buttons = data.items.map(card => { const a = actions?.(card); return libraryCard({ id: 'home-' + card.id, title: card.title, subtitle: card.subtitle, badge: `P${card.point.part}`, progress: card.point }, owner.signal, a ? () => a.choose() : () => select(card), undefined, a?.hold); });
     buttons.forEach((button, i) => { button.dataset.left = buttons[i - 1]?.dataset.focusId ?? 'nav-home'; button.dataset.right = buttons[i + 1]?.dataset.focusId ?? button.dataset.focusId; button.dataset.up = button.dataset.focusId; button.dataset.down = 'source-popular'; });
     grid.append(...buttons);
   }

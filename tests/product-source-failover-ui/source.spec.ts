@@ -39,7 +39,7 @@ test('ADR-102 later playback in the same run starts on the working line without 
 });
 test('ADR-102 when both lines fail, 帮助与诊断 names the step, track, line, node class and upstream code',async({page})=>{
  const errors=await begin(page,'/mirrorcosov|mirrorakam/',false);
- await page.locator('[data-focus-id^=shelf-popular-]').first().click();await page.locator('[data-focus-id=detail-play]').click();
+ await page.locator('[data-focus-id^=shelf-popular-]').first().click();
  await expect(page.locator('#overlays')).toContainText('网络连接中断，播放未完成',{timeout:20000});
  const note=await help(page);
  await expect(note).toContainText('最近一次播放失败：读取播放源时 · 网络中断 · 来源检查（视频·备用线路·B站Akamai） · 上游 HTTP 504 / cURL 0 · 已切换备用线路');

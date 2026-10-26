@@ -46,9 +46,9 @@ export function localSettings(owner: ResourceOwner, shell: TvShell, profile: Pro
     if (owner.signal.aborted) return; current=profile.read(); resume.disabled=step.disabled=current.kind!=='ok';
     const summary=writeSummary(); writes.textContent=summary==='guest'?'账号写操作需先登录':summary?`当前账号写操作记录 ${summary.total} 条，未确认 ${summary.unknown} 条`:'写操作记录不可读，提交已锁定';
     if(current.kind==='ok'){
-      resume.textContent='本地续播提醒：'+(current.value.preferences.resumePrompt?'开':'关'); resume.setAttribute('aria-pressed',String(current.value.preferences.resumePrompt));
+      resume.textContent='自动续播：'+(current.value.preferences.resumePrompt?'开':'关'); resume.setAttribute('aria-pressed',String(current.value.preferences.resumePrompt));
       step.textContent=`遥控跳转步长：${current.value.preferences.jumpSeconds} 秒`; const all=profile.bookmarks?.();list.textContent=all?.kind==='ok'?`当前身份保存了 ${all.items.length} 条本机续播记录（首P ${all.items.filter(p=>p.part===1).length} / 其他分P ${all.items.filter(p=>p.part>1).length}）`:all?'分P记录未能完整读取，请进入本机观看记录核查':`当前身份保存了 ${current.value.resume.length} 条首P续播记录`; status.textContent='仅保存在电视，不写入云端';
-    }else{resume.textContent='本地续播提醒';resume.removeAttribute('aria-pressed');step.textContent='遥控跳转步长';list.textContent='';status.textContent=localReadIssue(current.kind);diagnostics.add('local',current.kind==='unavailable'?'read_unavailable':current.kind==='future'?'read_future':'read_corrupt');}
+    }else{resume.textContent='自动续播';resume.removeAttribute('aria-pressed');step.textContent='遥控跳转步长';list.textContent='';status.textContent=localReadIssue(current.kind);diagnostics.add('local',current.kind==='unavailable'?'read_unavailable':current.kind==='future'?'read_future':'read_corrupt');}
   }
   function save(result: LocalWrite): void {
     read();diagnostics.add('local',result==='saved'?'save_confirmed':'save_unconfirmed');status.textContent=result==='saved'?'已保存到电视':'本地保存未确认，请重新读取后核查';

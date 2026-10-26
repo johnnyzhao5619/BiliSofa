@@ -1,3 +1,4 @@
+import type { HoldHandlers } from '../ui/hold.ts';
 import {ContinuousGrid} from '../ui/continuous-grid.ts';
 import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import type { AccountWorkspace } from './account-workspace.ts';
@@ -31,6 +32,8 @@ interface Services {
   openCatalog?(tab: 'bangumi' | 'drama'): void;
   /** 0.51.1 (ADR-104): the shared video detail page, resuming this update's part. */
   openVideo?(card: { bvid: string; title: string; owner: string; durationSec: number; views: number; cover?: LibraryEntry['cover'] }, part: number): void;
+  /** ADR-113: a video card's short press (play) and hold (card menu). */
+  videoCard?(card: { bvid: string; title: string; owner: string; durationSec: number; views: number; cover?: LibraryEntry['cover'] }, part: number): { choose(): void; hold: HoldHandlers };
 }
 const tabs = [['hot', '热门番剧'], ['updates', '关注更新'], ['bangumi', '我的追番'], ['drama', '我的追剧']] as const;
 /** Same product cards; source-bound summaries never invent playable IDs. */
@@ -218,7 +221,8 @@ export function productFollowing(owner: ResourceOwner, shell: TvShell, route: 'f
       memory.pages[kind] = page;
       noMore = result.noMore;
       const rendered=result.items.map(card => {
-        const item = libraryCard({ ...card, id: 'following-card-' + card.id }, owner.signal, () => details(card), art);
+        const a = card.target && services.videoCard ? services.videoCard({ bvid: card.target.bvid, title: card.title, owner: '', durationSec: 0, views: 0, ...(card.cover ? { cover: card.cover } : {}) }, card.target.part) : undefined;
+        const item = libraryCard({ ...card, id: 'following-card-' + card.id }, owner.signal, a ? () => a.choose() : () => details(card), art, a?.hold);
         item.setAttribute('aria-label', `${card.badge}，${card.title}，${card.subtitle}`);
         return item;
       });

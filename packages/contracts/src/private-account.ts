@@ -1,3 +1,4 @@
+import type { VideoInteractionAccess } from './video-interactions-dto.ts';
 import type {RecommendationQuery,RecommendationPage} from './recommendations-dto.ts';
 import {parseAccountProfile,type AccountProfile} from './account-profile.ts';
 import type { HistoryQuery, HistoryPage } from './history-dto.ts';
@@ -30,6 +31,8 @@ export interface AccountRuntime {
   openLive?(media:boolean,scope:Scope,signal:AbortSignal):Promise<LiveAccess>;
   pgcFollow?(command:PgcFollowCommand,scope:Scope,signal:AbortSignal):Promise<PgcFollowValue>;
   openVod?(scope: Scope, signal: AbortSignal): Promise<VodAccess>;
+  /** ADR-113: this account's like/follow/watch-later lane for one video outside playback (the card menu); close() ends it. */
+  openInteractions?(bvid: string, scope: Scope, signal: AbortSignal): Promise<VideoInteractionAccess>;
   openPgc?(seasonId: string, scope: Scope, signal: AbortSignal): Promise<PgcAccess>;
   readFollowUpdates?(query: FollowUpdatesQuery, scope: Scope, signal: AbortSignal): Promise<FollowUpdatesPage>;
   readFavoriteFolders?(query: FavoriteFoldersQuery, scope: Scope, signal: AbortSignal): Promise<FavoriteFoldersPage>;

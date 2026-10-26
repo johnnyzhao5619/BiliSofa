@@ -1,3 +1,4 @@
+import {InteractionRuntime} from './interaction-runtime.ts';
 import {RecommendationWindow} from '../../../../packages/bili-client/src/recommendations.ts';
 import {noteListSkips} from './list-skips.ts';
 import {parseRecommendationQuery,parseRecommendationRequest,parseRecommendationResult,RecommendationReadError,type RecommendationRequest} from '../../../../packages/contracts/src/recommendations.ts';
@@ -115,6 +116,12 @@ export function accountRuntime(account:PrivateAccount,kernel=takeAccountKernel()
    const worker=new ScopedGuestWorker<PgcFollowRequest,PgcFollowResult>('pgc-follow-worker.js','pgc-follow',parsePgcFollowRequest,parsePgcFollowResult,40000,12000,(q,r)=>r.kind!=='ok'||r.value.kind===q.command.kind&&(q.command.kind!=='list'||r.value.kind==='list'&&r.value.page.page===q.command.query.page&&r.value.page.type===q.command.query.type));
    const result=await run<PgcFollowRequest,PgcFollowResult>(worker,{version:1,operation:'pgc-follow',scope,account:secret!,command:parsed},signal,ticket);
    if(result.kind==='error')throw new DomainError(result.code);noteListSkips(result);return result.value;
+  },
+  async openInteractions(bvid,scope,signal){
+   const ticket=await acquire(scope,signal);
+   if(ticket!==generation||!secret||closing||signal.aborted)throw new DomainError('cancelled');
+   const lane=new InteractionRuntime(secret),access=lane.access(bvid);current={dispose:()=>lane.close()};
+   return {read:(...args)=>access.read(...args),submit:(...args)=>access.submit(...args),close:async()=>{try{await access.close();}finally{await lane.close();}}};
   },
   async openVod(scope,signal){
    const ticket=await acquire(scope,signal),caps=vodCandidateCapabilities();

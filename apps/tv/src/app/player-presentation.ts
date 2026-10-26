@@ -23,6 +23,9 @@ interface Options {
   openSettings?(buttons:HTMLButtonElement[]):void;
   icons?:Record<string,string>;
   iconOnly?:readonly string[];
+  /** ADR-113 quick settings row: Down on the main row shows these controls (by focus id) in one row; each proxy clicks
+   * its original, so pickers and toggles behave exactly as in ⚙. `label` replaces the original's text. */
+  quick?:readonly {id:string;label?:string}[];
 }
 interface Intent {
   preview(deltaMs:number):void;
@@ -40,22 +43,41 @@ export class PlayerPresentation {
   private readonly secondary=document.createElement('div');
   private readonly more:HTMLButtonElement;
   private expanded=false;
+  private readonly quickRow=document.createElement('div');
+  private quickOpen=false;
   private seekable=false;
   constructor(private readonly owner:ResourceOwner,private readonly panel:HTMLElement,title:HTMLElement,private readonly timer:HTMLElement,status:HTMLElement,controls:HTMLElement,primaryIds:readonly string[],private readonly intent:Intent,private readonly lead?:HTMLElement,private readonly options:Options={}){
     panel.classList.add('tv-player');title.classList.add('tv-player-title');status.classList.add('tv-player-status');
     this.badge.className='tv-player-badge';const heading=document.createElement('div');heading.className='tv-player-heading';title.replaceWith(heading);heading.append(title,this.badge);
     this.seek.className='tv-player-seek';this.seek.dataset.focusId='player-timeline';this.seek.tabIndex=0;this.seek.setAttribute('role','slider');this.seek.setAttribute('aria-label','播放进度，左右预览，确认跳转，返回取消');
     this.progress.max=1;this.progress.value=0;this.progress.setAttribute('aria-hidden','true');this.marker.className='tv-player-marker';this.marker.hidden=true;this.seek.append(this.progress,this.marker);timer.before(this.seek);timer.classList.add('tv-player-time');
-    this.primary.className='tv-player-primary';this.secondary.className='tv-player-secondary';this.secondary.hidden=true;
+    this.primary.className='tv-player-primary';this.secondary.className='tv-player-secondary';this.secondary.hidden=true;this.quickRow.className='tv-player-quick';this.quickRow.hidden=true;
     const buttons=[...controls.querySelectorAll<HTMLButtonElement>(':scope>button')];
     for(const button of buttons)(primaryIds.includes(button.dataset.focusId??'')?this.primary:this.secondary).append(button);
-    this.more=productButton('player-more',options.openSettings?'设置':'更多',()=>{if(owner.signal.aborted)return;if(options.openSettings){options.openSettings([...this.secondary.querySelectorAll<HTMLButtonElement>(':scope>button')].filter(b=>!b.hidden));return;}this.expanded=!this.expanded;this.render();});this.more.setAttribute('aria-expanded','false');this.primary.append(this.more);controls.append(this.primary,this.secondary);
+    this.more=productButton('player-more',options.openSettings?'设置':'更多',()=>{if(owner.signal.aborted)return;if(options.openSettings){options.openSettings([...this.secondary.querySelectorAll<HTMLButtonElement>(':scope>button')].filter(b=>!b.hidden));return;}this.expanded=!this.expanded;this.render();});this.more.setAttribute('aria-expanded','false');this.primary.append(this.more);controls.append(this.primary,this.quickRow,this.secondary);
     if(options.icons){for(const button of [...this.primary.querySelectorAll<HTMLButtonElement>(':scope>button')]){const path=options.icons[button.dataset.focusId??''];if(path)decorate(button,path,options.iconOnly?.includes(button.dataset.focusId??''));}if(options.openSettings)decorate(this.more,ICONS.settings);}
     this.render();
   }
-  get moreOpen():boolean{return this.expanded;}
-  back():boolean{if(!this.expanded)return false;this.expanded=false;this.render();this.more.focus();return true;}
+  /** True while ⚙'s inline grid or the quick row is open: the control layer then stays shown. */
+  get moreOpen():boolean{return this.expanded||this.quickOpen;}
+  back():boolean{if(this.quickOpen){this.closeQuick();return true;}if(!this.expanded)return false;this.expanded=false;this.render();this.more.focus();return true;}
+  private openQuick():void{
+    const doc=this.panel.ownerDocument,proxies=(this.options.quick??[]).map(({id,label})=>{const source=doc.querySelector<HTMLButtonElement>(`[data-focus-id="${id}"]`);if(!source||source.hidden)return undefined;
+      const b=productButton('player-quick-'+id.replace(/^vod-/,''),label??'',()=>{if(this.owner.signal.aborted||source.disabled)return;source.click();this.render();});b.dataset.source=id;if(label)b.dataset.fixed='1';return b;}).filter((b):b is HTMLButtonElement=>!!b);
+    if(!proxies.length)return;
+    this.quickRow.replaceChildren(...proxies);this.quickOpen=true;this.render();(proxies.find(b=>!b.disabled)??proxies[0]!).focus();
+  }
+  private closeQuick():void{
+    if(!this.quickOpen)return;
+    const from=[...this.quickRow.children].indexOf(this.panel.ownerDocument.activeElement as Element);
+    this.quickOpen=false;this.quickRow.replaceChildren();this.render();
+    const row=[...this.primary.querySelectorAll<HTMLButtonElement>('button[data-focus-id]')].filter(b=>!b.hidden&&!b.disabled);(row[Math.max(0,Math.min(from,row.length-1))]??this.more).focus();
+  }
   key(event:KeyboardEvent):boolean{
+    // ADR-113: Down on the main row opens the quick settings row; Up from it closes it again. Hidden-layer keys are untouched.
+    const active=this.panel.ownerDocument.activeElement,down=['ArrowDown','Down'].includes(event.key)||event.keyCode===40,up=['ArrowUp','Up'].includes(event.key)||event.keyCode===38;
+    if(!this.owner.signal.aborted&&this.options.quick&&down&&!this.quickOpen&&!this.expanded&&active instanceof HTMLElement&&(this.primary.contains(active)||active===this.more)){this.openQuick();if(this.quickOpen)return true;}
+    if(!this.owner.signal.aborted&&this.quickOpen&&up&&active instanceof HTMLElement&&this.quickRow.contains(active)){this.closeQuick();return true;}
     if(this.owner.signal.aborted||this.panel.ownerDocument.activeElement!==this.seek||!this.seekable)return false;
     if(['ArrowLeft','Left','ArrowRight','Right'].includes(event.key)||[37,39].includes(event.keyCode)){
       this.intent.preview((event.key==='ArrowLeft'||event.key==='Left'||event.keyCode===37?-1:1)*this.intent.stepMs());return true;
@@ -78,7 +100,10 @@ export class PlayerPresentation {
     const buttons=(row:HTMLElement)=>[...row.querySelectorAll<HTMLButtonElement>('button[data-focus-id]')].filter(b=>!b.hidden);
     // Lead choices (resume/from start) sit above the primary row and must stay in the remote path.
     const leading=this.lead?buttons(this.lead):[];
-    const rows=[...(leading.length?[leading]:[]),buttons(this.primary)],extra=this.expanded?buttons(this.secondary):[];
+    // Quick-row proxies mirror their originals' label and state on every render.
+    this.quickRow.hidden=!this.quickOpen;
+    for(const b of [...this.quickRow.querySelectorAll<HTMLButtonElement>('button[data-source]')]){const source=this.panel.ownerDocument.querySelector<HTMLButtonElement>(`[data-focus-id="${b.dataset.source}"]`);if(!source)continue;b.disabled=source.disabled;if(!b.dataset.fixed){const text=source.getAttribute('aria-label')??source.textContent??'';if(b.textContent!==text)b.textContent=text;}const pressed=source.getAttribute('aria-pressed');if(pressed===null)b.removeAttribute('aria-pressed');else b.setAttribute('aria-pressed',pressed);}
+    const rows=[...(leading.length?[leading]:[]),buttons(this.primary),...(this.quickOpen?[buttons(this.quickRow)]:[])],extra=this.expanded?buttons(this.secondary):[];
     for(let i=0;i<extra.length;i+=4)rows.push(extra.slice(i,i+4));
     const nearest=(row:HTMLButtonElement[]|undefined,index:number)=>row?.map((b,i)=>({b,d:Math.abs(i-index)})).filter(item=>!item.b.disabled).sort((a,b)=>a.d-b.d)[0]?.b.dataset.focusId;
     this.seek.dataset.left=this.seek.dataset.right='player-timeline';this.seek.dataset.up='player-timeline';this.seek.dataset.down=nearest(rows[0],0)??'player-more';

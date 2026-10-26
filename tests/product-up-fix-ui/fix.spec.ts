@@ -2,6 +2,7 @@ import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {setup as mediaSetup} from '../w04-media-ui/fixture.ts';
 import {setup as librarySetup,library,cards} from '../product-library-ui/fixture.ts';
+import {openDetail} from '../product-polish-ui/polish-helpers.ts';
 /** The library fixture seeds a saved account, so the 0.50.0 chooser opens first. */
 const chooser=(page:Page)=>page.locator('#overlays section.tv-launch');
 // ADR-104: catalog reads carry the TV runtime User-Agent; a failed read keeps the remote on a control; every video entry opens the shared detail page.
@@ -43,7 +44,7 @@ test('ADR-104 after a failed category read, 重试 keeps the remote on a control
 test('ADR-104 继续观看 opens the shared detail page on its own part, and the read names the UP',async({page})=>{
  const f=await librarySetup(page);await page.route('**/vod-api/probe.js',r=>r.fulfill({contentType:'text/javascript',body:api}));await page.reload();
  await expect(chooser(page)).toBeVisible();await page.keyboard.press('Escape');await expect(chooser(page)).toHaveCount(0);
- const card=page.locator('.tv-continuing-grid button').first();await expect(card).toContainText('P2');await card.click();
+ const card=page.locator('.tv-continuing-grid button').first();await expect(card).toContainText('P2');await openDetail(page,card);
  const top=page.locator('#overlays>section').last();await expect(top.locator('h2')).toHaveText('合成完整视频');
  await expect(top.locator('[data-focus-id=detail-play]')).toHaveText('继续观看 · P2 0:03');await expect(top.locator('[data-focus-id=detail-enqueue]')).toHaveText('加入本机队列 · P2');
  await expect(top).toContainText('共 2P');await expect(top.locator('.tv-detail-header')).toContainText('合成UP');await expect(top.locator('[data-focus-id=detail-up]')).toBeVisible();
@@ -53,7 +54,7 @@ test('ADR-104 我的 → 云端历史 opens the shared detail page on that entry
  const f=await librarySetup(page);await page.route('**/vod-api/probe.js',r=>r.fulfill({contentType:'text/javascript',body:api}));
  await expect(chooser(page)).toBeVisible();await page.locator('[data-focus-id=launch-account-bili_101]').click();await expect(chooser(page)).toHaveCount(0);await library(page);
  f.mode('history');await page.getByRole('button',{name:'云端历史',exact:true}).click();
- await expect(cards(page).first()).toContainText('P2');await cards(page).first().click();
+ await expect(cards(page).first()).toContainText('P2');await openDetail(page,cards(page).first());
  const top=page.locator('#overlays>section').last();await expect(top.locator('[data-focus-id=detail-play]')).toContainText('P2');
  await expect(top.locator('[data-focus-id=library-detail-play]')).toHaveCount(0);
  // The synthetic VOD API stays anonymous, so this signed-in part list read is refused there; the 继续观看 case covers it.

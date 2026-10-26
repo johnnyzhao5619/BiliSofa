@@ -1,3 +1,4 @@
+import type { HoldHandlers } from '../ui/hold.ts';
 import {ContinuousGrid} from '../ui/continuous-grid.ts';
 import { DomainError } from '../../../../packages/contracts/src/index.ts';
 import type { ProfileStore } from '../../../../packages/contracts/src/local-profile.ts';
@@ -31,6 +32,8 @@ export interface LibraryServices {
   playQueue(items: QueueItem[], index: number, continuous: boolean): void;
   /** 0.51.1 (ADR-104): the shared video detail page, resuming this entry's part. */
   openVideo?(card: PopularCard, part: number, context?: VideoDetailContext): void;
+  /** ADR-113: a video entry's short press and hold (card menu with the entry's own actions). */
+  videoCard?(card: PopularCard, part: number, context?: VideoDetailContext): { choose(): void; hold: HoldHandlers };
 }
 interface Entry extends LibraryEntry {
   ordinal?:number;
@@ -155,6 +158,16 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
     const index = current.value.items.findIndex(item => queueItemKey(item) === queueItemKey(entry.queued!));
     if (index >= 0) services.playQueue(current.value.items, index, current.value.continuous);
   }
+  /** ADR-113: video entries play on a short press (the queue plays from this entry) and open the card menu on a hold;
+   * the menu carries the entry's own actions. Folders and other kinds keep their panels. */
+  function videoActions(entry: Entry): { choose(): void; hold: HoldHandlers } | undefined {
+    if (entry.folderKey || !entry.target || !services.videoCard) return undefined;
+    const card = { bvid: entry.target.bvid, title: entry.title, owner: '', durationSec: 0, views: 0, ...(entry.cover ? { cover: entry.cover } : {}) };
+    if (entry.queued || entry.local) return services.videoCard(card, entry.target.part, {
+      ...(entry.queued ? { primary: { label: '从本项开始播放队列', run: () => queuePlay(entry) }, enqueue: false } : {}),
+      extra: (child, closeThen) => contextActions(entry, child, closeThen) });
+    return services.videoCard(card, entry.target.part);
+  }
   function details(entry: Entry): void {
     if (entry.folderKey) {
       const childMemory: LibraryMemory = { tab: 'folders', pages: {}, anchors: {} };
@@ -277,7 +290,7 @@ export function productLibrary(owner: ResourceOwner, shell: TvShell, services: L
       art = new CoverArt();
       const seen = new Set<string>();
       const buttons = items.map((entry, i) => { entry.ordinal=(page-1)*4+i; if (seen.has(entry.id))
-        entry.id += '-' + i; seen.add(entry.id); return libraryCard(entry as LibraryCardView, owner.signal, () => details(entry), art); });
+        entry.id += '-' + i; seen.add(entry.id); const a = videoActions(entry); return libraryCard(entry as LibraryCardView, owner.signal, a ? () => a.choose() : () => details(entry), art, a?.hold); });
       if(feed){const currentArt=art;feed.commit(sourceKey,page,buttons,noMore,currentKind==='local'&&!folder?48:25,1,()=>currentArt.close());}else grid.replaceChildren(...buttons);
       status.textContent = items.length ? `${note}${feed?' · 向下浏览更多':' · 第 '+page+' 页'}` : source.kind === 'history' && !noMore ? '本页没有当前范围内的记录，可继续下一页' : `${note} · ${source.kind === 'local' ? '还没有本机续播位置' : source.kind === 'queue' ? '队列为空，可从视频详情加入' : source.kind === 'watchlater' ? '稍后再看为空' : source.kind === 'history' ? '云端历史为空或未记录' : '收藏夹为空'}`;
       if(page>=25&&!noMore&&source.kind!=='local'&&source.kind!=='queue')status.textContent+=' · 当前读取上限25页，可刷新查看最新';

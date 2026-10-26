@@ -2,6 +2,7 @@ import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {setup as mediaSetup} from '../w04-media-ui/fixture.ts';
 import {setup as librarySetup,library,cards} from '../product-library-ui/fixture.ts';
+import {openDetail} from '../product-polish-ui/polish-helpers.ts';
 // ADR-105: signed-in public lists use the viewer's own session; risk-control refusals are named and paused; local records and the queue open the full detail page.
 const publicRead=(variant:string)=>readFileSync('tests/product-up-fix2-ui/public-read-fixture.js','utf8').replace('__VARIANT__',variant);
 const catalog=readFileSync('tests/catalog-ui/native-fixture.js','utf8').replace('__VARIANT__','normal');
@@ -47,10 +48,10 @@ test('ADR-105 as a guest, the same category within ten minutes is read once',asy
 });
 test('ADR-105 继续观看 and 本机播放队列 open the full detail page with their own actions',async({page})=>{
  const f=await librarySetup(page);await expect(chooser(page)).toBeVisible();await page.keyboard.press('Escape');await library(page);
- await page.getByRole('button',{name:'继续观看',exact:true}).click();await expect(cards(page).first()).toContainText('P2');await cards(page).first().click();
+ await page.getByRole('button',{name:'继续观看',exact:true}).click();await expect(cards(page).first()).toContainText('P2');await openDetail(page,cards(page).first());
  let top=page.locator('#overlays>section').last();await expect(top.locator('[data-focus-id=detail-play]')).toHaveText('继续观看 · P2 0:03');
  await expect(top.locator('[data-focus-id=library-detail-remove]')).toHaveText('删除本机此项');await expect(top.locator('[data-focus-id=library-detail-play]')).toHaveCount(0);
- await page.keyboard.press('Escape');await page.getByRole('button',{name:'本机播放队列',exact:true}).click();await expect(cards(page)).toHaveCount(2);await cards(page).nth(1).click();
+ await page.keyboard.press('Escape');await page.getByRole('button',{name:'本机播放队列',exact:true}).click();await expect(cards(page)).toHaveCount(2);await openDetail(page,cards(page).nth(1));
  top=page.locator('#overlays>section').last();await expect(top.locator('[data-focus-id=detail-play]')).toHaveText('从本项开始播放队列');
  await expect(top.locator('[data-focus-id=detail-play-single]')).toBeVisible();await expect(top.locator('[data-focus-id=detail-enqueue]')).toHaveCount(0);
  await expect(top.locator('[data-focus-id=library-detail-move-up]')).toBeEnabled();await expect(top.locator('[data-focus-id=library-detail-move-down]')).toBeDisabled();

@@ -1,6 +1,7 @@
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {setup} from '../w04-media-ui/fixture.ts';
+import {openDetail} from '../product-polish-ui/polish-helpers.ts';
 // ADR-095: detail facts from the same view response, and the R07 rate probe in 帮助与诊断.
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64');
 const description='第一行简介'+'很长的介绍'.repeat(40)+'\n第二行\n第三行\n第四行\n第五行';
@@ -13,14 +14,14 @@ async function detailSetup(page:Page){
  await page.reload();return errors;
 }
 test('ADR-095 the detail page shows date, counts, UP avatar and a clamped description from the same read',async({page})=>{
- const errors=await detailSetup(page);const card=page.locator('[data-focus-id^=shelf-popular-]').first();await expect(card).toBeVisible();await card.click();
+ const errors=await detailSetup(page);const card=page.locator('[data-focus-id^=shelf-popular-]').first();await expect(card).toBeVisible();await openDetail(page,card);
  await expect(page.locator('.tv-detail-meta')).toContainText('发布于 2025-10-23');await expect(page.locator('.tv-detail-meta')).toContainText('789点赞 · 12弹幕');
  await expect(page.locator('.tv-detail-face')).toBeVisible();await expect(page.locator('.tv-detail-desc')).toContainText('第一行简介');
  const clamp=await page.locator('.tv-detail-desc').evaluate(e=>e.scrollHeight>e.clientHeight);expect(clamp).toBe(true);
  await expect(page.locator('[data-focus-id=detail-play]')).toBeFocused();expect(errors).toEqual([]);
 });
 test('ADR-095 简介全文 opens its own layer; Up/Down scroll the text and Back returns to the button',async({page})=>{
- const errors=await detailSetup(page);await page.locator('[data-focus-id^=shelf-popular-]').first().click();
+ const errors=await detailSetup(page);await openDetail(page,page.locator('[data-focus-id^=shelf-popular-]').first());
  const open=page.locator('[data-focus-id=detail-description]');await open.click();const body=page.locator('[data-focus-id=detail-description-text]');
  await expect(body).toBeFocused();await expect(body).toContainText('第五行');
  await page.evaluate(()=>{const b=document.querySelector<HTMLElement>('[data-focus-id=detail-description-text]')!;b.style.maxHeight='120px';});

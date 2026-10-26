@@ -63,7 +63,7 @@ const root = document.querySelector<HTMLElement>('#pages')!, overlays = document
 {let notice:ReturnType<typeof setTimeout>|undefined;new MutationObserver(()=>{clearTimeout(notice);const text=feedback.textContent??'';if(text&&!/正在|未确认|扫码|登录|失效|重新打开|权限/.test(text))notice=setTimeout(()=>{if(feedback.textContent===text)feedback.textContent='';},4000);}).observe(feedback,{childList:true,characterData:true,subtree:true});}
 const repository = protectedAccountStore(), login = new LoginCoordinator(repository, () => new IdentityWorkerClient());
 const queues=localQueues();
-const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.59.0'); diagnostics.add('app','started'); onListSkips(() => diagnostics.add('app','list_items_skipped'));document.body.classList.add('product-instant');document.body.classList.add('product-stream');
+const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.60.0'); diagnostics.add('app','started'); onListSkips(() => diagnostics.add('app','list_items_skipped'));document.body.classList.add('product-instant');document.body.classList.add('product-stream');
 const histories=searchHistories();
 const writes = new RetainedWrites(writeJournal());
 function writeSummary(id:string){const old=writes.summary(id),video=interactionWrites().summary(id);return old&&video?{total:old.total+video.total,unknown:old.unknown+video.unknown}:undefined;}
@@ -139,7 +139,9 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
       if(signal.aborted)throw new DomainError('cancelled');return createLiveAccess(media?caps:undefined);
     };
     const playLive=(card:LiveCard)=>{if(!LIVE_IN_CURRENT_DELIVERY||owner.signal.aborted)return;if(!caps){feedback.textContent=unavailable||'设备媒体状态未确认';return;}shell.openModal('live-playback',child=>liveWorkspace(child,shell,card,liveOpen,()=>createLiveAccess(),source=>createLiveRelayPlayer(source.url),diagnostics),'live-player-back');};
-    const vod=caps?{caps,open:()=>openVodAccess(caps),openPgc:(seasonId:string)=>openPgcMedia(seasonId,caps),playLive:(card:import('../../../../packages/contracts/src/live-search.ts').LiveSearchCard)=>playLive({roomId:card.roomId,title:card.title,owner:card.owner,category:card.category,state:card.state}),...(state?.kind==='active'?{follows:(child:ResourceOwner)=>pgcFollows(child,workspace)}:{})}:undefined;
+    // ADR-113: the card menu's 稍后再看 uses the signed-in account's own interaction lane.
+    const openInteractions=state?.kind==='active'?(bvid:string)=>workspace.read((runtime,scope,signal)=>{if(!runtime.openInteractions)throw new DomainError('unsupported');return runtime.openInteractions(bvid,scope,signal);},value=>{const lane=value as import('../../../../packages/contracts/src/video-interactions-dto.ts').VideoInteractionAccess;if(!lane||typeof lane.read!=='function'||typeof lane.submit!=='function'||typeof lane.close!=='function')throw new DomainError('invalid');return lane;}):undefined;
+    const vod=caps?{caps,open:()=>openVodAccess(caps),openPgc:(seasonId:string)=>openPgcMedia(seasonId,caps),...(openInteractions?{interactions:openInteractions}:{}),playLive:(card:import('../../../../packages/contracts/src/live-search.ts').LiveSearchCard)=>playLive({roomId:card.roomId,title:card.title,owner:card.owner,category:card.category,state:card.state}),...(state?.kind==='active'?{follows:(child:ResourceOwner)=>pgcFollows(child,workspace)}:{})}:undefined;
     return wrap(productPage(owner,shell,route,productMemory,{profile,queue,history,feedback,diagnostics,workspace,unavailable,vod,libraryEnabled:true,discoveryEnabled:true,collectionsEnabled:true}));
   }
   const status = document.createElement('p'); status.setAttribute('role', 'status'); status.textContent = '正在读取电视保存的账号';

@@ -1,3 +1,4 @@
+import type { HoldHandlers } from '../ui/hold.ts';
 import {ContinuousGrid} from '../ui/continuous-grid.ts';
 import { DomainError, type PopularCard } from '../../../../packages/contracts/src/index.ts';
 import type { SearchHistoryStore } from '../../../../packages/contracts/src/search-history.ts';
@@ -31,6 +32,8 @@ interface Services {
   }): void;
   /** ADR-103: the shared video detail page and the UP page. */
   openVideo?(card: PopularCard): void;
+  /** ADR-113: a video result's short press (play) and hold (card menu). */
+  videoCard?(card: PopularCard): { choose(): void; hold: HoldHandlers };
   openUp?(up: { mid: string; name: string; fans: number; videos: number }): void;
 }
 const types = [['video', '视频'], ['up', 'UP主'], ['pgc', '番剧影视']] as const;
@@ -219,7 +222,8 @@ export function productSearch(owner: ResourceOwner, shell: TvShell, memory: Sear
         const title = entry.kind === 'up' ? entry.card.name : entry.card.title;
         const subtitle = entry.kind === 'video' ? [entry.card.owner, durationText(entry.card.durationSec)].filter(Boolean).join(' · ') : entry.kind === 'up' ? `${entry.card.videos} 投稿 · ${entry.card.fans} 粉丝` : `${entry.card.category || '番剧影视'} · ${entry.card.status || '更新未提供'}`;
         const cover = entry.kind === 'video' ? entry.card.cover : undefined;
-        return libraryCard({ id: 'search-card-' + (feed?(page-1)*4+i:i), title, subtitle, badge: type === 'up' ? 'UP主' : type === 'pgc' ? '番剧影视' : '视频', ...(cover ? { cover } : {}) }, owner.signal, () => detail(entry), art);
+        const a = entry.kind === 'video' ? services.videoCard?.(entry.card) : undefined;
+        return libraryCard({ id: 'search-card-' + (feed?(page-1)*4+i:i), title, subtitle, badge: type === 'up' ? 'UP主' : type === 'pgc' ? '番剧影视' : '视频', ...(cover ? { cover } : {}) }, owner.signal, a ? () => a.choose() : () => detail(entry), art, a?.hold);
       });
       if(feed){const currentArt=art;feed.commit(sourceKey,page,rendered,result.noMore,25,1,()=>currentArt.close());}else grid.replaceChildren(...rendered);
       status.textContent = `“${keyword}” · ${types.find(t => t[0] === type)![1]} · ${result.items.length ? feed?'向下浏览更多':'第 ' + page + ' 页' : '暂无结果'}${page === 10 && !noMore ? ' · 已到本次浏览上限' : ''}`;

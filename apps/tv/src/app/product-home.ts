@@ -1,3 +1,4 @@
+import { videoCard, type VideoCardServices } from './card-actions.ts';
 import {ContinuousGrid} from '../ui/continuous-grid.ts';
 import {productContinuing,continueDetails} from './product-continuing.ts';
 import { DomainError, type PopularCard } from '../../../../packages/contracts/src/index.ts';
@@ -11,7 +12,6 @@ import type { TvShell } from './tv-shell.ts';
 import { PublicContentRuntime } from '../platform/content-runtime.ts';
 import { CoverArt } from '../platform/cover-art.ts';
 import { contentCard } from '../ui/content-card.ts';
-import { openVideoDetail, type VideoDetailServices } from './product-video-detail.ts';
 import { limitedFrom, limitedText } from '../platform/public-lists.ts';
 import { productButton } from './product-frame.ts';
 import { contentLoadFailureText } from './user-messages.ts';
@@ -30,7 +30,7 @@ export interface HomeMemory {
     mode?: 'shelves' | 'grid';
 }
 /** Detail-page services (profile, queue, play, parts, openUp) come from VideoDetailServices. */
-export interface HomeServices extends VideoDetailServices {
+export interface HomeServices extends VideoCardServices {
     /** 0.51.2 (ADR-105): category rankings with the active account's own session. */
     signedCategory?(categoryId: CategoryId, signal: AbortSignal): Promise<PopularCard[]>;
     profile: ProfileStore;
@@ -64,7 +64,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
     const grid = document.createElement('div');
     grid.className = 'tv-grid';
     grid.setAttribute('aria-label', '视频');
-    const continuing=services.local&&!search?productContinuing(owner,services.profile,services.queue,card=>services.playPart?openVideoDetail(owner,shell,services,{bvid:card.point.bvid,title:card.title,owner:'',durationSec:0,views:0},{part:card.point.part}):continueDetails(owner,shell,card,services.profile,services.queue,services.local!.play)):undefined;
+    const continuing=services.local&&!search?productContinuing(owner,services.profile,services.queue,card=>continueDetails(owner,shell,card,services.profile,services.queue,services.local!.play),services.playPart?card=>videoCard(owner,shell,services,{bvid:card.point.bvid,title:card.title,owner:'',durationSec:0,views:0},{part:card.point.part}):undefined):undefined;
     if(continuing?.first())node.dataset.initialFocusId=continuing.first()!;
     if(continuing){const all=productButton('continuing-all','查看全部本机记录',()=>services.local!.openLibrary());all.className='tv-continuing-all';continuing.node.append(all);}
     const paging = document.createElement('div');
@@ -112,7 +112,8 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
     const feed=new ContinuousGrid(owner,grid,{load:page=>{memory.source.page=page;return read(false);},restored:page=>{memory.source.page=page;},top:()=>sourceButtons.find(b=>b.getAttribute('aria-pressed')==='true')?.dataset.focusId??'source-popular',left:()=>search?'nav-search':'nav-home',bottom:()=> 'home-refresh'});
     if(feed)previous.hidden=next.hidden=true;
     paging.append(previous, next, refresh);
-    function detail(card: PopularCard): void { openVideoDetail(owner, shell, services, card, { thumbnails: node }); }
+    /** ADR-113: a short press plays, a hold opens the card menu (whose 详情 is the full detail page). */
+    function actions(card: PopularCard) { return videoCard(owner, shell, services, card, { thumbnails: node }); }
     async function read(fresh: boolean, replace=false): Promise<void> {
         if (busy && !replace || owner.signal.aborted)
             return;
@@ -149,7 +150,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
                 return;
             if(!feed)art.close();
             art = new CoverArt();
-            const buttons = result.items.map(card => contentCard(card, 'home-card-' + card.bvid, art, owner.signal, () => detail(card)));
+            const buttons = result.items.map(card => { const a = actions(card); return contentCard(card, 'home-card-' + card.bvid, art, owner.signal, () => a.choose(), a.hold); });
             buttons.forEach((b, i) => { const id = (at: number) => buttons[at]?.dataset.focusId ?? b.dataset.focusId!; b.dataset.left = i % 4 ? id(i - 1) : search ? 'nav-search' : 'nav-home'; b.dataset.right = i % 4 < 3 ? id(i + 1) : id(i); b.dataset.up = selected?.dataset.focusId ?? (search ? 'search-input' : 'source-popular'); b.dataset.down = 'home-refresh'; });
             if(feed){const currentArt=art;feed.commit(sourceKey,query.page,buttons,result.noMore,query.kind==='recommend'?1000000:25,result.firstPage??1,()=>currentArt.close());}
             else grid.replaceChildren(...buttons);
@@ -196,7 +197,7 @@ export function productHome(owner: ResourceOwner, shell: TvShell, services: Home
     const shelvesEnabled = !search;
     let gridMode = !shelvesEnabled || memory.mode === 'grid', returnTo = '';
     const openGrid = (source: HomeSource, from: string) => { if (owner.signal.aborted) return; returnTo = from; memory.source = { ...source, page: 1 }; memory.mode = 'grid'; gridMode = true; showMode(); const tab = sourceButtons.find(b => b.dataset.focusId === 'source-' + source.kind); tab?.focus(); void read(false, true).then(() => { if (gridMode && document.activeElement === tab) grid.querySelector<HTMLElement>('[data-focus-id]')?.focus(); }); };
-    const shelves = shelvesEnabled ? homeShelves(owner, services, () => wireTools(), detail, openGrid, () => { openGrid(memory.source.kind === 'search' || memory.source.kind === 'category' ? { kind: 'popular', page: 1 } : memory.source, 'shelf-categories'); category.click(); }, () => continuing?.first()) : undefined;
+    const shelves = shelvesEnabled ? homeShelves(owner, services, () => wireTools(), actions, openGrid, () => { openGrid(memory.source.kind === 'search' || memory.source.kind === 'category' ? { kind: 'popular', page: 1 } : memory.source, 'shelf-categories'); category.click(); }, () => continuing?.first()) : undefined;
     const shelfArea = document.createElement('div'); shelfArea.className = 'tv-shelf-area';
     if (shelves) shelfArea.append(...(continuing ? [continuing.node] : []), shelves.node);
     function showMode(): void { if (!shelves) return; shelfArea.hidden = gridMode; for (const part of [tools, status, grid, paging]) part.hidden = !gridMode; }

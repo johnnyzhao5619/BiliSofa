@@ -1,4 +1,4 @@
-import {accountCapability} from './account-capability.ts';
+import {accountCapability,accountInteractions} from './account-capability.ts';
 import type {PageRoute,ReturnAnchor} from '../../../../packages/contracts/src/navigation.ts';
 import { DomainError, type Scope } from '../../../../packages/contracts/src/index.ts';
 import { AccountCoordinator, type AccountState } from '../../../../packages/bili-client/src/accounts.ts';
@@ -27,6 +27,8 @@ export class AccountWorkspace {
       const expired=()=>{if(current())void this.authenticationLost(ticket).catch(()=>{});};
       return {...runtime,
         ...(runtime.openVod?{openVod:async(...args:Parameters<NonNullable<AccountRuntime['openVod']>>)=>accountCapability(await runtime.openVod!(...args),current,expired,expiresAt,clock)}:{}),
+        // ADR-113: the card menu's interaction lane follows the same current-account and expiry checks as playback.
+        ...(runtime.openInteractions?{openInteractions:async(...args:Parameters<NonNullable<AccountRuntime['openInteractions']>>)=>accountInteractions(await runtime.openInteractions!(...args),current,expired,expiresAt,clock)}:{}),
         ...(runtime.openPgc?{openPgc:async(...args:Parameters<NonNullable<AccountRuntime['openPgc']>>)=>accountCapability(await runtime.openPgc!(...args),current,expired,expiresAt,clock)}:{}),
         close:()=>runtime.close()
       };

@@ -1,3 +1,4 @@
+import type { HoldHandlers } from '../ui/hold.ts';
 import { DomainError, type PopularCard } from '../../../../packages/contracts/src/index.ts';
 import type { ContentQuery } from '../../../../packages/contracts/src/content.ts';
 import type { ResourceOwner } from './resource-owner.ts';
@@ -13,7 +14,7 @@ interface Shelf { key: string; label: string; source: HomeSource; pages: number;
 /** Home shelves (ADR-091): rows load one at a time, the first at mount and each next
  * one when focus reaches the row above. A failed row keeps its own retry; no automatic
  * retries, so rate-limited sources (API -352/HTTP 412) are not hammered. */
-export function homeShelves(owner: ResourceOwner, services: HomeServices, changed: () => void, detail: (card: PopularCard) => void, openGrid: (source: HomeSource, from: string) => void, browseCategories: () => void, top: () => string | undefined): { node: HTMLElement; first(): string | undefined; firstRowIds(): string[] } {
+export function homeShelves(owner: ResourceOwner, services: HomeServices, changed: () => void, actions: (card: PopularCard) => { choose(): void; hold: HoldHandlers }, openGrid: (source: HomeSource, from: string) => void, browseCategories: () => void, top: () => string | undefined): { node: HTMLElement; first(): string | undefined; firstRowIds(): string[] } {
   const node = document.createElement('div'); node.className = 'tv-shelves';
   const runtime = new PublicContentRuntime(), art = new CoverArt(), controller = new AbortController();
   owner.add('home-shelves', async () => { controller.abort(); art.close(); if (!(await runtime.close()).closed) throw new DomainError('unknown'); });
@@ -69,7 +70,7 @@ export function homeShelves(owner: ResourceOwner, services: HomeServices, change
       try {
         const items = await read(shelf); if (owner.signal.aborted) return;
         const seen = new Set<string>();
-        const buttons = items.filter(card => !seen.has(card.bvid) && seen.add(card.bvid)).slice(0, 12).map(card => contentCard(card, `shelf-${shelf.key}-${card.bvid}`, art, owner.signal, () => detail(card)));
+        const buttons = items.filter(card => !seen.has(card.bvid) && seen.add(card.bvid)).slice(0, 12).map(card => { const a = actions(card); return contentCard(card, `shelf-${shelf.key}-${card.bvid}`, art, owner.signal, () => a.choose(), a.hold); });
         shelf.row.replaceChildren(...buttons, shelf.more); shelf.state = 'ready'; shelf.status.textContent = buttons.length ? '' : '暂时没有内容';
         wire(); changed();
         // The first loaded row takes focus only if the viewer has not moved anywhere yet.

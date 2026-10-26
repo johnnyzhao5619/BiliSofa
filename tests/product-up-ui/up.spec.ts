@@ -1,6 +1,7 @@
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {setup} from '../w04-media-ui/fixture.ts';
+import {openDetail} from '../product-polish-ui/polish-helpers.ts';
 // ADR-103: UP主页·投稿 (newest first, 30 per page, read only on request), one shared video detail page, 关注's direct card.
 const shared=readFileSync('tests/catalog-ui/native-fixture.js','utf8').replace('__VARIANT__','normal'),route=readFileSync('tests/product-up-ui/up-route.js','utf8');
 /** The shared catalog fixture keeps every other route; the UP route is spliced in front of its route check. */
@@ -24,7 +25,7 @@ const up=(page:Page)=>page.locator('#overlays section.tv-up-page');
 /** ADR-105/106: the code is named, the lane pauses 60 s, and a refused guest read suggests signing in. */
 const limitedText=/^B站暂时限制了访问（HTTP 412），约 \d+ 秒后可重试；登录后通常更稳定$/;
 async function openUpFromDetail(page:Page,reads:()=>number){
- const card=page.locator('[data-focus-id^=shelf-popular-]').first();await expect(card).toBeVisible();await card.click();
+ const card=page.locator('[data-focus-id^=shelf-popular-]').first();await expect(card).toBeVisible();await openDetail(page,card);
  await page.locator('[data-focus-id=detail-up]').click();await expect(up(page)).toBeVisible();await expect(up(page).locator('.tv-status')).not.toHaveText('正在读取投稿');
  return reads();
 }
@@ -36,7 +37,7 @@ test('ADR-103 the detail page opens the UP page: newest uploads first, 30 per pa
  await page.keyboard.press('ArrowRight');await expect(cards.nth(1)).toBeFocused();await page.keyboard.press('ArrowDown');await expect(cards.nth(5)).toBeFocused();
  await page.locator('[data-focus-id=up-next]').click();await expect(up(page).locator('.tv-status')).toHaveText('第 2 页 · 共 45 个投稿');await expect(cards).toHaveCount(15);expect(reads()).toBe(base+1);
  await expect(page.locator('[data-focus-id=up-next]')).toBeDisabled();
- await cards.first().click();const top=page.locator('#overlays>section').last();await expect(page.locator('#overlays>section')).toHaveCount(3);
+ await openDetail(page,cards.first());const top=page.locator('#overlays>section').last();await expect(page.locator('#overlays>section')).toHaveCount(3);
  await expect(top.locator('h2')).toHaveText('合成投稿 31');await expect(top.locator('[data-focus-id=detail-play]')).toBeVisible();
  // The UP action would appear with the part list; wait for that read before checking it is absent.
  await expect(top).toContainText('共 2P');await expect(top.locator('[data-focus-id=detail-up]')).toHaveCount(0);
@@ -45,7 +46,7 @@ test('ADR-103 the detail page opens the UP page: newest uploads first, 30 per pa
 test('ADR-103 search results use the shared detail page; an UP result opens the UP page directly',async({page})=>{
  const {errors}=await begin(page);await page.locator('[data-focus-id=nav-search]').click();
  await page.locator('[data-focus-id=keyword-key-n]').click();await page.locator('[data-focus-id=keyword-key-h]').click();await page.locator('[data-focus-id=keyword-candidate-0]').click();
- await expect(page.locator('[data-focus-id=search-card-0]')).toBeFocused();await page.locator('[data-focus-id=search-card-0]').click();
+ await expect(page.locator('[data-focus-id=search-card-0]')).toBeFocused();await openDetail(page,page.locator('[data-focus-id=search-card-0]'));
  await expect(page.locator('[data-focus-id=detail-play]')).toBeVisible();await expect(page.locator('[data-focus-id=search-detail-play]')).toHaveCount(0);
  await expect(page.locator('[data-focus-id=detail-up]')).toBeVisible();
  await page.keyboard.press('Escape');await page.locator('[data-focus-id=search-type-up]').click();

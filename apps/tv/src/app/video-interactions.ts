@@ -6,7 +6,7 @@ import type {ResourceOwner} from './resource-owner.ts';
 const labels={like:'点赞',follow:'关注UP','watch-later':'稍后再看',favorite:'指定收藏夹',coin:'投币',triple:'三连'};
 /** Read -> concrete preview -> one disabled-on-dispatch confirm -> independent
  * readback. Back/Home/source change cannot issue or resume a write. */
-export function videoInteractions(shell:TvShell,open:()=>VideoInteractionAccess,valid:()=>boolean,initialAction?:'like'|'follow'|'watch-later',onSnapshot?:(value:InteractionSnapshot|undefined)=>void):void{
+export function videoInteractions(shell:TvShell,open:()=>VideoInteractionAccess,valid:()=>boolean,initialAction?:'like'|'follow'|'watch-later',onSnapshot?:(value:InteractionSnapshot|undefined)=>void,backLabel='返回播放'):void{
  shell.openModal('video-interactions',owner=>{
   const panel=document.createElement('section');panel.className='interaction-panel';let access:VideoInteractionAccess|undefined,snapshot:InteractionSnapshot|undefined,busy=false,page=0,initial=initialAction;
   const nodes=new Set<HTMLElement>([panel]);const alive=(o:ResourceOwner)=>!o.signal.aborted&&!owner.signal.aborted&&valid();
@@ -14,7 +14,7 @@ export function videoInteractions(shell:TvShell,open:()=>VideoInteractionAccess,
   const guard=setInterval(()=>{if(!owner.signal.aborted&&!valid()){for(const n of nodes){n.inert=true;n.replaceChildren();}void shell.closeOwnedBranch(owner);}},200);owner.add('interaction-source',()=>clearInterval(guard));
   const h=document.createElement('h2'),status=document.createElement('p'),summary=document.createElement('p'),actions=document.createElement('div'),folders=document.createElement('div');status.setAttribute('role','status');h.textContent='当前账号互动';actions.className=folders.className='interaction-grid';
   const button=(o:ResourceOwner,id:string,label:string,run:()=>void)=>{const b=document.createElement('button');b.dataset.focusId=id;b.textContent=label;b.onclick=()=>{if(alive(o))run();};return b;};
-  const back=button(owner,'interaction-back','返回播放',()=>{void shell.back();}),query=button(owner,'interaction-read','读取实际状态 · 不提交',()=>{void read();});
+  const back=button(owner,'interaction-back',backLabel,()=>{void shell.back();}),query=button(owner,'interaction-read','读取实际状态 · 不提交',()=>{void read();});
   const prev=button(owner,'interaction-prev','上一组收藏夹',()=>{page--;render();}),next=button(owner,'interaction-next','下一组收藏夹',()=>{page++;render();});
   function render(){
    actions.replaceChildren();folders.replaceChildren();query.disabled=busy;

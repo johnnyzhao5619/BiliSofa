@@ -1,3 +1,4 @@
+import { holdable, type HoldHandlers } from './hold.ts';
 import type { CoverReference } from '../../../../packages/contracts/src/index.ts';
 import type { CoverArt } from '../platform/cover-art.ts';
 export interface LibraryCardView {
@@ -12,7 +13,8 @@ export interface LibraryCardView {
   };
 }
 /** Readable text/part identity remain useful when a source has no safe artwork. */
-export function libraryCard(card: LibraryCardView, signal: AbortSignal, select: () => void, art?: CoverArt): HTMLButtonElement {
+/** `hold` (ADR-113): OK held for 0.5 s opens the card's menu; the short press stays `select`. */
+export function libraryCard(card: LibraryCardView, signal: AbortSignal, select: () => void, art?: CoverArt, hold?: HoldHandlers): HTMLButtonElement {
   const button = document.createElement('button');
   button.className = 'tv-library-card';
   button.dataset.focusId = card.id;
@@ -42,5 +44,7 @@ export function libraryCard(card: LibraryCardView, signal: AbortSignal, select: 
       return; const image = document.createElement('img'); image.alt = ''; image.src = url; picture.prepend(image); });
   button.onclick = () => { if (!signal.aborted)
     select(); };
+  if (hold)
+    holdable(button, hold);
   return button;
 }

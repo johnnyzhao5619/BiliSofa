@@ -1,8 +1,9 @@
+import { videoCard } from './card-actions.ts';
 import type { TvShell } from './tv-shell.ts';
 import { CoverArt } from '../platform/cover-art.ts';
 import { contentCard, viewsText } from '../ui/content-card.ts';
 import { productButton } from './product-frame.ts';
-import { openVideoDetail, type VideoDetailServices } from './product-video-detail.ts';
+import type { VideoDetailServices } from './product-video-detail.ts';
 import { UpArchiveError, UpArchiveRead } from './up-archive-read.ts';
 import { PublicLimitedError, limitedText } from '../platform/public-lists.ts';
 
@@ -44,7 +45,8 @@ export function openUpPage(shell: TvShell, services: VideoDetailServices, up: Up
         const result = await reader.read(up.mid, up.name, target);
         if (child.signal.aborted || mine !== ticket) return;
         art.close(); art = new CoverArt(); page = target;
-        const cards = result.items.map(card => contentCard(card, 'up-card-' + card.bvid, art, child.signal, () => openVideoDetail(child, shell, detailServices, card, { thumbnails: grid, modal: 'up-detail' })));
+        // ADR-113: a short press plays, a hold opens the card menu (no UP主页 item inside an UP page).
+        const cards = result.items.map(card => { const a = videoCard(child, shell, detailServices, card, { thumbnails: grid, modal: 'up-detail' }); return contentCard(card, 'up-card-' + card.bvid, art, child.signal, () => a.choose(), a.hold); });
         grid.replaceChildren(...cards); meta.textContent = facts(result.total); meta.hidden = !meta.textContent;
         status.textContent = cards.length ? `第 ${page} 页 · 共 ${result.total} 个投稿` : page > 1 ? '没有更多投稿' : '这位UP主还没有公开投稿';
         previous.disabled = page <= 1; next.disabled = result.noMore; wire(cards);

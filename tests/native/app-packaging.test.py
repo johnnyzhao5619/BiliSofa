@@ -15,7 +15,7 @@ class ProductPackage(unittest.TestCase):
  def test_csp_wildcard_is_rejected(self):self.rejected('index.html',lambda b:b.replace(b"connect-src 'self'",b"connect-src * 'self'"),'W04 CSP mismatch')
  def test_remote_script_is_rejected(self):self.rejected('index.html',lambda b:b.replace(b"script-src 'self'",b"script-src https: 'self'"),'W04 CSP mismatch')
  def test_unscoped_image_origin_is_rejected(self):self.rejected('config.xml',lambda b:b.replace(b'https://i0.hdslb.com',b'https://outside.invalid'),'Foundation network privilege mismatch')
- def test_wrong_version_is_rejected(self):self.rejected('config.xml',lambda b:b.replace(b'version="0.59.0"',b'version="0.58.0"'),'Foundation identity mismatch')
+ def test_wrong_version_is_rejected(self):self.rejected('config.xml',lambda b:b.replace(b'version="0.60.0"',b'version="0.59.0"'),'Foundation identity mismatch')
  def test_credential_like_payload_is_rejected(self):self.rejected('app.js',lambda b:b+b'\n/* SESSDATA=synthetic */','Foundation private or unsafe payload')
  def test_missing_input_privilege_is_rejected(self):self.rejected('config.xml',lambda b:b.replace(b'  <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>\n',b''),'Foundation network privilege mismatch')
  def test_extra_privilege_is_rejected(self):self.rejected('config.xml',lambda b:b.replace(b'privilege/tv.inputdevice"/>',b'privilege/tv.inputdevice"/>\n  <tizen:privilege name="http://tizen.org/privilege/mediastorage"/>'),'Foundation network privilege mismatch')

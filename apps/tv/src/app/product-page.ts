@@ -1,3 +1,6 @@
+import { videoCard } from './card-actions.ts';
+import { videoInteractions } from './video-interactions.ts';
+import type { VideoInteractionAccess } from '../../../../packages/contracts/src/video-interactions-dto.ts';
 import {productCast} from './product-cast.ts';
 import {productFollowing,type FollowingMemory} from './product-following.ts';
 import {productSearch,type SearchMemory} from './product-search.ts';
@@ -66,6 +69,8 @@ interface Services {
         caps: VodCapabilities;
         open(): Promise<VodAccess>;
         openPgc(id: string): Promise<PgcAccess>;
+        /** ADR-113: signed in only; the card menu's watch-later lane for one video. */
+        interactions?(bvid: string): Promise<VideoInteractionAccess>;
     } | undefined;
 }
 /** Product destination composition; individual legacy readers retain their owners. */
@@ -107,17 +112,27 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
     const services: HomeServices = { profile, queue, feedback, play, playPart: playTarget, ...(parts ? { parts } : {}), ...(vod ? { prefetch: (query: { bvid: string; part: number }) => new VodPrefetch(query, () => vod.open()) } : {}), ...(dependencies.libraryEnabled?{local:{play:playTarget,openLibrary:()=>{memory.library.tab='local';void shell.navigateTop({page:'library'});}}}:{}), ...(state?.kind === 'active' ? { name: state.account.name, recommend: productRecommendations(owner, workspace) } : {}) };
     // ADR-103: UP pages from the detail page and search; the UP page's own details have no UP action.
     services.openUp = up => { if (!owner.signal.aborted) openUpPage(shell, services, up); };
+    // ADR-113: 稍后再看 from a card menu: the account's interaction panel reads the real state, then writes once.
+    if (vod?.interactions) services.watchLater = bvid => { void vod.interactions!(bvid).then(lane => {
+        if (owner.signal.aborted || shell.restartRequired) { void lane.close(); return; }
+        videoInteractions(shell, () => lane, () => !owner.signal.aborted, 'watch-later', undefined, '返回');
+    }, () => { if (!owner.signal.aborted) feedback.textContent = '暂时无法读取账号的稍后再看，可稍后再试'; }); };
+    // ADR-113: each video card's short press (play) and hold (card menu with the entry's own actions).
+    const cardActions = (card: PopularCard, part = 1, context?: VideoDetailContext) => videoCard(owner, shell, services, card, { part, ...context });
     // ADR-105: with an active account, the two risk-controlled public lists use its own session (read-only).
     if (state?.kind === 'active') { const signed = signedPublicReads(workspace); services.signedCategory = (id, signal) => signed.category(id, signal); services.signedUp = (mid, page, signal) => signed.up(mid, page, signal); }
-    if(route.page==='library'&&dependencies.libraryEnabled)return productLibrary(owner,shell,{profile,queue,workspace,feedback,play:playTarget,...({openVideo:(card:PopularCard,part:number,context?:VideoDetailContext)=>openVideoDetail(owner,shell,services,card,{part,...context})}),playQueue:(items,index,continuous)=>{if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}queuePlayback(shell,items,index,continuous,profile,diagnostics,feedback,vod);}},memory.library);
-    if (route.page === 'home')
+    if(route.page==='library'&&dependencies.libraryEnabled)return productLibrary(owner,shell,{profile,queue,workspace,feedback,play:playTarget,...({openVideo:(card:PopularCard,part:number,context?:VideoDetailContext)=>openVideoDetail(owner,shell,services,card,{part,...context}),videoCard:cardActions}),playQueue:(items,index,continuous)=>{if(!vod){feedback.textContent='当前平台缺少可用播放器';return;}queuePlayback(shell,items,index,continuous,profile,diagnostics,feedback,vod);}},memory.library);
+    if (route.page === 'home') {
+        // ADR-113: the first three home visits per identity show the hold hint under a focused card (per-viewer convenience).
+        holdHint(identity, owner);
         return productHome(owner, shell, services, memory.home);
+    }
     const openSeason = (card: {
         seasonId: string;
     }) => { if (owner.signal.aborted)
         return; if(!vod){feedback.textContent=typeof unavailable==='string'?unavailable:'当前平台缺少可用播放器';return;} shell.openModal('product-season', child => productSeason(child, shell, profile, diagnostics, feedback, vod.caps, () => vod.openPgc(card.seasonId), source => createGuestProbePlayer(source.url), state?.kind === 'active' ? pgcFollows(child, workspace) : undefined), 'season-play'); return; };
-    if((route.page==='following'||route.page==='catalog')&&dependencies.collectionsEnabled){const page=route.page;return productFollowing(owner,shell,page,memory[page]??={tab:page==='following'?'updates':'hot',pages:{},anchors:{}},{workspace,openSeason,play:target=>{const saved=profile.readPart(target.bvid,target.part);playTarget(target,saved.kind==='ok'&&saved.value?saved.value.timeMs:0);},openSearch:type=>{memory.discovery??={type,pages:{}};memory.discovery.type=type;void shell.navigateTop({page:'search'});},...({openVideo:(card:PopularCard,part:number)=>openVideoDetail(owner,shell,services,card,{part})}),...({openCatalog:(tab:'bangumi'|'drama')=>{const catalog=memory.catalog??={tab,pages:{},anchors:{}};catalog.tab=tab;void shell.navigateTop({page:'catalog'});}})});}
-    if(route.page==='search'&&dependencies.discoveryEnabled)return productSearch(owner,shell,memory.discovery??=( {type:'video',pages:{}}),{history,profile,queue,feedback,play,openSeason,...({openVideo:(card:PopularCard)=>openVideoDetail(owner,shell,services,card),openUp:(up:{mid:string;name:string;fans:number;videos:number})=>{if(!owner.signal.aborted)openUpPage(shell,services,up);}})});
+    if((route.page==='following'||route.page==='catalog')&&dependencies.collectionsEnabled){const page=route.page;return productFollowing(owner,shell,page,memory[page]??={tab:page==='following'?'updates':'hot',pages:{},anchors:{}},{workspace,openSeason,play:target=>{const saved=profile.readPart(target.bvid,target.part);playTarget(target,saved.kind==='ok'&&saved.value?saved.value.timeMs:0);},openSearch:type=>{memory.discovery??={type,pages:{}};memory.discovery.type=type;void shell.navigateTop({page:'search'});},...({openVideo:(card:PopularCard,part:number)=>openVideoDetail(owner,shell,services,card,{part}),videoCard:(card:PopularCard,part:number)=>cardActions(card,part)}),...({openCatalog:(tab:'bangumi'|'drama')=>{const catalog=memory.catalog??={tab,pages:{},anchors:{}};catalog.tab=tab;void shell.navigateTop({page:'catalog'});}})});}
+    if(route.page==='search'&&dependencies.discoveryEnabled)return productSearch(owner,shell,memory.discovery??=( {type:'video',pages:{}}),{history,profile,queue,feedback,play,openSeason,...({openVideo:(card:PopularCard)=>openVideoDetail(owner,shell,services,card),videoCard:(card:PopularCard)=>cardActions(card),openUp:(up:{mid:string;name:string;fans:number;videos:number})=>{if(!owner.signal.aborted)openUpPage(shell,services,up);}})});
     if (route.page === 'search')
         return productHome(owner, shell, services, memory.search, { remember: keyword => { history.remember(keyword); }, tools: accepted => { const tools = document.createElement('div'); tools.className = 'tv-search-actions'; tools.append(productButton('search-input', '输入关键词', () => { shell.openModal('search-keyword', child => searchKeyword(child, shell, accepted), 'keyword-key-a'); }), productButton('search-hot', '热搜', () => { shell.openModal('search-hot', child => hotSearch(child, shell, accepted), 'hot-back'); }), productButton('search-history', '搜索历史', () => { shell.openModal('search-history', child => historyPanel(child, shell, history, accepted), 'history-back'); }), productButton('search-up', '搜索UP主', () => { shell.openModal('up-keyword', child => searchKeyword(child, shell, keyword => { if (!owner.signal.aborted)
                 shell.openModal('user-search', nested => userSearch(nested, shell, keyword, history, diagnostics, feedback, card => play(card, 0)), 'user-search-back'); }, 'UP主'), 'keyword-key-a'); }), productButton('search-pgc', '搜索番剧影视', () => { shell.openModal('pgc-keyword', child => searchKeyword(child, shell, keyword => { if (!owner.signal.aborted)
@@ -154,4 +169,11 @@ export function productPage(owner: ResourceOwner, shell: TvShell, route: PageRou
         actions.append(productButton('destination-account', '登录与账号', () => { void shell.navigateTop({ page: 'account' }); }));
     }
     return section;
+}
+function holdHint(identity: string, owner: ResourceOwner): void {
+    const key = 'bilisofa.hold-hint.' + identity;
+    let seen = 3;
+    try { seen = Number(globalThis.localStorage?.getItem(key) ?? 0) || 0; if (seen < 3) globalThis.localStorage?.setItem(key, String(seen + 1)); } catch { /* no hint without storage */ }
+    if (seen >= 3) return;
+    document.body.classList.add('show-hold-hint'); owner.add('hold-hint', () => { document.body.classList.remove('show-hold-hint'); });
 }

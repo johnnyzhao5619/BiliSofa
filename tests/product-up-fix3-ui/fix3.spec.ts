@@ -2,6 +2,7 @@ import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {setup as mediaSetup} from '../w04-media-ui/fixture.ts';
 import {setup as librarySetup} from '../product-library-ui/fixture.ts';
+import {openDetail} from '../product-polish-ui/polish-helpers.ts';
 // ADR-106: anonymous category/UP reads carry B站's own visitor identity, kept on this TV and clearable in 设置; a refused guest read suggests signing in.
 const shared=readFileSync('tests/catalog-ui/native-fixture.js','utf8'),route=readFileSync('tests/product-up-ui/up-route.js','utf8');
 const publicRead=readFileSync('tests/product-up-fix2-ui/public-read-fixture.js','utf8').replace('__VARIANT__','limited');
@@ -46,7 +47,7 @@ test('ADR-106 a guest category read obtains the visitor identity once, keeps it 
 test('ADR-106 UP uploads carry the same identity; without it the gate answers HTTP 412',async({page})=>{
  const errors=await mediaSetup(page,false);await routes(page,'visitor-required');
  await page.route('**/vod-api/probe.js',r=>r.fulfill({contentType:'text/javascript',body:api}));
- const card=page.locator('[data-focus-id^=shelf-popular-]').first();await expect(card).toBeVisible();await card.click();await page.locator('[data-focus-id=detail-up]').click();
+ const card=page.locator('[data-focus-id^=shelf-popular-]').first();await expect(card).toBeVisible();await openDetail(page,card);await page.locator('[data-focus-id=detail-up]').click();
  const up=page.locator('#overlays section.tv-up-page');await expect(up.locator('.tv-status')).toHaveText('第 1 页 · 共 45 个投稿');await expect(up.locator('.tv-up-grid button')).toHaveCount(30);
  expect(await saved(page)).not.toBeNull();expect(errors).toEqual([]);
 });

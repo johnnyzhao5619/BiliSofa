@@ -131,7 +131,8 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
   controls.append(back, replay, toggle, previous, next, parts, danmaku, overlaySettings, comments, like, follow, watch, earlier, later, commit, cancel, tracks, danmakuSettings, rate, continuousButton, repeatButton, collection, interactions, enqueue, hide);
   content.append(title, timeline, status, resume, controls); panel.append(content, wake);
   const primaryIds = ['vod-back','vod-replay','vod-toggle','vod-previous','vod-next','vod-parts','vod-overlay-dm','vod-overlays','vod-comments','vod-action-like','vod-action-follow','vod-action-watch-later','vod-earlier','vod-later','vod-seek-confirm','vod-seek-cancel'];
-  const polish = { openSettings: settingsPanel, icons: { 'vod-toggle': ICONS.pause, 'vod-previous': ICONS.previous, 'vod-next': ICONS.next, 'vod-parts': ICONS.parts, 'vod-overlay-dm': ICONS.danmaku, 'vod-overlays': ICONS.subtitles, 'vod-comments': ICONS.comments, 'vod-action-like': ICONS.like, 'vod-action-follow': ICONS.follow, 'vod-action-watch-later': ICONS.later }, iconOnly: ['vod-action-like', 'vod-action-follow', 'vod-action-watch-later'] };
+  // ADR-113: Down on the main row opens 画质 · 倍速 · 弹幕 · 字幕 · 连播; ⚙ keeps every setting.
+  const polish = { openSettings: settingsPanel, quick: [{ id: 'vod-tracks', label: '画质' }, { id: 'vod-rate' }, { id: 'vod-overlay-dm' }, { id: 'vod-overlays', label: '字幕' }, { id: 'vod-continuous' }], icons: { 'vod-toggle': ICONS.pause, 'vod-previous': ICONS.previous, 'vod-next': ICONS.next, 'vod-parts': ICONS.parts, 'vod-overlay-dm': ICONS.danmaku, 'vod-overlays': ICONS.subtitles, 'vod-comments': ICONS.comments, 'vod-action-like': ICONS.like, 'vod-action-follow': ICONS.follow, 'vod-action-watch-later': ICONS.later }, iconOnly: ['vod-action-like', 'vod-action-follow', 'vod-action-watch-later'] };
   presentation=new PlayerPresentation(owner,panel,title,timeline,status,controls,primaryIds,{preview:delta=>{if(!earlier.disabled){preview.move(delta);if(autoSeek)arm();update();}},confirm:()=>{if(!commit.disabled)commit.click();},target:()=>preview.targetMs,stepMs:step},resume,polish);
   shell.modalInput(owner, { back() { if (nextUp?.active) { cancelNextUp(); return true; } if (preview.targetMs !== undefined) { disarm(); preview.cancel(); update(); return true; } if(presentation?.back())return true;return controlLayer?.back() ?? false; }, key(event) { return controlLayer?.key(event)||presentation?.key(event)||false; },
     media(command) {
@@ -188,17 +189,33 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
       setLabel(danmaku, on ? '弹幕 开' : '弹幕 关'); danmaku.setAttribute('aria-pressed', String(on));
       previous.disabled = !available || !s || s.index === 0;
     }
-    controlLayer?.update(media?.state === 'playing', !started || busy || !!instant?.busy || !!terminal || !!s?.moving || !!media?.seeking || !!media?.buffering || media?.state === 'loading' || media?.state === 'error' || media?.state === 'closed' || !!presentation?.moreOpen || preview.targetMs!==undefined);
+    controlLayer?.update(media?.state === 'playing', !started || busy || !!instant?.busy || !!terminal || !!s?.moving || !!media?.seeking || !!media?.buffering || media?.state === 'loading' || media?.state === 'error' || media?.state === 'closed' || !!presentation?.moreOpen || preview.targetMs!==undefined || !!startOver);
+    // The start-over offer counts its 8 s from the first frame, not from the start command.
+    if (startOver && !startOverTimer && media?.state === 'playing') { const offered = startOver; startOverTimer = setTimeout(() => { const focused = document.activeElement === offered; clearStartOver(); if (focused && !panel.inert) toggle.focus(); update(); }, 8000); }
+  }
+  /** ADR-113: a saved local position is where playback continues, with no prompt (自动续播 on); off means from 0. */
+  function resumeAt(item: { bvid: string; part: number; durationMs: number }): number {
+    const saved = settings.kind === 'ok' && settings.value.preferences.resumePrompt ? profile.readPart(item.bvid, item.part) : undefined;
+    return saved?.kind === 'ok' && saved.value && saved.value.timeMs < item.durationMs ? saved.value.timeMs : 0;
   }
   async function withResume(item: VodItem, run: (position: number) => Promise<void>): Promise<void> {
-    const saved = settings.kind === 'ok' && settings.value.preferences.resumePrompt ? profile.readPart(item.bvid, item.part) : undefined;
-    if (saved?.kind !== 'ok' || !saved.value || saved.value.timeMs >= item.durationMs) { await run(0); return; }
-    const position = saved.value.timeMs;
-    shell.openModal('vod-change-resume', child => {
-      const node = document.createElement('section'); node.className = 'vod-picker'; const heading = document.createElement('h2'); heading.textContent = `继续 ${item.title} 的本机进度？`;
-      const begin = (at: number) => { if (!child.signal.aborted) void shell.back().then(() => { if (!owner.signal.aborted) return run(at); }).catch(error => { terminal = failure(error); update(); }); };
-      node.append(heading, button('vod-change-continue', `继续观看 · ${Math.floor(position / 1000)} 秒`, () => begin(position)), button('vod-change-start', '从头播放', () => begin(0)), button('vod-change-cancel', '取消', () => { void shell.back(); })); return node;
-    }, 'vod-change-continue');
+    const position = resumeAt(item); await run(position); offerStartOver(position);
+  }
+  let startOver: HTMLButtonElement | undefined, startOverTimer: ReturnType<typeof setTimeout> | undefined;
+  owner.add('vod-start-over', () => clearTimeout(startOverTimer));
+  function clearStartOver(): void { clearTimeout(startOverTimer); startOverTimer = undefined; startOver = undefined; if (resume.querySelector('[data-focus-id=vod-start-over]')) resume.replaceChildren(); }
+  /** ADR-113: after continuing from saved progress, 从头播放 is focused with the controls shown, for 8 s from the first frame. */
+  function offerStartOver(fromMs: number): void {
+    clearStartOver(); if (owner.signal.aborted || fromMs <= 0) return;
+    const info = document.createElement('span'); info.textContent = `已从 ${clockTime(fromMs / 1000)} 继续`;
+    const again = button('vod-start-over', '从头播放', () => {
+      clearStartOver(); const s = player?.snapshot();
+      // Playing or paused: one seek to 0. Still preparing: start this item again from 0.
+      if (s?.media && ['playing', 'paused'].includes(s.media.state)) void player!.seek(0).catch(() => {}); else if (s) void restart(playlist, s.index, sequence, 0);
+      update();
+    });
+    resume.replaceChildren(info, again); startOver = again; controlLayer?.reveal('vod-start-over'); if (!panel.inert) again.focus();
+    update();
   }
   async function select(index: number, position = 0): Promise<void> {
     if (!player || busy || owner.signal.aborted) return;
@@ -211,7 +228,7 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     busy = true; preview.cancel(); const ticket = ++epoch;
     if (player && !(await player.close()).closed) { terminal = failure(new DomainError('unknown')); busy = false; update(); return; }
     if (owner.signal.aborted || ticket !== epoch) return;
-    playlist = items; sequence = kind; terminal = advice = note = ''; started = true; resume.replaceChildren(); observedMs = position;
+    playlist = items; sequence = kind; terminal = advice = note = ''; started = true; clearStartOver(); resume.replaceChildren(); observedMs = position;
     player = new VodPlayback(playlist, index, (item, selected, finished) => {
       const recorder = new LocalPlayback(profile, item.bvid, diagnostics, () => { feedback.textContent = '本地续播保存未确认，可在设置中核查'; }, undefined, item.part);
       return new VodCatalogMedia(access!, item, selected, caps, () => catalog, (result, value, fallback) => {
@@ -334,18 +351,15 @@ export function vodWorkspace(owner: ResourceOwner, shell: TvShell, feedback: HTM
     if (owner.signal.aborted) return;
     catalog = await value.read(query, owner.signal); if (owner.signal.aborted) return;
     defaultVodChoice(catalog, caps);
-    const part = catalog.catalog.item, saved = settings.kind === 'ok' && settings.value.preferences.resumePrompt ? profile.readPart(part.bvid, part.part) : undefined;
+    const part = catalog.catalog.item;
     const initialEntries = episodeMode ? catalog.detail.collection?.entries : undefined;
     const initialIndex = initialEntries?.findIndex(e => e.item?.bvid === part.bvid && e.item.part === part.part) ?? -1;
     const initial = initialEntries && initialIndex >= 0 ? playableVodSegment(initialEntries, initialIndex) : { items: catalog.detail.parts, index: part.part - 1 };
     const kind = episodeMode ? 'collection' : 'parts';
     busy = false;
-    if(initialPosition!==undefined)await restart(initial.items,initial.index,kind,initialPosition<part.durationMs?initialPosition:0);
-    else if (saved?.kind === 'ok' && saved.value && saved.value.timeMs < part.durationMs) {
-      const position = saved.value.timeMs;
-      resume.append(button('vod-resume', `继续观看 · ${clockTime(position / 1000)}`, () => { void restart(initial.items, initial.index, kind, position); }), button('vod-from-start', '从头播放', () => { void restart(initial.items, initial.index, kind); })); update();
-      if (!panel.inert) resume.querySelector<HTMLButtonElement>('button')?.focus();
-    } else await restart(initial.items, initial.index, kind);
+    // ADR-113: an explicit position (a card or the detail page) or the saved one; never a prompt.
+    const at = initialPosition !== undefined ? (initialPosition < part.durationMs ? initialPosition : 0) : resumeAt(part);
+    await restart(initial.items, initial.index, kind, at); offerStartOver(at);
   }).catch(error => { if (!owner.signal.aborted) { busy = false; terminal = failure(error); update(); } });
   panel.dataset.initialFocusId='vod-toggle';
   update(); return panel;
