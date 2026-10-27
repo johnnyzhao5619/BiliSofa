@@ -1,6 +1,6 @@
 # 0.51.0 UP主页·投稿、共用视频详情页与关注页直达卡（本地证据）
 
-2026-10-23；[ADR-103](../../../adr/103-up-page-shared-detail-and-following-shortcut.md)。
+2026-10-23；[ADR-103](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/103-up-page-shared-detail-and-following-shortcut.md)。
 
 - 原生链接：`python3 tools/link-catalog-up.py`，输出到 `build/catalog-up`。
 - 构建：`node tools/build-foundation-app.mjs --product-up`，输出到 `dist/product-up-app`。
@@ -34,4 +34,4 @@
 | V2 | 搜索UP → UP主页（翻页）→ 播放 → 返回；视频详情 → UP主页 | 最新在前、每页30条；返回落回原卡；被限频时显示原因，不自动重试 |
 | K3 | 关注 → “我的追番 · 我的追剧 → 番剧影视” | 打开番剧影视的我的追番 |
 
-结果（2026-10-23）：**V1 FAIL**（分区-352、导航失焦）；V2① PASS、② 仅首页/搜索为完整详情、③ PASS；关注页直达卡未报告。处理见[ADR-104](../../../adr/104-runtime-user-agent-shared-detail-everywhere.md)。
+结果（2026-10-23）：**V1 FAIL**（分区-352、导航失焦）；V2① PASS、② 仅首页/搜索为完整详情、③ PASS；关注页直达卡未报告。处理见[ADR-104](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/104-runtime-user-agent-shared-detail-everywhere.md)。

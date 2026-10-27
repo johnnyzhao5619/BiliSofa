@@ -1,6 +1,6 @@
 # 单账号恢复模块
 
-2026-10-22；0.40.0、F01/F12、W02、U4/R06。[合同/边界](../../../adr/082-single-account-session-recovery.md) · [精确工件与平台回执](receipt.json)。
+2026-10-22；0.40.0、F01/F12、W02、U4/R06。[合同/边界](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/082-single-account-session-recovery.md) · [精确工件与平台回执](receipt.json)。
 
 明确失效会撤销私人请求/播放器及返回的能力；原账号重新扫码更新受保护会话，返回原栏目，私人数据/游标重新读取。Back/Home取消扫码，迟到回包无效；不自动播放、不重发POST，不删除已有队列、续播、设置或未知日志。保护存储v1保留、v2双bank更新；旧包回退可能需要重新扫码。
 

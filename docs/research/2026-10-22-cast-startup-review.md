@@ -12,7 +12,7 @@
 | 当前修正候选 | 0.43.0保留播放态原生路径，当前SOAP同一新鲜对外整数秒直接幂等完成；其他目标/暂停/旧缓存不合并。不扩大起播容差，不伪造tick |
 | 证据边界 | 该样本的起点丢失已证，SDK为何忽略预缓冲起点、手机为何选4秒仍未知。0.43新包实际效果待USER，合成成功不代替TV声画 |
 
-[派生数字证据及原包配对](../design/evidence/2026-10-22-cast-seek/observation-summary.json) · [ADR-084](../adr/084-playing-cast-seek-without-reopen.md) · [0.43回执](../design/evidence/2026-10-22-cast-clock/receipt.json) · [协议幂等决策](../adr/085-canonical-cast-position-idempotence.md)。0.41.0原有有限容差/失败见ADR-083，不重写旧工件或扩大旧通过。
+[派生数字证据及原包配对](../design/evidence/2026-10-22-cast-seek/observation-summary.json) · [ADR-084](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/084-playing-cast-seek-without-reopen.md) · [0.43回执](../design/evidence/2026-10-22-cast-clock/receipt.json) · [协议幂等决策](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/085-canonical-cast-position-idempotence.md)。0.41.0原有有限容差/失败见ADR-083，不重写旧工件或扩大旧通过。
 
 ## 取证方式与边界
 

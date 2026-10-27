@@ -1,6 +1,6 @@
 # 0.50.1 启动选择页界面统一与播放失败摘要（本地证据）
 
-2026-10-23；[ADR-099](../../../adr/099-launch-account-chooser.md)文末。构建`node tools/build-foundation-app.mjs --product-profiles-fix` → `dist/product-profiles-fix-app`；打包`python3 tools/package-foundation-app.py --product-profiles-fix`。**已签名（`743bbc131f519541f2367897f3f11251619d28e1fa52b2cbff8bf343a9157c8d`，证书预检PASS，权限不变）并升级安装/启动（平台确认，一次，不清数据）。用户结果：P1′ USER PASS；P4′失败摘要为network、时好时坏，见[ADR-100](../../../adr/100-bounded-playback-reconnect.md)。** 源码归档`85e6d973a69148fe7673f78b16d590c4df9323ed5217410094b371399cdd7439`，见[receipt.json](receipt.json)。
+2026-10-23；[ADR-099](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/099-launch-account-chooser.md)文末。构建`node tools/build-foundation-app.mjs --product-profiles-fix` → `dist/product-profiles-fix-app`；打包`python3 tools/package-foundation-app.py --product-profiles-fix`。**已签名（`743bbc131f519541f2367897f3f11251619d28e1fa52b2cbff8bf343a9157c8d`，证书预检PASS，权限不变）并升级安装/启动（平台确认，一次，不清数据）。用户结果：P1′ USER PASS；P4′失败摘要为network、时好时坏，见[ADR-100](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/100-bounded-playback-reconnect.md)。** 源码归档`85e6d973a69148fe7673f78b16d590c4df9323ed5217410094b371399cdd7439`，见[receipt.json](receipt.json)。
 
 ## 本地结果
 

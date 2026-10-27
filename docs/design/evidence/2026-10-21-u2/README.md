@@ -7,4 +7,4 @@
 - [我的：账号收藏夹](library-folders-synthetic.png)。`<img src=x>`是文本隔离样本，没有执行或创建该HTML图片。
 - [工件/截图/检查配对](evidence.json)。详细回执、最终日志、初次合成时序失败日志及其回归构建manifest位于`.local/u2-library/`。
 
-[U2布局](../../U2_LIBRARY_LAYOUT.md) · [ADR-073](../../../adr/073-continuation-and-product-library.md)。当前电视保持0.28.0；新UI图床CORS、朗读/远距/性能及U2其余页面仍未验收。
+[U2布局](../../U2_LIBRARY_LAYOUT.md) · [ADR-073](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/073-continuation-and-product-library.md)。当前电视保持0.28.0；新UI图床CORS、朗读/远距/性能及U2其余页面仍未验收。

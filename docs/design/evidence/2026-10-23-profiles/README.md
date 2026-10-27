@@ -1,6 +1,6 @@
 # 0.50.0 启动账号选择与热门番剧筛选（本地证据）
 
-2026-10-23；[ADR-098](../../../adr/098-hot-bangumi-type-and-time-filters.md) · [ADR-099](../../../adr/099-launch-account-chooser.md)。构建`node tools/build-foundation-app.mjs --product-profiles` → `dist/product-profiles-app`；原生`python3 tools/link-catalog.py --out build/catalog-pgc2`；打包`python3 tools/package-foundation-app.py --product-profiles`。**已签名（`22ec2901c5602ab983fe6305edbbebfc83ae6255355cd91abe6f088b70f3b5d2`，证书预检PASS，权限不变）并升级安装/启动（平台确认，一次，不清数据），未经真机验收。** 用户结果：P1/P3 USER PASS；P2暂缓（待多账号）；P4部分通过，见[0.50.1](../2026-10-23-profiles-fix/README.md)。 源码归档`87fd5a2c7796dde64a1af5282b2b36b132d270694dc607487457e2e34412fb4f`，见[receipt.json](receipt.json)。
+2026-10-23；[ADR-098](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/098-hot-bangumi-type-and-time-filters.md) · [ADR-099](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/099-launch-account-chooser.md)。构建`node tools/build-foundation-app.mjs --product-profiles` → `dist/product-profiles-app`；原生`python3 tools/link-catalog.py --out build/catalog-pgc2`；打包`python3 tools/package-foundation-app.py --product-profiles`。**已签名（`22ec2901c5602ab983fe6305edbbebfc83ae6255355cd91abe6f088b70f3b5d2`，证书预检PASS，权限不变）并升级安装/启动（平台确认，一次，不清数据），未经真机验收。** 用户结果：P1/P3 USER PASS；P2暂缓（待多账号）；P4部分通过，见[0.50.1](../2026-10-23-profiles-fix/README.md)。 源码归档`87fd5a2c7796dde64a1af5282b2b36b132d270694dc607487457e2e34412fb4f`，见[receipt.json](receipt.json)。
 
 ## 本地结果
 

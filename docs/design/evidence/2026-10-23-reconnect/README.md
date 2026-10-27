@@ -1,6 +1,6 @@
 # 0.50.2 播放中网络中断的有界自动重连（本地证据）
 
-2026-10-23；[ADR-100](../../../adr/100-bounded-playback-reconnect.md)。构建`node tools/build-foundation-app.mjs --product-reconnect` → `dist/product-reconnect-app`；打包`python3 tools/package-foundation-app.py --product-reconnect`。**已签名并升级安装/启动（平台确认，不清数据）；未经真机验收。**
+2026-10-23；[ADR-100](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/100-bounded-playback-reconnect.md)。构建`node tools/build-foundation-app.mjs --product-reconnect` → `dist/product-reconnect-app`；打包`python3 tools/package-foundation-app.py --product-reconnect`。**已签名并升级安装/启动（平台确认，不清数据）；未经真机验收。**
 
 ## 本地结果
 
@@ -24,4 +24,4 @@
 | --- | --- | --- |
 | P4″ | 连续播放伍六七之玄武国篇前三集，各看几分钟 | 网络波动时出现“正在重新连接…”并在原位置附近继续；若仍提示网络中断，进“设置 → 帮助与诊断”报告失败摘要，并说明出现过几次“正在重新连接” |
 
-结果（2026-10-23）：**P4″ FAIL**，两次“正在重新连接”后仍中断，位置一致；原因与处理见[ADR-101](../../../adr/101-cdn-failover-to-bilibili-backup.md)。
+结果（2026-10-23）：**P4″ FAIL**，两次“正在重新连接”后仍中断，位置一致；原因与处理见[ADR-101](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/101-cdn-failover-to-bilibili-backup.md)。

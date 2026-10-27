@@ -1,6 +1,6 @@
 # 0.50.4 来源检查主备切换与运行内避开失败节点（本地证据）
 
-2026-10-23；[ADR-102](../../../adr/102-source-check-failover-and-run-level-avoidance.md)。
+2026-10-23；[ADR-102](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/102-source-check-failover-and-run-level-avoidance.md)。
 
 - 原生链接：`python3 tools/link-vod-api-failover.py`、`python3 tools/link-pgc-read-failover.py`，输出到 `build/vod-api-failover`、`build/pgc-read-failover`。
 - 构建：`node tools/build-foundation-app.mjs --product-source-failover`，输出到 `dist/product-source-failover-app`。

@@ -1,6 +1,6 @@
 # 0.49.1 追番状态与写入结果（本地证据）
 
-2026-10-23；[ADR-096](../../../adr/096-product-season-page-follow-toggle-and-hot-ranking.md)文末“0.49.1修正”。构建`node tools/build-foundation-app.mjs --product-season-fix` → `dist/product-season-fix-app`；原生`python3 tools/link-pgc-follow.py --out build/pgc-follow-status`；打包`python3 tools/package-foundation-app.py --product-season-fix`。**已签名（`e76c619c49be1e4e7e849ac6a6e1ea63e88eee4d52c7bd576514400a98d20e79`，证书预检PASS，权限不变）并升级安装/启动（平台确认，一次，不清数据）；Q3复验USER PASS。** 源码归档`56cc3f29335947304cd61da85e5628f47a40e148704eaf55f471c93a07afbaa4`，见[receipt.json](receipt.json)。
+2026-10-23；[ADR-096](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/096-product-season-page-follow-toggle-and-hot-ranking.md)文末“0.49.1修正”。构建`node tools/build-foundation-app.mjs --product-season-fix` → `dist/product-season-fix-app`；原生`python3 tools/link-pgc-follow.py --out build/pgc-follow-status`；打包`python3 tools/package-foundation-app.py --product-season-fix`。**已签名（`e76c619c49be1e4e7e849ac6a6e1ea63e88eee4d52c7bd576514400a98d20e79`，证书预检PASS，权限不变）并升级安装/启动（平台确认，一次，不清数据）；Q3复验USER PASS。** 源码归档`56cc3f29335947304cd61da85e5628f47a40e148704eaf55f471c93a07afbaa4`，见[receipt.json](receipt.json)。
 
 ## 本地结果
 

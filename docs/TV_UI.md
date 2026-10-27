@@ -1,6 +1,6 @@
 # 电视UI与遥控交互合同
 
-更新：2026-10-21。Web/WGT当前路线；本页规定不可丢失的交互/工程约束，页面组织与尺寸见[大屏产品设计](TV_PRODUCT_DESIGN.md)，开发顺序与集中验收见[收口台账](PRODUCT_CLOSURE.md)。旧探针过程与原文保存在[改版前归档](archive/2026-10-21-tv-ui-before-product-design.md)，不得用其中旧“未实现/待补验”覆盖后续USER结果。
+更新：2026-10-21。Web/WGT当前路线；本页规定不可丢失的交互/工程约束，页面组织与尺寸见[大屏产品设计](TV_PRODUCT_DESIGN.md)，开发顺序与集中验收见[收口台账](PRODUCT_CLOSURE.md)。旧探针过程与原文保存在[改版前归档](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-21-tv-ui-before-product-design.md)，不得用其中旧“未实现/待补验”覆盖后续USER结果。
 
 ## 产品界面
 
@@ -22,7 +22,7 @@
 
 - 返回先归系统IME，再由当前owner处理：取消seek预览→顶层面板/确认框→播放控制层→播放器→路由。一个Back只消费一次；根页退出有确认，长按退出归系统。
 - 顶级浏览区Back先回当前侧栏项；非首页侧栏Back回首页锚点，首页侧栏Back退出确认。子页/详情回原内容卡，不无条件跳首页。
-- 播放5秒无操作隐藏控制；暂停/预览/加载/故障/子面板不自动隐藏。[ADR-088](adr/088-remote-media-keys-and-direct-controls.md)：本机播放隐藏时确认＝暂停/继续，左右＝直接预览并停手1.2秒提交一次，上下只唤回；投屏隐藏时任何键只唤回。媒体键先查询再注册（tv.inputdevice），Play/Pause/Stop/FF/RW按ADR-088。
+- 播放5秒无操作隐藏控制；暂停/预览/加载/故障/子面板不自动隐藏。[ADR-088](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/088-remote-media-keys-and-direct-controls.md)：本机播放隐藏时确认＝暂停/继续，左右＝直接预览并停手1.2秒提交一次，上下只唤回；投屏隐藏时任何键只唤回。媒体键先查询再注册（tv.inputdevice），Play/Pause/Stop/FF/RW按ADR-088。
 - 播放器主行为图标按钮，⚙设置侧栏取代“更多”，弹幕设置在⚙内单独一项；同一视频下一P/集结束时5秒“即将播放”倒计时（ADR-090）。首页为货架，详情为整页（ADR-091）。投屏布局不变。
 - 搜索为一页式，选中候选即搜索（ADR-092/094）；评论单列、到底自动接续。主行“字幕”只开字幕设置并显示字幕状态；弹幕/字幕数值用左右调整（ADR-093）。Home返回后提供“继续观看”（不自动播放）；连播偏好独立持久化。
 - 番剧影视默认“热门番剧”（公开排行），卡片直达番剧详情页：封面、简介、主播放、分组标签与一行横排剧集；“追番 / 已追番 ✓”一键切换，结果以回读为准，未确认时只提供查询并显示原因（ADR-096）。热门番剧有类型（国创/番剧）与时间（近三日/近一周/累计热门）筛选，选择保存在本机（ADR-098）。
@@ -49,7 +49,7 @@
 - 桌面ARIA与截图不能证明远距可读；新产品界面需本机焦点/对比/减少动画检查。Voice Guide不是需求（[ADR-089](adr/089-voice-guide-not-required.md)），保留现有ARIA但不安排朗读验收。
 - 每个完整模块交付方向/Back、加载/空/失败/权限/恢复规格、保留F映射与实际证据；集中验收按T1–T8，不逐按钮新增电视测试。
 
-[Samsung/YouTube/Netflix等当前来源](research/tv-product-patterns-2026-10-21.md) · [既有平台来源](research/tizen-best-practices-2026-10-14.md) · [ADR-070](adr/070-product-closure-and-tv-experience.md)
+[Samsung/YouTube/Netflix等当前来源](research/tv-product-patterns-2026-10-21.md) · [既有平台来源](research/tizen-best-practices-2026-10-14.md) · [ADR-070](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/070-product-closure-and-tv-experience.md)
 
 ## 网站配置入口（ADR-119，0.66.0候选）
 

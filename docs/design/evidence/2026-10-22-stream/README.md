@@ -1,6 +1,6 @@
 # 稳定浏览与目标控制候选
 
-2026-10-22；0.39.0、F06/F11/F12、U4。[技术复核/来源](../../../research/2026-10-22-browse-review.md) · [交互/资源合同](../../../adr/081-stable-browsing-and-targeted-controls.md) · [精确工件/检查/部署](receipt.json)。
+2026-10-22；0.39.0、F06/F11/F12、U4。[技术复核/来源](../../../research/2026-10-22-browse-review.md) · [交互/资源合同](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/081-stable-browsing-and-targeted-controls.md) · [精确工件/检查/部署](receipt.json)。
 
 稳定滚动空间与连续窗口；按需480×270公共封面、共享去重/租约/有界资源；快捷查询只获取目标状态；暂停默认焦点、遥控Back/时间轴替代冗余按钮。原生库/C和旧数据保持，Worker内身份/目标/单次POST/unknown合同保留。桌面自动检查仅合成账号/媒体，不执行真实账号POST。
 

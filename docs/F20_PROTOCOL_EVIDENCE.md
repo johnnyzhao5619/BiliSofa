@@ -35,4 +35,4 @@
 
 当前未完成：官方直播、全内容/发送端/画质矩阵、连续/快速换源、争用、断连恢复、产品时长及资源策略。相关要求留在F20/W06/W07，不反复让用户重跑已通过样本。
 
-[W01精确工件](archive/2026-10-24-phase-records/W01_EVIDENCE_INDEX.md) · [设备矩阵](DEVICE_CAPABILITIES.md) · [协议过程归档](archive/2026-10-19-process-records/F20_PROTOCOL_EVIDENCE.md)
+[W01精确工件](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-24-phase-records/W01_EVIDENCE_INDEX.md) · [设备矩阵](DEVICE_CAPABILITIES.md) · [协议过程归档](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-19-process-records/F20_PROTOCOL_EVIDENCE.md)

@@ -109,19 +109,19 @@
 - Z2：0.5×/0.75×通过；1×、1.25×、1.5×斜率0.81、0.9、1.05（off）。用户要求提供0.25×与2×。R07先做探查v2（加0.25×/2×，统计等待与缓冲），再决定是否采用混合方案。
 - Z3 FAIL：番剧详情与追番仍为开发样式，失败原因被吞掉。0.49.0改为产品番剧页与一键追番，并显示原因。
 - 用户建议增加推荐番剧：番剧影视新增公开“热门番剧”。
-- 详见[ADR-096](../adr/096-product-season-page-follow-toggle-and-hot-ranking.md)。
+- 详见[ADR-096](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/096-product-season-page-follow-toggle-and-hot-ranking.md)。
 
 ### R07决定（2026-10-23）
 
-倍速探查v2后，用户决定保持1×/2×，小数倍速按本机设备限制记录，探查保留为诊断（[ADR-097](../adr/097-fractional-rates-device-limited.md)）。P1-A至此结束，不实施混合方案。
+倍速探查v2后，用户决定保持1×/2×，小数倍速按本机设备限制记录，探查保留为诊断（[ADR-097](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/097-fractional-rates-device-limited.md)）。P1-A至此结束，不实施混合方案。
 
 ### 0.49.1之后的用户优化（2026-10-23）
 
-Q3复验USER PASS。用户新增两项优化：热门番剧的国创/时间筛选（[ADR-098](../adr/098-hot-bangumi-type-and-time-filters.md)）与启动时选择账号（[ADR-099](../adr/099-launch-account-chooser.md)），合入0.50.0。
+Q3复验USER PASS。用户新增两项优化：热门番剧的国创/时间筛选（[ADR-098](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/098-hot-bangumi-type-and-time-filters.md)）与启动时选择账号（[ADR-099](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/099-launch-account-chooser.md)），合入0.50.0。
 
 ### P4 国创播放中断（2026-10-23）
 
-0.50.1的失败摘要原因为`network`；0.50.2加入有界重连（[ADR-100](../adr/100-bounded-playback-reconnect.md)），P4″仍失败且位置一致。匿名核对确认主节点回源失败、B站备用可读，0.50.3改为按轨道切换到备用线路（[ADR-101](../adr/101-cdn-failover-to-bilibili-backup.md)）。P4‴第1集通过、第2/3集在开播前的来源检查阶段失败，0.50.4把来源检查也纳入主备切换，并加入运行内避开与分步骤诊断（[ADR-102](../adr/102-source-check-failover-and-run-level-avoidance.md)）。P4⁗ USER PASS，P4收口。
+0.50.1的失败摘要原因为`network`；0.50.2加入有界重连（[ADR-100](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/100-bounded-playback-reconnect.md)），P4″仍失败且位置一致。匿名核对确认主节点回源失败、B站备用可读，0.50.3改为按轨道切换到备用线路（[ADR-101](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/101-cdn-failover-to-bilibili-backup.md)）。P4‴第1集通过、第2/3集在开播前的来源检查阶段失败，0.50.4把来源检查也纳入主备切换，并加入运行内避开与分步骤诊断（[ADR-102](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/102-source-check-failover-and-run-level-avoidance.md)）。P4⁗ USER PASS，P4收口。
 
 ## 3. 不做或等待条件
 
@@ -218,7 +218,7 @@ Q3复验USER PASS。用户新增两项优化：热门番剧的国创/时间筛�
 - 游客：对照实验（6个请求）全部code 0、无法区分；用户决定0.51.3游客改带B站官方访客标识、WBI暂不加（ADR-106），已签名安装，游客V1g、清除访客标识与登录状态回归 USER PASS。
 - V3–V6 USER PASS（0.51.3，2026-10-23）；U5集中验收完成，[报告](../acceptance/2026-10-23-u5-final/REPORT.md)。仍暂停：R08、R12、R14；图文/关注动态BLOCKED；条件未验证项见报告。
 
-### 6.5 决定（用户已确认，2026-10-23：K1–K6按建议；K5 R08继续暂缓；实施见[ADR-103](../adr/103-up-page-shared-detail-and-following-shortcut.md)）
+### 6.5 决定（用户已确认，2026-10-23：K1–K6按建议；K5 R08继续暂缓；实施见[ADR-103](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/103-up-page-shared-detail-and-following-shortcut.md)）
 
 | 编号 | 问题 | 建议 |
 | --- | --- | --- |

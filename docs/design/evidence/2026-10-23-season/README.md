@@ -1,6 +1,6 @@
 # 0.49.0 番剧详情、一键追番、热门番剧与倍速探查v2（本地证据）
 
-2026-10-23；[ADR-096](../../../adr/096-product-season-page-follow-toggle-and-hot-ranking.md)。构建`node tools/build-foundation-app.mjs --product-season` → `dist/product-season-app`；原生`python3 tools/link-catalog.py --out build/catalog-pgc`；打包`python3 tools/package-foundation-app.py --product-season`。**已签名（`cd08619bcf8f58d73bffb46d7d8d6bfa4c34f197c4b924eec2552c6db850e6ef`，证书预检PASS，权限不变）并升级安装/启动（平台确认，一次，不清数据），未经真机验收。** 用户结果：Q1/Q2 USER PASS；Q3 FAIL，修正见[0.49.1](../2026-10-23-season-fix/README.md)；Q4倍速见ADR-096文末。 源码归档`6438d7db3d68f530d49b1768ce44165fe30c64aa0eb2a1007d378ea449853e1a`，见[receipt.json](receipt.json)。
+2026-10-23；[ADR-096](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/096-product-season-page-follow-toggle-and-hot-ranking.md)。构建`node tools/build-foundation-app.mjs --product-season` → `dist/product-season-app`；原生`python3 tools/link-catalog.py --out build/catalog-pgc`；打包`python3 tools/package-foundation-app.py --product-season`。**已签名（`cd08619bcf8f58d73bffb46d7d8d6bfa4c34f197c4b924eec2552c6db850e6ef`，证书预检PASS，权限不变）并升级安装/启动（平台确认，一次，不清数据），未经真机验收。** 用户结果：Q1/Q2 USER PASS；Q3 FAIL，修正见[0.49.1](../2026-10-23-season-fix/README.md)；Q4倍速见ADR-096文末。 源码归档`6438d7db3d68f530d49b1768ce44165fe30c64aa0eb2a1007d378ea449853e1a`，见[receipt.json](receipt.json)。
 
 ## 本地结果
 

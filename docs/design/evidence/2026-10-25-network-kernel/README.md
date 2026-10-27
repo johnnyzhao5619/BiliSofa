@@ -1,6 +1,6 @@
 # ADR-108 设备验证：常驻只读内核（0.54.0）
 
-2026-10-25。用户授权签名并升级安装0.54.0，按[ADR-108](../../../adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)做设备验证：先在已安装的0.51.3上测基线，再测0.54.0。
+2026-10-25。用户授权签名并升级安装0.54.0，按[ADR-108](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/108-resident-read-kernels-connection-reuse-and-batched-pages.md)做设备验证：先在已安装的0.51.3上测基线，再测0.54.0。
 
 - **设备**：Samsung UN58U8200FFXZC，Tizen 9.0（`capability`读到`platform_version:9.0`、armv7）。
 - **包**：0.54.0未签名`114e9efe…b7f9`，签名`515a6229…29dd`（证书预检PASS，权限不变）。升级安装、启动均platformSuccess（一次，不清数据）。

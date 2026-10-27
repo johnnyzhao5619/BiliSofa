@@ -48,4 +48,4 @@
 
 当前安装为0.65.1（见表首行）。各版本均未卸载或清数据，未执行代理账号POST。已签名包、源码快照、证书及原始日志均在仓库外保护目录；公共回执仅含hash与平台结果。单一产品构建（ADR-107）输出`dist/bilisofa-app`；原生打包目录：`vod/`←`build/vod-failover`，`vod-api/`、`pgc-read/`←各自的`-failover`目录（0.63.0起与0.58.0逐字节相同，ADR-115），`overlay-read/`←`build/overlay-read-subtitle`，`pgc-follow/`←`build/pgc-follow-status`，公共与账号只读内核←`build/public-kernel`、`build/account-read-kernel`（ADR-108），完整对照见[工具说明](../tools/README.md)。本机只保留当前与上一版未签名包。
 
-[当前验收](CURRENT_DEVICE_TEST.md) · [0.38.0原记录](archive/2026-10-22-direct-038/SIGNING_DEVICE_RECORD.md)
+[当前验收](CURRENT_DEVICE_TEST.md) · [0.38.0原记录](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-22-direct-038/SIGNING_DEVICE_RECORD.md)

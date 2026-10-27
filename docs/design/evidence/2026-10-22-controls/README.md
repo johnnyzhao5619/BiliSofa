@@ -1,6 +1,6 @@
 # 控制栏常用互动与倍速菜单证据
 
-2026-10-22；0.37.0已签名升级启动，见[ADR-079](../../../adr/079-player-actions-and-rate-menu.md)及[工件回执](receipt.json)。首次能力查询未确认，原地址有界重连一次后state/capability/install/launch均明确成功；未卸载、清数据、执行真实账号POST或发布Git。
+2026-10-22；0.37.0已签名升级启动，见[ADR-079](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/079-player-actions-and-rate-menu.md)及[工件回执](receipt.json)。首次能力查询未确认，原地址有界重连一次后state/capability/install/launch均明确成功；未卸载、清数据、执行真实账号POST或发布Git。
 
 286模块、644单元合同、6项新UI、8项互动回归、13项播放器/设置回归、8项连续浏览回归与6项包负例通过。244输入/27界面文件已配对，0.28–0.36的243个冻结文件保持；17原生模块/68资源沿用。原始日志在ignored `.local/u4-controls/`，签名包、设备原始日志及配对源码快照保留在仓库外保护目录。
 

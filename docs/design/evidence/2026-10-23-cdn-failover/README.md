@@ -1,6 +1,6 @@
 # 0.50.3 播放源按轨道切换到B站备用线路（本地证据）
 
-2026-10-23；[ADR-101](../../../adr/101-cdn-failover-to-bilibili-backup.md)。
+2026-10-23；[ADR-101](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/101-cdn-failover-to-bilibili-backup.md)。
 
 - 原生链接：`python3 tools/link-vod-bridge-failover.py`，输出到 `build/vod-failover`。
 - 构建：`node tools/build-foundation-app.mjs --product-cdn-failover`，输出到 `dist/product-cdn-failover-app`。
@@ -40,4 +40,4 @@
 | --- | --- | --- |
 | P4‴ | 连续播放伍六七之玄武国篇前三集，每集看过原来出错的位置 | 不再提示网络中断，也不出现“正在重新连接”；若仍失败，报告“设置 → 帮助与诊断”的失败摘要（含“上游”与“已切换备用线路”） |
 
-结果（2026-10-23）：**P4‴**第1集PASS；第2、3集在读取播放源阶段失败（source·network）。原因与处理见[ADR-102](../../../adr/102-source-check-failover-and-run-level-avoidance.md)。
+结果（2026-10-23）：**P4‴**第1集PASS；第2、3集在读取播放源阶段失败（source·network）。原因与处理见[ADR-102](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/102-source-check-failover-and-run-level-avoidance.md)。

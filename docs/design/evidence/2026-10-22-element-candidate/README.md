@@ -1,6 +1,6 @@
 # R07小数倍速候选：当前证据
 
-2026-10-22；[ADR-086](../../../adr/086-fractional-rate-element-candidate.md) · [源码与检查回执](receipt.json) · [浏览器部分结果/旧失败](desktop-partial.json)。**未接入生产、未打包/签名/部署，电视仍是0.43.0；R07未完成。**
+2026-10-22；[ADR-086](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/086-fractional-rate-element-candidate.md) · [源码与检查回执](receipt.json) · [浏览器部分结果/旧失败](desktop-partial.json)。**未接入生产、未打包/签名/部署，电视仍是0.43.0；R07未完成。**
 
 已实现独立HTML video适配器及固定倍速合同，含来源限制、排他claim、真实事件、有限prepare/seek、旧回调隔离、暂停定位与实际清空后释放。生产VodRate/AVPlay/菜单仍只有1×/2×。跨后端互斥与异步切换、生产SegmentBase DASH和电视实播尚未完成。
 

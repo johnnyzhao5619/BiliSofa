@@ -1,6 +1,6 @@
 # 0.51.2 登录会话读取公开列表、请求节奏与本机记录/队列完整详情页（本地证据）
 
-2026-10-23；[ADR-105](../../../adr/105-signed-public-reads-pacing-and-local-detail.md)。
+2026-10-23；[ADR-105](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/105-signed-public-reads-pacing-and-local-detail.md)。
 
 - 原生链接：`python3 tools/link-public-read.py`，输出到 `build/public-read`。
 - 构建：`node tools/build-foundation-app.mjs --product-up-fix2`，输出到 `dist/product-up-fix2-app`。
@@ -45,4 +45,4 @@
 
 结果（2026-10-23）：**V1 USER PASS**（登录状态）、**V2②补 USER PASS**、导航与UP主页回归 **USER PASS**。游客匿名通道未验证。
 
-更正（2026-10-24）：上表“投屏时钟配置30/30”因该配置把构建目录写死，实际跑在冻结的0.43.0上，不是本版的回归结果；本版在投屏规格上的重跑见[ADR-107](../../../adr/107-single-product-build.md)“更正”。
+更正（2026-10-24）：上表“投屏时钟配置30/30”因该配置把构建目录写死，实际跑在冻结的0.43.0上，不是本版的回归结果；本版在投屏规格上的重跑见[ADR-107](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/107-single-product-build.md)“更正”。

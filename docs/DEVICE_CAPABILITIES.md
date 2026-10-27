@@ -38,8 +38,8 @@
 - 旧全局联网失败已恢复，未定位根因。
 - 内部15分钟/字节/连接等探针限额不是产品能力边界，0.21.1生产DASH/HLS路径已去累计探针配额，但尚待本版真机与W07长播证据。
 
-精确包/source配对见[W01索引](archive/2026-10-24-phase-records/W01_EVIDENCE_INDEX.md)，当前安装见[签名部署](SIGNING_DEVICE_RECORD.md)，逐轮记录见[历史归档](archive/2026-10-19-process-records/README.md)。原始地址、DUID、账号、证书和抓包只在仓库外私密保存。
+精确包/source配对见[W01索引](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-24-phase-records/W01_EVIDENCE_INDEX.md)，当前安装见[签名部署](SIGNING_DEVICE_RECORD.md)，逐轮记录见[历史归档](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-19-process-records/README.md)。原始地址、DUID、账号、证书和抓包只在仓库外私密保存。
 
-当前产品策略见[ADR-055](adr/055-runtime-media-fallback.md)：下列实测记录保留为证据，不作为固定型号/720P播放白名单。实际可表达源交由本机播放器尝试，失败后有界回退；其他型号或高分辨率候选可试不等于硬件通过。
+当前产品策略见[ADR-055](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/055-runtime-media-fallback.md)：下列实测记录保留为证据，不作为固定型号/720P播放白名单。实际可表达源交由本机播放器尝试，失败后有界回退；其他型号或高分辨率候选可试不等于硬件通过。
 
-R07新增HTML video候选见[ADR-086](adr/086-fractional-rate-element-candidate.md)与[部分本地结果](design/evidence/2026-10-22-element-candidate/README.md)，未部署到本电视。旧0.21.4直播失败与`live.network.source.manifest_h0_c28_n2`保留为历史；当前直播按ADR-068排除，不沿用早期“下版本修复”承诺。
+R07新增HTML video候选见[ADR-086](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/086-fractional-rate-element-candidate.md)与[部分本地结果](design/evidence/2026-10-22-element-candidate/README.md)，未部署到本电视。旧0.21.4直播失败与`live.network.source.manifest_h0_c28_n2`保留为历史；当前直播按ADR-068排除，不沿用早期“下版本修复”承诺。

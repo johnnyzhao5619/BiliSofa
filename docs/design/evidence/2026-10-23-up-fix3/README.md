@@ -1,6 +1,6 @@
 # 0.51.3 游客读取带B站官方访客标识、设置中可清除、被拦时提示登录（本地证据）
 
-2026-10-23；[ADR-106](../../../adr/106-guest-visitor-identity-and-sign-in-hint.md)。
+2026-10-23；[ADR-106](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/106-guest-visitor-identity-and-sign-in-hint.md)。
 
 - 原生链接：`python3 tools/link-catalog-visitor.py`，输出到 `build/catalog-visitor`。
 - 构建：`node tools/build-foundation-app.mjs --product-up-fix3`，输出到 `dist/product-up-fix3-app`。
@@ -36,4 +36,4 @@
 
 结果（2026-10-23）：**V1g USER PASS**（游客）、**清除访客标识 USER PASS**、**登录状态回归 USER PASS**。
 
-更正（2026-10-24）：上表“投屏时钟配置30/30”因该配置把构建目录写死，实际跑在冻结的0.43.0上，不是本版的回归结果；本版在投屏规格上的重跑见[ADR-107](../../../adr/107-single-product-build.md)“更正”。
+更正（2026-10-24）：上表“投屏时钟配置30/30”因该配置把构建目录写死，实际跑在冻结的0.43.0上，不是本版的回归结果；本版在投屏规格上的重跑见[ADR-107](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/107-single-product-build.md)“更正”。

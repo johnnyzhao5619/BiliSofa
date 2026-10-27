@@ -1,6 +1,6 @@
 # 投屏当前位置幂等候选
 
-2026-10-22；0.43.0，F20/W06/U4/R11。Android所请求首投/控制组及iPhone首次起播/声画时间/停止组USER PASS，完整矩阵OPEN。[ADR-085](../../../adr/085-canonical-cast-position-idempotence.md) · [0.41/0.42实测证据](../2026-10-22-cast-seek/USER_ACCEPTANCE.md) · [精确包/源码/平台回执](receipt.json)。
+2026-10-22；0.43.0，F20/W06/U4/R11。Android所请求首投/控制组及iPhone首次起播/声画时间/停止组USER PASS，完整矩阵OPEN。[ADR-085](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/085-canonical-cast-position-idempotence.md) · [0.41/0.42实测证据](../2026-10-22-cast-seek/USER_ACCEPTANCE.md) · [精确包/源码/平台回执](receipt.json)。
 
 保留0.42播放态非零原生Seek，修正当前SOAP整数秒的冗余定位：新鲜真实playing位置已经处在同一对外秒时，直接幂等完成，不调用SDK、不改真实时间。不是起播扩大容差；不同秒、小数目标、陈旧缓存、paused/busy、所有权/代次均保持原路径。真正暂停/回0不偷偷播放或重放，未知写日志/账号/原生权限无变化。
 

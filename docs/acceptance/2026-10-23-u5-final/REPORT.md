@@ -16,8 +16,8 @@
 
 | 组 | 版本 | 路径 | 结果 |
 | --- | --- | --- | --- |
-| V1 浏览 | 0.51.2（登录）/0.51.3（游客） | 首页 → 14个分区逐个打开 → 详情 → 返回原卡；导航 | **USER PASS**（[ADR-105](../../adr/105-signed-public-reads-pacing-and-local-detail.md)、[ADR-106](../../adr/106-guest-visitor-identity-and-sign-in-hint.md)） |
-| V2 搜索与UP | 0.51.0–0.51.2 | 搜索视频/UP → UP主页投稿翻页 → 播放 → 返回；所有入口共用完整详情页 | **USER PASS**（[ADR-103](../../adr/103-up-page-shared-detail-and-following-shortcut.md)–105） |
+| V1 浏览 | 0.51.2（登录）/0.51.3（游客） | 首页 → 14个分区逐个打开 → 详情 → 返回原卡；导航 | **USER PASS**（[ADR-105](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/105-signed-public-reads-pacing-and-local-detail.md)、[ADR-106](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/106-guest-visitor-identity-and-sign-in-hint.md)） |
+| V2 搜索与UP | 0.51.0–0.51.2 | 搜索视频/UP → UP主页投稿翻页 → 播放 → 返回；所有入口共用完整详情页 | **USER PASS**（[ADR-103](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/103-up-page-shared-detail-and-following-shortcut.md)–105） |
 | V3 我的与账号 | 0.51.3 | 启动选择页 → 私人片库（云端历史、稍后再看、收藏夹、继续观看、本机播放队列）→ 删除继续观看一项 → 游客与账号之间切换、重启后数据一致 | **USER PASS** |
 | V4 播放 | 0.51.3 | UGC单P/多P、番剧、会员/付费提示、自然接下一P/下一集、字幕/弹幕/评论、播放中返回 | **USER PASS** |
 | V5 投屏 | 0.51.3 | 官方B站App（Android、iPhone）：首投、定位、暂停/继续、换P/换集、停止、Home后重新接收、遥控键不抢控制权 | **USER PASS** |
@@ -33,7 +33,7 @@
 | FAIL | 无 |
 | BLOCKED | R04图文/关注动态：匿名HTTP 412，按K2记录，不绕过 |
 | PAUSED | R08投币/三连（F14）；R12两小时性能与耐久报告（T8的耐久部分）；R14最终发布候选与发布准备 |
-| 设备限制 | R07小数倍速：本机video只有0.5×/0.75×可用，生产保持1×/2×（[ADR-097](../../adr/097-fractional-rates-device-limited.md)） |
+| 设备限制 | R07小数倍速：本机video只有0.5×/0.75×可用，生产保持1×/2×（[ADR-097](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/097-fractional-rates-device-limited.md)） |
 | 条件未验证 | R06会话自然过期后的重登录恢复；R10 HDR与独立decoder（无样本）；R11 iPad与双发送端争用、61秒/近结束落点精度边界；R13版本回退（K6：只在平台允许低版本直接覆盖时做）；R01账号移除后重新扫码；地区限制提示；T7减少动画与深列表的单独观察 |
 | 用户排除 | 直播及依赖分支（[ADR-068](../../adr/068-current-scope-and-reversible-interactions.md)）；真实双账号（ADR-069）；云进度本轮验收（用户要求跳过，旧未知写记录保留、不重发） |
 

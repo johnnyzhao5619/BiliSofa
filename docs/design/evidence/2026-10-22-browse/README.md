@@ -1,6 +1,6 @@
 # 连续浏览与投屏优化证据
 
-2026-10-22；0.35.0已签名升级启动，新增五项真实体验待用户验证。[工件/脱敏平台回执](receipt.json)、[ADR-077](../../../adr/077-continuous-browse-and-cast-refinement.md)、[布局/来源](../../CONTINUOUS_BROWSE_AND_CAST.md)、[本轮五组清单](../../../CURRENT_DEVICE_TEST.md)。0.34.0所请求A–F USER PASS及五项缺陷并列保留。
+2026-10-22；0.35.0已签名升级启动，新增五项真实体验待用户验证。[工件/脱敏平台回执](receipt.json)、[ADR-077](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/077-continuous-browse-and-cast-refinement.md)、[布局/来源](../../CONTINUOUS_BROWSE_AND_CAST.md)、[本轮五组清单](../../../CURRENT_DEVICE_TEST.md)。0.34.0所请求A–F USER PASS及五项缺陷并列保留。
 
 284模块检查、632单元合同、8项新组合UI、13项保留播放器/设置UI和6项新包负例通过。242源码输入/27界面文件已配对；0.28–0.34的189冻结文件及固定manifest不变，17原生模块/68项资源含CA沿用。首次能力查询关闭，原地址有界重连一次后四项平台回执成功；没有卸载/清数据、真实账号POST或Git发布。
 

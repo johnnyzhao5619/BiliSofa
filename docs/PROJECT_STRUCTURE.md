@@ -44,9 +44,9 @@
 | F18候选 | live-product合同/解析、LivePlayback、单运行时API→匿名HLS中转、近期消息视图 | ADR-053/057；浏览组通过，实播失败并由用户延期；证据分层 |
 | F17候选 | pgc-season详情/播放；pgc-follow列表/写门禁与持久回查 | ADR-052；已装机C只读组通过；真实追番写入未验收 |
 
-生成物只在ignored `build/`、`dist/`、`.local/`；私密签名、目标和会话在仓库外。依赖版本/来源/许可见[第三方声明](../THIRD_PARTY_NOTICES.md)，命令见[开发说明](DEVELOPMENT.md)。[原结构过程](archive/2026-10-19-process-records/PROJECT_STRUCTURE.md)保留追溯。
+生成物只在ignored `build/`、`dist/`、`.local/`；私密签名、目标和会话在仓库外。依赖版本/来源/许可见[第三方声明](../THIRD_PARTY_NOTICES.md)，命令见[开发说明](DEVELOPMENT.md)。[原结构过程](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-19-process-records/PROJECT_STRUCTURE.md)保留追溯。
 
-R07小数倍速按[ADR-097](adr/097-fractional-rates-device-limited.md)不接入生产；`apps/tv/src/platform/element-video.ts`、`packages/contracts/src/playback-rate.ts`与`tests/media-element/`保留为诊断探查代码（[ADR-086](adr/086-fractional-rate-element-candidate.md)）。
+R07小数倍速按[ADR-097](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/097-fractional-rates-device-limited.md)不接入生产；`apps/tv/src/platform/element-video.ts`、`packages/contracts/src/playback-rate.ts`与`tests/media-element/`保留为诊断探查代码（[ADR-086](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/086-fractional-rate-element-candidate.md)）。
 
 ## 0.66.0候选的配置层
 

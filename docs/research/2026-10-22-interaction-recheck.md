@@ -6,4 +6,4 @@
 
 因此移除对关注响应中mid必填的错误假设，但保留返回值匹配校验。官方脚本有可选播放器/统计字段，本项目不伪造这些上下文，也没有足够证据认定缺它们导致-403。用户已报告-403且回查false，点赞根因/真实通过仍OPEN。
 
-交互借鉴[YouTube官方倍速操作说明](https://support.google.com/youtube/answer/7509567?hl=en-PG)的设置内选择即时生效，本项目落实为遥控单列菜单/当前值聚焦；不是当前YouTube TV逐像素复刻。Samsung能力与小数倍速边界沿用[ADR-079](../adr/079-player-actions-and-rate-menu.md)。
+交互借鉴[YouTube官方倍速操作说明](https://support.google.com/youtube/answer/7509567?hl=en-PG)的设置内选择即时生效，本项目落实为遥控单列菜单/当前值聚焦；不是当前YouTube TV逐像素复刻。Samsung能力与小数倍速边界沿用[ADR-079](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/079-player-actions-and-rate-menu.md)。

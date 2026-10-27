@@ -1,6 +1,6 @@
 # 投屏起播定位候选
 
-2026-10-22；0.41.0、F20/W06/U4。[复核](../../../research/2026-10-22-cast-startup-review.md) · [合同/容差边界](../../../adr/083-bounded-cast-initial-alignment.md) · [精确源码/包/平台回执](receipt.json)。
+2026-10-22；0.41.0、F20/W06/U4。[复核](../../../research/2026-10-22-cast-startup-review.md) · [合同/容差边界](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/083-bounded-cast-initial-alignment.md) · [精确源码/包/平台回执](receipt.json)。
 
 已排查正式包的自动回跳入口；修正首次近起点定位无条件暂停/重开解码器的路径。合并一次已对齐的0～1秒目标，保留真实时间；其余非零定位、后续回0、暂停、明确回放和换源代次照旧。产品诊断仅记录固定枚举，区别定位、合并与换源，不扩大旧W01位集。
 

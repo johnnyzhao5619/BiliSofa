@@ -1,6 +1,6 @@
 # 0.47.2 搜索课程行、选词焦点与AI字幕地址（本地证据）
 
-2026-10-23；[ADR-094](../../../adr/094-search-course-rows-and-ai-subtitle-files.md)。构建`node tools/build-foundation-app.mjs --product-reading-fix2` → `dist/product-reading-fix2-app`；原生`python3 tools/link-overlay-read.py --out build/overlay-read-subtitle`；打包`python3 tools/package-foundation-app.py --product-reading-fix2`。**已签名（`c602062dde8d9b7e0475bd705a613c284e5db71cd647c8bc910d7bf4c5c21efc`，证书预检PASS，权限不变）并升级安装/启动（平台确认，一次，不清数据），未经真机复验。** 源码归档`2199303c8c9c955d06279018b6240a0454aaca51d1beaf5f8cfec461b5c7fbae`，见[receipt.json](receipt.json)。
+2026-10-23；[ADR-094](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/094-search-course-rows-and-ai-subtitle-files.md)。构建`node tools/build-foundation-app.mjs --product-reading-fix2` → `dist/product-reading-fix2-app`；原生`python3 tools/link-overlay-read.py --out build/overlay-read-subtitle`；打包`python3 tools/package-foundation-app.py --product-reading-fix2`。**已签名（`c602062dde8d9b7e0475bd705a613c284e5db71cd647c8bc910d7bf4c5c21efc`，证书预检PASS，权限不变）并升级安装/启动（平台确认，一次，不清数据），未经真机复验。** 源码归档`2199303c8c9c955d06279018b6240a0454aaca51d1beaf5f8cfec461b5c7fbae`，见[receipt.json](receipt.json)。
 
 ## 起因（用户0.47.1真机结果）
 

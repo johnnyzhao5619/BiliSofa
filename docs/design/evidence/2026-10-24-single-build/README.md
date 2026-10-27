@@ -1,6 +1,6 @@
 # 0.52.0 单一产品构建（本地证据）
 
-2026-10-24；[ADR-107](../../../adr/107-single-product-build.md)。
+2026-10-24；[ADR-107](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/107-single-product-build.md)。
 
 - 构建：`npm run build:app`，输出到 `dist/bilisofa-app`。
 - 合成UI：`npm run test:ui:app`。

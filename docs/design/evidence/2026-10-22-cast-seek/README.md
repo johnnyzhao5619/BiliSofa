@@ -1,6 +1,6 @@
 # 播放态投屏定位候选
 
-2026-10-22；0.42.0、F20/W06/U4/R11。**已签名升级启动，用户报告向前跳转，平顺性OPEN**。[状态决策](../../../adr/084-playing-cast-seek-without-reopen.md) · [派生设备证据](observation-summary.json) · [精确源码/包/平台回执](receipt.json)。
+2026-10-22；0.42.0、F20/W06/U4/R11。**已签名升级启动，用户报告向前跳转，平顺性OPEN**。[状态决策](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/084-playing-cast-seek-without-reopen.md) · [派生设备证据](observation-summary.json) · [精确源码/包/平台回执](receipt.json)。
 
 0.41.0同包取证已证实：真实1545ms时收到目标4000ms，应用先暂停、PREBUFFER重建后有效SDK从16ms播放。没有自动回跳测试入口；手机为何给4秒及SDK为何未采用预缓冲起点仍未证。0.42.0对播放态非零定位保留原生Seek，不先暂停/重开/再次play；真正暂停、显式回0与失败关闭策略保留，不再启用0.41近零合并，不扩大容差丢弃请求。
 

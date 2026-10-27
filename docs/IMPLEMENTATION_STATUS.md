@@ -6,9 +6,9 @@
 
 | 对象 | 当前事实 | 证据 |
 | --- | --- | --- |
-| 已安装0.65.1 | [ADR-117](adr/117-ranking-session-refusal-and-row-order.md)“0.65.1清理”：去掉全站排行匿名通道多余的5分钟复用，删除4处无调用方的代码；行为不变。单元785/785、合成UI 120/120、包负例通过；签名`16e6a879…f878`，升级安装/启动platformSuccess；设备：版本0.65.1，登录时排行榜走本人会话读出 | [设备证据](design/evidence/2026-10-26-p2b-device/README.md) |
-| 0.65.0（ADR-117设备证据来源） | [ADR-117](adr/117-ranking-session-refusal-and-row-order.md)：登录时全站排行走本人会话（账号内核新固定路由）；全站排行纳入10分钟复用与60秒暂停，暂停改为游客、账号各自一份；被拒时首页与网格写明风控代码和剩余秒数；首页各行依次读取，不等焦点（被页面盖住时暂停）。单元785/785、合成UI 120/120、包负例通过。设备：登录时排行榜走本人会话读出（×3），三行在按OK后3.9–4.6 s依次读完；游客匿名-352，显示风控与秒数、暂停中重试不发请求；方向键响应与0.64.1相当 | [设备证据](design/evidence/2026-10-26-p2b-device/README.md) |
-| 0.64.0–0.64.1（上一版） | [ADR-116](adr/116-home-snapshot-home-structure-and-search.md)：首页先显示上次的快照再原位刷新（为你推荐按账号存并随账号清除），排行榜下14个分区直达，行尾追加，搜索默认“综合”，拼音词典Worker常驻，删除旧搜索分支与隐藏翻页按钮。设备：选账号到首卡约1.96 s（有快照）／2.44 s（无快照）对比0.63.0约2.35 s；搜索首个候选约0.13–0.19 s对比约0.59 s；用户实看全部符合。0.64.1：排行榜等货架仍在加载时上下键越过它（设备受信任按键确认：分区按上到热门视频）；排行榜失败已查明：B站对匿名全站排行返回-352，之前看到的超时是测试脚本造成；修复见0.65.0。含0.63.0的逐项来源检查与7天媒体上限（超过24小时的视频仍待设备验证） | [设备证据](design/evidence/2026-10-26-p2b-device/README.md) |
+| 已安装0.65.1 | [ADR-117](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/117-ranking-session-refusal-and-row-order.md)“0.65.1清理”：去掉全站排行匿名通道多余的5分钟复用，删除4处无调用方的代码；行为不变。单元785/785、合成UI 120/120、包负例通过；签名`16e6a879…f878`，升级安装/启动platformSuccess；设备：版本0.65.1，登录时排行榜走本人会话读出 | [设备证据](design/evidence/2026-10-26-p2b-device/README.md) |
+| 0.65.0（ADR-117设备证据来源） | [ADR-117](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/117-ranking-session-refusal-and-row-order.md)：登录时全站排行走本人会话（账号内核新固定路由）；全站排行纳入10分钟复用与60秒暂停，暂停改为游客、账号各自一份；被拒时首页与网格写明风控代码和剩余秒数；首页各行依次读取，不等焦点（被页面盖住时暂停）。单元785/785、合成UI 120/120、包负例通过。设备：登录时排行榜走本人会话读出（×3），三行在按OK后3.9–4.6 s依次读完；游客匿名-352，显示风控与秒数、暂停中重试不发请求；方向键响应与0.64.1相当 | [设备证据](design/evidence/2026-10-26-p2b-device/README.md) |
+| 0.64.0–0.64.1（上一版） | [ADR-116](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/116-home-snapshot-home-structure-and-search.md)：首页先显示上次的快照再原位刷新（为你推荐按账号存并随账号清除），排行榜下14个分区直达，行尾追加，搜索默认“综合”，拼音词典Worker常驻，删除旧搜索分支与隐藏翻页按钮。设备：选账号到首卡约1.96 s（有快照）／2.44 s（无快照）对比0.63.0约2.35 s；搜索首个候选约0.13–0.19 s对比约0.59 s；用户实看全部符合。0.64.1：排行榜等货架仍在加载时上下键越过它（设备受信任按键确认：分区按上到热门视频）；排行榜失败已查明：B站对匿名全站排行返回-352，之前看到的超时是测试脚本造成；修复见0.65.0。含0.63.0的逐项来源检查与7天媒体上限（超过24小时的视频仍待设备验证） | [设备证据](design/evidence/2026-10-26-p2b-device/README.md) |
 
 已签名包不覆盖；构建为单一产品构建（ADR-107），新版本只提升`foundation-config.xml`中的版本号，本机只保留当前与上一版未签名包；账号/本机数据与旧unknown写日志保留、不重放。签名/部署按版本取得用户授权（升级安装，不清数据）；Git只在用户要求时提交/推送。
 
@@ -61,7 +61,7 @@
 - 旧全局联网故障已恢复，但根因未确认；不将诊断补丁说成根因修复。
 - W04历史出口保留，直播当前范围由ADR-068排除；其余门槛不自动关闭。后续按ADR-070完整模块统一实施，不逐入口/控件部署，不重复已通过的无影响项目。真实账号写入仍须具体授权。
 
-过程记录见[历史归档](archive/2026-10-19-process-records/README.md)、[2026-10-23归档](archive/2026-10-23-superseded/README.md)、[W01–W06阶段记录](archive/2026-10-24-phase-records/README.md)与[台账清理归档](archive/2026-10-26-ledger-cleanup/README.md)，全部归档见[归档索引](archive/README.md)；本页只维护当前结论，不追加逐轮日志，逐版本记录在[签名与部署记录](SIGNING_DEVICE_RECORD.md)。本页形状由`tools/check-docs.mjs`机器门禁强制（见[开发与部署](DEVELOPMENT.md)）。
+过程记录见[历史归档](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-19-process-records/README.md)、[2026-10-23归档](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-23-superseded/README.md)、[W01–W06阶段记录](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-24-phase-records/README.md)与[台账清理归档](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-26-ledger-cleanup/README.md)，全部归档见[归档索引](archive/README.md)；本页只维护当前结论，不追加逐轮日志，逐版本记录在[签名与部署记录](SIGNING_DEVICE_RECORD.md)。本页形状由`tools/check-docs.mjs`机器门禁强制（见[开发与部署](DEVELOPMENT.md)）。
 
 ## 源码候选
 

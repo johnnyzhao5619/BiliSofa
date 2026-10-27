@@ -1,6 +1,6 @@
 # 0.51.1 运行时User-Agent、所有入口共用详情页与失败后焦点（本地证据）
 
-2026-10-23；[ADR-104](../../../adr/104-runtime-user-agent-shared-detail-everywhere.md)。
+2026-10-23；[ADR-104](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/104-runtime-user-agent-shared-detail-everywhere.md)。
 
 - 原生链接：`python3 tools/link-catalog-ua.py`，输出到 `build/catalog-ua`。
 - 构建：`node tools/build-foundation-app.mjs --product-up-fix`，输出到 `dist/product-up-fix-app`。
@@ -42,4 +42,4 @@
 | V2② | 我的（历史、稍后再看、收藏）、关注更新、继续观看 → 打开视频 | 完整详情页；续播对应分P；有“UP主页” |
 | K3 | 关注 → 直达卡 | 打开番剧影视的我的追番 |
 
-结果（2026-10-23）：**V1 FAIL**；导航 PASS；V2② 三项 PASS、继续观看/本机播放队列仍为旧面板；关注页直达卡 PASS。User-Agent结论作废，处理见[ADR-105](../../../adr/105-signed-public-reads-pacing-and-local-detail.md)。
+结果（2026-10-23）：**V1 FAIL**；导航 PASS；V2② 三项 PASS、继续观看/本机播放队列仍为旧面板；关注页直达卡 PASS。User-Agent结论作废，处理见[ADR-105](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/105-signed-public-reads-pacing-and-local-detail.md)。

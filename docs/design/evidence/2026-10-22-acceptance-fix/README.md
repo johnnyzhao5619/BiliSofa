@@ -1,6 +1,6 @@
 # 0.44.0 第三方验收修正候选：工件证据
 
-2026-10-22；[ADR-087](../../../adr/087-third-party-acceptance-fixes.md) · [回执](receipt.json) · [第三方验收](../../../acceptance/third-party/2026-10-22T213335-0400/REPORT.md)。**已构建、签名，并经用户授权升级安装到电视（不清数据）；平台确认安装/启动成功；用户所请求M1回复全文/M2默认画质USER PASS（[用户结果](USER_ACCEPTANCE.md)）。** 构建授权：输出到新目录、不覆盖冻结工件；部署授权：升级安装、不清数据。
+2026-10-22；[ADR-087](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/087-third-party-acceptance-fixes.md) · [回执](receipt.json) · [第三方验收](../../../acceptance/third-party/2026-10-22T213335-0400/REPORT.md)。**已构建、签名，并经用户授权升级安装到电视（不清数据）；平台确认安装/启动成功；用户所请求M1回复全文/M2默认画质USER PASS（[用户结果](USER_ACCEPTANCE.md)）。** 构建授权：输出到新目录、不覆盖冻结工件；部署授权：升级安装、不清数据。
 
 ## 工件
 

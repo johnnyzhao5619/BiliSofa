@@ -40,4 +40,4 @@ Certificate Manager 3.0.0 主程序安装 exit 0，包管理器已更新到 0.5.
 
 ## 创建后签名与安装
 
-开发代理核查 profile 的非敏感元数据和设备适用性，执行 `npm run sign:app`（`tools/sign-foundation-app.py`），输出签名包到仓库外并记录包 SHA-256，再按逐版本授权用 `npm run deploy:app` 安装/启动。工具拒绝 SDK 默认 Distributor、过期/尚未生效的证书和不匹配资源；它不替代电视的证书链信任验证。新 Author 与旧第三方应用不互相替换。逐版本结果见[签名部署](SIGNING_DEVICE_RECORD.md)；W01 探针时期的独立命令见[探针指南](archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md)。
+开发代理核查 profile 的非敏感元数据和设备适用性，执行 `npm run sign:app`（`tools/sign-foundation-app.py`），输出签名包到仓库外并记录包 SHA-256，再按逐版本授权用 `npm run deploy:app` 安装/启动。工具拒绝 SDK 默认 Distributor、过期/尚未生效的证书和不匹配资源；它不替代电视的证书链信任验证。新 Author 与旧第三方应用不互相替换。逐版本结果见[签名部署](SIGNING_DEVICE_RECORD.md)；W01 探针时期的独立命令见[探针指南](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md)。

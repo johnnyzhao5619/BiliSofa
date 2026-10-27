@@ -45,7 +45,7 @@ function rules(path, text) {
   if (/^docs\/plans\/[^/]+\.md$/.test(path)) {
     // A plan whose status says it shipped is superseded by its ADR's implementation section.
     const status = (text.split(/\n\s*\n/).find(p => p.trim() && !p.startsWith('#')) ?? '');
-    if (/状态：\*\*[^*]*(已实现|已安装)/.test(status)) problems.push(`${path}: implemented plan; move it to docs/archive/<date>-plans/ and link the ADR instead`);
+    if (/状态：\*\*[^*]*(已实现|已安装)/.test(status)) problems.push(`${path}: implemented plan; remove it from current plans and link the decision or fixed Git history instead`);
   }
   return problems;
 }
