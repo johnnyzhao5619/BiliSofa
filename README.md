@@ -1,6 +1,6 @@
 # BiliSofa
 
-[访问 BiliSofa 门户](https://johnnyzhao5619.github.io/BiliSofa/)
+[下载与安装](#下载安装) · [项目门户源码](docs/index.html)
 
 **在三星电视上探索 B 站内容的独立第三方项目，免费用于学习和测试。**
 
@@ -9,6 +9,10 @@
 BiliSofa 的起点是一个实际的不便：作者使用的海外 Samsung Tizen 电视上没有可用的 Bilibili 应用。项目尝试让用户通过电视遥控器浏览和观看；安装后日常使用不需要一直开着电脑，也不需要项目提供的云端服务。
 
 BiliSofa 与 Bilibili、Samsung 无隶属、合作或官方认证关系。项目当前无盈利行为。
+
+![BiliSofa 电视搜索界面示例](docs/design/evidence/2026-10-26-p2a-layout/7-search.png)
+
+<sub>项目历史界面截图，使用合成数据；不代表 0.66.0 实机验收。</sub>
 
 ## 下载安装
 

@@ -1,6 +1,6 @@
 # BiliSofa
 
-[Visit the BiliSofa website](https://johnnyzhao5619.github.io/BiliSofa/)
+[Download and install](#download-and-install) · [Website source](docs/index.html)
 
 **An independent third-party Samsung Tizen TV client, provided for learning and testing.**
 
@@ -11,6 +11,10 @@ BiliSofa is an independent, remote-control-first Bilibili client for Samsung Tiz
 The app runs on the TV. An Android phone or computer can be used to attempt installation and updates; everyday viewing requires no always-on computer, NAS, LAN gateway or project-hosted cloud service. Internet access to Bilibili and its CDNs is still required.
 
 This community project is not affiliated with, endorsed by or certified by Bilibili or Samsung. It connects to the mainland China Bilibili service; it is not a client for the separate international service and does not extend regional or membership rights.
+
+![Example BiliSofa TV search interface](docs/design/evidence/2026-10-26-p2a-layout/7-search.png)
+
+<sub>Historical interface screenshot using synthetic data; not evidence of 0.66.0 TV acceptance.</sub>
 
 ## Download and install
 
