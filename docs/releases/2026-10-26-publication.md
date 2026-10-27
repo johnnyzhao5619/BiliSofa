@@ -2,6 +2,8 @@
 
 关联 F01–F20 / W07 / R14。用户已明确授权公开仓库、构建可下载版本和便捷安装手册。已执行并回读确认；本页记录实际结果。发布时间为 2026-10-26 21:15 America/Toronto（UTC 2026-10-27 01:15）。
 
+**后续变更（2026-10-26）：** 用户要求仅提供 0.66.0。0.65.1 Release 已转为草稿，匿名下载返回 404；保留原 tag、附件和历史记录。当前唯一公开下载为 [0.66.0 预览版](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0)，不因此宣称它已完成设备验收。下文记录此前公开时的事实。
+
 ## 版本与材料
 
 - 0.65.1 正式基线软件精确固定 `e7bc3740e0fed2f9b2c89f9a83755398fa11faf7`；WGT SHA-256 `dd778893ca4e26c2ca462cf757dc31fd7db00b56b02b2f4693c595bfa6a5b783`。
@@ -26,14 +28,14 @@
 - 使用系统 curl，开启 TLS 验证且无认证信息，匿名请求仓库、Issues、两个 Release 和快捷手册均返回 HTTP 200；两个 WGT 均完整下载，SHA-256 与本地一致。未降低 TLS 验证来完成回读。
 - 没有启用 / 声称 release immutability 或生成 attestation；没有签名、连接 / 部署 TV、运行应用测试或取得新增设备验收。
 
-## 公开下载与摘要
+## 当时的下载与摘要
 
 [五步安装](../QUICK_INSTALL.md) · [English](../QUICK_INSTALL.en.md)。不需要自己编译；下载 WGT 后在本机为自己的电视签名，仍需 Developer Mode 与有效证书。Apps2Samsung 路径依据上游文档，尚未独立实测。
 
 | 版本 | Release / 文件 | 字节 | SHA-256 |
 | --- | --- | ---: | --- |
-| 0.65.1 | [BiliSofa-0.65.1-unsigned.wgt](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.65.1/BiliSofa-0.65.1-unsigned.wgt) | 19557394 | `dd778893ca4e26c2ca462cf757dc31fd7db00b56b02b2f4693c595bfa6a5b783` |
-| 0.65.1 | [BiliSofa-0.65.1-download.zip](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.65.1/BiliSofa-0.65.1-download.zip) | 19594153 | `4bca20287969f7e27e36a96ade5ddeeaef42b911424b331065b3fbd8f5db773f` |
+| 0.65.1 | `BiliSofa-0.65.1-unsigned.wgt`（已转草稿） | 19557394 | `dd778893ca4e26c2ca462cf757dc31fd7db00b56b02b2f4693c595bfa6a5b783` |
+| 0.65.1 | `BiliSofa-0.65.1-download.zip`（已转草稿） | 19594153 | `4bca20287969f7e27e36a96ade5ddeeaef42b911424b331065b3fbd8f5db773f` |
 | 0.66.0 | [BiliSofa-0.66.0-unsigned.wgt](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) | 19591157 | `13717f95c85a73e5397c5eac7a315d918eb67bf04f77d4d1ab3444d145e78477` |
 | 0.66.0 | [BiliSofa-0.66.0-download.zip](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-download.zip) | 28375164 | `91f7102ae913d09ceec987acc04f3ced8de5863e5d3659a99d73d24c2b15a8e9` |
 
