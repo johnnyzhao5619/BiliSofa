@@ -1,5 +1,7 @@
 # BiliSofa
 
+[访问 BiliSofa 门户](https://johnnyzhao5619.github.io/BiliSofa/)
+
 **在三星电视上探索 B 站内容的独立第三方项目，免费用于学习和测试。**
 
 [English](README.en.md) · [下载与版本说明](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0) · [报告问题](https://github.com/johnnyzhao5619/BiliSofa/issues)

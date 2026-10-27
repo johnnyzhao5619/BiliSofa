@@ -1,5 +1,7 @@
 # BiliSofa
 
+[Visit the BiliSofa website](https://johnnyzhao5619.github.io/BiliSofa/)
+
 **An independent third-party Samsung Tizen TV client, provided for learning and testing.**
 
 [简体中文](README.md) · [Quick install](docs/QUICK_INSTALL.en.md) · [Download 0.66.0 preview](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) · [Service terms risks](docs/BILIBILI_TERMS_RISK.md)
