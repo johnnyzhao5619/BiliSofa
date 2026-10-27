@@ -1,6 +1,6 @@
 # BiliSofa
 
-[Visit the BiliSofa website](https://lunarca.app/BiliSofa/) · [Download and install](#download-and-install) · [Website source](docs/index.html)
+[Download and install](#download-and-install) · [Website source](docs/index.html)
 
 **An independent third-party Samsung Tizen TV client, provided for learning and testing.**
 
