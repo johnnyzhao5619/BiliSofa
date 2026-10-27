@@ -2,7 +2,7 @@
 
 **An independent third-party Samsung Tizen TV client, provided for learning and testing.**
 
-[简体中文](README.md) · [Quick install](docs/QUICK_INSTALL.en.md) · [Download 0.66.0 preview](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) · [0.65.1 baseline](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.65.1) · [Service terms risks](docs/BILIBILI_TERMS_RISK.md)
+[简体中文](README.md) · [Quick install](docs/QUICK_INSTALL.en.md) · [Download 0.66.0 preview](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) · [Service terms risks](docs/BILIBILI_TERMS_RISK.md)
 
 BiliSofa is an independent, remote-control-first Bilibili client for Samsung Tizen TVs. It started with a practical frustration: there was no usable Bilibili app on the overseas Samsung Tizen TV I used, making big-screen viewing inconvenient.
 
@@ -14,14 +14,13 @@ This community project is not affiliated with, endorsed by or certified by Bilib
 
 | Version | Download | Status |
 | --- | --- | --- |
-| 0.65.1 | [Unsigned WGT](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.65.1/BiliSofa-0.65.1-unsigned.wgt) · [release and checksums](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.65.1) | Original public baseline; device evidence covers specific paths and one recorded TV |
 | 0.66.0 | [Unsigned WGT](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) · [release and checksums](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0) | Website configuration preview; TV installation and runtime acceptance are still open |
 
 **No compilation is needed.** Installation requires a computer, TV Developer Mode and your own valid Samsung TV signing certificate; the downloaded WGT must be signed before installation. Follow the [five-step guide](docs/QUICK_INSTALL.en.md) or the [Samsung official-tool guide](docs/INSTALLATION.md). Apps2Samsung is an independent third-party tool; this installation path has not been independently tested with BiliSofa. The package requires Tizen 9.0; compatibility depends on the device and firmware.
 
 Documentation bundled in release assets is a snapshot from publication; the README and installation guides on the repository’s main branch receive later updates.
 
-On first launch, 0.66.0 asks for `www.bilibili.com` or `bilibili.com` to enable a service profile already packaged locally. Version 0.65.1 has no such step. Entering a website does not grant permission, and addresses remain in packaged configuration and platform declarations.
+On first launch, 0.66.0 asks for `www.bilibili.com` or `bilibili.com` to enable a service profile already packaged locally. Entering a website does not grant permission, and addresses remain in packaged configuration and platform declarations.
 
 ## Purpose, content and rights
 
@@ -45,11 +44,7 @@ The project is provided as-is; the [MIT License](LICENSE) sets out the license a
 
 ## Version and compatibility
 
-The selected public release is **0.65.1**, with software fixed at commit [`e7bc3740e0fed2f9b2c89f9a83755398fa11faf7`](https://github.com/johnnyzhao5619/BiliSofa/commit/e7bc3740e0fed2f9b2c89f9a83755398fa11faf7). This is a public open-source version, without a claim that all v1.0.0 acceptance work is complete.
-
-Recorded device evidence is specific to **Samsung UN58U8200FFXZC / Tizen 9.0** and the paths described in the records. The package requires Tizen 9.0. Other models and firmware versions are unverified. See the [release notes](docs/releases/0.65.1.md) for evidence and limitations.
-
-The separate [0.66.0 preview](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0) adds user-entered website selection and local service configuration. Compilation and static package checks passed; TV runtime, installation and upgrade acceptance have not been performed for this build. Earlier device results do not apply to it. The frozen 0.65.1 baseline remains available separately.
+The available version is the [0.66.0 preview](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0). Compilation and static package checks passed; TV runtime, installation and upgrade acceptance have not been performed. Older device results do not establish acceptance for this version. The package requires Tizen 9.0; compatibility varies by model and firmware. See the [preview notes](docs/releases/0.66.0-service-configuration.md).
 
 ## Features
 
@@ -67,7 +62,7 @@ The documented route is **Developer Mode sideloading of a WGT signed with your o
 
 Download the [0.66.0 preview WGT](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt), then follow the [five-step Apps2Samsung guide](docs/QUICK_INSTALL.en.md). No compilation is needed. The installer signs the package locally for your TV. This third-party route has not been independently tested with BiliSofa; an [official-tool guide](docs/INSTALLATION.md) is also available. Keep certificates, passwords, DUIDs and account cookies private.
 
-On first launch of 0.66.0, enter `www.bilibili.com` (or `bilibili.com`) to enable the packaged service profile. Only this profile is supported; entering a website does not grant platform permission. Version 0.65.1 has no website-selection step. You can then start as a guest. For sign-in, scan the TV's QR code using your own official Bilibili app and review the confirmation. Removing a saved session does not delete your Bilibili account. Use directional keys, OK and Back to navigate; explicitly enable casting on the TV before connecting a phone on the same trusted LAN.
+On first launch of 0.66.0, enter `www.bilibili.com` (or `bilibili.com`) to enable the packaged service profile. Only this profile is supported; entering a website does not grant platform permission. You can then start as a guest. For sign-in, scan the TV's QR code using your own official Bilibili app and review the confirmation. Removing a saved session does not delete your Bilibili account. Use directional keys, OK and Back to navigate; explicitly enable casting on the TV before connecting a phone on the same trusted LAN.
 
 ## Privacy and service terms
 

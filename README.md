@@ -2,7 +2,7 @@
 
 **面向 Samsung Tizen 电视的独立第三方客户端，供学习与测试。**
 
-[English](README.en.md) · [快捷安装](docs/QUICK_INSTALL.md) · [下载 0.66.0 预览版](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) · [0.65.1 正式基线](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.65.1) · [协议风险](docs/BILIBILI_TERMS_RISK.md)
+[English](README.en.md) · [快捷安装](docs/QUICK_INSTALL.md) · [下载 0.66.0 预览版](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) · [协议风险](docs/BILIBILI_TERMS_RISK.md)
 
 BiliSofa 是一个面向 Samsung Tizen 电视、使用遥控器操作的独立 Bilibili 第三方客户端。
 
@@ -14,14 +14,13 @@ BiliSofa 是一个面向 Samsung Tizen 电视、使用遥控器操作的独立 B
 
 | 版本 | 下载 | 状态 |
 | --- | --- | --- |
-| 0.65.1 | [下载未签名 WGT](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.65.1/BiliSofa-0.65.1-unsigned.wgt) · [版本与校验文件](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.65.1) | 指定提交的正式开源基线；有特定电视和功能路径的分项记录 |
 | 0.66.0 | [下载未签名 WGT](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) · [版本与校验文件](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0) | 网站配置预览版；尚未完成电视安装或运行验收 |
 
 下载后**无需自行编译**。两版均需一台电脑、电视 Developer Mode，以及使用者自己的有效 Samsung TV 签名证书；WGT 需要在安装前签名。请按[五步快捷安装](docs/QUICK_INSTALL.md)操作，或选用 [Samsung 官方工具安装指南](docs/INSTALLATION.md)。快捷手册介绍的 Apps2Samsung 是独立第三方工具，该路径尚未与本应用完成独立实测。应用声明要求 Tizen 9.0；设备和固件兼容性以实际验证为准。
 
 发行附件中的说明文档为发布时快照；本仓库主分支的 README 和安装手册提供后续更新。
 
-0.66.0 首次启动需输入 `www.bilibili.com` 或 `bilibili.com`，以启用 WGT 中已有的本地服务配置；0.65.1 没有此步骤。输入网址不取得平台授权，相关地址仍存在于配置文件及平台声明中。
+0.66.0 首次启动需输入 `www.bilibili.com` 或 `bilibili.com`，以启用 WGT 中已有的本地服务配置。输入网址不取得平台授权，相关地址仍存在于配置文件及平台声明中。
 
 ## 项目用途、内容与权利
 
@@ -45,15 +44,13 @@ Bilibili、Samsung 及相关名称和标识的权利属于各自权利人；本�
 
 ## 当前状态
 
-公开版本基线为 **0.65.1**，软件提交固定为 [`e7bc3740e0fed2f9b2c89f9a83755398fa11faf7`](https://github.com/johnnyzhao5619/BiliSofa/commit/e7bc3740e0fed2f9b2c89f9a83755398fa11faf7)。仓库记录的已安装工件为0.65.1。
+当前提供 **[0.66.0 服务配置预览版](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0)**，首次填写网站后启用包内配置。已完成编译和静态打包检查，电视安装、升级和运行尚未验收；详见[版本说明](docs/releases/0.66.0-service-configuration.md)。最低声明 Tizen 9.0，其他设备及固件需分别确认。
 
-0.65.1 是正式开源基线；这不表示完整 v1.0.0 验收已经完成，也不表示所有三星电视均兼容。当前仍有来源阻塞、暂停功能及条件未验证项，见[版本说明](docs/releases/0.65.1.md)。
-
-**0.66.0 服务配置预览版**在上述基线上增加“先填写网站，再启用包内地址配置”。下载见 [v0.66.0](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0)；已完成编译与静态打包检查，尚未完成电视运行、安装和升级验收，不沿用 0.65.1 的设备结论，见[预览说明](docs/releases/0.66.0-service-configuration.md)。
+仓库记录的已安装工件为0.65.1；这是维护者过往设备记录，不代表 0.66.0 已经安装或通过设备验收。完整 v1.0.0 验收仍未完成。
 
 ## 可以做什么
 
-| 使用场景 | 0.65.1 的范围 |
+| 使用场景 | 项目功能范围 |
 | --- | --- |
 | 找视频 | 推荐、热门、排行榜、分区、视频 / UP / 番剧搜索；应用内拼音首字母选词 |
 | 看视频和番剧 | 点播、分 P / 选集、队列、本地续播、可用画质及音轨选择、1× / 2× 播放 |
@@ -62,11 +59,11 @@ Bilibili、Samsung 及相关名称和标识的权利属于各自权利人；本�
 | 从手机投屏 | 电视前台显式开启接收后，使用未修改的官方 Bilibili App；已有 Android / iPhone 所请求路径的设备记录，iPad 等完整矩阵尚未完成 |
 | 管理本机数据 | 播放与阅读偏好、搜索记录、本地记录 / 队列和脱敏诊断 |
 
-接口可能拒绝请求或发生变化。画质、内容和互动均受账号权益、地区、来源及电视能力限制。图文 / 关注动态有来源阻塞；投币 / 三连暂停；云端进度双向接续未完成验收。直播和真实双账号不在当前交付范围。完整限制和证据见[版本说明](docs/releases/0.65.1.md)，不以此功能表代替验收结论。
+接口可能拒绝请求或发生变化。画质、内容和互动均受账号权益、地区、来源及电视能力限制。图文 / 关注动态有来源阻塞；投币 / 三连暂停；云端进度双向接续未完成验收。直播和真实双账号不在当前交付范围。这些功能沿用原有实现，0.66.0 尚无电视实测结果；完整限制和证据见[版本说明](docs/releases/0.66.0-service-configuration.md)及[状态台账](docs/PRODUCT_CLOSURE.md)。
 
 ## 第一次使用
 
-0.66.0 首次打开，先填写 `www.bilibili.com`（也接受 `bilibili.com`），再启用本地服务配置。当前只支持此配置，输入地址不是平台授权，也不能作为任意网站浏览器。0.65.1 没有该步骤。
+0.66.0 首次打开，先填写 `www.bilibili.com`（也接受 `bilibili.com`），再启用本地服务配置。当前只支持此配置，输入地址不是平台授权，也不能作为任意网站浏览器。
 
 进入应用后可以先以游客浏览。需要私人片库或互动时，在电视上选择扫码登录，并在自己的官方 Bilibili App 内核对后确认。共享电视使用完毕后，可在设置的账号区域移除本机保存的会话；这不会注销 Bilibili 账号。
 
