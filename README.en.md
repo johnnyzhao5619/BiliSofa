@@ -6,21 +6,26 @@
 
 BiliSofa is an independent, remote-control-first Bilibili client for Samsung Tizen TVs. It started with a practical frustration: there was no usable Bilibili app on the overseas Samsung Tizen TV I used, making big-screen viewing inconvenient.
 
-The app runs on the TV. A computer is needed for installation and updates, but everyday viewing requires no always-on computer, NAS, LAN gateway or project-hosted cloud service. Internet access to Bilibili and its CDNs is still required.
+The app runs on the TV. An Android phone or computer can be used to attempt installation and updates; everyday viewing requires no always-on computer, NAS, LAN gateway or project-hosted cloud service. Internet access to Bilibili and its CDNs is still required.
 
 This community project is not affiliated with, endorsed by or certified by Bilibili or Samsung. It connects to the mainland China Bilibili service; it is not a client for the separate international service and does not extend regional or membership rights.
 
 ## Download and install
 
-| Version | Download | Status |
+Get the [**0.66.0 preview WGT**](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt), then choose an installer:
+
+| Device | Apps2Samsung download | Instructions |
 | --- | --- | --- |
-| 0.66.0 | [Unsigned WGT](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) · [release and checksums](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0) | Website configuration preview; TV installation and runtime acceptance are still open |
+| Android phone | [Android installer APK](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-android.apk) | [Step-by-step phone guide](docs/QUICK_INSTALL_ANDROID.en.md); can be attempted without a computer |
+| Windows | [Windows MSI](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-win-x64.msi) | [Computer guide](docs/QUICK_INSTALL.en.md) |
+| Mac | [Apple silicon DMG](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-macos-arm64.dmg) · [Intel DMG](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-macos-x64.dmg) | [Computer guide](docs/QUICK_INSTALL.en.md) |
+| Linux | [Choose a build](https://github.com/Apps2Samsung/Apps2Samsung/releases/tag/v2.8.3) | [Computer guide](docs/QUICK_INSTALL.en.md) and upstream documentation |
 
-**No compilation is needed.** Installation requires a computer, TV Developer Mode and your own valid Samsung TV signing certificate; the downloaded WGT must be signed before installation. Follow the [five-step guide](docs/QUICK_INSTALL.en.md) or the [Samsung official-tool guide](docs/INSTALLATION.md). Apps2Samsung is an independent third-party tool; this installation path has not been independently tested with BiliSofa. The package requires Tizen 9.0; compatibility depends on the device and firmware.
+Apps2Samsung is an independent third-party tool. Its APK runs on the phone; BiliSofa is the separate WGT installed on the TV. **No compilation is needed**, but Samsung TV installation requires Developer Mode and a valid signature for your own TV; an account may be needed to generate a certificate. The tool attempts local signing. Follow the guide and keep credentials and certificates private.
 
-Documentation bundled in release assets is a snapshot from publication; the README and installation guides on the repository’s main branch receive later updates.
+The 0.66.0 preview passed compilation and static package checks, but TV runtime, installation and upgrade acceptance remain open. Neither the Android nor desktop installer route has been independently tested with BiliSofa. The package requires Tizen 9.0; device, firmware, network and certificate conditions affect results. Users can download it directly, but universal one-click installation is not guaranteed.
 
-On first launch, 0.66.0 asks for `www.bilibili.com` or `bilibili.com` to enable a service profile already packaged locally. Entering a website does not grant permission, and addresses remain in packaged configuration and platform declarations.
+On first launch, enter `www.bilibili.com` or `bilibili.com` to enable a profile already packaged locally. Entering a website does not grant platform permission; addresses remain in the package. WGT SHA-256: `13717f95c85a73e5397c5eac7a315d918eb67bf04f77d4d1ab3444d145e78477`; signing changes the digest. See the [release](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0) for checksums. Documents inside release assets are publication-time snapshots; use the current guides linked above.
 
 ## Purpose, content and rights
 
@@ -55,14 +60,6 @@ The available version is the [0.66.0 preview](https://github.com/johnnyzhao5619/
 - Receive casting while the TV app is in the foreground and reception is explicitly enabled. Requested Android / iPhone paths have device records; the full iPad and sender-content matrix is incomplete. Official, unmodified Bilibili sender apps are used; this is not official certification.
 
 Known limits include blocked article / following-feed sources, paused coin / triple actions, unverified two-way cloud progress, fractional speed limitations on the measured TV, and incomplete HDR, endurance and rollback evidence. Live features and real dual-account use are excluded from the current delivery. Account rights, region, source availability and device capability apply to every feature.
-
-## Install and use
-
-The documented route is **Developer Mode sideloading of a WGT signed with your own Samsung TV certificate**. This is not an Android APK or a promised TV-store, USB or TV-browser installation.
-
-Download the [0.66.0 preview WGT](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt), then follow the [five-step Apps2Samsung guide](docs/QUICK_INSTALL.en.md). No compilation is needed. The installer signs the package locally for your TV. This third-party route has not been independently tested with BiliSofa; an [official-tool guide](docs/INSTALLATION.md) is also available. Keep certificates, passwords, DUIDs and account cookies private.
-
-On first launch of 0.66.0, enter `www.bilibili.com` (or `bilibili.com`) to enable the packaged service profile. Only this profile is supported; entering a website does not grant platform permission. You can then start as a guest. For sign-in, scan the TV's QR code using your own official Bilibili app and review the confirmation. Removing a saved session does not delete your Bilibili account. Use directional keys, OK and Back to navigate; explicitly enable casting on the TV before connecting a phone on the same trusted LAN.
 
 ## Privacy and service terms
 

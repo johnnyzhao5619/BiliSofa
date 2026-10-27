@@ -1,6 +1,6 @@
 # BiliSofa 0.66.0：一步一步安装到三星电视
 
-[English](QUICK_INSTALL.en.md) · 更新：2026-10-26
+[English](QUICK_INSTALL.en.md) · [安卓手机安装](QUICK_INSTALL_ANDROID.md) · 更新：2026-10-26
 
 只需要跟着下面的步骤操作，**不用写代码，也不用自己编译**。安装时需要一台 Windows / Mac 电脑；装好后，电脑可以关机。整个过程要让电脑和电视连接同一网络。
 

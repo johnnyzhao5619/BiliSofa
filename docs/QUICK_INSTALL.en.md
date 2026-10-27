@@ -1,6 +1,6 @@
 # Install BiliSofa 0.66.0 on your Samsung TV
 
-[简体中文详细教程](QUICK_INSTALL.md)
+[简体中文详细教程](QUICK_INSTALL.md) · [Android phone route](QUICK_INSTALL_ANDROID.en.md)
 
 No compilation is needed. You need a Windows or Mac computer, a Samsung Tizen TV on the same network, and a Samsung account if a new TV signing certificate is required. The package requires Tizen 9.0. **Version 0.66.0 has not completed TV installation or runtime acceptance; the third-party installation route has not been independently tested with BiliSofa.**
 
