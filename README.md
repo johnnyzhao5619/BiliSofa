@@ -1,6 +1,6 @@
 # BiliSofa
 
-[访问 BiliSofa 门户](https://johnnyzhao5619.github.io/BiliSofa/index.html) · [下载与安装](#下载安装) · [项目门户源码](docs/index.html)
+[访问 BiliSofa 门户](https://johnnyzhao5619.github.io/BiliSofa/) · [下载与安装](#下载安装) · [项目门户源码](docs/index.html)
 
 **在三星电视上探索 B 站内容的独立第三方项目，免费用于学习和测试。**
 
