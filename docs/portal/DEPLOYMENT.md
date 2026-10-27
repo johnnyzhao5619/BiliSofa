@@ -1,10 +1,12 @@
 # BiliSofa 门户发布记录
 
-更新：2026-10-27。门户源文件为 `docs/index.html`，样式位于 `docs/portal/`；界面图片来自标明合成数据的历史截图。用户随后要求不使用 `lunarca.app`，原有 BiliSofa 独立路由已撤回，仓库 README 保留可访问的 GitHub 项目介绍和安装入口，GitHub 仓库 Homepage 暂时清空。项目只公开 0.66.0 预览版 WGT，门户不修改软件包或签名。
+更新：2026-10-27。门户源文件为 `docs/index.html`，样式位于 `docs/portal/`；界面图片来自标明合成数据的历史截图。用户随后要求不使用 `lunarca.app`，原有 BiliSofa 独立路由已撤回，并授权移除 GitHub 用户级 Pages 的自定义域名绑定；门户改由 GitHub Pages 的 `https://johnnyzhao5619.github.io/BiliSofa/index.html` 提供。项目只公开 0.66.0 预览版 WGT，门户不修改软件包或签名。
 
 ## 当前状态与历史发布结构
 
-2026-10-27 后续：GitHub 用户级 Pages 仍绑定 `lunarca.app`，GitHub 原生项目地址仍重定向到该域名。撤掉服务器路由后目标返回 404，当前不能宣称独立门户已通过该地址公开访问。是否移除用户级 Pages 自定义域名须由用户决定；该操作会影响 GitHub 个人主页及所有继承此配置的项目。现有 `lunarca.app` 生产站点及 DNS 不受此决定直接修改。以下保留此前发布、回滚及核对记录。
+2026-10-27 后续：用户明确授权移除 GitHub 用户级 Pages 自定义域名。通过 GitHub Pages API 将 `johnnyzhao5619/johnnyzhao5619.github.io` 的 `cname` 设为 null，GitHub 在该仓库创建 `1a5a4aa9a9ce26127ce9aa5d7e5276262e4727a1` 删除 CNAME；原提交为 `b5cb9851fcae8e39ea5ec3ac929f1b6ad64b8b38`，原文件 blob 为 `caec2827f19a4bde27fc73fbc87488f1f992eac9`，本地 `.local/bilisofa-route/` 保留变更前配置及文件快照，可按用户未来授权恢复。GitHub 个人主页变为 `https://johnnyzhao5619.github.io/`；该账户当前有个人主页和本项目两个 Pages 站点。
+
+BiliSofa 页面位于 [GitHub Pages](https://johnnyzhao5619.github.io/BiliSofa/index.html)，用户无需再访问 `lunarca.app`。变更后 GitHub 对目录地址的旧重定向曾被边缘缓存，故公开入口使用经过验证的 `index.html`；缓存刷新后可重新核查目录地址。撤掉 Caddy 路由后，Lunarca 主页和 API 仍返回 200，主页与操作前字节一致，旧 BiliSofa 路径返回 404；未更改现有生产站点的 DNS、发布目录或其他规则。以下保留此前发布和回滚历史。
 
 GitHub Pages 来源为 `main` 分支的 `/docs`，`docs/.nojekyll` 使静态资源按原样发布。账号用户级 Pages 站点设有 `lunarca.app` 自定义域名，所以 GitHub 将 `https://johnnyzhao5619.github.io/BiliSofa/` 自动重定向到该域名路径。[GitHub 域名规则](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages)
 
