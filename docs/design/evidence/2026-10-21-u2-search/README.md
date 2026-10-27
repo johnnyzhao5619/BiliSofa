@@ -1,6 +1,6 @@
 # U2 统一搜索：桌面合成证据
 
-2026-10-21；[ADR-074](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/074-unified-product-search.md)、[布局](../../U2_SEARCH_LAYOUT.md)。0.32.0仅为独立源码构建；电视仍0.28.0。下列使用生产UI/Worker/合同与合成C/媒体/响应，不是三星电视、真实搜索可用率、本人账号或Voice Guide证明。图片为空是合成源未提供封面；标题中的`<img…>`为安全文本用例，不执行外部内容。
+2026-10-21；[ADR-074](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/074-unified-product-search.md)、[布局](https://github.com/johnnyzhao5619/BiliSofa/blob/940d96985671da169406fb88e1f9818291681aca/docs/design/U2_SEARCH_LAYOUT.md)。0.32.0仅为独立源码构建；电视仍0.28.0。下列使用生产UI/Worker/合同与合成C/媒体/响应，不是三星电视、真实搜索可用率、本人账号或Voice Guide证明。图片为空是合成源未提供封面；标题中的`<img…>`为安全文本用例，不执行外部内容。
 
 - [视频结果与实际焦点](search-video.png)：四列、同关键词、分页/卡片边界。
 - [番剧类型](search-pgc.png)：共用关键词、更新信息及类型焦点。

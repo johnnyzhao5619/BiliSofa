@@ -1,6 +1,6 @@
 # BiliSofa U5 集中验收报告（0.51.3）
 
-2026-10-23；电视上安装的是0.51.3（签名`19ac5ad3…3c5f`，[回执](../../design/evidence/2026-10-23-up-fix3/receipt.json)，本地Git `3d236c3`）。按[收口计划](../../plans/2026-10-23-remaining-work-plan.md)第6.3节分组，用户在电视上逐组执行。
+2026-10-23；电视上安装的是0.51.3（签名`19ac5ad3…3c5f`，[回执](../../design/evidence/2026-10-23-up-fix3/receipt.json)，本地Git `3d236c3`）。按[收口计划](https://github.com/johnnyzhao5619/BiliSofa/blob/940d96985671da169406fb88e1f9818291681aca/docs/plans/2026-10-23-remaining-work-plan.md)第6.3节分组，用户在电视上逐组执行。
 
 ## 结论
 

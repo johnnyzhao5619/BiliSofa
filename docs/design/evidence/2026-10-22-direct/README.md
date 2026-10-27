@@ -1,6 +1,6 @@
 # 单击互动、倍速与回看缓存候选
 
-2026-10-22；F06/F11/F12、U4；0.38.0独立候选。[决定与权限](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/080-instant-actions-and-bounded-page-cache.md)、[真实来源](../../../research/2026-10-22-interaction-recheck.md)、[工件/测试/部署回执](receipt.json)。
+2026-10-22；F06/F11/F12、U4；0.38.0独立候选。[决定与权限](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/080-instant-actions-and-bounded-page-cache.md)、[真实来源](https://github.com/johnnyzhao5619/BiliSofa/blob/940d96985671da169406fb88e1f9818291681aca/docs/research/2026-10-22-interaction-recheck.md)、[工件/测试/部署回执](receipt.json)。
 
 - 三项快捷动作统一一次点击/持久防重/实际回读；关注允许mid缺省但拒绝返回的错误mid。收藏夹保持精确预览，不重复三项入口。
 - 倍速当前值聚焦、上下选择、确认即返回，Back不修改；当前仅真实支持1×/2×，小数后端仍OPEN。

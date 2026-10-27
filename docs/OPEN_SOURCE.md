@@ -1,6 +1,6 @@
 # BiliSofa 开源发布
 
-更新：2026-10-26。用户已明确授权将 `johnnyzhao5619/BiliSofa` 设为 public，并提供可下载的安装包与便捷手册。远端实际结果单独记录在[公开发布记录](releases/2026-10-26-publication.md)，不以文档勾选代替。
+当前公开下载为 0.66.0 预览版，发布结果与工件身份见[公开发布记录](releases/2026-10-26-publication.md)。
 
 项目起因是在作者使用的海外 Samsung Tizen 电视上缺少可用的 Bilibili 应用。原创代码与文档采用标准 MIT；保留第三方许可，不增加“禁止商用”限制。作者免费用于学习 / 测试、当前无盈利及愿下架的声明见 [RIGHTS](../RIGHTS.md)，不代表取得平台授权。
 
@@ -21,8 +21,8 @@
 
 ## 来源、风险与发布记录
 
-[发布清单](RELEASE_CHECKLIST.md)记录材料与远端操作，[公开发布记录](releases/2026-10-26-publication.md)记录实际结果。所有公开附件提供哈希、源码身份和未验证项；历史秘密扫描不等于漏洞审计或法律审核。未接受的本地 logo 草稿不加入此次提交 / 附件。
+[发布清单](RELEASE_CHECKLIST.md)记录材料与远端操作，[公开发布记录](releases/2026-10-26-publication.md)记录实际结果。所有公开附件提供哈希、源码身份和未验证项；历史秘密扫描不等于漏洞审计或法律审核。
 
-[Bilibili 协议评估](BILIBILI_TERMS_RISK.md)识别到非官方访问及 5.6(3) 的授权风险。没有取得 Bilibili 书面授权；开源、免费、用户输入地址、自签名和愿下架都不消除协议 / 版权风险。本次按用户授权免费公开分发，未宣称已获平台许可。MIT 不授予第三方内容、接口或商标权。没有收费、预装或为他人操作账号。
+[Bilibili 协议评估](BILIBILI_TERMS_RISK.md)识别到非官方访问及 5.6(3) 的授权风险。没有取得 Bilibili 书面授权；开源、免费、用户输入地址、自签名和愿下架都不消除协议 / 版权风险。项目免费公开分发，未宣称已获平台许可。MIT 不授予第三方内容、接口或商标权。没有收费、预装或为他人操作账号。
 
 [许可范围](LICENSING.md) · [第三方声明](../THIRD_PARTY_NOTICES.md) · [隐私](../PRIVACY.md) · [贡献](../CONTRIBUTING.md) · [安全私密报告](../SECURITY.md) · [最佳实践来源](research/open-source-release-2026-10-26.md)

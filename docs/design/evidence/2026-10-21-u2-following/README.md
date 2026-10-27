@@ -1,6 +1,6 @@
 # U2 关注与番剧影视：桌面合成证据
 
-2026-10-21；[ADR-075](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/075-following-and-pgc-product-browse.md)、[布局](../../U2_FOLLOWING_LAYOUT.md)。0.33.0仅为独立源码候选，电视仍0.28.0。生产UI/Worker/合同配合合成C/媒体/账号，不证明真实服务成功率、私人内容、TV朗读或性能；标题中的`<img…>`为安全文本用例。
+2026-10-21；[ADR-075](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/075-following-and-pgc-product-browse.md)、[布局](https://github.com/johnnyzhao5619/BiliSofa/blob/940d96985671da169406fb88e1f9818291681aca/docs/design/U2_FOLLOWING_LAYOUT.md)。0.33.0仅为独立源码候选，电视仍0.28.0。生产UI/Worker/合同配合合成C/媒体/账号，不证明真实服务成功率、私人内容、TV朗读或性能；标题中的`<img…>`为安全文本用例。
 
 - [关注更新](following.png)：视频/专栏类型、作者与发布时间；无可播放ID，不伪造媒体动作。
 - [已追番剧](catalog.png)：四列紧凑卡、源端更新/观看状态、类型与实际原卡焦点；详情可进入季/集工作区。

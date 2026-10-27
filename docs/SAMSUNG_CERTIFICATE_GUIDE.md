@@ -32,12 +32,6 @@ Certificate Manager 3.0.0 主程序安装 exit 0，包管理器已更新到 0.5.
 
 上述向导步骤依据官方文档；当前生成资源和部署证据另见 SIGNING_DEVICE_RECORD。Codex UI 工具不能绑定该已运行的官方进程（`Invalid app`）；若用户也无法看到窗口，应报告这一工具故障，不能把它当成证书申请成功，也不要绕过系统安全提示。
 
-## 替代界面与已知工具状态
-
-官方新版 VS Code 流程是 Tizen 活动栏 → ACTIONS → `Create Certificate` → profile 名 → `Create Samsung Certificate` → Author Details / Distributor Details → 选择设备 → Create → Samsung 登录。[官方 VS Code 证书步骤](https://developer.samsung.com/smarttv/develop/tools/additional-tools/vscode/creating-certificates.html)
-
-本机独立 VS Code extension 目录已安装 `tizen.vscode-tizen-csharp@10.4.3`。官方 overview 链接指向的 TV 辅助扩展 `samsungtvsdk.tv-vscode-tizen` 在本次 Marketplace CLI 查询返回 `Extension not found`，不把安装尝试记为成功；主路线使用现有官方 Certificate Manager。上述 VS Code 私有目录不改变用户日常编辑器的扩展/profile。[官方扩展入口](https://developer.samsung.com/smarttv/develop/tools/additional-tools/vscode-extension-new.html)
-
 ## 创建后签名与安装
 
 开发代理核查 profile 的非敏感元数据和设备适用性，执行 `npm run sign:app`（`tools/sign-foundation-app.py`），输出签名包到仓库外并记录包 SHA-256，再按逐版本授权用 `npm run deploy:app` 安装/启动。工具拒绝 SDK 默认 Distributor、过期/尚未生效的证书和不匹配资源；它不替代电视的证书链信任验证。新 Author 与旧第三方应用不互相替换。逐版本结果见[签名部署](SIGNING_DEVICE_RECORD.md)；W01 探针时期的独立命令见[探针指南](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md)。

@@ -24,10 +24,10 @@ BiliSofa 与 Bilibili、Samsung 无隶属、合作或官方认证关系。项目
 
 | 你手头有什么 | 安装入口 | 操作说明 |
 | --- | --- | --- |
-| 安卓手机 | [下载 Apps2Samsung 安卓安装器](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-android.apk) | [手机一步一步安装](https://johnnyzhao5619.github.io/BiliSofa/install-android.html)；可尝试不使用电脑 |
-| Windows 电脑 | [下载安装器（.msi）](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-win-x64.msi) | [电脑一步一步安装](https://johnnyzhao5619.github.io/BiliSofa/install-computer.html) |
-| Mac 电脑 | [Apple 芯片（.dmg）](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-macos-arm64.dmg) · [Intel 芯片（.dmg）](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-macos-x64.dmg) | [电脑一步一步安装](https://johnnyzhao5619.github.io/BiliSofa/install-computer.html) |
-| Linux | [选择对应版本](https://github.com/Apps2Samsung/Apps2Samsung/releases/tag/v2.8.3) | 参考[电脑安装步骤](https://johnnyzhao5619.github.io/BiliSofa/install-computer.html)及上游文档 |
+| 安卓手机 | [下载 Apps2Samsung 安卓安装器](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-android.apk) | [手机一步一步安装](https://johnnyzhao5619.github.io/BiliSofa/portal/install-android.html)；可尝试不使用电脑 |
+| Windows 电脑 | [下载安装器（.msi）](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-win-x64.msi) | [电脑一步一步安装](https://johnnyzhao5619.github.io/BiliSofa/portal/install-computer.html) |
+| Mac 电脑 | [Apple 芯片（.dmg）](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-macos-arm64.dmg) · [Intel 芯片（.dmg）](https://github.com/Apps2Samsung/Apps2Samsung/releases/download/v2.8.3/Apps2Samsung-v2.8.3-macos-x64.dmg) | [电脑一步一步安装](https://johnnyzhao5619.github.io/BiliSofa/portal/install-computer.html) |
+| Linux | [选择对应版本](https://github.com/Apps2Samsung/Apps2Samsung/releases/tag/v2.8.3) | 参考[电脑安装步骤](https://johnnyzhao5619.github.io/BiliSofa/portal/install-computer.html)及上游文档 |
 
 上表的 Apps2Samsung 是独立第三方工具，下载链接指向它的官方 GitHub。安卓 APK 是**手机上的安装工具**，不是要安装在电视上的 BiliSofa；电视应用包是上面的 `.wgt` 文件。
 
