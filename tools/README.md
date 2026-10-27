@@ -16,7 +16,7 @@ Current source is 0.66.0: `build:app` writes `dist/bilisofa-configured-app`; nat
 | Unsigned WGT | `npm run package:app` | `package-foundation-app.py` (checks every native module's source digests, required markers and the 0.58.0-identical source modules) |
 | Sign | `npm run sign:app` | `sign-foundation-app.py` |
 | Install/launch | `npm run deploy:app` | `deploy-foundation-app.py` |
-| Synthetic UI | `npm run test:ui:app` | `playwright.app.config.ts`, served by `serve.mjs` |
+| Synthetic UI | `npm run test:ui:app` | `tests/config/playwright.app.config.ts`, served by `serve.mjs` |
 | Gates | `npm run check` | `check-boundaries.mjs`, `check-docs.mjs` (with `--self-test`) |
 
 `sign-foundation-app.py` uses the user's BiliSofa profile and writes signed packages and logs outside the repository (`~/.local/share/BiliSofa`). It rejects the SDK default Distributor, expired or not-yet-valid embedded certificates, non-Samsung leaf issuers and altered packaged resources. It does not change profiles, accept passwords, install or run a package. Certificate date/issuer checks do not establish chain trust; the TV must accept the signature separately.

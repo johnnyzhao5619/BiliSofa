@@ -22,7 +22,7 @@
 npm run check        # tsc、依赖边界、文档门禁（tools/check-docs.mjs）
 npm test
 npm run build:app    # dist/bilisofa-app
-npm run test:ui:app  # 保留的产品合成UI套件（playwright.app.config.ts）
+npm run test:ui:app  # 保留的产品合成UI套件（tests/config/playwright.app.config.ts）
 npm run package:app  # 校验UI/native来源、CSP/权限、固定路由后生成未签名WGT
 npm run test:package:app
 ```

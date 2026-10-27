@@ -38,3 +38,6 @@ artifacts/private/
 # Python tool/test bytecode
 __pycache__/
 *.py[cod]
+
+# Local website design records
+.hallmark/

@@ -1,5 +1,5 @@
 // ADR-114 baseline: the key screens at 1920×1080 with the synthetic UI fixture (no real account or content).
-// Run with a copy of playwright.app.config.ts pointed at this file; SHOTS_DIR chooses where the PNGs go.
+// Run with a copy of tests/config/playwright.app.config.ts pointed at this file; SHOTS_DIR chooses where the PNGs go.
 import {test,expect} from '@playwright/test';
 import {setup,snapshot} from '../../../../tests/w04-media-ui/fixture.ts';
 const dir=process.env.SHOTS_DIR??'./';

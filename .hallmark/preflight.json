@@ -1,8 +1,0 @@
-{
-  "date": "2026-10-27",
-  "project": "BiliSofa",
-  "source": ["apps/tv/public/product-ui.css:2", "docs/design/evidence/2026-10-26-p2a-layout/README.md:1", "README.md:13"],
-  "preserve": ["TV app navy and pink focus", "0.66 preview and unsigned installation constraints", "standalone runtime", "existing unaccepted logo drafts"],
-  "introduce": ["standalone GitHub Pages portal", "historical synthetic TV interface screenshot clearly identified", "download and installation paths"],
-  "factsNotSupplied": ["testimonials", "usage statistics", "0.66 TV acceptance", "approved new logo"]
-}
