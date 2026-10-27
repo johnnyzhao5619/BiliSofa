@@ -1,5 +1,5 @@
 /* Hallmark · shape: Feature Stack · genre: atmospheric · theme: Spore (deal 3/3, seed bilisofa-independent-samsung-tizen-e7aa·a305187f·2026-10-27·r0) · job: try · draw: eda2bc
- * hero: Counter · nav: edge-aligned · footer: letter close · imagery: historical synthetic product captures · signature: product search screen at living-room scale · spore: brand-source navy/pink conversion
+ * hero: Counter · nav: edge-aligned · footer: letter close · imagery: historical synthetic product captures · signature: product search screen at living-room scale · spore: brand-source pink installation surface and navy canvas
  * axes: dark/roman-serif/warm · posture: committed · contrast: reviewed · fold: reviewed · v2.0.0 */
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: V, use only a clearly labelled real product capture */
 /* waive: theme warmth and pill nav adapted to existing TV interface and its accessible product navigation; screenshot is synthetic historical UI, not a real-device claim. */
@@ -51,15 +51,16 @@
 .scene figcaption{display:flex;align-items:start;justify-content:space-between;gap:var(--space-lg);margin-top:var(--space-lg)}
 .scene figcaption strong{font-size:var(--text-lg);font-weight:600;white-space:nowrap}
 .scene figcaption span{max-width:24em;color:var(--color-muted);font-size:var(--text-sm)}
-.install{background:var(--color-paper-2)}
+.install{background:var(--color-accent);color:var(--color-accent-ink)}
 .install-inner{padding-block:var(--section-gap)}
 .install-heading{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.8fr);gap:var(--space-2xl);align-items:end}
-.install-heading p{margin:0}
-.install-list{margin-top:var(--space-2xl);border-top:1px solid var(--color-rule)}
-.install-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-lg);padding:var(--space-lg) 0;border-bottom:1px solid var(--color-rule);text-decoration:none}
+.install-heading p{margin:0;color:var(--color-on-accent-muted)}
+.install-list{margin-top:var(--space-2xl);border-top:1px solid var(--color-on-accent-rule)}
+.install-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-lg);padding:var(--space-lg) 0;border-bottom:1px solid var(--color-on-accent-rule);text-decoration:none}
 .install-row>span:first-child{display:grid;gap:var(--space-2xs)}
 .install-row strong{font-size:var(--text-xl);font-weight:500}
-.install-row small,.install-note{font-size:var(--text-sm);color:var(--color-muted)}
+.install-row small,.install-note{font-size:var(--text-sm);color:var(--color-on-accent-muted)}
+.install-row:focus-visible{outline-color:var(--color-accent-ink)}
 .install-row:hover .row-action{text-decoration:underline;text-underline-offset:.2em}
 .row-action{flex:none;font-size:var(--text-sm)}
 .install-note{margin-top:var(--space-lg)}

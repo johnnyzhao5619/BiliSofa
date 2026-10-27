@@ -13,6 +13,7 @@
   --color-ink: #f4f7fb; --color-ink-2: #d4e1ee; --color-muted: #a9bad0;
   --color-rule: #526078;
   --color-accent: #fb7299; --color-accent-2: #ff9cb6; --color-accent-ink: #0c1524; --color-focus: #ffb8ce;
+  --color-on-accent-muted: #3a2132; --color-on-accent-rule: #8a3855;
   --font-display: "Songti SC", "STSong", Georgia, serif; --font-body: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-outlier: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --radius-card: 14px; --radius-pill: 999px; --rule-hair: 1px;
