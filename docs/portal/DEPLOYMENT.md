@@ -1,17 +1,25 @@
 # BiliSofa 门户发布记录
 
-更新：2026-10-27。门户源文件为 `docs/index.html`，样式位于 `docs/portal/`，界面图片来自仓库的历史合成截图。用户授权将门户放在 GitHub 项目主页；仓库 README 已展示截图和安装入口。
+更新：2026-10-27。门户源文件为 `docs/index.html`，样式位于 `docs/portal/`；界面图片来自标明合成数据的历史截图。仓库 README 和 GitHub 项目主页链接指向 `https://lunarca.app/BiliSofa/`。项目只公开 0.66.0 预览版 WGT，门户不修改软件包或签名。
 
-## 当前 GitHub Pages 状态
+## 发布结构
 
-GitHub Pages 已启用，来源为 `main` 分支的 `/docs`，构建状态 `built`。源文件 `docs/.nojekyll` 用于按原样发布静态资源。该仓库只公开 0.66.0 预览版 WGT，门户不修改软件包或签名。
+GitHub Pages 来源为 `main` 分支的 `/docs`，`docs/.nojekyll` 使静态资源按原样发布。账号用户级 Pages 站点设有 `lunarca.app` 自定义域名，所以 GitHub 将 `https://johnnyzhao5619.github.io/BiliSofa/` 自动重定向到该域名路径。[GitHub 域名规则](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages)
 
-账号的用户级 Pages 站点 `johnnyzhao5619.github.io` 设置了自定义域名 `lunarca.app`。因此 GitHub 将 `https://johnnyzhao5619.github.io/BiliSofa/` 重定向至 `https://lunarca.app/BiliSofa/`；该域名当前由现有 Lunarca 生产服务器处理，目标路径返回 HTTP 404。GitHub 返回的项目 Pages 地址也指向该域名路径。
+用户已明确授权配置现有站点的 `/BiliSofa/` 路径。生产入口的 Caddy `portal.caddy` 为该路径增加受限反向代理，转发到 GitHub Pages 的 `johnnyzhao5619.github.io`，并以 `lunarca.app` 为上游 Host；上游 HTTPS 使用 `johnnyzhao5619.github.io` 进行正常证书验证。门户源仍由 GitHub Pages 构建和提供，提交更新后须等待 Pages 构建及缓存更新。若以后移除账号级 Pages 域名，需重新核对上游 Host 和路由。
 
-2026-10-27 检查：匿名公开访问随重定向返回 404；使用系统 curl 将同一域名临时解析到 GitHub Pages 服务地址，且保持 HTTPS 证书验证时，首页、样式、token、基础样式和示例截图均返回 200。这只证明 GitHub 发布源可用，不证明普通访问已修复。Lunarca 现有主页返回 200；没有修改其服务器、DNS、用户级 Pages 设置或证书。
+代理只允许首页、三份门户样式及三张已列明的界面截图，其他 `/BiliSofa/` 请求返回 404。门户响应附带 CSP、nosniff、拒绝嵌入、权限和缓存头；不加载远程字体、脚本或分析工具。`Cookie`、`Authorization`、`Referer` 与反向代理转发地址头在上游请求中删除。其他 Lunarca 路径仍转发至原 `lunarca-website:8080`；`www` 重定向、API、现有 HTTPS 证书、DNS 和 Lunarca 发布目录未更改。与已部署配置一致的文件保存在 [lunarca-route.caddy](lunarca-route.caddy)。
 
-GitHub 说明用户级自定义域名会成为项目 Pages 的默认域名，单个项目可用自己配置的域名覆盖：[GitHub Docs](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages)。后续方案需由用户决定，例如授权在现有站点增加独立路由，或提供可配置 DNS 的独立域名。原仓库 README 避免发布已知失效的网站链接；解决后再更新 README 与仓库 homepage，并验证普通匿名访问及资源。
+## 操作与回滚
 
-## 证据范围
+- 生产代理：`lunarca-caddy-1`；站点规则：`~/lunarca-server/tls/sites/portal.caddy`，由现有主 Caddyfile 的站点导入加载。
+- 切换前站点规则 SHA-256：`bfd54c4cc09d100ea062946db08ac633281cbf33a07478b1095b1b4c9868d433`。
+- 新站点规则 SHA-256：`a49977d1412431515324ff4749bdf70a4bbbe04c8bab7141edddc3f71e5e34f4`。
+- 原规则备份：`~/lunarca-server/tls/backups/portal.before-bilisofa-a49977d1.caddy.bak`；恢复时先在临时配置中验证完整主配置，确认线上规则未被其他操作改变，再恢复原规则、验证并 reload 代理。恢复会撤销 BiliSofa 路由，保留 Lunarca 原站点。不要覆盖其他站点配置或重启 / 删除 API 服务。
+- 样式或页面修改需提交到本仓库并等待 GitHub Pages 构建；新增门户静态文件时必须同步更新 Caddy 的允许路径，否则该文件返回 404。未来通过其他脚本更新 `portal.caddy` 时要保留或明确撤销此路由。
 
-门户用本地 HTTP 服务、Chrome 与 Hallmark render 检查了桌面 / 手机断点；无 JavaScript 依赖。图形安装流程和 0.66.0 的电视安装 / 运行仍未获得实机验收。没有执行或声称应用测试、电视部署、全设备兼容、Lunarca 生产部署或 DNS 变更。未接受的 logo 草稿没有纳入本次提交。
+## 本次核对
+
+上线前在生产容器使用临时完整配置执行 `caddy validate`，检查现有规则与主配置摘要；保存原规则后原子替换，重新验证并 reload。上线后普通 HTTPS 与 GitHub Pages 默认网址的重定向均返回 200，首页、三份 CSS 和三张图片的内容与本地文件逐字节一致；未允许文件返回 404。Lunarca 中 / 英 / 法首页及 `release.json` 与切换前逐字节一致，`api.lunarca.app/healthz` 返回 200。桌面 / 手机布局由 Hallmark render 检查。
+
+门户截图是历史合成界面，不是 0.66.0 实机验收。图形安装路径、电视安装 / 播放与全设备兼容仍未验收。未修改或提交本地未接受的 logo 草稿。
