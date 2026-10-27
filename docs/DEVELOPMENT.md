@@ -71,7 +71,7 @@ npm run native:live-product
 
 签名使用自有BiliSofa profile；部署从仓库外manifest取同一授权目标与确切签名包，检查hash/身份后state→capability→install→run。Application ID必须是完整`BiliSofa01.TV`。未知结果不自动重复安装，不卸载/清数据或改Author。回退仅使用已冻结原包，不重建旧版本冒充回退；不降级未知存储schema。
 
-私密文件默认在`~/.local/share/BiliSofa/`；SDK、缓存、构建和诊断生成物在ignored目录。证书/会话/地址不进入源码、CI、公开日志或包。当前包身份/hash见[签名部署](SIGNING_DEVICE_RECORD.md)，证书建立见[指南](SAMSUNG_CERTIFICATE_GUIDE.md)。
+私密文件默认在`~/.local/share/BiliSofa/`；SDK、缓存、构建和诊断生成物在ignored目录。私密证书、会话和个人设备地址不进入源码、CI、公开日志或包；公开服务域名配置属于随包提供的运行数据。当前包身份/hash见[签名部署](SIGNING_DEVICE_RECORD.md)，证书建立见[指南](SAMSUNG_CERTIFICATE_GUIDE.md)。
 
 旧W01探针的打包命令已删除；仅复现历史证据时查[探针指南](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md)、[环境归档](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-19-process-records/DEVELOPMENT.md)与git历史，它们不是当前产品包入口。产品 CI 只配置手动触发；是否运行以相应提交的 Actions 记录为准。公开发布结果见[发布记录](releases/2026-10-26-publication.md)。
 

@@ -26,10 +26,16 @@ async function entry(): Promise<void> {
     const panel = document.createElement('section'); panel.className = 'service-setup'; panel.dataset.initialFocusId = 'service-address';
     const brand = document.createElement('p'); brand.className = 'service-brand'; brand.textContent = 'BiliSofa';
     const title = document.createElement('h1'); title.textContent = '连接你要使用的网站';
-    const description = document.createElement('p'); description.textContent = '填写网站地址，确认后启用对应配置。尚未配置时，不会访问内容服务。';
+    const description = document.createElement('p');
     const label = document.createElement('label'); label.htmlFor = 'service-address'; label.textContent = '网站地址';
     const address = document.createElement('input'); address.id = 'service-address'; address.type = 'url'; address.maxLength = 300;
-    address.autocomplete = 'off'; address.spellcheck = false; address.placeholder = 'https://www.example.com';
+    address.autocomplete = 'off'; address.spellcheck = false;
+    const updateWebsiteHint = () => {
+      const example = catalog[0]?.inputHosts[0];
+      description.textContent = `填写你想观看的网站地址${example ? `，例如 ${example}` : ''}，确认后启用。尚未配置时，不会访问内容服务。`;
+      address.placeholder = example ? `例如 ${example}` : '填写网站地址';
+    };
+    updateWebsiteHint();
     address.dataset.focusId = 'service-address'; address.dataset.returnFocusId = 'service-enable'; address.dataset.down = 'service-enable';
     const note = document.createElement('p'); note.textContent = '仅支持应用内已有配置的网站。启用后，电视将连接该服务及相应分发网络；这不代表已取得第三方授权。';
     const status = document.createElement('p'); status.setAttribute('role', 'status');
@@ -63,7 +69,7 @@ async function entry(): Promise<void> {
     });
     retry.addEventListener('click', () => {
       if (busy) return; busy = true; retry.disabled = true;
-      void serviceCatalog().then(value => { if (!owner.signal.aborted) { catalog = value; status.textContent = '本地目录已载入，请填写网址。'; } })
+      void serviceCatalog().then(value => { if (!owner.signal.aborted) { catalog = value; updateWebsiteHint(); status.textContent = '本地目录已载入，请填写网址。'; } })
         .catch(() => { if (!owner.signal.aborted) status.textContent = '本地目录无法读取，请重新安装完整发行包。'; })
         .finally(() => { busy = false; if (!owner.signal.aborted) retry.disabled = false; });
     });

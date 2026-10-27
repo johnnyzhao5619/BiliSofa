@@ -40,7 +40,7 @@
 
 ## 5. 在电视上启动
 
-在电视 Apps 中打开 BiliSofa，首次输入 **`www.bilibili.com`**（也接受 `bilibili.com`）并确认，再选择游客或按提示使用官方 Bilibili App 扫码登录。电视日常观看需要联网；安装完成后不需要手机持续运行。
+在电视 Apps 中打开 BiliSofa，首次使用时，自行填写想观看的网站地址，例如 **`www.bilibili.com`**（也接受 `bilibili.com`），并确认启用（目前仅支持 Bilibili），再选择游客或按提示使用官方 Bilibili App 扫码登录。电视日常观看需要联网；安装完成后不需要手机持续运行。
 
 ## 没有成功怎么办？
 

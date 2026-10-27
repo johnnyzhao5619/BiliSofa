@@ -120,4 +120,4 @@ tizen run -p BiliSofa01.TV -s TV_SERIAL
 
 提交普通问题时提供版本、型号 / 固件和最短步骤即可。不要提交二维码、Cookie、带签名播放地址、证书或原始抓包；敏感问题见[SECURITY](../SECURITY.md)。
 
-0.66.0 首次打开需填写 `www.bilibili.com` 再进入应用；仅启用本地支持的配置，不访问任意用户网址。详见[预览版说明](releases/0.66.0-service-configuration.md)。
+首次使用时，自行填写想观看的网站地址，例如 `www.bilibili.com` 或 `bilibili.com`，并确认启用。目前仅支持 Bilibili；后续启动可复用已保存的选择，具体观看内容由用户自行选择。输入用于匹配随包提供的服务配置，不能打开任意网站。详见[预览版说明](releases/0.66.0-service-configuration.md)。

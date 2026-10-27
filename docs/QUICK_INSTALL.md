@@ -64,7 +64,7 @@ Samsung 要求应用在安装前使用有效证书签名；下载包里的 `unsi
 ## 第五步：在电视上打开
 
 1. 在电视 **Apps / 应用**中找到并打开 **BiliSofa**。
-2. 首次打开时，用遥控器输入 **`www.bilibili.com`**，选择确认。也可以填 `bilibili.com`；这里不要填密码、Cookie 或 API 密钥。
+2. 首次使用时，用遥控器自行填写想观看的网站地址，例如 **`www.bilibili.com`**，并确认启用。目前仅支持 Bilibili，也接受 `bilibili.com`；这里不要填密码、Cookie 或 API 密钥。
 3. 选择游客浏览；需要自己的私人片库时，再按电视提示用自己的官方 Bilibili App 扫码并确认。
 4. 以后观看时，电视需要联网；安装电脑可以关闭。
 
