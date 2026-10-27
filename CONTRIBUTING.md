@@ -1,16 +1,16 @@
 # 参与 BiliSofa / Contributing
 
-欢迎提供文档修正、可脱敏复现的错误报告、设备兼容信息和保持产品边界的改进。项目为独立 Samsung Tizen 电视应用，日常不依赖外部常开服务；公开基线为 0.65.1，完整 v1.0.0 的剩余工作见[收口台账](docs/PRODUCT_CLOSURE.md)。
+欢迎提供文档修正、可脱敏复现的错误报告、设备兼容信息和保持产品边界的改进。项目为独立 Samsung Tizen 电视应用，日常不依赖外部常开服务；当前公开下载为 0.66.0 预览版，完整 v1.0.0 的剩余工作见[收口台账](docs/PRODUCT_CLOSURE.md)。
 
 ## 报告问题
 
-先读 [README](README.md)、[版本限制](docs/releases/0.65.1.md)及已有 Issues。普通问题写明应用版本 / 提交、电视型号、Tizen / 固件、最短步骤、期望与实际结果。设备信息无需包含序列号、DUID 或真实 IP；截图 / 诊断需人工检查并脱敏。
+先读 [README](README.md)、[版本限制](docs/releases/0.66.0-service-configuration.md)及已有 Issues。普通问题写明应用版本 / 提交、电视型号、Tizen / 固件、最短步骤、期望与实际结果。设备信息无需包含序列号、DUID 或真实 IP；截图 / 诊断需人工检查并脱敏。
 
 账号、会话、签名或远程控制漏洞遵循 [SECURITY](SECURITY.md)，不公开敏感细节。服务协议或权利问题请给出原始条款 / 来源和具体受影响文件，不提交其他人的私人材料。
 
 ## 开始开发
 
-阅读 [AGENTS](AGENTS.md)、[PRD](docs/PRD.md)、[架构](docs/ARCHITECTURE.md)、[工程规则](docs/ENGINEERING.md)、[结构](docs/PROJECT_STRUCTURE.md)，再按任务查 TV / 平台文档。关联 F01–F20、W 工作包及适用 ADR；小型文档修正不必为凑编号创建新产品需求。
+阅读 [AGENTS](AGENTS.md)、[工程规范与功能范围](docs/ENGINEERING.md)、[结构](docs/PROJECT_STRUCTURE.md)，再按任务查 TV / 平台文档。关联 F01–F20、W 工作包及适用 ADR；小型文档修正不必为凑编号创建新产品需求。
 
 - 保持一个焦点 owner、返回栈、账号 / 媒体代次与取消、平台适配器和独立 Worker 网络边界。
 - 评论 / 回复 / 弹幕只读；当前不做直播或真实双账号，不自行扩大范围。

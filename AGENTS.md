@@ -2,7 +2,7 @@
 
 ## Read by task
 
-- Product/architecture: [PRD](docs/PRD.md), [architecture](docs/ARCHITECTURE.md), [plan](docs/IMPLEMENTATION_PLAN.md), [ADR-001](docs/adr/001-standalone-tv-runtime.md).
+- Product/architecture: [engineering and feature scope](docs/ENGINEERING.md), [structure](docs/PROJECT_STRUCTURE.md), [closure register](docs/PRODUCT_CLOSURE.md), [ADR-001](docs/adr/001-standalone-tv-runtime.md).
 - All implementation: [engineering rules](docs/ENGINEERING.md), [structure](docs/PROJECT_STRUCTURE.md).
 - UI/input: [TV UI](docs/TV_UI.md), [TV product design](docs/TV_PRODUCT_DESIGN.md). Current remaining work and grouped acceptance: [closure register](docs/PRODUCT_CLOSURE.md). Platform/media/network/package: [Tizen practices](docs/TIZEN_PRACTICES.md).
 - Platform claims: [source register](docs/research/tizen-best-practices-2026-10-14.md). Device/release: [acceptance](docs/ACCEPTANCE.md), [open-source plan](docs/OPEN_SOURCE.md).

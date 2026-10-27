@@ -38,3 +38,7 @@
 完成：当前提交 / 版本 / 文档 / 打包脚本审阅，官方资料阅读，现存未签名包的身份、许可目录与 SHA-256 读取，面向公开用户的文档重写。
 
 未完成：全历史敏感信息审计、依赖漏洞 / 全素材权利审计、干净机器完整构建、第三方自签安装实测、全设备兼容、重新签名 / 部署、托管 CI、Git tag / 提交 / 推送、仓库可见性或 Release 操作。调研不补写这些结果。
+
+## 2026-10-27：文档维护补充
+
+[GitHub 仓库最佳实践](https://docs.github.com/en/repositories/creating-and-managing-repositories/best-practices-for-repositories)建议以 README、许可证、贡献指南和行为规范帮助访问者理解项目；[安全政策指南](https://docs.github.com/en/code-security/getting-started/quickstart-for-securing-your-repository)说明应提供漏洞报告渠道。[Open Source Guides](https://opensource.guide/best-practices/)建议更新或标注过时文档。项目据此保留用户、安全、许可及现行工程入口，减少已被取代的重复方案，通过固定 Git 提交追溯；不将建议理解为要求删除验收、许可或来源证据。

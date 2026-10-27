@@ -15,7 +15,7 @@
 | `platform/wasm-network/` | 电视Worker/cURL/socket原生源、固定依赖/许可证 |
 | `tools/` | 开发侧构建、打包、签名/安装和脱敏取证 |
 | `tests/` | 单元/合同、相关UI、HOST native与包门禁；真机证据另存 |
-| `docs/` | PRD、架构/规则、当前状态、验收/交付索引及ADR；旧过程在archive |
+| `docs/` | 工程规则与功能范围、当前状态、验收/交付索引及 ADR；旧过程在 archive 或 Git 历史 |
 
 ## 依赖与所有权
 

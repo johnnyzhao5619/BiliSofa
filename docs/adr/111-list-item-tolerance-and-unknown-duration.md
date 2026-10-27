@@ -1,6 +1,6 @@
 # ADR-111：列表逐卡容错与未知时长
 
-2026-10-25；F02/F03/F05/F06/F07、R03、可靠性。接2026-10-25 review与ADR-108。状态：**用户确认全部4项决定（2026-10-25）；在0.58.0实现并已签名安装；设备上冷启动20次，“为你推荐”0次失败（修复前19次中2次），见[设备证据](../design/evidence/2026-10-25-list-tolerance/README.md)**。改动方案见[列表容错方案](../archive/2026-10-26-plans/2026-10-25-list-item-tolerance-plan.md)。
+2026-10-25；F02/F03/F05/F06/F07、R03、可靠性。接2026-10-25 review与ADR-108。状态：**用户确认全部4项决定（2026-10-25）；在0.58.0实现并已签名安装；设备上冷启动20次，“为你推荐”0次失败（修复前19次中2次），见[设备证据](../design/evidence/2026-10-25-list-tolerance/README.md)**。改动方案见[列表容错方案](https://github.com/johnnyzhao5619/BiliSofa/blob/6e327470c9f8d6814cebe0e5796b01f81bd9534e/docs/archive/2026-10-26-plans/2026-10-25-list-item-tolerance-plan.md)。
 
 ## 背景
 

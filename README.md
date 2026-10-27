@@ -37,7 +37,7 @@ BiliSofa 与 Bilibili、Samsung 无隶属、合作或官方认证关系。项目
 
 **能否直接安装？** 其他用户可以直接下载 WGT，无需自己编译；该包是未签名包，不能保证像应用商店那样点一下就能安装到所有电视。手机 / 电脑图形安装路径依据 Apps2Samsung 上游文档及源码整理，**尚未用 BiliSofa 完成独立实测**。0.66.0 已完成编译和静态打包检查，尚未完成电视安装、升级和运行验收；型号、固件、网络和证书都会影响安装结果。
 
-首次打开 0.66.0，输入 **`www.bilibili.com`** 或 `bilibili.com`，确认后启用包内已有的服务配置。输入网址不等于平台授权，也不会把地址从安装包中删除。遇到问题可到 [Issues](https://github.com/johnnyzhao5619/BiliSofa/issues) 描述版本、电视型号和脱敏后的错误。
+首次打开应用时，请输入想观看的网站地址，例如 **`www.bilibili.com`** 或 `bilibili.com`，并确认。目前仅支持应用内提供的网站配置。使用第三方服务请遵守其适用的协议与规则；输入网址不代表获得平台授权。遇到问题可到 [Issues](https://github.com/johnnyzhao5619/BiliSofa/issues) 描述电视型号和脱敏后的错误。
 
 WGT 的 SHA-256：`13717f95c85a73e5397c5eac7a315d918eb67bf04f77d4d1ab3444d145e78477`。签名后文件摘要变化属正常；完整校验文件见 [0.66.0 Release](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0)。发行附件中的文档是发布时快照，请优先使用本页链接的最新安装教程。
 

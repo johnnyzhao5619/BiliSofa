@@ -16,5 +16,7 @@
 | [2026-10-22-pre-u4](2026-10-22-pre-u4/SIGNING_DEVICE_RECORD.md) | U4 前的签名记录与测试报告 |
 | [2026-10-23-superseded](2026-10-23-superseded/README.md) | 2026-10-23 被取代的文档 |
 | [2026-10-24-phase-records](2026-10-24-phase-records/README.md) | W01–W06 阶段交付与过程记录 |
-| [2026-10-26-plans](2026-10-26-plans/) | 已在对应 ADR（108–117）中写明实现的方案原文 |
+| [2026-10-26 方案历史](https://github.com/johnnyzhao5619/BiliSofa/tree/6e327470c9f8d6814cebe0e5796b01f81bd9534e/docs/archive/2026-10-26-plans) | 已实现方案原文保存在固定 Git 提交中；现行决定见 ADR 108–117 |
 | [2026-10-26-ledger-cleanup](2026-10-26-ledger-cleanup/README.md) | 2026-10-26 从台账、README 与说明中逐字移出的过程描述和过时措辞 |
+
+2026-10-27 文档整理移除的 [PRD](https://github.com/johnnyzhao5619/BiliSofa/blob/6e327470c9f8d6814cebe0e5796b01f81bd9534e/docs/PRD.md)、[架构](https://github.com/johnnyzhao5619/BiliSofa/blob/6e327470c9f8d6814cebe0e5796b01f81bd9534e/docs/ARCHITECTURE.md)和[实施计划](https://github.com/johnnyzhao5619/BiliSofa/blob/6e327470c9f8d6814cebe0e5796b01f81bd9534e/docs/IMPLEMENTATION_PLAN.md)原文保存在固定 Git 提交；现行功能范围与规则见[工程规范](../ENGINEERING.md)。

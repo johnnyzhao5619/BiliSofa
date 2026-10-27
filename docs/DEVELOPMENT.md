@@ -1,6 +1,6 @@
 # 开发与部署
 
-公开 0.65.1 的使用者请先读[安装指南](INSTALLATION.md)；下文保留维护者构建 / 私密签名布局，不是可直接照搬的陌生电脑安装器。0.65.1 软件提交及后续文档 / 工件身份分别见[版本说明](releases/0.65.1.md)，没有已证明的干净环境一步全量构建。
+安装当前公开的 0.66.0 预览版请先读[安装指南](INSTALLATION.md)；下文保留维护者构建 / 私密签名布局，不是可直接照搬的陌生电脑安装器。0.66.0 软件提交及工件身份见[版本说明](releases/0.66.0-service-configuration.md)，没有已证明的干净环境一步全量构建。
 
 > 下文构建/签名/安装命令仅作开发参考；签名/部署须按版本取得用户授权。冻结的dist/build目录与已签名工件不重建覆盖；R07候选未接生产/打包/部署，不能借用已安装包的设备结果。
 
@@ -8,7 +8,7 @@
 
 ## 当前源码候选：0.66.0服务配置
 
-本轮源码按[ADR-119](adr/119-user-selected-local-service-configuration.md)实现网址选择与本地 profile。已安装 / 已选公开基线仍为0.65.1；下文早期构建目录说明用于背景，当前 Web 输出为 `dist/bilisofa-configured-app`，新原生目录为 `build/service-config/<模块>`，不覆盖旧工件。`npm run build:app` / `package:app` 生成0.66.0候选；不自动签名、部署或发布。
+本轮源码按[ADR-119](adr/119-user-selected-local-service-configuration.md)实现网址选择与本地 profile。历史已安装基线为0.65.1，当前仅公开0.66.0预览版；下文早期构建目录说明用于背景，当前 Web 输出为 `dist/bilisofa-configured-app`，新原生目录为 `build/service-config/<模块>`，不覆盖旧工件。`npm run build:app` / `package:app` 生成0.66.0候选；不自动签名、部署或发布。
 
 修改地址或目录时编辑 `apps/tv/service-providers/*.json`；原生槽位 ID 改变须先 `python3 tools/service-config.py`，再按现有对应 link 脚本重新链接。当前叠加 / 追番输出分别显式指定 `--out build/service-config/overlay-read-subtitle`、`--out build/service-config/pgc-follow-status`。单纯更改地址值不能绕过 profile 校验和 CSP/WARP 的重新构建 / 签名。
 
@@ -73,6 +73,6 @@ npm run native:live-product
 
 私密文件默认在`~/.local/share/BiliSofa/`；SDK、缓存、构建和诊断生成物在ignored目录。证书/会话/地址不进入源码、CI、公开日志或包。当前包身份/hash见[签名部署](SIGNING_DEVICE_RECORD.md)，证书建立见[指南](SAMSUNG_CERTIFICATE_GUIDE.md)。
 
-旧W01探针的打包命令已删除；仅复现历史证据时查[探针指南](archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md)、[环境归档](archive/2026-10-19-process-records/DEVELOPMENT.md)与git历史，它们不是当前产品包入口。CI仅有workflow配置，未运行hosted CI或发布。
+旧W01探针的打包命令已删除；仅复现历史证据时查[探针指南](archive/2026-10-24-phase-records/W01_PROBE_GUIDE.md)、[环境归档](archive/2026-10-19-process-records/DEVELOPMENT.md)与git历史，它们不是当前产品包入口。产品 CI 只配置手动触发；是否运行以相应提交的 Actions 记录为准。公开发布结果见[发布记录](releases/2026-10-26-publication.md)。
 
 
