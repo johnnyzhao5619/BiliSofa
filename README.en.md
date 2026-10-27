@@ -1,6 +1,6 @@
 # BiliSofa
 
-**Watch Bilibili from your sofa, on a Samsung Tizen TV.**
+**An independent third-party Samsung Tizen TV client, provided for learning and testing.**
 
 [简体中文](README.md) · [Quick install](docs/QUICK_INSTALL.en.md) · [Download 0.66.0 preview](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) · [0.65.1 baseline](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.65.1) · [Service terms risks](docs/BILIBILI_TERMS_RISK.md)
 
@@ -10,15 +10,38 @@ The app runs on the TV. A computer is needed for installation and updates, but e
 
 This community project is not affiliated with, endorsed by or certified by Bilibili or Samsung. It connects to the mainland China Bilibili service; it is not a client for the separate international service and does not extend regional or membership rights.
 
+## Download and install
+
+| Version | Download | Status |
+| --- | --- | --- |
+| 0.65.1 | [Unsigned WGT](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.65.1/BiliSofa-0.65.1-unsigned.wgt) · [release and checksums](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.65.1) | Original public baseline; device evidence covers specific paths and one recorded TV |
+| 0.66.0 | [Unsigned WGT](https://github.com/johnnyzhao5619/BiliSofa/releases/download/v0.66.0/BiliSofa-0.66.0-unsigned.wgt) · [release and checksums](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0) | Website configuration preview; TV installation and runtime acceptance are still open |
+
+**No compilation is needed.** Installation requires a computer, TV Developer Mode and your own valid Samsung TV signing certificate; the downloaded WGT must be signed before installation. Follow the [five-step guide](docs/QUICK_INSTALL.en.md) or the [Samsung official-tool guide](docs/INSTALLATION.md). Apps2Samsung is an independent third-party tool; this installation path has not been independently tested with BiliSofa. The package requires Tizen 9.0; compatibility depends on the device and firmware.
+
+Documentation bundled in release assets is a snapshot from publication; the README and installation guides on the repository’s main branch receive later updates.
+
+On first launch, 0.66.0 asks for `www.bilibili.com` or `bilibili.com` to enable a service profile already packaged locally. Version 0.65.1 has no such step. Entering a website does not grant permission, and addresses remain in packaged configuration and platform declarations.
+
 ## Purpose, content and rights
 
-**The author provides this project free of charge for learning and testing, with no profit-making activity at present.** This describes the author's current operation and purpose; it does not add restrictions to the standard MIT license.
+The author currently provides the project free of charge for learning and testing, **with no profit-making activity** and no software, subscription or viewing fee. This describes the author's present purpose and operation; the standard MIT license governs original code and does not grant third-party rights.
 
-Runtime videos, audio, covers, subtitles, comments and danmaku come from **Bilibili and its associated delivery infrastructure**. The project does not host its own programme library or offer offline programme downloads, export or permanent saved copies. It is not intended to alter programme content or harm Bilibili or other rights holders.
+Programme video, audio, covers, subtitles, comments and danmaku accessed by the app originate from Bilibili and its delivery infrastructure. The project does not host a programme library or offer user-facing offline programme downloads or exports. It is not intended to alter programme content or harm the platform, creators or other rights holders.
 
-Online playback still transfers media data and uses temporary buffering. The app also caches covers / lists, keeps local records and generates a local playback manifest. These facts rule out an absolute “no caching or processing” claim. Original UI, local dictionary data and synthetic diagnostic samples are separate from Bilibili programme content.
+Online playback still transfers media data and uses temporary buffering. The app caches covers and lists, keeps local records and generates a playback manifest. These facts do not support a claim of zero caching or processing, or that all relevant rights have been cleared. Original UI, local dictionary data and synthetic diagnostic samples are not platform programme content.
 
-If Bilibili or another rights holder believes the project infringes its rights, please contact the author through [Issues](https://github.com/johnnyzhao5619/BiliSofa/issues). **The author is willing to promptly review concerns and take down affected releases or stop distribution / functions at any time.** See [rights contact](RIGHTS.md). Learning / testing, nonprofit operation and willingness to remove releases do not establish platform permission or immunity.
+Bilibili, Samsung and related names and marks belong to their respective owners. References identify the compatibility target and content source; they do not imply permission, affiliation, partnership, sponsorship, endorsement or certification. The project currently provides no public evidence of Bilibili authorization for its interfaces, content or branding.
+
+If Bilibili, a creator or another rights holder believes the project, package or project materials may infringe their rights, please contact the author through [GitHub Issues](https://github.com/johnnyzhao5619/BiliSofa/issues). The author is willing to promptly review concerns and take down affected releases or stop distribution or functions at any time. Identify the affected material and concern without posting identity documents, private contact details, credentials or other sensitive information; request a private channel if needed. See [rights contact](RIGHTS.md).
+
+## Before use
+
+This is unofficial third-party software. Section 5.6(3) of the [Bilibili user agreement](https://www.bilibili.com/blackboard/protocal/licence.html) restricts software-based access to platform services, content or data without prior explicit written permission. This creates a **real contractual risk** for the access used by this project; its application and legal consequences depend on the agreement, actual conduct and applicable law. Requests may be refused, services may stop working, accounts may be restricted, and rights complaints may arise.
+
+Learning, testing, free or open-source distribution, entering a website and a takedown contact do not replace platform permission or eliminate copyright, trademark or contractual risks. Read the [terms risk review](docs/BILIBILI_TERMS_RISK.md), [privacy notice](PRIVACY.md) and platform terms. Respect content, membership and regional restrictions; do not use the project to bypass payment, digital rights protection or access controls. For public distribution and jurisdiction-specific issues, the author should seek written permission from the platform and advice from qualified counsel.
+
+The project is provided as-is; the [MIT License](LICENSE) sets out the license and disclaimer for original code, subject to applicable law. This statement does not exclude liability that cannot lawfully be excluded or guarantee that third-party services remain available.
 
 ## Version and compatibility
 

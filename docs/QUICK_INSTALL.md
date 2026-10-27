@@ -12,7 +12,7 @@
 
 Apps2Samsung 是独立第三方工具，不随本项目分发。[上游 v2.8.3 文档](https://github.com/Apps2Samsung/Apps2Samsung/blob/v2.8.3/README.md)提供自定义 WGT 和签名安装能力；**BiliSofa 尚未通过这条安装路径独立实测**。不愿使用第三方工具时，见 [Samsung 官方工具安装](INSTALLATION.md)。
 
-在 [0.66.0 Release](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0) 下载 `SHA256SUMS.txt` 校对同名 WGT。Mac 用 `shasum -a 256 文件名.wgt`，Windows PowerShell 用 `Get-FileHash .\文件名.wgt -Algorithm SHA256`。完整下载 ZIP 另含本指南、许可、隐私和来源记录。
+在所选版本的 Release（[0.65.1](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.65.1) 或 [0.66.0](https://github.com/johnnyzhao5619/BiliSofa/releases/tag/v0.66.0)）下载 `SHA256SUMS.txt` 校对同名 WGT。Mac 用 `shasum -a 256 文件名.wgt`，Windows PowerShell 用 `Get-FileHash .\文件名.wgt -Algorithm SHA256`。完整下载 ZIP 另含本指南、许可、隐私和来源记录。
 
 ## 2. 打开电视 Developer Mode
 
@@ -20,7 +20,7 @@ Apps2Samsung 是独立第三方工具，不随本项目分发。[上游 v2.8.3 �
 
 ## 3. 在安装器选择电视和 WGT
 
-打开 Apps2Samsung，选择 / 连接自己的电视，找到 **Custom WGT / 自定义 WGT**，载入刚下载的 `BiliSofa-0.66.0-unsigned.wgt`。无需在工具的社区应用目录找到 BiliSofa。界面名称以实际工具版本为准。
+打开 Apps2Samsung，选择 / 连接自己的电视，找到 **Custom WGT / 自定义 WGT**，载入刚下载的 WGT：0.66.0 选择 `BiliSofa-0.66.0-unsigned.wgt`，0.65.1 选择 `BiliSofa-0.65.1-unsigned.wgt`。无需在工具的社区应用目录找到 BiliSofa。界面名称以实际工具版本为准。
 
 ## 4. 按提示签名并安装
 
