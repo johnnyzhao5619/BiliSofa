@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import {DomainError,record} from '../../../packages/contracts/src/index.ts';
 import {vodKeys} from '../../../packages/contracts/src/vod-catalog.ts';
 import {parsePgcFollowRequest,parsePgcFollowResult,type PgcFollowRequest,type PgcFollowValue} from '../../../packages/contracts/src/pgc-follow.ts';
@@ -26,6 +27,6 @@ worker.onmessage=event=>{
   const request=active!;
   void api.execute(request.command,request.account,controller!.signal).then(value=>finish(value),error=>finish(undefined,error));
  },print(line:unknown){api?.receive(line);},printErr(){},onAbort:fatal,locateFile:(name:string)=>'pgc-follow/'+name};
- worker.Module=module as unknown as VodApiNative;
+ worker.Module=configureServiceNative(module as unknown as VodApiNative);
  try{worker.importScripts('pgc-follow/probe.js');}catch{loading=false;void finish(undefined,new DomainError('unsupported'));}
 };

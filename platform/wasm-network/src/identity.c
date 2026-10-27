@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original W02 identity-only HTTPS transport: QR generate/poll and nav GET. */
 #include <stdio.h>
 #include <string.h>
@@ -22,9 +23,9 @@ static char body[AUTH_CAP+1], input[AUTH_PRIVATE_CAP+1], cookie_output[AUTH_PRIV
 static size_t body_size, header_size, cookie_size;
 static double session_until, request_until;
 static const char *const fixed_urls[]={
- "https://passport.bilibili.com/x/passport-login/web/qrcode/generate",
+ SERVICE_ADDRESS_A_A5815C02C756,
  NULL,
- "https://api.bilibili.com/x/web-interface/nav"
+ SERVICE_ADDRESS_A_34A874714ED0
 };
 static double now_ms(void){struct timespec t;if(clock_gettime(CLOCK_MONOTONIC,&t))return -1;return t.tv_sec*1000.0+t.tv_nsec/1000000.0;}
 static void emit(const char *s){puts(s);fflush(stdout);}
@@ -48,7 +49,7 @@ static size_t body_cb(char *data,size_t unit,size_t count,void *ctx){
  (void)ctx;if(unit && count>AUTH_CAP/unit)return 0;size_t n=unit*count;if(n>AUTH_CAP-body_size || memchr(data,0,n))return 0;
  memcpy(body+body_size,data,n);body_size+=n;body[body_size]=0;return n;
 }
-static int domain_allowed(const char *s){return !strcasecmp(s,".bilibili.com") || !strcasecmp(s,"bilibili.com") || !strcasecmp(s,"api.bilibili.com") || !strcasecmp(s,"passport.bilibili.com");}
+static int domain_allowed(const char *s){return !strcasecmp(s,SERVICE_ADDRESS_A_0F551371E9F1) || !strcasecmp(s,SERVICE_ADDRESS_A_4727900DD5EC) || !strcasecmp(s,SERVICE_ADDRESS_A_518E98F60A28) || !strcasecmp(s,SERVICE_ADDRESS_A_68B73A5F5B0A);}
 static size_t header_cb(char *data,size_t unit,size_t count,void *ctx){
  (void)ctx;if(unit && count>8192/unit)return 0;size_t n=unit*count;if(n>8192-header_size)return 0;header_size+=n;
  if(n>=11 && !strncasecmp(data,"Set-Cookie:",11)){
@@ -113,7 +114,7 @@ AUTH_EXPORT int auth_import_cookies(int length){
 AUTH_EXPORT int auth_begin(int operation){
  if(!live || active>=0 || operation<0 || operation>2 || now_ms()<0 || now_ms()>=session_until)return 0;
  const char *url=fixed_urls[operation];
- if(operation==1){if(strlen(input)!=32 || strspn(input,"0123456789abcdef")!=32)return 0;snprintf(request_url,sizeof(request_url),"https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key=%s",input);url=request_url;}
+ if(operation==1){if(strlen(input)!=32 || strspn(input,"0123456789abcdef")!=32)return 0;snprintf(request_url,sizeof(request_url),SERVICE_ADDRESS_A_2286FDBABDF6,input);url=request_url;}
  OPENSSL_cleanse(input,sizeof(input));wipe_response();header_size=0;http_status=0;result_code=-1;
  if(curl_easy_setopt(easy,CURLOPT_URL,url)!=CURLE_OK || curl_multi_add_handle(multi,easy)!=CURLM_OK)return 0;
  active=operation;added=1;request_until=now_ms()+9000;return 1;
@@ -136,7 +137,7 @@ static int start(void){
  if(curl_global_init(CURL_GLOBAL_DEFAULT)!=CURLE_OK)return 0;initialized=1;easy=curl_easy_init();multi=curl_multi_init();if(!easy || !multi){finish();return 0;}
 #define SET(option,value) do {if(curl_easy_setopt(easy,option,value)!=CURLE_OK){finish();return 0;}} while(0)
  SET(CURLOPT_COOKIEFILE,"");SET(CURLOPT_FOLLOWLOCATION,0L);SET(CURLOPT_PROTOCOLS_STR,"https");SET(CURLOPT_REDIR_PROTOCOLS_STR,"https");
- SET(CURLOPT_PROXY,"");SET(CURLOPT_NOPROXY,"*");SET(CURLOPT_USERAGENT,"BiliSofa/0.0.0");SET(CURLOPT_REFERER,"https://passport.bilibili.com/login");
+ SET(CURLOPT_PROXY,"");SET(CURLOPT_NOPROXY,"*");SET(CURLOPT_USERAGENT,"BiliSofa/0.0.0");SET(CURLOPT_REFERER,SERVICE_ADDRESS_A_891E17FA8EE6);
  SET(CURLOPT_SSL_VERIFYPEER,1L);SET(CURLOPT_SSL_VERIFYHOST,2L);SET(CURLOPT_CAINFO,"/cacert.pem");
  SET(CURLOPT_CONNECTTIMEOUT_MS,4000L);SET(CURLOPT_TIMEOUT_MS,8000L);SET(CURLOPT_NOSIGNAL,1L);SET(CURLOPT_HTTPGET,1L);
  SET(CURLOPT_WRITEFUNCTION,body_cb);SET(CURLOPT_HEADERFUNCTION,header_cb);

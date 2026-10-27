@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* ADR-106: catalog-ua plus Bilibili's own visitor identity for anonymous reads.
  * A browser receives buvid3/buvid4 from x/frontend/finger/spi on its first visit
  * and sends them (with b_nut) with every request; the guest lane now does the same.
@@ -51,7 +52,7 @@ static int catalog_visitor_set(const char *value) {
 }
 static void catalog_visitor_id(void) {
   guest_reset(); guest_limit = 8192;
-  guest_get("https://api.bilibili.com/x/frontend/finger/spi", "https://www.bilibili.com/", 0);
+  guest_get(SERVICE_ADDRESS_A_C22C56A99CED, SERVICE_ADDRESS_A_B12964D8C1B1, 0);
 }
 int main(int argc, char **argv) {
   if (argc >= 2 && !strncmp(argv[1], "--visitor=", 10)) {

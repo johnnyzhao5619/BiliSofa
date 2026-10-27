@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { DomainError, record } from '../../../packages/contracts/src/index.ts';
 import { parseOverlayRequest, parseOverlayResult, type OverlayRequest, type OverlayValue } from '../../../packages/contracts/src/overlay-read.ts';
 import { OverlayNativeApi } from './overlay-native-api.ts';
@@ -44,6 +45,6 @@ port.onmessage = event => {
     },
     print(line: unknown) { api?.receive(line); }, printErr() {}, onAbort: fault, locateFile: (name: string) => 'overlay-read/' + name,
   } as unknown as Native;
-  port.Module = native;
+  port.Module = configureServiceNative(native);
   try { port.importScripts('overlay-read/probe.js'); } catch { void finish(undefined, new DomainError('unsupported')); }
 };

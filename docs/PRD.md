@@ -1,5 +1,7 @@
 # Product requirements
 
+Public release selection (2026-10-26): 0.65.1 at `e7bc3740e0fed2f9b2c89f9a83755398fa11faf7` is the user-selected public open-source version ([ADR-118](adr/118-public-open-source-0651-baseline.md)). It can be released with explicit limitations without claiming complete v1.0.0 acceptance; retained features and unresolved requirements below are not removed.
+
 Product experience and delivery closure (2026-10-21): use the [TV product design](TV_PRODUCT_DESIGN.md) for page/remote behavior and the [single closure register](PRODUCT_CLOSURE.md) for remaining implementation and acceptance, under ADR-070. Productization has implemented/user-tested groups; use current status for remaining final gates, not the historical 0.28.0 baseline. Existing F IDs and approved exclusions remain authoritative.
 
 Name: BiliSofa. Meaning: Bilibili viewing from the sofa. Initial acceptance target: Samsung UN58U8200FFXZC, Chinese mainland Bilibili service, remote-control-first TV UI. Per user direction (2026-10-20), playback must adapt across Samsung TV devices through runtime attempts and bounded fallback; the measured initial model/resolution is not a playback whitelist. Other models and high-quality formats still require their own acceptance evidence (ADR-055).

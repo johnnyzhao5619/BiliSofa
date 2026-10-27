@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original bounded public video search. No URL/header/cookie argument. */
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +23,7 @@ static int search_keyword_valid(const char *s) {
 static int search_page_valid(const char *s){return s && *s && strlen(s)<=2 && s[0]!='0' && strspn(s,"0123456789")==strlen(s) && atoi(s)>=1 && atoi(s)<=10;}
 static void search_public_nav(void){
   guest_reset();guest_limit=16384;
-  guest_get("https://api.bilibili.com/x/web-interface/nav","https://search.bilibili.com/",0);
+  guest_get(SERVICE_ADDRESS_A_34A874714ED0,SERVICE_ADDRESS_A_51DF6D39D2D6,0);
 }
 static int search_key_valid(const char *s){return s&&strlen(s)==32&&strspn(s,"0123456789abcdef")==32;}
 static int search_epoch_valid(const char *s){
@@ -48,9 +49,9 @@ static void search_typed(const char *keyword,const char *page,const char *img,co
   unsigned char digest[EVP_MAX_MD_SIZE];unsigned int length=0;
   if(EVP_Digest(signed_query,(size_t)size,digest,&length,EVP_md5(),NULL)!=1||length!=16)goto reject;
   for(int i=0;i<16;i++)snprintf(hex+i*2,3,"%02x",digest[i]);
-  size=snprintf(url,sizeof(url),"https://api.bilibili.com/x/web-interface/wbi/search/type?%s&w_rid=%s",query,hex);
+  size=snprintf(url,sizeof(url),SERVICE_ADDRESS_A_8102263D41AA,query,hex);
   if(size<1||(size_t)size>=sizeof(url))goto reject;
-  guest_get(url,"https://search.bilibili.com/",0);return;
+  guest_get(url,SERVICE_ADDRESS_A_51DF6D39D2D6,0);return;
 reject:puts("GUEST:closed");fflush(stdout);
 }
 static void search_video(const char *keyword,const char *page,const char *img,const char *sub,const char *epoch){search_typed(keyword,page,img,sub,epoch,0);}

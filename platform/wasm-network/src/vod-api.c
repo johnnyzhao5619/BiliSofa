@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original fixed read-only VOD lane. API cookie jar and anonymous CDN easy
  * handles are separate. No caller URL except the independently scoped CDN GET. */
 #include <stdio.h>
@@ -74,7 +75,7 @@ static size_t vod_body_cb(char *bytes, size_t unit, size_t count, void *context)
   memcpy(vod_body + vod_size, bytes, n); vod_size += n; vod_body[vod_size] = 0; return n;
 }
 static int vod_domain(const char *s) {
-  return !strcasecmp(s, ".bilibili.com") || !strcasecmp(s, "bilibili.com") || !strcasecmp(s, "api.bilibili.com") || !strcasecmp(s, "passport.bilibili.com")
+  return !strcasecmp(s, SERVICE_ADDRESS_A_0F551371E9F1) || !strcasecmp(s, SERVICE_ADDRESS_A_4727900DD5EC) || !strcasecmp(s, SERVICE_ADDRESS_A_518E98F60A28) || !strcasecmp(s, SERVICE_ADDRESS_A_68B73A5F5B0A)
 #ifdef BILISOFA_EXTRA_COOKIE_DOMAIN
     || BILISOFA_EXTRA_COOKIE_DOMAIN(s)
 #endif
@@ -166,7 +167,7 @@ static int vod_playurl(char *value) {
   unsigned char digest[EVP_MAX_MD_SIZE]; unsigned length = 0;
   if (n < 1 || (size_t)n >= sizeof(signed_query) || EVP_Digest(signed_query, (size_t)n, digest, &length, EVP_md5(), NULL) != 1 || length != 16) return 0;
   for (int i = 0; i < 16; i++) snprintf(hex + i * 2, 3, "%02x", digest[i]);
-  n = snprintf(vod_url, sizeof(vod_url), "https://api.bilibili.com/x/player/wbi/playurl?%s&w_rid=%s", query, hex);
+  n = snprintf(vod_url, sizeof(vod_url), SERVICE_ADDRESS_A_2CA411709600, query, hex);
   OPENSSL_cleanse(joined, sizeof(joined)); OPENSSL_cleanse(mix, sizeof(mix)); OPENSSL_cleanse(signed_query, sizeof(signed_query));
   return n > 0 && (size_t)n < sizeof(vod_url);
 }
@@ -184,8 +185,8 @@ VOD_EXPORT int vod_begin(int operation) {
   if (!vod_live || vod_active >= 0 || operation < 0 || operation > BILISOFA_MAX_READ_OPERATION || !BILISOFA_OPERATION_ALLOWED(operation) || vod_now() < 0 || vod_now() >= vod_session_until) return 0;
   size_t n = strnlen(vod_input, sizeof(vod_input));
   if (n > VOD_INPUT_CAP) return 0;
-  if (operation == 0) { if (n) return 0; strcpy(vod_url, "https://api.bilibili.com/x/web-interface/nav"); }
-  else if (operation == 1) { if (!guest_bvid_valid(vod_input)) return 0; snprintf(vod_url, sizeof(vod_url), "https://api.bilibili.com/x/web-interface/view?bvid=%s", vod_input); }
+  if (operation == 0) { if (n) return 0; strcpy(vod_url, SERVICE_ADDRESS_A_34A874714ED0); }
+  else if (operation == 1) { if (!guest_bvid_valid(vod_input)) return 0; snprintf(vod_url, sizeof(vod_url), SERVICE_ADDRESS_A_37538D7FE65A, vod_input); }
   else if (operation == 2) { char copy[VOD_INPUT_CAP + 1]; memcpy(copy, vod_input, n + 1); int valid = vod_playurl(copy); OPENSSL_cleanse(copy, sizeof(copy)); if (!valid) return 0; }
   else if (operation == 3) { if (!guest_cdn_valid(vod_input)) return 0; strcpy(vod_url, vod_input); }
   else if (!BILISOFA_EXTRA_READ(operation, vod_input, vod_url, sizeof(vod_url))) return 0;
@@ -222,7 +223,7 @@ static int vod_start(void) {
     CURL *easy = i ? vod_cdn : vod_api;
 #define VOD_SET(option,value) do { if (curl_easy_setopt(easy, option, value) != CURLE_OK) { vod_finish(); return 0; } } while (0)
     VOD_SET(CURLOPT_FOLLOWLOCATION, 0L); VOD_SET(CURLOPT_PROTOCOLS_STR, "https"); VOD_SET(CURLOPT_REDIR_PROTOCOLS_STR, "https");
-    VOD_SET(CURLOPT_PROXY, ""); VOD_SET(CURLOPT_NOPROXY, "*"); VOD_SET(CURLOPT_USERAGENT, "BiliSofa/0.0.0"); VOD_SET(CURLOPT_REFERER, "https://www.bilibili.com/");
+    VOD_SET(CURLOPT_PROXY, ""); VOD_SET(CURLOPT_NOPROXY, "*"); VOD_SET(CURLOPT_USERAGENT, "BiliSofa/0.0.0"); VOD_SET(CURLOPT_REFERER, SERVICE_ADDRESS_A_B12964D8C1B1);
     VOD_SET(CURLOPT_SSL_VERIFYPEER, 1L); VOD_SET(CURLOPT_SSL_VERIFYHOST, 2L); VOD_SET(CURLOPT_CAINFO, "/cacert.pem");
     VOD_SET(CURLOPT_CONNECTTIMEOUT_MS, 4000L); VOD_SET(CURLOPT_TIMEOUT_MS, 8000L); VOD_SET(CURLOPT_NOSIGNAL, 1L); VOD_SET(CURLOPT_HTTPGET, 1L);
     VOD_SET(CURLOPT_WRITEFUNCTION, vod_body_cb); VOD_SET(CURLOPT_HEADERFUNCTION, vod_header_cb);

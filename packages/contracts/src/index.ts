@@ -1,3 +1,4 @@
+import { serviceString } from './service-configuration.ts';
 import { MAX_MEDIA_SECONDS } from './media-limits.ts';
 export type Evidence = 'source' | 'desktop' | 'emulator' | 'device';
 export type Verdict = 'PASS' | 'FAIL' | 'BLOCKED' | 'UNVERIFIED';
@@ -159,10 +160,10 @@ export function parseInitialResult(value: unknown): InitialResult {
 }
 
 // W01/W03 guest popular read candidate. No caller URL, cookie, header or account data.
-export interface CoverReference { host: 'i0.hdslb.com' | 'i1.hdslb.com' | 'i2.hdslb.com'; path: string; }
+export interface CoverReference { host: string; path: string; }
 export function parseCoverReference(value: unknown): CoverReference {
   const v = record(value);
-  if (Object.keys(v).length !== 2 || !['i0.hdslb.com','i1.hdslb.com','i2.hdslb.com'].includes(String(v.host)) || typeof v.path !== 'string' || v.path.length > 1024 || !/^\/bfs\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|webp)$/.test(v.path)) throw new DomainError('invalid');
+  if (Object.keys(v).length !== 2 || ![serviceString('a_d1d8109613cd'),serviceString('a_d1460da3012e'),serviceString('a_b97db64c383a')].includes(String(v.host)) || typeof v.path !== 'string' || v.path.length > 1024 || !/^\/bfs\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|webp)$/.test(v.path)) throw new DomainError('invalid');
   return {host:v.host as CoverReference['host'],path:v.path};
 }
 export interface PopularCard { bvid: string; title: string; owner: string; durationSec: number; views: number; cover?: CoverReference; }

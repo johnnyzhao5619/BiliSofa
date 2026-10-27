@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / '.local/network-upgrade'
 SDK = ROOT / '.local/sdk/emscripten-release-bundle/emsdk'
 PREFIX = BASE / 'stage/bilisofa/network'
-OUT = ROOT / 'build/network-candidate'
+OUT = ROOT / 'build/service-config/network-candidate'
 subprocess.run(['python3', str(ROOT / 'tools/build-network-candidate.py'), 'check'], check=True)
 lock = json.loads((ROOT / 'platform/wasm-network/dependencies/network-candidate.lock.json').read_text())
 libraries = json.loads((BASE / 'candidate-libraries.json').read_text())
@@ -88,7 +88,7 @@ manifest = {'schema': 1, 'status': 'W01-link-only-not-TV-or-credential-approval'
   'dependencies': {'curl': lock['curl']['version'], 'openssl': lock['openssl']['version'], 'zlib': 'not-linked'},
   'curlPatches': lock['curl'].get('patches', []),
   'libraryBuild': libraries, 'outputs': outputs, 'licenses': license_hashes,
-  'sourceInputs': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+  'serviceSchemaSha256':hashlib.sha256((ROOT/'platform/wasm-network/src/service-config.h').read_bytes()).hexdigest(),'sourceInputs': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
       for p in [ROOT / 'tools/link-network-candidate.py', ROOT / 'tools/build-network-candidate.py', ROOT / 'platform/wasm-network/dependencies/network-candidate.lock.json', ROOT / 'tests/native/network-candidate-selftest.c', ROOT / 'platform/wasm-network/src/network-validation.c', ROOT / 'platform/wasm-network/src/session-https.c', ROOT / 'platform/wasm-network/src/account-probe.c', ROOT / 'platform/wasm-network/src/account-readback.c', ROOT / 'platform/wasm-network/src/progress-post.c'] +
       [ROOT / 'platform/wasm-network/dependencies' / patch['file'] for patch in lock['curl'].get('patches', [])] +
       sorted((ROOT / 'platform/wasm-network/src').glob('probe*.[ch]'))},

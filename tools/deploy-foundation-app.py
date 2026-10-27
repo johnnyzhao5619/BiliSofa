@@ -1,9 +1,10 @@
 """Explicit install/launch of the privately signed W02 app on the one authorized TV."""
 from pathlib import Path
+import xml.etree.ElementTree as ET
 import argparse, datetime, hashlib, ipaddress, json, os, re, subprocess, zipfile
 
 parser=argparse.ArgumentParser(description=__doc__);args=parser.parse_args()
-version='0.65.1'
+version=ET.parse(Path(__file__).resolve().parents[1]/'apps/tv/foundation-config.xml').getroot().attrib['version']
 ROOT=Path(__file__).resolve().parents[1]
 private=Path(os.environ.get('BILISOFA_PRIVATE_DIR',str(Path.home()/'.local/share/BiliSofa'))).resolve()
 if private.is_relative_to(ROOT):raise SystemExit('Private deployment metadata must remain outside repository')

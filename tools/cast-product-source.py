@@ -5,9 +5,9 @@ ROOT=Path(__file__).resolve().parents[1]
 NAMES=['probe-bridge.h','probe-cast.h','probe-cast-source.h']
 # Exact reviewed source baseline, also recorded in the linked module manifest.
 EXPECTED={
- 'probe-bridge.h':'3eef5c56bd48a7a216cf8eede2abc1249de3881065545573a64ffacc39cb0b7f',
+ 'probe-bridge.h':'d162ea64a37b86762f3c876beb72b54cfe2ae492533bac399e2f132d17c2c399',
  'probe-cast.h':'e4fb2394fc64e2081c2c2caf22c106a6e315c7012834daa4a94cae82532e23a8',
- 'probe-cast-source.h':'8fa96f3fc6d0f290051b6820b47e711c171eaaaabe13d5aaef12c9914f5372b6',
+ 'probe-cast-source.h':'a9b5ea0974bf0abb765ae92eafbee5ffaaaf0c55e41a9c6d0280a857103f9901',
 }
 def generate(output):
  out=Path(output);out.mkdir(parents=True,exist_ok=True)

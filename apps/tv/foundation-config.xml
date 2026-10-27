@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://bilisofa.invalid/foundation" version="0.65.1" viewmodes="maximized">
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://bilisofa.invalid/foundation" version="0.66.0" viewmodes="maximized">
   <tizen:application id="BiliSofa01.TV" package="BiliSofa01" required_version="9.0"/>
   <name>BiliSofa</name>
   <icon src="icon.png"/>
   <access origin="http://127.0.0.1:40324" subdomains="false"/>
   <access origin="http://127.0.0.1:40325" subdomains="false"/>
-  <access origin="https://i0.hdslb.com" subdomains="false"/>
-  <access origin="https://i1.hdslb.com" subdomains="false"/>
-  <access origin="https://i2.hdslb.com" subdomains="false"/>
   <content src="index.html"/>
   <tizen:profile name="tv-samsung"/>
   <tizen:privilege name="http://tizen.org/privilege/internet"/>

@@ -1,7 +1,8 @@
+from service_config_data import service_config_strings
 """ADR-108: resident public read kernel TV WASM into build/public-kernel. No sign/install/network."""
 from pathlib import Path
 import hashlib,json,os,re,subprocess
-ROOT=Path(__file__).resolve().parents[1];BASE=ROOT/'.local/network-upgrade';SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk';PREFIX=BASE/'stage/bilisofa/network';OUT=ROOT/'build/public-kernel'
+ROOT=Path(__file__).resolve().parents[1];BASE=ROOT/'.local/network-upgrade';SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk';PREFIX=BASE/'stage/bilisofa/network';OUT=ROOT/'build/service-config/public-kernel'
 SRC=ROOT/'platform/wasm-network/src'
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 subprocess.run(['python3',str(ROOT/'tools/category-data.py'),'--check'],check=True)
@@ -26,8 +27,8 @@ wasm=(OUT/'probe.wasm').read_bytes()
 for bad in [b'/x/player/',b'playurl',b'bilivideo',b'/x/passport',b'/qrcode',b'/heartbeat',b'/history/',b'/toview',b'/medialist',b'/fav/',b'/x/v3/',b'/x/space/',b'/x/polymer/',b'feed/rcmd',b'/x/web-interface/coin',b'/x/web-interface/like',b'/pgc/web/follow',b'/x/relation',b'live_room']:
  if bad in wasm:raise SystemExit('Public kernel includes unrelated route '+bad.decode())
 for good in [b'/x/web-interface/popular?ps=%d&pn=%d',b'/x/web-interface/ranking/v2',b'/pgc/web/rank/list',b'/pgc/season/index/result',b'/x/series/recArchivesByKeywords',b'/x/frontend/finger/spi',b'/x/web-interface/nav',b'/x/web-interface/wbi/search/type',b'https://s.search.bilibili.com/main/hotword',b'https://api.bilibili.com/x/web-interface/view?bvid=%s',b'KERNEL:ready',b'KERNEL:closed']:
- if good not in wasm:raise SystemExit('Public kernel lost route '+good.decode())
+ if good not in wasm and good not in service_config_strings(ROOT):raise SystemExit('Public kernel lost route '+good.decode())
 inputs=[source,*(SRC/n for n in ['probe-guest.h','catalog.c','catalog-up.c','catalog-ua.c','catalog-visitor.c','catalog-categories.h','search.c','hot-search.c']),ROOT/'packages/contracts/data/categories.json',ROOT/'tools/category-data.py',ROOT/'tools/link-public-kernel.py',ROOT/'platform/wasm-network/dependencies/network-candidate.lock.json']
-manifest={'schema':1,'purpose':'ADR-108 resident anonymous public read kernel (popular, rankings, PGC lists, UP uploads, visitor identity, WBI search, hot words) over reused connections; not device acceptance','libraryBuild':json.loads((BASE/'candidate-libraries.json').read_text()),'files':{n:digest(OUT/n) for n in ['probe.js','probe.wasm','probe.data']},'sourceInputs':{str(p.relative_to(ROOT)):digest(p) for p in inputs},'caSha256':expected}
+manifest={'schema':1,'purpose':'ADR-108 resident anonymous public read kernel (popular, rankings, PGC lists, UP uploads, visitor identity, WBI search, hot words) over reused connections; not device acceptance','libraryBuild':json.loads((BASE/'candidate-libraries.json').read_text()),'files':{n:digest(OUT/n) for n in ['probe.js','probe.wasm','probe.data']},'serviceSchemaSha256':digest(ROOT/'platform/wasm-network/src/service-config.h'),'sourceInputs':{str(p.relative_to(ROOT)):digest(p) for p in inputs+[ROOT/'tools/service_config_data.py',ROOT/'platform/wasm-network/src/service-config.h']},'caSha256':expected}
 (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print('Public kernel Samsung WASM linked and scanned; no deployment')

@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { DomainError, record } from '../../../packages/contracts/src/index.ts';
 import { vodInteger, vodKeys } from '../../../packages/contracts/src/vod-catalog.ts';
 import { parseVodCapabilities, vodNonce } from '../../../packages/contracts/src/vod-runtime.ts';
@@ -98,7 +99,7 @@ worker.onmessage = event => {
           account = undefined;
           send(0, 'ready');
         }, print(line: unknown) { api?.receive(line); }, printErr() {}, onAbort: fault, locateFile: (name: string) => `${directory}/${name}` };
-      worker.Module = configuration as unknown as Native;
+      worker.Module = configureServiceNative(configuration as unknown as Native);
       try { worker.importScripts(`${directory}/probe.js`); } catch { fault(); }
       return;
     }

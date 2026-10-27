@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* W05 fixed signed player/segment reads and anonymous scoped subtitle JSON.
  * No write endpoint, caller-supplied API URL or redirect following. */
 #include <stdio.h>
@@ -9,7 +10,7 @@
 #include <openssl/crypto.h>
 #include "vod-source-policy.h"
 static int overlay_subtitle_url(const char *s) {
-  const char *hosts[] = { "https://aisubtitle.hdslb.com/", "https://i0.hdslb.com/", "https://i1.hdslb.com/", "https://i2.hdslb.com/" };
+  const char *hosts[] = { SERVICE_ADDRESS_A_2991B09DB4DC, SERVICE_ADDRESS_A_2F0868A1CB64, SERVICE_ADDRESS_A_E54F9A20E06B, SERVICE_ADDRESS_A_11BBB9115CC0 };
   const char *path = NULL;
   if (!s || strlen(s) > 2048) return 0;
   for (unsigned i = 0; i < sizeof(hosts) / sizeof(hosts[0]); i++) if (!strncmp(s, hosts[i], strlen(hosts[i]))) path = s + strlen(hosts[i]) - 1;
@@ -42,13 +43,13 @@ static int overlay_wbi(int operation, char *input, char *url, size_t capacity) {
   OPENSSL_cleanse(joined, sizeof(joined)); OPENSSL_cleanse(mix, sizeof(mix)); OPENSSL_cleanse(signing, sizeof(signing));
   if (!good) return 0;
   for (int i = 0; i < 16; i++) snprintf(hex + i * 2, 3, "%02x", digest[i]);
-  n = snprintf(url, capacity, "https://api.bilibili.com%s?%s&w_rid=%s", operation == 4 ? "/x/player/wbi/v2" : "/x/v2/dm/wbi/web/seg.so", query, hex);
+  n = snprintf(url, capacity, SERVICE_ADDRESS_A_BAB388FB4F51, operation == 4 ? "/x/player/wbi/v2" : "/x/v2/dm/wbi/web/seg.so", query, hex);
   return n > 0 && (size_t)n < capacity;
 }
 static int overlay_extra_read(int operation, char *input, char *url, size_t capacity) {
   if (operation == 4 || operation == 6) return overlay_wbi(operation, input, url, capacity);
   if (operation == 5) { if (!overlay_subtitle_url(input)) return 0; int n = snprintf(url, capacity, "%s", input); return n > 0 && (size_t)n < capacity; }
-  if (operation == 7) { if (!guest_cid_valid(input)) return 0; int n = snprintf(url, capacity, "https://api.bilibili.com/pgc/view/web/season?season_id=%s", input); return n > 0 && (size_t)n < capacity; }
+  if (operation == 7) { if (!guest_cid_valid(input)) return 0; int n = snprintf(url, capacity, SERVICE_ADDRESS_A_A51D128366E2, input); return n > 0 && (size_t)n < capacity; }
   return 0;
 }
 static int overlay_prepare(CURL *easy, int operation) { return operation != 5 || curl_easy_setopt(easy, CURLOPT_RANGE, NULL) == CURLE_OK; }

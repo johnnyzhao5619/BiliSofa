@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original fixed anonymous hot-word GET. No caller-controlled URL or headers. */
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +7,7 @@
 #include "probe-guest.h"
 static void search_hot(void){
   guest_reset();guest_limit=65536u;
-  guest_get("https://s.search.bilibili.com/main/hotword","https://search.bilibili.com/",0);
+  guest_get(SERVICE_ADDRESS_A_C12C515A6161,SERVICE_ADDRESS_A_51DF6D39D2D6,0);
 }
 #ifndef HOT_SEARCH_NO_MAIN
 int main(int argc,char **argv){

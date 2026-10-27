@@ -1,3 +1,4 @@
+import { serviceString } from '../../contracts/src/service-configuration.ts';
 import { DomainError, text } from '../../contracts/src/index.ts';
 import { AKAMAI_BACKUP_HOST, type CdnClass } from '../../contracts/src/cdn-failover.ts';
 import { GuestVideoError, guestCdnUrl } from './guest-video.ts';
@@ -8,7 +9,7 @@ export function vodCdnUrl(value: unknown, now: number): { url: string; expiresAt
   const raw = text(value, 2048);
   let host = ''; try { host = new URL(raw).hostname; } catch { throw new DomainError('invalid'); }
   if (!AKAMAI_BACKUP_HOST.test(host) || !raw.startsWith(`https://${host}/`)) return guestCdnUrl(raw, now);
-  const checked = guestCdnUrl(`https://synthetic.bilivideo.com/${raw.slice(9 + host.length)}`, now);
+  const checked = guestCdnUrl(`${serviceString('a_9fee5161a406')}${raw.slice(9 + host.length)}`, now);
   return { url: raw, expiresAt: checked.expiresAt };
 }
 const hostOf = (url: string) => new URL(url).hostname;
@@ -16,7 +17,7 @@ export const vodCdnHost = hostOf;
 /** upos-* are Bilibili's named mirrors; any other bilivideo host (cn-… ISP edge caches) is an edge node. */
 export function vodCdnClass(url: string): CdnClass {
   const host = hostOf(url);
-  return AKAMAI_BACKUP_HOST.test(host) ? 'akamai' : /^upos-[a-z0-9-]+\.bilivideo\.com$/.test(host) ? 'upos' : 'edge';
+  return AKAMAI_BACKUP_HOST.test(host) ? 'akamai' : new RegExp(serviceString('a_521582064046'), "").test(host) ? 'upos' : 'edge';
 }
 /** ADR-102: Bilibili's own order, with edge nodes after named mirrors and Akamai.
  * The alternate is the first later-validated candidate on a different host. */

@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original isolated W01 network validation. Fixed anonymous GETs only. */
 #include <stdio.h>
 #include <string.h>
@@ -14,7 +15,7 @@ static int stage, failed, live, added, initialized;
 static size_t body_bytes, header_bytes;
 static char error_buffer[CURL_ERROR_SIZE];
 static double deadline;
-static const char *const urls[] = { "https://api.bilibili.com/x/web-interface/nav", "https://expired.badssl.com/", "https://wrong.host.badssl.com/", "https://self-signed.badssl.com/" };
+static const char *const urls[] = { SERVICE_ADDRESS_A_34A874714ED0, "https://expired.badssl.com/", "https://wrong.host.badssl.com/", "https://self-signed.badssl.com/" };
 static const char *const names[] = { "positive", "expired", "hostname", "selfsigned" };
 static double clock_ms(void) { struct timespec t; if (clock_gettime(CLOCK_MONOTONIC, &t)) return -1; return t.tv_sec * 1000.0 + t.tv_nsec / 1000000.0; }
 static void line(const char *value) { puts(value); fflush(stdout); }

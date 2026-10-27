@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { DomainError, record, type ErrorCode } from '../../../packages/contracts/src/index.ts';
 import { parseAccountKernelCommand, type AccountKernelRequest } from '../../../packages/contracts/src/account-kernel.ts';
 import type { KernelEvent } from '../../../packages/contracts/src/public-kernel.ts';
@@ -175,12 +176,12 @@ function printed(line: unknown): void {
 }
 function boot(): void {
   phase = 'loading';
-  port.Module = {
+  port.Module = configureServiceNative({
     noInitialRun: true, noExitRuntime: true,
     onRuntimeInitialized() { native = port.Module as unknown as Native; phase = 'ready'; post({ version: 1, type: 'ready' }); drain(); },
     print: printed, printErr() {}, onAbort() { phase = 'failed'; post({ version: 1, type: 'failed' }); },
     locateFile: (name: string) => `account-read-kernel/${name}`,
-  };
+  });
   void fetch('account-read-kernel/manifest.json').then(response => {
     void response.body?.cancel();
     if (!response.ok) throw new Error();

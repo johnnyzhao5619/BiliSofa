@@ -16,7 +16,7 @@ def checked(path, expected):
 
 def load_candidate():
   subprocess.run([sys.executable, str(ROOT/'tools/build-network-candidate.py'), 'check'], check=True)
-  base = ROOT/'build/network-candidate'
+  base = ROOT/'build/service-config/network-candidate'
   candidate = json.loads((base/'manifest.json').read_text())
   if candidate['libraryBuild'] != json.loads((ROOT/'.local/network-upgrade/candidate-libraries.json').read_text()):
     raise SystemExit('Modern linked libraries are stale')

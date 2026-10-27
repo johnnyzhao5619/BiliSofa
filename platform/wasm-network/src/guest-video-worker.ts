@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { guestBridgeMetadata, guestBridgeManifestUrl } from '../../../packages/media/src/guest-mpd.ts';
 import { parseGuestVideoRequest, parseGuestVideoResult, type GuestVideoRequest, type GuestVideoResult, parseGuestBridgeEvent, type GuestBridgeEvent } from '../../../packages/contracts/src/guest-video.ts';
 import { GuestVideoError, parseGuestVideoDetail, parseGuestVideoPlan, type GuestVideoDetail, type GuestVideoPlan } from '../../../packages/bili-client/src/guest-video.ts';
@@ -95,7 +96,7 @@ worker.onmessage = async event => {
   try { const r = await fetch('native/manifest.json'); if (r.body) await r.body.cancel(); if (!r.ok) { finish('ugc.native_unavailable'); return; } }
   catch { finish('ugc.native_unavailable'); return; }
   if (cancelled) { finish('ugc.cancelled'); return; }
-  worker.Module = { arguments: [], noInitialRun: true, noExitRuntime: true, onRuntimeInitialized: next, print(line) {
+  worker.Module = configureServiceNative({ arguments: [], noInitialRun: true, noExitRuntime: true, onRuntimeInitialized: next, print(line) {
     if (line === 'GUEST:closed') { setTimeout(closed, 0); return; }
     if (line === 'BRIDGE:ready' && active?.operation === 'guest-video-play' && plan && !bridgeReady) {
       bridgeReady = true;
@@ -107,6 +108,6 @@ worker.onmessage = async event => {
     } else if (line === 'BRIDGE:stopped' && bridgeReady) finish('ugc.bridge_stopped');
     else if (line === 'BRIDGE:failed:17') setTimeout(() => { throw new Error('native_cleanup_unconfirmed'); }, 0);
     else if (typeof line === 'string' && /^BRIDGE:failed:(10|12|16)$/.test(line)) finish(`ugc.bridge_failed_${line.split(':')[2]}`);
-  }, printErr() {}, onAbort() { setTimeout(() => { throw new Error('native_runtime_aborted'); }, 0); }, locateFile: name => `native/${name}` };
+  }, printErr() {}, onAbort() { setTimeout(() => { throw new Error('native_runtime_aborted'); }, 0); }, locateFile: name => `native/${name}` });
   try { worker.importScripts('native/probe.js'); } catch { setTimeout(() => { throw new Error('native_import_failed_cleanup_unconfirmed'); }, 0); }
 };

@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { ACCOUNT_TEST_VIDEO as video, parseAccountRequest, parseAccountResult, parseQr, type AccountProbeRequest, type AccountProbeResult, type AccountSession, type AccountView } from '../../../packages/contracts/src/account-probe.ts';
 import { record } from '../../../packages/contracts/src/index.ts';
 interface Native {
@@ -143,6 +144,6 @@ worker.onmessage = async event => {
       }
     }, printErr() {}, onAbort: unknown, locateFile: (name: string) => 'account/' + name,
   } as unknown as Native;
-  worker.Module = module;
+  worker.Module = configureServiceNative(module);
   worker.importScripts('account/probe.js');
 };

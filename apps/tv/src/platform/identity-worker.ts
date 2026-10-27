@@ -1,3 +1,4 @@
+import { createServiceWorker } from './service-worker.ts';
 import { DomainError, type Scope } from '../../../../packages/contracts/src/index.ts';
 import { parseIdentityEvent, parseIdentityRequest, type IdentityEvent, type IdentityRequest, type LoginDisplay, type LoginExchange } from '../../../../packages/contracts/src/identity.ts';
 import { parsePrivateAccount, type AccountIdentity, type PrivateAccount } from '../../../../packages/contracts/src/private-account.ts';
@@ -15,7 +16,7 @@ export class IdentityWorkerClient implements LoginExchange {
   private poisoned = false;
   private used = false;
   private disposed = false;
-  constructor(private readonly create: () => IdentityPort = () => new Worker('identity-worker.js'), private readonly closeMs = 5000) {
+  constructor(private readonly create: () => IdentityPort = () => createServiceWorker('identity-worker.js'), private readonly closeMs = 5000) {
     if (!Number.isInteger(closeMs) || closeMs < 10 || closeMs > 15000) throw new DomainError('invalid');
   }
   private scope(id = 'guest'): Scope { return { accountId: id, generation: 0, mediaSessionId: 'identity', requestId: `identity-${++sequence}` }; }

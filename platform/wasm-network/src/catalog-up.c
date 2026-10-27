@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* ADR-103: the public catalog lane plus one fixed public UP-archives read (the
  * official web series search with empty keywords: newest first, 30 per page).
  * catalog.c stays frozen; this entry repeats its route table unchanged and adds
@@ -17,9 +18,9 @@ static int catalog_up_page(const char *s) {
 }
 static void catalog_up_archives(const char *mid, int page) {
   char url[160];
-  snprintf(url, sizeof(url), "https://api.bilibili.com/x/series/recArchivesByKeywords?mid=%s&keywords=&ps=30&pn=%d", mid, page);
+  snprintf(url, sizeof(url), SERVICE_ADDRESS_A_6C37D2E5D0A2, mid, page);
   guest_reset(); guest_limit = BILISOFA_GUEST_MAX;
-  guest_get(url, "https://space.bilibili.com/", 0);
+  guest_get(url, SERVICE_ADDRESS_A_FBF80F678C49, 0);
 }
 int main(int argc, char **argv) {
   (void)guest_popular; (void)guest_video;

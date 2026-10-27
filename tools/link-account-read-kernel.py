@@ -1,7 +1,8 @@
+from service_config_data import service_config_strings
 """ADR-108 P0b: resident account read kernel TV WASM into build/account-read-kernel. No sign/install/network."""
 from pathlib import Path
 import hashlib,json,os,re,subprocess
-ROOT=Path(__file__).resolve().parents[1];BASE=ROOT/'.local/network-upgrade';SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk';PREFIX=BASE/'stage/bilisofa/network';OUT=ROOT/'build/account-read-kernel'
+ROOT=Path(__file__).resolve().parents[1];BASE=ROOT/'.local/network-upgrade';SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk';PREFIX=BASE/'stage/bilisofa/network';OUT=ROOT/'build/service-config/account-read-kernel'
 SRC=ROOT/'platform/wasm-network/src'
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 subprocess.run(['python3',str(ROOT/'tools/category-data.py'),'--check'],check=True)
@@ -26,8 +27,8 @@ wasm=(OUT/'probe.wasm').read_bytes()
 for bad in [b'/x/player/',b'/heartbeat',b'/x/web-interface/view',b'bilivideo',b'BV14GHy6bE9n',b'/x/passport',b'/qrcode',b'/toview/del',b'/toview/add',b'/history/delete',b'/history/clear',b'/history/report',b'/history/shadow',b'/fav/resource/deal',b'/fav/resource/batch-del',b'/fav/folder/add',b'/fav/folder/del',b'/dynamic/create',b'/dynamic/rm',b'/dynamic/thumb',b'/pgc/web/follow',b'/x/relation',b'/x/web-interface/coin',b'/x/web-interface/like',b'/x/v2/history/toview/add',b's.search.bilibili.com',b'live_room']:
  if bad in wasm:raise SystemExit('Account kernel includes unrelated route '+bad.decode())
 for good in [b'/x/web-interface/nav',b'/x/web-interface/history/cursor',b'/x/v3/fav/folder/list4navigate',b'/x/polymer/web-dynamic/v1/feed/nav',b'/x/web-interface/wbi/index/top/feed/rcmd',b'ps=%d&desc=true&otype=2',b'biz_id=%s&ps=%d&desc=true',b'/x/web-interface/ranking/v2?rid=%d&type=all',b'/x/series/recArchivesByKeywords?mid=%s&keywords=&ps=30&pn=%s',b'AUTH:closed']:
- if good not in wasm:raise SystemExit('Account kernel lost route '+good.decode())
+ if good not in wasm and good not in service_config_strings(ROOT):raise SystemExit('Account kernel lost route '+good.decode())
 inputs=[source,*(SRC/n for n in ['library.c','recommend-read.c','catalog-categories.h']),ROOT/'packages/contracts/data/categories.json',ROOT/'tools/category-data.py',ROOT/'tools/link-account-read-kernel.py',ROOT/'platform/wasm-network/dependencies/network-candidate.lock.json']
-manifest={'schema':1,'purpose':'ADR-108 P0b resident account read kernel (history, favorites, follow updates, watch later, recommendations, signed category/UP) over one verified session; not device acceptance','libraryBuild':json.loads((BASE/'candidate-libraries.json').read_text()),'files':{n:digest(OUT/n) for n in ['probe.js','probe.wasm','probe.data']},'sourceInputs':{str(p.relative_to(ROOT)):digest(p) for p in inputs},'caSha256':expected}
+manifest={'schema':1,'purpose':'ADR-108 P0b resident account read kernel (history, favorites, follow updates, watch later, recommendations, signed category/UP) over one verified session; not device acceptance','libraryBuild':json.loads((BASE/'candidate-libraries.json').read_text()),'files':{n:digest(OUT/n) for n in ['probe.js','probe.wasm','probe.data']},'serviceSchemaSha256':digest(ROOT/'platform/wasm-network/src/service-config.h'),'sourceInputs':{str(p.relative_to(ROOT)):digest(p) for p in inputs+[ROOT/'tools/service_config_data.py',ROOT/'platform/wasm-network/src/service-config.h']},'caSha256':expected}
 (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print('Account kernel Samsung WASM linked and scanned; no deployment')

@@ -1,3 +1,4 @@
+#include "service-config.h"
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -107,7 +108,7 @@ static int https_probe(void) {
   struct response response = {0, 0, 0}; long status = 0;
   struct curl_slist *headers = NULL;
   headers = curl_slist_append(headers, "Accept: application/json");
-  curl_easy_setopt(curl, CURLOPT_URL, "https://api.bilibili.com/x/web-interface/nav");
+  curl_easy_setopt(curl, CURLOPT_URL, SERVICE_ADDRESS_A_34A874714ED0);
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, "BiliSofa-W01-Probe/0.0.1");
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);

@@ -1,3 +1,5 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
+import { serviceString } from '../../../packages/contracts/src/service-configuration.ts';
 import { ACCOUNT_TEST_VIDEO as video } from '../../../packages/contracts/src/account-probe.ts';
 import { parseProgressRequest, parseProgressResult, type ProgressRequest, type ProgressResult } from '../../../packages/contracts/src/progress-probe.ts';
 import { record } from '../../../packages/contracts/src/index.ts';
@@ -31,7 +33,7 @@ function read(op: number): void { expected = op; if (native._auth_begin(op) !== 
 function key(value: unknown): string {
   if (typeof value !== 'string' || value.length > 200) throw new Error();
   const url = new URL(value);
-  if (url.protocol !== 'https:' || !['i0.hdslb.com','i1.hdslb.com','i2.hdslb.com'].includes(url.hostname) || url.port || url.username || url.password || url.search || url.hash || !/^\/bfs\/wbi\/[a-f0-9]{32}\.png$/.test(url.pathname)) throw new Error();
+  if (url.protocol !== 'https:' || ![serviceString('a_d1d8109613cd'),serviceString('a_d1460da3012e'),serviceString('a_b97db64c383a')].includes(url.hostname) || url.port || url.username || url.password || url.search || url.hash || !/^\/bfs\/wbi\/[a-f0-9]{32}\.png$/.test(url.pathname)) throw new Error();
   return url.pathname.slice(-36, -4);
 }
 function response(op: number): void {
@@ -86,6 +88,6 @@ host.onmessage = event => {
   }
   try { active = parseProgressRequest(event.data); if (active.session.expiresAt <= Date.now() || active.session.expiresAt > Date.now() + 1800000) throw new Error(); }
   catch { active = undefined; return; }
-  host.Module = native;
+  host.Module = configureServiceNative(native);
   try { host.importScripts('progress-post/probe.js'); } catch { unknown(); }
 };

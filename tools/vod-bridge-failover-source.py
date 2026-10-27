@@ -12,7 +12,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 RECIPE = ROOT / 'tools/vod-bridge-source.py'
-RECIPE_HASH = '6d451471f392bc67f469a27329711769934540728f0ae85356abc4f196649bd2'
+RECIPE_HASH = 'cfcf042aa0b2f24c0fce059488995ab78994a59f60cacdd7c451ad72c02a81bf'
 
 
 def generate(output):

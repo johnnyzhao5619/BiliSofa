@@ -1,3 +1,4 @@
+import { serviceString } from '../../contracts/src/service-configuration.ts';
 import {DomainError,record,finite} from '../../contracts/src/index.ts';
 import {parseFollowUpdate,parseFollowUpdatesBatch,parseFollowOffset,type FollowUpdatesBatch} from '../../contracts/src/follow-updates.ts';
 import {eachRow,line} from './list-rows.ts';
@@ -16,6 +17,6 @@ export function parseFollowUpdatesBody(raw:string,current:string):FollowUpdatesB
 function videoId(v:Record<string,unknown>):string|undefined{
  const direct=typeof v.bvid==='string'&&/^BV[A-Za-z0-9]{10}$/.test(v.bvid)?v.bvid:undefined;
  const link=typeof v.uri==='string'?v.uri:typeof v.jump_url==='string'?v.jump_url:undefined;
- const match=link?.match(/^(?:https:)?\/\/www\.bilibili\.com\/video\/(BV[A-Za-z0-9]{10})(?:[/?#]|$)/);
+ const match=link?.match(new RegExp(serviceString('a_6858bb8c068d'), ""));
  if(direct&&match&&direct!==match[1])return;return direct??match?.[1];
 }

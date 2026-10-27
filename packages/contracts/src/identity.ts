@@ -1,3 +1,4 @@
+import { serviceString } from './service-configuration.ts';
 import { DomainError, parseScope, record, text, type ErrorCode, type Scope } from './index.ts';
 import { parseAccountIdentity, parsePrivateAccount, type AccountIdentity, type PrivateAccount } from './private-account.ts';
 export type IdentityRequest = { version: 1; operation: 'identity'; scope: Scope } & ({ mode: 'login' } | { mode: 'verify'; account: PrivateAccount });
@@ -21,13 +22,13 @@ function scope(value: unknown): Scope {
 }
 export function loginQr(value: unknown, expected?: string): string {
   const raw = text(value, 1024); let url: URL; try { url = new URL(raw); } catch { throw new DomainError('invalid'); }
-  const path = url.hostname === 'account.bilibili.com' ? '/h5/account-h5/auth/scan-web' : url.hostname === 'passport.bilibili.com' ? '/h5-app/passport/login/scan' : '';
+  const path = url.hostname === serviceString('a_199a6038520d') ? '/h5/account-h5/auth/scan-web' : url.hostname === serviceString('a_68b73a5f5b0a') ? '/h5-app/passport/login/scan' : '';
   const keys = [...url.searchParams.keys()], key = url.searchParams.get('qrcode_key');
-  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.hash || !path || url.pathname !== path || keys.length !== new Set(keys).size || keys.some(k => !['navhide', 'qrcode_key', 'callback', 'from'].includes(k)) || url.searchParams.has('from') && (url.hostname !== 'account.bilibili.com' || url.searchParams.get('from') !== '') || url.searchParams.get('navhide') !== '1' || !/^[0-9a-f]{32}$/.test(key ?? '') || expected !== undefined && key !== expected) throw new DomainError('invalid');
+  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.hash || !path || url.pathname !== path || keys.length !== new Set(keys).size || keys.some(k => !['navhide', 'qrcode_key', 'callback', 'from'].includes(k)) || url.searchParams.has('from') && (url.hostname !== serviceString('a_199a6038520d') || url.searchParams.get('from') !== '') || url.searchParams.get('navhide') !== '1' || !/^[0-9a-f]{32}$/.test(key ?? '') || expected !== undefined && key !== expected) throw new DomainError('invalid');
   const callback = url.searchParams.get('callback');
-  if (callback && !(url.hostname === 'account.bilibili.com' && callback === 'close')) {
+  if (callback && !(url.hostname === serviceString('a_199a6038520d') && callback === 'close')) {
     let target: URL; try { target = new URL(callback); } catch { throw new DomainError('invalid'); }
-    if (!['http:', 'https:'].includes(target.protocol) || target.hostname !== 'www.bilibili.com' || target.username || target.password || target.port || target.hash || !['/', '/login'].includes(target.pathname)) throw new DomainError('invalid');
+    if (!['http:', 'https:'].includes(target.protocol) || target.hostname !== serviceString('a_0fae5909ea6a') || target.username || target.password || target.port || target.hash || !['/', '/login'].includes(target.pathname)) throw new DomainError('invalid');
   }
   return raw;
 }

@@ -163,3 +163,11 @@ body.product-instant #overlays>section.vod-rate-picker{inset:160px 64px auto aut
 .tv-search-mixed-row{display:flex;flex-wrap:wrap;gap:16px;margin:0 0 20px}
 .tv-search-mixed-row>h3{flex:0 0 100%;margin:0;font-size:var(--tv-fs-aux);font-weight:400;color:var(--tv-muted)}
 .tv-search-mixed-row>button{flex:0 0 calc((100% - 64px)/5);min-width:0;margin:0}
+
+/* Service selection is a local, remote-first launch surface (ADR-119). */
+body.service-configuration>header{display:none}
+.service-setup{box-sizing:border-box;max-width:1180px;margin:56px auto;padding:32px 48px;background:#142033;border:1px solid #344258;border-radius:24px;color:#f4f7fb;font-size:26px;line-height:1.35}
+.service-setup h1{font-size:48px;line-height:1.2;margin:16px 0 28px}.service-brand{color:#ff8ab3;font-weight:700;letter-spacing:.06em}
+.service-setup label{display:block;font-weight:700;margin:20px 0 12px}.service-setup input{box-sizing:border-box;width:100%;padding:18px 22px;background:#0c1524;border:2px solid #62718a;border-radius:12px;color:#fff;font-size:32px}
+.service-setup input:focus,.service-setup button:focus{outline:4px solid #ff8ab3;outline-offset:5px}.service-setup p{margin:12px 0}.service-actions{display:flex;gap:22px;margin-top:30px}
+.service-actions button{padding:18px 26px;font-size:28px;color:#fff;background:#243650;border:2px solid #71809a;border-radius:12px}.service-actions button:disabled{opacity:.5}.service-setup [role=status]{min-height:44px;color:#ffd6e5}

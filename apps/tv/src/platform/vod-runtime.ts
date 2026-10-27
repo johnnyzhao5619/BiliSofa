@@ -1,3 +1,4 @@
+import { createServiceWorker } from './service-worker.ts';
 import {InteractionRuntime} from './interaction-runtime.ts';
 import { DomainError, record } from '../../../../packages/contracts/src/index.ts';
 import { parseVodChoice, vodKeys, type VodCapabilities, type VodChoice } from '../../../../packages/contracts/src/vod-catalog.ts';
@@ -55,7 +56,7 @@ export class VodRuntime {
     catch { channel.port1.close(); channel.port2.close(); throw new DomainError('cancelled'); }
   }
   constructor(capabilities: VodCapabilities, account?: PrivateAccount,
-    private readonly createWorker: (path: string) => VodWorkerPort = path => new Worker(path),
+    private readonly createWorker: (path: string) => VodWorkerPort = path => createServiceWorker(path),
     private readonly createChannel: () => { port1: MessagePort; port2: MessagePort } = () => new MessageChannel(),
     private readonly makeNonce: () => string = nonce, private readonly closeMs = 13000, private readonly readMs = 15000, private readonly seasonId?: string) {
     this.owner = vodNonce(makeNonce()); this.capabilities = parseVodCapabilities(capabilities);

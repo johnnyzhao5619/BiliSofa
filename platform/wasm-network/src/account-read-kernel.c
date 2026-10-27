@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* ADR-108 P0b: the resident account read kernel. One WASM instance per active
  * account keeps one verified session (its own cookie jar, one connection) for
  * every private read: history, favorite folders and items, follow updates,
@@ -27,26 +28,26 @@ static int account_url(int operation, char *value) {
   int n = 0; char *part = strchr(value, '|');
   if (operation == ACCOUNT_WATCH_LATER) {
     if (part || !account_batch(value)) return 0;
-    n = snprintf(request_url, sizeof(request_url), "https://api.bilibili.com/x/v2/medialist/toview/web?mobi_app=web&ps=%d&desc=true&otype=2&with_current=false&direction=false&preview=0&use_pn=true&pn=%s", KERNEL_ROWS, value);
+    n = snprintf(request_url, sizeof(request_url), SERVICE_ADDRESS_A_C6C61F49565C, KERNEL_ROWS, value);
   } else if (operation == ACCOUNT_FAVORITE_ITEMS) {
     if (!part || strchr(part + 1, '|')) return 0; *part++ = 0;
     if (!account_digits(value, 16) || !account_batch(part)) return 0;
-    n = snprintf(request_url, sizeof(request_url), "https://api.bilibili.com/x/v2/medialist/resource/list?mobi_app=web&type=3&biz_id=%s&ps=%d&desc=true&sort_field=3&tid=0&otype=2&with_current=false&direction=false&preview=0&use_pn=true&pn=%s", value, KERNEL_ROWS, part);
+    n = snprintf(request_url, sizeof(request_url), SERVICE_ADDRESS_A_49E6D827C56B, value, KERNEL_ROWS, part);
   } else if (operation == ACCOUNT_CATEGORY) {
     int id = part ? 0 : catalog_category_id(value); if (!id) return 0;
-    n = snprintf(request_url, sizeof(request_url), "https://api.bilibili.com/x/web-interface/ranking/v2?rid=%d&type=all", id);
+    n = snprintf(request_url, sizeof(request_url), SERVICE_ADDRESS_A_4FA2082A8383, id);
   } else if (operation == ACCOUNT_RANKING) {
     if (strcmp(value, "all")) return 0;
-    n = snprintf(request_url, sizeof(request_url), "https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all");
+    n = snprintf(request_url, sizeof(request_url), SERVICE_ADDRESS_A_E61A02296C1E);
   } else if (operation == ACCOUNT_UP) {
     if (!part || strchr(part + 1, '|')) return 0; *part++ = 0;
     if (!account_digits(value, 16) || strtoull(value, NULL, 10) > 9007199254740991ULL || !account_digits(part, 2) || atoi(part) > 50) return 0;
-    n = snprintf(request_url, sizeof(request_url), "https://api.bilibili.com/x/series/recArchivesByKeywords?mid=%s&keywords=&ps=30&pn=%s", value, part);
+    n = snprintf(request_url, sizeof(request_url), SERVICE_ADDRESS_A_B6F25B647450, value, part);
   }
   return n > 0 && (size_t)n < sizeof(request_url);
 }
 static const char *account_referer(int operation) {
-  return operation == ACCOUNT_WATCH_LATER ? "https://www.bilibili.com/list/watchlater" : operation == ACCOUNT_UP ? "https://space.bilibili.com/" : "https://www.bilibili.com/";
+  return operation == ACCOUNT_WATCH_LATER ? SERVICE_ADDRESS_A_423A883982ED : operation == ACCOUNT_UP ? SERVICE_ADDRESS_A_FBF80F678C49 : SERVICE_ADDRESS_A_B12964D8C1B1;
 }
 /* Opens a session (or reports that one is already open); the caller then imports the jar and verifies nav. */
 AUTH_EXPORT int kernel_open(void) {

@@ -10,7 +10,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / 'platform/wasm-network/src/probe-bridge.h'
-BASE_HASH = '3eef5c56bd48a7a216cf8eede2abc1249de3881065545573a64ffacc39cb0b7f'
+BASE_HASH = 'd162ea64a37b86762f3c876beb72b54cfe2ae492533bac399e2f132d17c2c399'
 
 
 def generate(output):

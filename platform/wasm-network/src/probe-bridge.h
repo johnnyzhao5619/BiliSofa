@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original bounded loopback media bridge candidate. No credential forwarding. */
 #ifndef BILISOFA_PROBE_BRIDGE_H
 #define BILISOFA_PROBE_BRIDGE_H
@@ -293,7 +294,7 @@ static int bridge_begin(const char *bvid,const char *token,const char *video,con
   for (int i=0;i<BRIDGE_CLIENTS;i++) { memset(&bridge_clients[i],0,sizeof(bridge_clients[i])); bridge_clients[i].fd=-1; }
   bridge_progressive=bridge_external_loop=0;
   strcpy(bridge_token,token); if (!bridge_manifest(metadata)) return 16;
-  strcpy(bridge_urls[0],video); strcpy(bridge_urls[1],audio); snprintf(bridge_referer,sizeof(bridge_referer),"https://www.bilibili.com/video/%s",bvid);
+  strcpy(bridge_urls[0],video); strcpy(bridge_urls[1],audio); snprintf(bridge_referer,sizeof(bridge_referer),SERVICE_ADDRESS_A_6CFDA06D9480,bvid);
   int opened=bridge_listen(); if (opened) return opened;
   double remaining[2];
   for (int i=0;i<2;i++) {
@@ -310,7 +311,7 @@ static int bridge_progressive_begin(const char *token,const char *url,double rem
   for(int i=0;i<BRIDGE_CLIENTS;i++){memset(&bridge_clients[i],0,sizeof(bridge_clients[i]));bridge_clients[i].fd=-1;}
   bridge_progressive=bridge_external_loop=1;
   strcpy(bridge_token,token);strcpy(bridge_urls[0],url);bridge_urls[1][0]=bridge_mpd[0]=0;
-  strcpy(bridge_referer,"https://www.bilibili.com/");
+  strcpy(bridge_referer,SERVICE_ADDRESS_A_B12964D8C1B1);
   int opened=bridge_listen();if(opened)return opened;
   bridge_progressive_total=total;bridge_stream_bytes=0;bridge_windows=0;memset(bridge_request_seen,0,sizeof(bridge_request_seen));
   /* Internal progressive-cast probe: five minutes including setup/pauses;

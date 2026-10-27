@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* W01/G4 anonymous fixed-room HLS preflight. No cookies, POST, redirects or proxy. */
 #include <stdio.h>
 #include <string.h>
@@ -31,7 +32,7 @@ static int allowed(const char *url, const char *extension){
 #ifdef BILISOFA_LIVE_PRODUCT
  const char *label=host;for(const char *p=host;p<slash;p++){if(*p=='.'){if(p==label||p[-1]=='-'||p-label>63)return 0;label=p+1;}else if(*p=='-'&&p==label)return 0;}if(label==slash||slash[-1]=='-'||slash-label>63)return 0;
 #endif
- int ok=0;const char *suffixes[]={".bilivideo.com",".bilivideo.cn"};
+ int ok=0;const char *suffixes[]={SERVICE_ADDRESS_A_CB591C9E9306,SERVICE_ADDRESS_A_07E3116C6FE5};
  for(int i=0;i<2;i++){size_t m=strlen(suffixes[i]);if((size_t)(slash-host)>m && !memcmp(slash-m,suffixes[i],m))ok=1;}
  const char *end=strchr(slash,'?');if(!end)end=url+n;size_t m=strlen(extension);
  return ok && (size_t)(end-slash)>m && !memcmp(end-m,extension,m);
@@ -87,7 +88,7 @@ LIVE_EXPORT int live_begin(int operation){
  || now_ms()>=until
 #endif
  )return 0;
- const char *url="https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo?room_id=6&protocol=1&format=1&codec=0&qn=80&platform=web&ptype=8";
+ const char *url=SERVICE_ADDRESS_A_17DCA5A8D170;
  if(operation && !allowed(input,operation==1?".m3u8":".ts"))return 0;
  live_response_clear();header_size=0;http_status=0;result_code=-1;
 #ifdef BILISOFA_LIVE_PRODUCT

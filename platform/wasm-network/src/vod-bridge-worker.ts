@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { DomainError, record } from '../../../packages/contracts/src/index.ts';
 import { vodInteger, vodKeys } from '../../../packages/contracts/src/vod-catalog.ts';
 import { vodErrorCode, vodNonce } from '../../../packages/contracts/src/vod-runtime.ts';
@@ -105,8 +106,8 @@ worker.onmessage = event => {
         }
       } catch { stop('invalid'); }
     }; port.start();
-    worker.Module = { arguments: [], noInitialRun: true, noExitRuntime: true, onRuntimeInitialized() { initialized = true; start(); },
-      print(line: unknown) { setTimeout(() => receive(line), 0); }, printErr() {}, onAbort: fault, locateFile: (name: string) => `vod/${name}` } as unknown as Native;
+    worker.Module = configureServiceNative({ arguments: [], noInitialRun: true, noExitRuntime: true, onRuntimeInitialized() { initialized = true; start(); },
+      print(line: unknown) { setTimeout(() => receive(line), 0); }, printErr() {}, onAbort: fault, locateFile: (name: string) => `vod/${name}` } as unknown as Native);
     try { worker.importScripts('vod/probe.js'); } catch { fault(); }
   } catch { fault(); }
 };

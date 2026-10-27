@@ -42,3 +42,7 @@
 账号失效/同身份重新登录按[ADR-082](adr/082-single-account-session-recovery.md)：返回媒体能力共享代次/到期保护；恢复仅保存安全页面意图，保护存储双bank更新，不恢复旧DTO/游标/播放/POST。
 
 小数倍速候选按[ADR-086](adr/086-fractional-rate-element-candidate.md)独立开发，尚未接入上述生产架构；原生video的生产DASH、跨后端排他切换与电视证据未完成，不能用已安装包的通过替代。
+
+## 用户选择服务配置（0.66.0源码候选）
+
+按[ADR-119](adr/119-user-selected-local-service-configuration.md)，启动入口先显示本地网址选择；确认匹配 WGT 内 profile 后才载入业务入口、预热读取或启动账号恢复。地址在 `apps/tv/service-providers/` 中作为本地数据保存，Worker bootstrap 与 C 槽位在业务执行前完成配置。没有新增外部后端服务；未知地址不被请求。Cookie / CDN / TLS / 身份边界和只读 / 排除范围不变。当前为未签名、未部署候选，不能继承原包全量通过。

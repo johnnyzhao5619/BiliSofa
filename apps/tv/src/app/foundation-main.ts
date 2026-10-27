@@ -1,3 +1,4 @@
+import { forgetService } from '../platform/service-configuration.ts';
 import {localOverlayPreferences} from '../platform/overlay-preferences-store.ts';
 import {productSettings} from './product-settings.ts';
 import {releaseInitials,sharedInitials} from '../platform/initials-worker.ts';
@@ -59,7 +60,7 @@ const root = document.querySelector<HTMLElement>('#pages')!, overlays = document
 {let notice:ReturnType<typeof setTimeout>|undefined;new MutationObserver(()=>{clearTimeout(notice);const text=feedback.textContent??'';if(text&&!/正在|未确认|扫码|登录|失效|重新打开|权限/.test(text))notice=setTimeout(()=>{if(feedback.textContent===text)feedback.textContent='';},4000);}).observe(feedback,{childList:true,characterData:true,subtree:true});}
 const repository = protectedAccountStore(), login = new LoginCoordinator(repository, () => new IdentityWorkerClient());
 const queues=localQueues();
-const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.65.1'); diagnostics.add('app','started'); onListSkips(() => diagnostics.add('app','list_items_skipped'));document.body.classList.add('product-instant');document.body.classList.add('product-stream');
+const profiles = localProfiles(), diagnostics = new AppDiagnostics('U5-0.66.0'); diagnostics.add('app','started'); onListSkips(() => diagnostics.add('app','list_items_skipped'));document.body.classList.add('product-instant');document.body.classList.add('product-stream');
 const histories=searchHistories();
 const writes = new RetainedWrites(writeJournal());
 function writeSummary(id:string){const old=writes.summary(id),video=interactionWrites().summary(id);return old&&video?{total:old.total+video.total,unknown:old.unknown+video.unknown}:undefined;}
@@ -125,8 +126,21 @@ const shell = new TvShell(document, root, overlays, (route, owner): HTMLElement 
   if (route.page === 'settings' || route.page === 'account') {const view=localSettings(owner, shell, profile, diagnostics, () => state?.kind === 'active' ? writeSummary(state.account.id) : 'guest',history,state?.kind==='active'?()=>{shell.openModal('read-cache-clear',child=>readCacheClear(child,shell,workspace),'cache-keep');}:undefined,queue,()=>{void shell.navigateTop({page:'home'});},state?.kind==='active'?()=>homeSnapshots().clearAccount(state.account.id):undefined);const probeDevice=vodRuntimeStatus(),probeCaps=probeDevice?.kind==='available'?probeDevice.capabilities:undefined;
     // R07 rate probe (ADR-095) lives in 帮助与诊断 and only runs when the viewer starts it.
     const probe=probeCaps?productButton('settings-rate-probe','倍速探查（诊断）',()=>{if(!owner.signal.aborted)shell.openModal('rate-probe',child=>rateProbe(child,shell,probeCaps,()=>openVodAccess(probeCaps),profile),'rate-probe-start');}):undefined;
+    const resetService = productButton('settings-service-address', '重新填写网站地址', () => {
+      shell.openModal('reset-service', () => {
+        const panel = document.createElement('section'), heading = document.createElement('h2'), note = document.createElement('p');
+        heading.textContent = '下次启动重新填写网站地址？'; note.textContent = '这会退出应用，但保留已保存的账号、本机观看记录和未确认的互动记录。';
+        panel.append(heading, note, button('service-reset-cancel', '取消', () => { void shell.back(); }), button('service-reset-confirm', '清除网址并退出', () => {
+          if (!forgetService()) { feedback.textContent = '无法清除已保存的网址，当前配置未改变'; return; }
+          void Promise.all([workspace.dispose(), publicKernel().close()]).then(([closed]) => {
+            if (closed) { disposed = true; exitApplication(); }
+            else feedback.textContent = '网址已清除，资源关闭未确认，请使用系统返回键退出';
+          }).catch(() => { feedback.textContent = '网址已清除，请退出后重新打开应用'; });
+        })); return panel;
+      }, 'service-reset-cancel');
+    });
     const account=accountView();
-    return wrap(productSettings(owner,shell,view,localOverlayPreferences(state?.kind==='active'?state.account.id:'guest'),probe,lastFailureNote(diagnostics.lastMediaFailure()),visitorSettings(owner),{node:account,open:route.page==='account'}));}
+    return wrap(productSettings(owner,shell,view,localOverlayPreferences(state?.kind==='active'?state.account.id:'guest'),probe,lastFailureNote(diagnostics.lastMediaFailure()),[...visitorSettings(owner),resetService],{node:account,open:route.page==='account'}));}
   {
     const device=vodRuntimeStatus(),caps=device?.kind==='available'?device.capabilities:undefined;
     const unavailable=device?.kind==='unavailable'?'当前平台缺少可用播放器（media.player_api_missing），请核对平台API':false;

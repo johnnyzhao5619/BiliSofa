@@ -1,3 +1,4 @@
+import { createServiceWorker } from './service-worker.ts';
 import { DomainError, type Scope } from '../../../../packages/contracts/src/index.ts';
 import { isSearchRequest, parseKernelEvent, type KernelEvent, type KernelRequest } from '../../../../packages/contracts/src/public-kernel.ts';
 import { wbiKeys, type WbiKeyStore } from './wbi-keys.ts';
@@ -38,7 +39,7 @@ export class ResidentKernel<Q extends { scope: Scope; operation: string } = Kern
   private readonly now: () => number;
   constructor(private readonly options: KernelOptions = {}) {
     const file = options.file ?? 'public-kernel-worker.js';
-    this.create = options.create ?? (() => new Worker(file) as unknown as KernelWorker);
+    this.create = options.create ?? (() => createServiceWorker(file) as unknown as KernelWorker);
     this.keys = options.keys ?? wbiKeys(); this.now = options.now ?? Date.now;
   }
   get paused(): boolean { return this.now() < this.pausedUntil; }

@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original F05 private read-only lane; one verified account per native lifetime. */
 #include <stdio.h>
 #include <string.h>
@@ -22,7 +23,7 @@ static char body[AUTH_CAP+1], input[AUTH_PRIVATE_CAP+1], request_url[4096];
 static size_t body_size, header_size;
 static double session_until, request_until;
 static const char *const fixed_urls[]={
- "https://api.bilibili.com/x/web-interface/nav"
+ SERVICE_ADDRESS_A_34A874714ED0
 };
 static double now_ms(void){struct timespec t;if(clock_gettime(CLOCK_MONOTONIC,&t))return -1;return t.tv_sec*1000.0+t.tv_nsec/1000000.0;}
 static void emit(const char *s){puts(s);fflush(stdout);}
@@ -46,7 +47,7 @@ static size_t body_cb(char *data,size_t unit,size_t count,void *ctx){
  (void)ctx;if(unit && count>AUTH_CAP/unit)return 0;size_t n=unit*count;if(n>AUTH_CAP-body_size || memchr(data,0,n))return 0;
  memcpy(body+body_size,data,n);body_size+=n;body[body_size]=0;return n;
 }
-static int domain_allowed(const char *s){return !strcasecmp(s,".bilibili.com") || !strcasecmp(s,"bilibili.com") || !strcasecmp(s,"api.bilibili.com") || !strcasecmp(s,"passport.bilibili.com");}
+static int domain_allowed(const char *s){return !strcasecmp(s,SERVICE_ADDRESS_A_0F551371E9F1) || !strcasecmp(s,SERVICE_ADDRESS_A_4727900DD5EC) || !strcasecmp(s,SERVICE_ADDRESS_A_518E98F60A28) || !strcasecmp(s,SERVICE_ADDRESS_A_68B73A5F5B0A);}
 static size_t header_cb(char *data,size_t unit,size_t count,void *ctx){
  (void)ctx;if(unit && count>8192/unit)return 0;size_t n=unit*count;if(n>8192-header_size)return 0;header_size+=n;
  if(n>=11 && !strncasecmp(data,"Set-Cookie:",11)){
@@ -94,7 +95,7 @@ AUTH_EXPORT int auth_begin(int operation){
  if(operation==1){
   size_t n=strlen(input);if(n<1 || n>2 || strspn(input,"0123456789")!=n || input[0]=='0')return 0;
   int page=atoi(input);if(page<1 || page>25)return 0;
-  snprintf(request_url,sizeof(request_url),"https://api.bilibili.com/x/v2/medialist/toview/web?mobi_app=web&ps=4&desc=true&otype=2&with_current=false&direction=false&preview=0&use_pn=true&pn=%d",page);url=request_url;
+  snprintf(request_url,sizeof(request_url),SERVICE_ADDRESS_A_3FCFD8D197F9,page);url=request_url;
  }
  if(operation==2){
   char cursor[64];size_t length=strlen(input);if(length<4 || length>=sizeof(cursor))return 0;memcpy(cursor,input,length+1);
@@ -102,25 +103,25 @@ AUTH_EXPORT int auth_begin(int operation){
   size_t m=strlen(cursor),t=strlen(first);if(m<1 || m>20 || t<1 || t>10 || strspn(cursor,"0123456789")!=m || strspn(first,"0123456789")!=t || (m>1&&cursor[0]=='0') || (t>1&&first[0]=='0') || (m==20&&strcmp(cursor,"18446744073709551615")>0) || (t==10&&strcmp(first,"4294967295")>0))return 0;
   if(!*second){if(strcmp(cursor,"0")||strcmp(first,"0"))return 0;}
   else if(strcmp(second,"archive")&&strcmp(second,"pgc")&&strcmp(second,"live")&&strcmp(second,"article")&&strcmp(second,"article-list")&&strcmp(second,"cheese"))return 0;
-  snprintf(request_url,sizeof(request_url),"https://api.bilibili.com/x/web-interface/history/cursor?max=%s&view_at=%s&business=%s",cursor,first,second);url=request_url;
+  snprintf(request_url,sizeof(request_url),SERVICE_ADDRESS_A_D18DD4138DAB,cursor,first,second);url=request_url;
   OPENSSL_cleanse(cursor,sizeof(cursor));
  }
- if(operation==3){if(*input)return 0;url="https://api.bilibili.com/x/v3/fav/folder/list4navigate";}
+ if(operation==3){if(*input)return 0;url=SERVICE_ADDRESS_A_4A19423B9584;}
  if(operation==4){
   char value[24];size_t length=strlen(input);if(length<3 || length>=sizeof(value))return 0;memcpy(value,input,length+1);
   char *part=strchr(value,'|');if(!part || strchr(part+1,'|'))return 0;*part++=0;
   size_t n=strlen(value),m=strlen(part);if(n<1 || n>16 || value[0]=='0' || strspn(value,"0123456789")!=n || m<1 || m>2 || part[0]=='0' || strspn(part,"0123456789")!=m)return 0;
   int page=atoi(part);if(page<1 || page>25)return 0;
-  snprintf(request_url,sizeof(request_url),"https://api.bilibili.com/x/v2/medialist/resource/list?mobi_app=web&type=3&biz_id=%s&ps=4&desc=true&sort_field=3&tid=0&otype=2&with_current=false&direction=false&preview=0&use_pn=true&pn=%d",value,page);url=request_url;
+  snprintf(request_url,sizeof(request_url),SERVICE_ADDRESS_A_6BA99CE07783,value,page);url=request_url;
   OPENSSL_cleanse(value,sizeof(value));
  }
  if(operation==5){
   size_t length=strlen(input);if(length>1024)return 0;for(size_t i=0;i<length;i++)if((unsigned char)input[i]<33 || (unsigned char)input[i]>126)return 0;
   char *offset=curl_easy_escape(easy,input,(int)length);if(!offset)return 0;
-  int size=snprintf(request_url,sizeof(request_url),"https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/nav?update_baseline=&offset=%s",offset);curl_free(offset);if(size<0 || (size_t)size>=sizeof(request_url))return 0;url=request_url;
+  int size=snprintf(request_url,sizeof(request_url),SERVICE_ADDRESS_A_775BAA9651E3,offset);curl_free(offset);if(size<0 || (size_t)size>=sizeof(request_url))return 0;url=request_url;
  }
  OPENSSL_cleanse(input,sizeof(input));wipe_response();header_size=0;http_status=0;result_code=-1;
- if(curl_easy_setopt(easy,CURLOPT_REFERER,operation==2?"https://www.bilibili.com/account/history":operation>=3?"https://www.bilibili.com/":"https://www.bilibili.com/list/watchlater")!=CURLE_OK || curl_easy_setopt(easy,CURLOPT_URL,url)!=CURLE_OK || curl_multi_add_handle(multi,easy)!=CURLM_OK)return 0;
+ if(curl_easy_setopt(easy,CURLOPT_REFERER,operation==2?SERVICE_ADDRESS_A_03F8D13FD9CC:operation>=3?SERVICE_ADDRESS_A_B12964D8C1B1:SERVICE_ADDRESS_A_423A883982ED)!=CURLE_OK || curl_easy_setopt(easy,CURLOPT_URL,url)!=CURLE_OK || curl_multi_add_handle(multi,easy)!=CURLM_OK)return 0;
  active=operation;added=1;request_until=now_ms()+9000;return 1;
 }
 AUTH_EXPORT void auth_stop(void){if(live)finish();}
@@ -141,7 +142,7 @@ static int start(void){
  if(curl_global_init(CURL_GLOBAL_DEFAULT)!=CURLE_OK)return 0;initialized=1;easy=curl_easy_init();multi=curl_multi_init();if(!easy || !multi){finish();return 0;}
 #define SET(option,value) do {if(curl_easy_setopt(easy,option,value)!=CURLE_OK){finish();return 0;}} while(0)
  SET(CURLOPT_COOKIEFILE,"");SET(CURLOPT_FOLLOWLOCATION,0L);SET(CURLOPT_PROTOCOLS_STR,"https");SET(CURLOPT_REDIR_PROTOCOLS_STR,"https");
- SET(CURLOPT_PROXY,"");SET(CURLOPT_NOPROXY,"*");SET(CURLOPT_USERAGENT,"BiliSofa/0.0.0");SET(CURLOPT_REFERER,"https://www.bilibili.com/list/watchlater");
+ SET(CURLOPT_PROXY,"");SET(CURLOPT_NOPROXY,"*");SET(CURLOPT_USERAGENT,"BiliSofa/0.0.0");SET(CURLOPT_REFERER,SERVICE_ADDRESS_A_423A883982ED);
  SET(CURLOPT_SSL_VERIFYPEER,1L);SET(CURLOPT_SSL_VERIFYHOST,2L);SET(CURLOPT_CAINFO,"/cacert.pem");
  SET(CURLOPT_CONNECTTIMEOUT_MS,4000L);SET(CURLOPT_TIMEOUT_MS,8000L);SET(CURLOPT_NOSIGNAL,1L);SET(CURLOPT_HTTPGET,1L);
  SET(CURLOPT_WRITEFUNCTION,body_cb);SET(CURLOPT_HEADERFUNCTION,header_cb);

@@ -3,8 +3,8 @@ from pathlib import Path
 import hashlib,json,os,re,subprocess
 ROOT=Path(__file__).resolve().parents[1];BASE=ROOT/'.local/network-upgrade';SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk';PREFIX=BASE/'stage/bilisofa/network';import sys
 # --out keeps an earlier frozen module intact (0.47.2 links into build/overlay-read-subtitle).
-OUT=ROOT/(sys.argv[sys.argv.index('--out')+1] if '--out' in sys.argv else 'build/overlay-read')
-if OUT.parent!=ROOT/'build' or not OUT.name.startswith('overlay-read'):raise SystemExit('Overlay read output must stay under build/overlay-read*')
+OUT=ROOT/(sys.argv[sys.argv.index('--out')+1] if '--out' in sys.argv else 'build/service-config/overlay-read')
+if OUT.parent!=ROOT/'build/service-config' or not OUT.name.startswith('overlay-read'):raise SystemExit('Overlay read output must stay under build/overlay-read*')
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 subprocess.run(['python3',str(ROOT/'tools/build-network-candidate.py'),'check'],check=True)
 ca=ROOT/'.local/cacert.pem';expected='a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505'
@@ -24,6 +24,6 @@ for n in ['probe.js','probe.wasm','probe.data']:
 if re.search(r'\beval\s*\(|new Function',s) or (OUT/'probe.wasm').read_bytes()[:8]!=b'\0asm\1\0\0\0' or digest(OUT/'probe.data')!=expected:raise SystemExit('Overlay read runtime policy mismatch')
 for bad in [b'/heartbeat',b'/x/passport',b'/qrcode',b'/toview/add',b'/toview/del',b'/history/report',b'/history/delete',b'/fav/resource/deal',b'/dynamic/create',b'/x/web-interface/coin',b'/x/web-interface/like']:
  if bad in (OUT/'probe.wasm').read_bytes():raise SystemExit('Overlay read includes unrelated write/login route')
-manifest={'schema':1,'purpose':'W05 signed player metadata/segmented protobuf and anonymous scoped subtitle JSON; target and identity verified; not device acceptance','libraryBuild':json.loads((BASE/'candidate-libraries.json').read_text()),'files':{n:digest(OUT/n) for n in ['probe.js','probe.wasm','probe.data']},'sourceInputs':{str(p.relative_to(ROOT)):digest(p) for p in [source,ROOT/'platform/wasm-network/src/vod-source-policy.h',ROOT/'platform/wasm-network/src/vod-api.c',ROOT/'tools/link-overlay-read.py',ROOT/'platform/wasm-network/dependencies/network-candidate.lock.json']},'caSha256':expected}
+manifest={'schema':1,'purpose':'W05 signed player metadata/segmented protobuf and anonymous scoped subtitle JSON; target and identity verified; not device acceptance','libraryBuild':json.loads((BASE/'candidate-libraries.json').read_text()),'files':{n:digest(OUT/n) for n in ['probe.js','probe.wasm','probe.data']},'serviceSchemaSha256':digest(ROOT/'platform/wasm-network/src/service-config.h'),'sourceInputs':{str(p.relative_to(ROOT)):digest(p) for p in [source,ROOT/'platform/wasm-network/src/vod-source-policy.h',ROOT/'platform/wasm-network/src/vod-api.c',ROOT/'tools/link-overlay-read.py',ROOT/'platform/wasm-network/dependencies/network-candidate.lock.json']},'caSha256':expected}
 (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print('Overlay read-only Samsung WASM linked and scanned; no deployment')

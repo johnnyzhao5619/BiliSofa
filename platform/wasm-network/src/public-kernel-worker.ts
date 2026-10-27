@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { parseKernelCommand, isSearchRequest, type KernelEvent, type KernelRequest, type WbiKeys } from '../../../packages/contracts/src/public-kernel.ts';
 import { parsePopularBody } from '../../../packages/bili-client/src/popular.ts';
 import { parseRankingBody, parsePgcRankingBody, parseUpArchivesBody, parseVisitorBody } from '../../../packages/bili-client/src/ranking.ts';
@@ -132,7 +133,7 @@ function handle(value: unknown): void {
 function drain(): void { while (phase === 'ready' && !current && queued.length) handle(queued.shift()); }
 function boot(): void {
   phase = 'loading';
-  port.Module = {
+  port.Module = configureServiceNative({
     noInitialRun: true, noExitRuntime: true,
     onRuntimeInitialized() { try { (port.Module as unknown as Native).callMain([]); } catch { post({ version: 1, type: 'failed' }); } },
     print(line: unknown) {
@@ -150,7 +151,7 @@ function boot(): void {
     },
     printErr() {}, onAbort() { post({ version: 1, type: 'failed' }); },
     locateFile: (name: string) => `public-kernel/${name}`,
-  };
+  });
   void fetch('public-kernel/manifest.json').then(response => {
     void response.body?.cancel();
     if (!response.ok) throw new Error();

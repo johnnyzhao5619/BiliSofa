@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import {DomainError,record,type ErrorCode} from '../../../packages/contracts/src/index.ts';
 import {parseWatchLaterRequest,parseWatchLaterResult,type WatchLaterRequest,type WatchLaterResult} from '../../../packages/contracts/src/watch-later.ts';
 import {parseHistoryRequest,parseHistoryResult,type HistoryRequest,type HistoryResult} from '../../../packages/contracts/src/history.ts';
@@ -40,5 +41,5 @@ port.onmessage=async event=>{
  else if(line==='AUTH:ready')later(()=>{if(!(module.HEAPU8 instanceof Uint8Array)||!active||module._auth_import_cookies(input(active.account.cookieLines))!==1){stop('invalid');return;}begin(0);});
  else if(typeof line==='string'&&/^AUTH:response:[0-5]$/.test(line))later(()=>response(Number(line.slice(-1))));else fail();
  },printErr(){},onAbort:fail,locateFile:(name:string)=>'library/'+name} as unknown as Native;
- port.Module=module;phase='loading';port.importScripts('library/probe.js');
+ port.Module=configureServiceNative(module);phase='loading';port.importScripts('library/probe.js');
 };

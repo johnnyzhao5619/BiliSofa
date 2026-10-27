@@ -1,3 +1,4 @@
+import { serviceString } from '../../contracts/src/service-configuration.ts';
 import { SOURCE_POLICY_REASONS, type SourcePolicyReason } from '../../contracts/src/upnp.ts';
 import { DomainError } from '../../contracts/src/index.ts';
 import type { SoapRequest, UpnpService, TransportQuery, CastMediaOffer, SoapProbeFact } from '../../contracts/src/upnp.ts';
@@ -6,9 +7,9 @@ const SOAP = 'http://schemas.xmlsoap.org/soap/envelope/', ENCODING = 'http://sch
 const serviceUri = (service: UpnpService) => `urn:schemas-upnp-org:service:${service}:1`;
 // Exact Bilibili node listed by its official video diagnostics page (ADR-018).
 // No other customer or subdomain of the shared CDN is eligible.
-export const BILI_CAST_AKAM_HOST = 'upos-hz-mirrorakam.akamaized.net';
+export const BILI_CAST_AKAM_HOST = serviceString('a_af91beaef16e');
 function castMediaHost(host: string): boolean {
-  return host === BILI_CAST_AKAM_HOST || /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+bilivideo\.com$/.test(host);
+  return host === BILI_CAST_AKAM_HOST || new RegExp(serviceString('a_199f07083b7f'), "").test(host);
 }
 export function isBiliCastAkamOffer(request: SoapRequest): boolean {
   if (request.kind !== 'offer') return false;

@@ -1,3 +1,4 @@
+import { serviceString } from '../../contracts/src/service-configuration.ts';
 import type { OfferContext, OfferReason } from '../../contracts/src/cast-offer-diagnostics.ts';
 import type { SoapRequest } from '../../contracts/src/upnp.ts';
 import type { ReceiverDecision } from './receiver.ts';
@@ -17,8 +18,8 @@ export function receiverOfferReason(request: SoapRequest, decision: ReceiverDeci
       if (policy === 'destination') {
         const url = new URL(request.uri);
         if (!url.username && !url.password && !url.port) {
-          if (/^(?:[a-z0-9-]+\.)+bilivideo\.cn$/.test(url.hostname)) return 'policy_destination_cn';
-          if (/^(?:[a-z0-9-]+\.)+akamaized\.net$/.test(url.hostname)) return 'policy_destination_akamaized';
+          if (new RegExp(serviceString('a_0d04b3e3e19d'), "").test(url.hostname)) return 'policy_destination_cn';
+          if (new RegExp(serviceString('a_d480c935d845'), "").test(url.hostname)) return 'policy_destination_akamaized';
         }
       }
       if (policy === 'other_format' && new URL(request.uri).pathname.endsWith('.flv')) return 'policy_other_flv';

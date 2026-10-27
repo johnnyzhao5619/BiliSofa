@@ -1,3 +1,4 @@
+import { serviceString } from './service-configuration.ts';
 import type { VideoInteractionAccess } from './video-interactions-dto.ts';
 import type {RecommendationQuery,RecommendationPage} from './recommendations-dto.ts';
 import {parseAccountProfile,type AccountProfile} from './account-profile.ts';
@@ -69,7 +70,7 @@ export function parsePrivateAccount(value: unknown): PrivateAccount {
   const names = new Set<string>();
   for (const line of lines) {
     const f = line.replace(/^#HttpOnly_/, '').split('\t');
-    if (f.length !== 7 || f.some(x => !/^[\x21-\x7e]+$/.test(x)) || !['.bilibili.com', 'bilibili.com', 'passport.bilibili.com', 'api.bilibili.com'].includes(f[0]!) || !['TRUE', 'FALSE'].includes(f[1]!) || f[2] !== '/' || f[3] !== 'TRUE' || !/^[0-9]{1,12}$/.test(f[4]!) || !['SESSDATA', 'bili_jct', 'DedeUserID', 'DedeUserID__ckMd5'].includes(f[5]!) || names.has(f[5]!) || f[6]!.length > 1536 || f[6]!.includes(';') || f[5] === 'DedeUserID' && f[6] !== v.uid) throw new DomainError('invalid');
+    if (f.length !== 7 || f.some(x => !/^[\x21-\x7e]+$/.test(x)) || ![serviceString('a_0f551371e9f1'), serviceString('a_4727900dd5ec'), serviceString('a_68b73a5f5b0a'), serviceString('a_518e98f60a28')].includes(f[0]!) || !['TRUE', 'FALSE'].includes(f[1]!) || f[2] !== '/' || f[3] !== 'TRUE' || !/^[0-9]{1,12}$/.test(f[4]!) || !['SESSDATA', 'bili_jct', 'DedeUserID', 'DedeUserID__ckMd5'].includes(f[5]!) || names.has(f[5]!) || f[6]!.length > 1536 || f[6]!.includes(';') || f[5] === 'DedeUserID' && f[6] !== v.uid) throw new DomainError('invalid');
     names.add(f[5]!);
   }
   if (!names.has('SESSDATA') || !names.has('bili_jct')) throw new DomainError('invalid');

@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original independent native destination validation, shared by W04 read/bridge
  * modules. Derived from the verified BiliSofa probe policy without GET routines.
  * Native checks stay independent of TypeScript/UI validation. */
@@ -21,7 +22,7 @@ static inline int guest_cid_valid(const char *cid) {
 static inline int guest_cdn_valid(const char *url) {
   if (!url || strlen(url) > 2048 || strncmp(url, "https://", 8)) return 0;
   const char *end = strchr(url + 8, '/'); if (!end || end == url + 8 || end - (url + 8) > 253) return 0;
-  size_t length = (size_t)(end - (url + 8)); const char *suffix = ".bilivideo.com";
+  size_t length = (size_t)(end - (url + 8)); const char *suffix = SERVICE_ADDRESS_A_CB591C9E9306;
   if (length <= strlen(suffix) || strncmp(end - strlen(suffix), suffix, strlen(suffix))) return 0;
   const char *label = url + 8;
   for (const char *c = label; c < end; c++) {

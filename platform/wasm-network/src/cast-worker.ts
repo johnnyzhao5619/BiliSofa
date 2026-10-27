@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 declare const BILISOFA_CAST_PRODUCT:boolean;
 const product=typeof BILISOFA_CAST_PRODUCT!=='undefined'&&BILISOFA_CAST_PRODUCT;
 import { offerObservationCode, type OfferReason } from '../../../packages/contracts/src/cast-offer-diagnostics.ts';
@@ -214,7 +215,7 @@ worker.onmessage = async event => {
   try { const r = await fetch('native/manifest.json'); if (r.body) await r.body.cancel(); if (!r.ok) { reply('cast.native_unavailable', true); return; } }
   catch { reply('cast.native_unavailable', true); return; }
   if (stopping) { reply('cast.cancelled', true); return; }
-  worker.Module = { noInitialRun: true, onRuntimeInitialized() {
+  worker.Module = configureServiceNative({ noInitialRun: true, onRuntimeInitialized() {
     if (stopping) { reply('cast.cancelled', true); return; }
     started = true;
     try { if (active!.receiverApproval === 'session') worker.Module!._cast_transition_enable!(); worker.Module!._cast_rpc_enable!(); worker.Module!.callMain!(['cast', active!.address, active!.uuid, active!.token]); } catch { unknown(); }
@@ -247,6 +248,6 @@ worker.onmessage = async event => {
     else if (typeof line === 'string' && /^CAST:closed(?::[0-9]{1,3}){7}$/.test(line)) reply(line.toLowerCase().split(':').join('_').replace('cast_', 'cast.'), true);
     else if (typeof line === 'string' && /^CAST:failed:(10|11|12|13|131|132|14|16)$/.test(line)) reply('cast.failed_' + line.split(':')[2], true);
     else if (line === 'CAST:failed:17') unknown('native_unconfirmed');
-  }, printErr() {}, onAbort: () => unknown('runtime_aborted'), locateFile: name => `${product?'cast-product':'native'}/${name}` };
+  }, printErr() {}, onAbort: () => unknown('runtime_aborted'), locateFile: name => `${product?'cast-product':'native'}/${name}` });
   try { worker.importScripts(product?'cast-product/probe.js':'native/probe.js'); } catch { unknown(); }
 };

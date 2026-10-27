@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { parseSessionProbeRequest, parseSessionProbeResult, type SessionProbeRequest } from '../../../packages/contracts/src/session-probe.ts';
 import { nativeSessionIssue, nativeSessionStack, type NativeSessionIssue } from './native-session-issue.ts';
 interface Module { noInitialRun: boolean; onRuntimeInitialized(): void; print(value: unknown): void; printErr(value?: unknown): void; onAbort(value?: unknown): void; locateFile(name: string): string; callMain?(args: string[]): void; _session_probe_stop?(): void; }
@@ -26,7 +27,7 @@ worker.onmessage = async event => {
   try { const response = await fetch('native/manifest.json'); if (response.body) await response.body.cancel(); if (!response.ok) { reply('session.native_unavailable', true); return; } }
   catch { reply('session.native_unavailable', true); return; }
   if (stopping) { reply('session.cancelled', true); return; }
-  worker.Module = { noInitialRun: true, onRuntimeInitialized() {
+  worker.Module = configureServiceNative({ noInitialRun: true, onRuntimeInitialized() {
     if (stopping) { reply('session.cancelled', true); return; }
     started = true; worker.Module!.callMain!(['session-wire', active!.token]);
   }, print(line) {
@@ -42,6 +43,6 @@ worker.onmessage = async event => {
     const stack = new Error().stack, frame = nativeSessionStack(stack);
     if (frame) reply(frame, false);
     unknown(nativeSessionIssue(value) ?? issue ?? nativeSessionIssue(stack?.slice(0, 1024)) ?? 'runtime_abort');
-  }, locateFile: name => 'native/' + name };
+  }, locateFile: name => 'native/' + name });
   try { worker.importScripts('native/probe.js'); } catch { unknown(issue ?? 'worker_exception'); }
 };

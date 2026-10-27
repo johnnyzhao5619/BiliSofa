@@ -1,3 +1,4 @@
+import { createServiceWorker } from './service-worker.ts';
 import {DomainError,record,type MediaSource} from '../../../../packages/contracts/src/index.ts';
 import {parsePrivateAccount,type PrivateAccount} from '../../../../packages/contracts/src/private-account.ts';
 import {parseLiveBrowse,parseLiveSelection,parseLiveBatch,parseLiveAreas,parseLiveCatalog,parseLiveMessages,liveId,LiveReadFailure,parseLiveSourceStatus,type LiveSourceStatus,type LiveAccess,type LiveCatalog,type LiveBrowseQuery,type LiveSelection} from '../../../../packages/contracts/src/live-product.ts';
@@ -30,7 +31,7 @@ export class LiveRuntime implements LiveAccess {
   private closeRequest=0;
   private closing:Promise<void>|undefined;
   constructor(caps?:VodCapabilities,account?:PrivateAccount,
-    private readonly factory:(file:string)=>VodWorkerPort=file=>new Worker(file),makeNonce=nonce,
+    private readonly factory:(file:string)=>VodWorkerPort=file=>createServiceWorker(file),makeNonce=nonce,
     private readonly readMs=45000,private readonly closeMs=13000){
     this.owner=vodNonce(makeNonce());this.caps=caps===undefined?undefined:parseVodCapabilities(caps);this.account=account===undefined?undefined:parsePrivateAccount(account);
     if(!Number.isInteger(readMs)||readMs<10||readMs>90000||!Number.isInteger(closeMs)||closeMs<10||closeMs>60000)throw new DomainError('invalid');

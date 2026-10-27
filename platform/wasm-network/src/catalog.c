@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original public catalog lane. No caller URL/header/authentication surface. */
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,28 +8,28 @@
 #include "catalog-categories.h"
 static void catalog_ranking(void) {
   guest_reset(); guest_limit = BILISOFA_GUEST_MAX;
-  guest_get("https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all", "https://www.bilibili.com/", 0);
+  guest_get(SERVICE_ADDRESS_A_E61A02296C1E, SERVICE_ADDRESS_A_B12964D8C1B1, 0);
 }
 /* 0.49.0 (ADR-096): public 番剧/国创 ranking. 0.50.0 (ADR-098) allows only season_type 1 (番剧) or
    4 (国创) and a 3- or 7-day window; the index lane sorts all time by followers, pages 1-5. */
 static int catalog_pgc_type(const char *s) { return s && (!strcmp(s, "1") || !strcmp(s, "4")) ? s[0] - '0' : 0; }
 static void catalog_pgc_ranking(int type, int day) {
   char url[128];
-  snprintf(url, sizeof(url), "https://api.bilibili.com/pgc/web/rank/list?day=%d&season_type=%d", day, type);
+  snprintf(url, sizeof(url), SERVICE_ADDRESS_A_1A38FCE7AEBD, day, type);
   guest_reset(); guest_limit = BILISOFA_GUEST_MAX;
-  guest_get(url, "https://www.bilibili.com/", 0);
+  guest_get(url, SERVICE_ADDRESS_A_B12964D8C1B1, 0);
 }
 static void catalog_pgc_index(int type, int page) {
   char url[192];
-  snprintf(url, sizeof(url), "https://api.bilibili.com/pgc/season/index/result?season_type=%d&type=1&order=3&sort=0&page=%d&pagesize=20", type, page);
+  snprintf(url, sizeof(url), SERVICE_ADDRESS_A_5D77BCB7DE30, type, page);
   guest_reset(); guest_limit = BILISOFA_GUEST_MAX;
-  guest_get(url, "https://www.bilibili.com/", 0);
+  guest_get(url, SERVICE_ADDRESS_A_B12964D8C1B1, 0);
 }
 static void catalog_category(int id) {
   char url[128];
-  snprintf(url, sizeof(url), "https://api.bilibili.com/x/web-interface/ranking/v2?rid=%d&type=all", id);
+  snprintf(url, sizeof(url), SERVICE_ADDRESS_A_4FA2082A8383, id);
   guest_reset(); guest_limit = BILISOFA_GUEST_MAX;
-  guest_get(url, "https://www.bilibili.com/", 0);
+  guest_get(url, SERVICE_ADDRESS_A_B12964D8C1B1, 0);
 }
 #ifndef CATALOG_NO_MAIN
 int main(int argc, char **argv) {

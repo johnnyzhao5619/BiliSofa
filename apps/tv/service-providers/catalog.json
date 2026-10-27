@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "profiles": [
+    {
+      "id": "bilibili-web",
+      "inputHosts": [
+        "www.bilibili.com",
+        "bilibili.com"
+      ],
+      "file": "service-providers/bilibili-web.json"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original single-intent G3 progress candidate. Default account-probe has no POST. */
 static void progress_wipe(void);
 #define AUTH_EXTRA_CLEANUP progress_wipe
@@ -35,7 +36,7 @@ AUTH_EXPORT int progress_prepare(int length){
  int n=snprintf(query,sizeof(query),"w_aid=117400733288351&w_dt=2&w_last_play_progress_time=15&w_mid=%s&w_played_time=15&w_real_played_time=0&w_realtime=0&w_start_ts=%s&w_video_duration=95&wts=%s",parts[0],parts[3],parts[3]);
  if(n<0||(size_t)n>=sizeof(query))goto done;n=snprintf(signed_query,sizeof(signed_query),"%s%s",query,mix);if(n<0||(size_t)n>=sizeof(signed_query)||EVP_Digest(signed_query,(size_t)n,sum,&size,EVP_md5(),NULL)!=1||size!=16)goto done;
  for(int i=0;i<16;i++)snprintf(hex+i*2,3,"%02x",sum[i]);
- n=snprintf(progress_url,sizeof(progress_url),"https://api.bilibili.com/x/click-interface/web/heartbeat?%s&w_rid=%s",query,hex);if(n<0||(size_t)n>=sizeof(progress_url))goto done;
+ n=snprintf(progress_url,sizeof(progress_url),SERVICE_ADDRESS_A_CBE66A0C7161,query,hex);if(n<0||(size_t)n>=sizeof(progress_url))goto done;
  n=snprintf(progress_form,sizeof(progress_form),"aid=117400733288351&cid=42548528128&mid=%s&type=3&dt=2&play_type=4&played_time=15&last_play_progress_time=15&max_play_progress_time=15&video_duration=95&realtime=0&real_played_time=0&start_ts=%s&csrf=%s",parts[0],parts[3],csrf);if(n<0||(size_t)n>=sizeof(progress_form))goto done;
  progress_prepared=ok=1;
 done:
@@ -44,10 +45,10 @@ done:
 AUTH_EXPORT int progress_attempt(void){
  if(!live||active>=0||!progress_prepared||progress_attempted||now_ms()<0||now_ms()>=session_until)return 0;
  progress_attempted=1;struct curl_slist *next=curl_slist_append(NULL,"Content-Type: application/x-www-form-urlencoded");if(!next)return 0;progress_headers=next;
- next=curl_slist_append(progress_headers,"Origin: https://www.bilibili.com");if(!next)return 0;progress_headers=next;
+ next=curl_slist_append(progress_headers,SERVICE_ADDRESS_A_CAD49761C389);if(!next)return 0;progress_headers=next;
  wipe_response();header_size=0;http_status=0;result_code=-1;
 #define POST_SET(option,value) do{if(curl_easy_setopt(easy,option,value)!=CURLE_OK)return 0;}while(0)
- POST_SET(CURLOPT_URL,progress_url);POST_SET(CURLOPT_REFERER,"https://www.bilibili.com/video/BV14GHy6bE9n/");POST_SET(CURLOPT_HTTPHEADER,progress_headers);POST_SET(CURLOPT_POSTFIELDS,progress_form);POST_SET(CURLOPT_POSTFIELDSIZE,(long)strlen(progress_form));
+ POST_SET(CURLOPT_URL,progress_url);POST_SET(CURLOPT_REFERER,SERVICE_ADDRESS_A_C8C5C0F812F0);POST_SET(CURLOPT_HTTPHEADER,progress_headers);POST_SET(CURLOPT_POSTFIELDS,progress_form);POST_SET(CURLOPT_POSTFIELDSIZE,(long)strlen(progress_form));
  POST_SET(CURLOPT_FRESH_CONNECT,1L);POST_SET(CURLOPT_FORBID_REUSE,1L);POST_SET(CURLOPT_HTTP_VERSION,(long)CURL_HTTP_VERSION_1_1);
 #undef POST_SET
  if(curl_multi_add_handle(multi,easy)!=CURLM_OK)return 0;active=5;added=1;request_until=now_ms()+9000;return 1;

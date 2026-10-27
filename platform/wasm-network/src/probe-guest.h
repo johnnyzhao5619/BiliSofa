@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original bounded, credential-free popular GET. No caller URL/headers/cookies. */
 #ifndef BILISOFA_PROBE_GUEST_H
 #define BILISOFA_PROBE_GUEST_H
@@ -57,7 +58,7 @@ static int guest_cid_valid(const char *cid) {
 static int guest_cdn_valid(const char *url) {
   if (!url || strlen(url) > 2048 || strncmp(url, "https://", 8)) return 0;
   const char *end = strchr(url + 8, '/'); if (!end || end == url + 8 || end - (url + 8) > 253) return 0;
-  size_t length = (size_t)(end - (url + 8)); const char *suffix = ".bilivideo.com";
+  size_t length = (size_t)(end - (url + 8)); const char *suffix = SERVICE_ADDRESS_A_CB591C9E9306;
   if (length <= strlen(suffix) || strncmp(end - strlen(suffix), suffix, strlen(suffix))) return 0;
   const char *label = url + 8;
   for (const char *c = label; c < end; c++) {
@@ -117,17 +118,17 @@ done:
 static void guest_popular(const char *page) {
   guest_reset();
   if (!page || !*page || strlen(page) > 2 || strspn(page, "0123456789") != strlen(page) || atoi(page) < 1 || atoi(page) > 10) { puts("GUEST:closed"); fflush(stdout); return; }
-  char url[128]; snprintf(url, sizeof(url), "https://api.bilibili.com/x/web-interface/popular?ps=4&pn=%d", atoi(page));
+  char url[128]; snprintf(url, sizeof(url), SERVICE_ADDRESS_A_4312E4303E59, atoi(page));
   guest_get(url, NULL, 0);
 }
 static void guest_video(const char *bvid, const char *cid, const char *cdn) {
   guest_reset();
   if (!guest_bvid_valid(bvid) || (cid && !guest_cid_valid(cid)) || (cdn && !guest_cdn_valid(cdn))) { puts("GUEST:closed"); fflush(stdout); return; }
-  char url[256], referer[80]; snprintf(referer, sizeof(referer), "https://www.bilibili.com/video/%s", bvid);
+  char url[256], referer[80]; snprintf(referer, sizeof(referer), SERVICE_ADDRESS_A_6CFDA06D9480, bvid);
   if (cdn) guest_get(cdn, referer, 1);
   else {
-    if (cid) snprintf(url, sizeof(url), "https://api.bilibili.com/x/player/playurl?bvid=%s&cid=%s&fnval=16&fnver=0&qn=16&fourk=0", bvid, cid);
-    else { guest_limit = BILISOFA_GUEST_MAX; snprintf(url, sizeof(url), "https://api.bilibili.com/x/web-interface/view?bvid=%s", bvid); }
+    if (cid) snprintf(url, sizeof(url), SERVICE_ADDRESS_A_673A4BFAF0C4, bvid, cid);
+    else { guest_limit = BILISOFA_GUEST_MAX; snprintf(url, sizeof(url), SERVICE_ADDRESS_A_37538D7FE65A, bvid); }
     guest_get(url, NULL, 0);
   }
 }

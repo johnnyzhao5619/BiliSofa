@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { parsePopularRequest, parsePopularResult, type PopularRequest, type PopularResult } from '../../../packages/contracts/src/index.ts';
 import { parsePopularBody } from '../../../packages/bili-client/src/popular.ts';
 interface NativeModule {
@@ -30,7 +31,7 @@ worker.onmessage = async event => {
     if (!response.ok) { finish({ kind: 'transport_error', status: 0, code: 'guest.native_unavailable' }); return; }
   } catch { finish({ kind: 'transport_error', status: 0, code: 'guest.native_unavailable' }); return; }
   if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'guest.cancelled' }); return; }
-  worker.Module = {
+  worker.Module = configureServiceNative({
     arguments: ['guest-popular', String(request.page)], noInitialRun: true,
     onRuntimeInitialized() {
       if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'guest.cancelled' }); return; }
@@ -64,7 +65,7 @@ worker.onmessage = async event => {
     // marks cleanup unknown and prevents silent reuse.
     onAbort() {},
     locateFile: name => `native/${name}`,
-  };
+  });
   try { worker.importScripts('native/probe.js'); }
   catch { /* Import/CSP failure can happen after partial native init: do not claim fd closure. */ }
 };

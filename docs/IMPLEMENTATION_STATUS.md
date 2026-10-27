@@ -62,3 +62,7 @@
 - W04历史出口保留，直播当前范围由ADR-068排除；其余门槛不自动关闭。后续按ADR-070完整模块统一实施，不逐入口/控件部署，不重复已通过的无影响项目。真实账号写入仍须具体授权。
 
 过程记录见[历史归档](archive/2026-10-19-process-records/README.md)、[2026-10-23归档](archive/2026-10-23-superseded/README.md)、[W01–W06阶段记录](archive/2026-10-24-phase-records/README.md)与[台账清理归档](archive/2026-10-26-ledger-cleanup/README.md)，全部归档见[归档索引](archive/README.md)；本页只维护当前结论，不追加逐轮日志，逐版本记录在[签名与部署记录](SIGNING_DEVICE_RECORD.md)。本页形状由`tools/check-docs.mjs`机器门禁强制（见[开发与部署](DEVELOPMENT.md)）。
+
+## 源码候选
+
+0.66.0按[ADR-119](adr/119-user-selected-local-service-configuration.md)实现用户先填写网站，再启用包内服务配置，JS / WASM地址外置。静态检查、配置迁移校验与本地构建 / 链接完成；未运行应用测试、未签名 / 部署，既有0.65.1设备结果不外推到本候选。

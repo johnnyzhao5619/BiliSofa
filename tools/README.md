@@ -2,11 +2,17 @@
 
 These run on the development computer. No command implicitly signs, installs, connects a TV or publishes; signing and deployment are separate explicit commands.
 
+## Configured candidate (ADR-119)
+
+Current source is 0.66.0: `build:app` writes `dist/bilisofa-configured-app`; native link scripts write under `build/service-config/`. Keep the frozen 0.65.1 files intact. `service-config.py` generates address-free C slots from the local JSON schema; `service_config_data.py` resolves trusted templates for build checks. First-launch selection, Worker bootstrap and one-shot native configuration precede business work. Package configuration remains readable and is not platform authorization.
+
+`package-public-release.py` remains pinned to the exact 0.65.1 baseline and its isolated build, not this changed candidate. The following table describes the common commands; the current stage path is the configured path above.
+
 ## Product build (ADR-107)
 
 | Step | Command | Tool |
 | --- | --- | --- |
-| Stage the app | `npm run build:app` | `build-foundation-app.mjs` → `dist/bilisofa-app` |
+| Stage the app | `npm run build:app` | `build-foundation-app.mjs` → `dist/bilisofa-configured-app` |
 | Unsigned WGT | `npm run package:app` | `package-foundation-app.py` (checks every native module's source digests, required markers and the 0.58.0-identical source modules) |
 | Sign | `npm run sign:app` | `sign-foundation-app.py` |
 | Install/launch | `npm run deploy:app` | `deploy-foundation-app.py` |

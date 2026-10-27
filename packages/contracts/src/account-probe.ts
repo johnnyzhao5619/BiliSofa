@@ -1,3 +1,4 @@
+import { serviceString } from './service-configuration.ts';
 import { boundedMessage, DomainError, parseScope, record, text, type Scope } from './index.ts';
 export const ACCOUNT_TEST_VIDEO = { bvid: 'BV14GHy6bE9n', aid: '117400733288351', cid: '42548528128', durationSec: 95 } as const;
 export interface AccountSession { schema: 1; uid: string; expiresAt: number; cookieLines: string; }
@@ -22,7 +23,7 @@ export function parseAccountSession(value: unknown): AccountSession {
   const names = new Set<string>();
   for (const line of lines) {
     const fields = line.replace(/^#HttpOnly_/, '').split('\t');
-    if (fields.length !== 7 || fields.some(x => !/^[\x21-\x7e]+$/.test(x)) || !['.bilibili.com','bilibili.com','passport.bilibili.com','api.bilibili.com'].includes(fields[0]!) || !['TRUE','FALSE'].includes(fields[1]!) || fields[2] !== '/' || !['TRUE','FALSE'].includes(fields[3]!) || !/^[0-9]{1,12}$/.test(fields[4]!) || !['SESSDATA','bili_jct','DedeUserID','DedeUserID__ckMd5'].includes(fields[5]!) || names.has(fields[5]!) || fields[6]!.length > 1536 || fields[6]!.includes(';')) throw new DomainError('invalid');
+    if (fields.length !== 7 || fields.some(x => !/^[\x21-\x7e]+$/.test(x)) || ![serviceString('a_0f551371e9f1'),serviceString('a_4727900dd5ec'),serviceString('a_68b73a5f5b0a'),serviceString('a_518e98f60a28')].includes(fields[0]!) || !['TRUE','FALSE'].includes(fields[1]!) || fields[2] !== '/' || !['TRUE','FALSE'].includes(fields[3]!) || !/^[0-9]{1,12}$/.test(fields[4]!) || !['SESSDATA','bili_jct','DedeUserID','DedeUserID__ckMd5'].includes(fields[5]!) || names.has(fields[5]!) || fields[6]!.length > 1536 || fields[6]!.includes(';')) throw new DomainError('invalid');
     names.add(fields[5]!);
   }
   if (!names.has('SESSDATA') || !names.has('bili_jct')) throw new DomainError('invalid');
@@ -40,11 +41,11 @@ export function parseAccountView(value: unknown): AccountView {
 }
 export function parseQr(value: unknown, expectedKey?: string): string {
   const raw = text(value, 1024); let url: URL; try { url = new URL(raw); } catch { throw new DomainError('invalid'); }
-  const path = url.hostname === 'account.bilibili.com' ? '/h5/account-h5/auth/scan-web' : url.hostname === 'passport.bilibili.com' ? '/h5-app/passport/login/scan' : '';
+  const path = url.hostname === serviceString('a_199a6038520d') ? '/h5/account-h5/auth/scan-web' : url.hostname === serviceString('a_68b73a5f5b0a') ? '/h5-app/passport/login/scan' : '';
   const keys = [...url.searchParams.keys()];
-  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.hash || !path || url.pathname !== path || keys.length !== new Set(keys).size || keys.some(k => !['navhide','qrcode_key','callback','from'].includes(k)) || url.searchParams.has('from') && (url.hostname !== 'account.bilibili.com' || url.searchParams.get('from') !== '') || url.searchParams.get('navhide') !== '1' || !/^[0-9a-f]{32}$/.test(url.searchParams.get('qrcode_key') ?? '') || expectedKey !== undefined && url.searchParams.get('qrcode_key') !== expectedKey) throw new DomainError('invalid');
+  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.hash || !path || url.pathname !== path || keys.length !== new Set(keys).size || keys.some(k => !['navhide','qrcode_key','callback','from'].includes(k)) || url.searchParams.has('from') && (url.hostname !== serviceString('a_199a6038520d') || url.searchParams.get('from') !== '') || url.searchParams.get('navhide') !== '1' || !/^[0-9a-f]{32}$/.test(url.searchParams.get('qrcode_key') ?? '') || expectedKey !== undefined && url.searchParams.get('qrcode_key') !== expectedKey) throw new DomainError('invalid');
   const callback = url.searchParams.get('callback');
-  if (callback && !(url.hostname === 'account.bilibili.com' && callback === 'close')) { let target: URL; try { target = new URL(callback); } catch { throw new DomainError('invalid'); } if (!['http:', 'https:'].includes(target.protocol) || target.hostname !== 'www.bilibili.com' || target.username || target.password || target.port || target.hash || !['/','/login'].includes(target.pathname)) throw new DomainError('invalid'); }
+  if (callback && !(url.hostname === serviceString('a_199a6038520d') && callback === 'close')) { let target: URL; try { target = new URL(callback); } catch { throw new DomainError('invalid'); } if (!['http:', 'https:'].includes(target.protocol) || target.hostname !== serviceString('a_0fae5909ea6a') || target.username || target.password || target.port || target.hash || !['/','/login'].includes(target.pathname)) throw new DomainError('invalid'); }
   return raw;
 }
 export function parseAccountResult(value: unknown): AccountProbeResult {

@@ -47,3 +47,7 @@
 生成物只在ignored `build/`、`dist/`、`.local/`；私密签名、目标和会话在仓库外。依赖版本/来源/许可见[第三方声明](../THIRD_PARTY_NOTICES.md)，命令见[开发说明](DEVELOPMENT.md)。[原结构过程](archive/2026-10-19-process-records/PROJECT_STRUCTURE.md)保留追溯。
 
 R07小数倍速按[ADR-097](adr/097-fractional-rates-device-limited.md)不接入生产；`apps/tv/src/platform/element-video.ts`、`packages/contracts/src/playback-rate.ts`与`tests/media-element/`保留为诊断探查代码（[ADR-086](adr/086-fractional-rate-element-candidate.md)）。
+
+## 0.66.0候选的配置层
+
+`apps/tv/service-providers/` 放服务目录与具名地址 / 模板 JSON；`packages/contracts/src/service-configuration.ts` 定义数据校验与 native 启动边界；平台 service-configuration / service-worker 负责包内读取、普通选择存储和 Worker FIFO 引导；foundation-entry 在业务入口之前拥有配置页。地址值不编进运行 JS / WASM；native 只带生成的 schema 槽位。新构建目录是 `dist/bilisofa-configured-app` 与 `build/service-config/`，旧 0.65.1 冻结输出保留。见[ADR-119](adr/119-user-selected-local-service-configuration.md)。

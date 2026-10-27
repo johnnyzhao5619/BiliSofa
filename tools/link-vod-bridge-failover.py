@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / '.local/network-upgrade'
 SDK = ROOT / '.local/sdk/emscripten-release-bundle/emsdk'
 PREFIX = BASE / 'stage/bilisofa/network'
-OUT = ROOT / 'build/vod-failover'
+OUT = ROOT / 'build/service-config/vod-failover'
 
 
 def digest(path):
@@ -60,6 +60,6 @@ manifest = {'schema': 1, 'purpose': 'ADR-101 production DASH bridge with per-tra
         'backupHosts': ['*.bilivideo.com', 'upos-<label>-mirrorakam.akamaized.net'], 'failoverPerTrack': 1, 'failoverNoHeadersSeconds': 6,
         'maxIndexEnd': 16777216, 'signatureBoundLease': True, 'ownedRenewal': True, 'cumulativeProbeQuotas': False},
     'libraryBuild': json.loads((BASE / 'candidate-libraries.json').read_text()), 'files': {name: digest(OUT / name) for name in ['probe.js', 'probe.wasm', 'probe.data']},
-    'sourceInputs': {str(p.relative_to(ROOT)): digest(p) for p in inputs}, 'generatedHeaderSha256': digest(generated), 'caSha256': expected}
+    'serviceSchemaSha256':digest(ROOT/'platform/wasm-network/src/service-config.h'),'sourceInputs': {str(p.relative_to(ROOT)): digest(p) for p in inputs}, 'generatedHeaderSha256': digest(generated), 'caSha256': expected}
 (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
 print('Failover DASH bridge linked into build/vod-failover and scanned with Samsung SDK; no deployment')

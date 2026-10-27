@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { parseHotSearchRequest, parseHotSearchResult, type HotSearchRequest, type HotSearchResult } from '../../../packages/contracts/src/hot-search.ts';
 import { parseHotSearchBody } from '../../../packages/bili-client/src/hot-search.ts';
 interface NativeModule {
@@ -30,7 +31,7 @@ worker.onmessage = async event => {
     if (!response.ok) { finish({ kind: 'transport_error', status: 0, code: 'hot.native_unavailable' }); return; }
   } catch { finish({ kind: 'transport_error', status: 0, code: 'hot.native_unavailable' }); return; }
   if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'hot.cancelled' }); return; }
-  worker.Module = {
+  worker.Module = configureServiceNative({
     arguments: ['search-hot'], noInitialRun: true,
     onRuntimeInitialized() {
       if (cancelled) { finish({ kind: 'cancelled', status: 0, code: 'hot.cancelled' }); return; }
@@ -64,7 +65,7 @@ worker.onmessage = async event => {
     // marks cleanup unknown and prevents silent reuse.
     onAbort() {},
     locateFile: name => `hot-search/${name}`,
-  };
+  });
   try { worker.importScripts('hot-search/probe.js'); }
   catch { /* Import/CSP failure can happen after partial native init: do not claim fd closure. */ }
 };

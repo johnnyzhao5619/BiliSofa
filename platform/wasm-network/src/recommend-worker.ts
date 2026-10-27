@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import {DomainError,record,type ErrorCode} from '../../../packages/contracts/src/index.ts';
 import {parseRecommendationRequest,parseRecommendationResult,RecommendationReadError,type RecommendationRequest,type RecommendationResult,type RecommendationBatch} from '../../../packages/contracts/src/recommendations.ts';
 import {parseRecommendationBody} from '../../../packages/bili-client/src/recommendations.ts';
@@ -22,5 +23,5 @@ worker.onmessage=async event=>{
  try{active=parseRecommendationRequest(event.data);}catch{return;}if(active.account.expiresAt<=Date.now()){stop('login');return;}
  try{const r=await fetch('recommend/manifest.json');if(r.body)await r.body.cancel();if(!r.ok){stop('unsupported');return;}}catch{stop('unsupported');return;}if(stopped||complete)return;
  const module={noInitialRun:true,onRuntimeInitialized(){if(stopped){end();return;}phase='running';module.callMain([]);},print(line:unknown){if(line==='AUTH:unclosed')fail();else if(line==='AUTH:closed')end();else if(line==='AUTH:deadline'){batch=undefined;code='timeout';detail='recommend.timeout';}else if(line==='AUTH:transport'){batch=undefined;code='network';detail='recommend.network';}else if(line==='AUTH:ready')later(()=>{if(!active||!(module.HEAPU8 instanceof Uint8Array)||module._auth_import_cookies(input(active.account.cookieLines))!==1){stop('invalid');return;}expected=0;if(module._auth_begin(0)!==1)stop('invalid');});else if(line==='AUTH:response:0'||line==='AUTH:response:6')later(()=>response(Number(line.slice(-1))));else fail();},printErr(){},onAbort:fail,locateFile:(name:string)=>'recommend/'+name}as unknown as Native;
- worker.Module=module;phase='loading';try{worker.importScripts('recommend/probe.js');}catch{fail();}
+ worker.Module=configureServiceNative(module);phase='loading';try{worker.importScripts('recommend/probe.js');}catch{fail();}
 };

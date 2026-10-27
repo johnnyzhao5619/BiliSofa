@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { DomainError, record } from '../../../packages/contracts/src/index.ts';
 import { parseCommentRequest, parseCommentResult, type CommentRequest, type CommentBatch } from '../../../packages/contracts/src/comments-read.ts';
 import { CommentsNativeApi } from './comments-native-api.ts';
@@ -44,6 +45,6 @@ port.onmessage = event => {
     },
     print(line: unknown) { api?.receive(line); }, printErr() {}, onAbort: fault, locateFile: (name: string) => 'comments-read/' + name,
   } as unknown as Native;
-  port.Module = native;
+  port.Module = configureServiceNative(native);
   try { port.importScripts('comments-read/probe.js'); } catch { void finish(undefined, new DomainError('unsupported')); }
 };

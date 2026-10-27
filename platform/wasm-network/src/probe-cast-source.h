@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original W01 HTTPS-only, one-attempt 512-byte source test and TV-approved media handoff. No
    credentials, redirects, HTTP fallback or raw request/response diagnostics. */
 #ifndef BILISOFA_PROBE_CAST_SOURCE_H
@@ -23,8 +24,8 @@ BILISOFA_GUEST_EXPORT uintptr_t cast_transition_buffer(void) { return (uintptr_t
 static int cast_source_valid(const char *url) {
   if(!url || strlen(url)>2048 || strncmp(url,"https://",8))return 0;
   const char *end=strchr(url+8,'/');if(!end || end-(url+8)>253)return 0;
-  const char *suffix=".bilivideo.com";size_t n=(size_t)(end-(url+8));
-  const char *akam="upos-hz-mirrorakam.akamaized.net";
+  const char *suffix=SERVICE_ADDRESS_A_CB591C9E9306;size_t n=(size_t)(end-(url+8));
+  const char *akam=SERVICE_ADDRESS_A_AF91BEAEF16E;
   int bili_akam=n==strlen(akam) && !strncmp(url+8,akam,n);
   if(!bili_akam && (n<=strlen(suffix) || strncmp(end-strlen(suffix),suffix,strlen(suffix))))return 0;
   const char *label=url+8;
@@ -142,7 +143,7 @@ BILISOFA_GUEST_EXPORT int cast_source_begin(unsigned int length) {
   if(!cast_source_multi || !cast_source_easy)goto failed;
 #define CAST_SOURCE_SET(option,value) do { if(curl_easy_setopt(cast_source_easy,option,value)!=CURLE_OK)goto failed; } while(0)
   CAST_SOURCE_SET(CURLOPT_URL,cast_source_input);
-  CAST_SOURCE_SET(CURLOPT_RANGE,"0-511");CAST_SOURCE_SET(CURLOPT_REFERER,"https://www.bilibili.com/");
+  CAST_SOURCE_SET(CURLOPT_RANGE,"0-511");CAST_SOURCE_SET(CURLOPT_REFERER,SERVICE_ADDRESS_A_B12964D8C1B1);
   CAST_SOURCE_SET(CURLOPT_USERAGENT,"BiliSofa-W01-Probe/0.0.28");
   CAST_SOURCE_SET(CURLOPT_SSL_VERIFYPEER,1L);CAST_SOURCE_SET(CURLOPT_SSL_VERIFYHOST,2L);CAST_SOURCE_SET(CURLOPT_CAINFO,"/cacert.pem");
   CAST_SOURCE_SET(CURLOPT_PROTOCOLS,CURLPROTO_HTTPS);CAST_SOURCE_SET(CURLOPT_REDIR_PROTOCOLS,CURLPROTO_HTTPS);CAST_SOURCE_SET(CURLOPT_FOLLOWLOCATION,0L);

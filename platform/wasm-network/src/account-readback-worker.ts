@@ -1,3 +1,5 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
+import { serviceString } from '../../../packages/contracts/src/service-configuration.ts';
 import { ACCOUNT_TEST_VIDEO as video, parseAccountRequest, parseAccountResult, type AccountProbeRequest, type AccountView } from '../../../packages/contracts/src/account-probe.ts';
 import { record } from '../../../packages/contracts/src/index.ts';
 interface Native {
@@ -22,7 +24,7 @@ function input(value: string): number {
 }
 function key(value: unknown): string {
   if (typeof value !== 'string' || value.length > 200) throw Error(); const url = new URL(value);
-  if (url.protocol !== 'https:' || !['i0.hdslb.com','i1.hdslb.com','i2.hdslb.com'].includes(url.hostname) || url.port || url.username || url.password || url.search || url.hash || !/^\/bfs\/wbi\/[a-f0-9]{32}\.png$/.test(url.pathname)) throw Error();
+  if (url.protocol !== 'https:' || ![serviceString('a_d1d8109613cd'),serviceString('a_d1460da3012e'),serviceString('a_b97db64c383a')].includes(url.hostname) || url.port || url.username || url.password || url.search || url.hash || !/^\/bfs\/wbi\/[a-f0-9]{32}\.png$/.test(url.pathname)) throw Error();
   return url.pathname.slice(-36, -4);
 }
 function begin(op: number): void { expected = op; if (native._auth_begin(op) !== 1) close('account.invalid_closed'); }
@@ -77,5 +79,5 @@ host.onmessage = event => {
   if (completed) return;
   if (active) { const v = event.data; if (v && Object.keys(v).length === 4 && v.version === 1 && v.operation === 'account-probe' && JSON.stringify(v.scope) === JSON.stringify(active.scope) && v.control === 'stop') close('account.cancelled_closed'); return; }
   try { active = parseAccountRequest(event.data); if (!active.session || active.session.expiresAt <= Date.now() || active.session.expiresAt > Date.now() + 1800000) throw Error(); } catch { active = undefined; return; }
-  host.Module = native; try { host.importScripts('account-readback/probe.js'); } catch { unknown(); }
+  host.Module = configureServiceNative(native); try { host.importScripts('account-readback/probe.js'); } catch { unknown(); }
 };

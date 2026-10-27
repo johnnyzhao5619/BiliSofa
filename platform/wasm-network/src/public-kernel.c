@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* ADR-108: the resident public read kernel. One WASM instance serves every
  * anonymous list read (popular, rankings, PGC lists, UP uploads, visitor
  * identity, WBI search, hot words and, since ADR-110, the video view) over two long-lived easy handles and one
@@ -65,7 +66,7 @@ static void kernel_emit(const char *line) { puts(line); fflush(stdout); }
 /* Builders call guest_reset()/guest_limit, then guest_get(): only the destination is kept here. */
 static void kernel_capture(const char *url, const char *referer, int range) {
   kernel_captured = 0;
-  if (range || !url || (strncmp(url, "https://api.bilibili.com/", 25) && strncmp(url, "https://s.search.bilibili.com/", 30))) return;
+  if (range || !url || (strncmp(url, SERVICE_ADDRESS_A_7B97A85AE2FF, 25) && strncmp(url, SERVICE_ADDRESS_A_35A5A681AC70, 30))) return;
   if (strlen(url) >= sizeof(kernel_url) || (referer && strlen(referer) >= sizeof(kernel_referer))) return;
   strcpy(kernel_url, url); strcpy(kernel_referer, referer ? referer : "");
   kernel_captured = 1;
@@ -82,8 +83,8 @@ static void kernel_video_view(const char *bvid) {
   guest_reset(); kernel_view_size = 0;
   if (!guest_bvid_valid(bvid)) return;
   char url[96], referer[64];
-  snprintf(url, sizeof(url), "https://api.bilibili.com/x/web-interface/view?bvid=%s", bvid);
-  snprintf(referer, sizeof(referer), "https://www.bilibili.com/video/%s", bvid);
+  snprintf(url, sizeof(url), SERVICE_ADDRESS_A_37538D7FE65A, bvid);
+  snprintf(referer, sizeof(referer), SERVICE_ADDRESS_A_6CFDA06D9480, bvid);
   kernel_capture(url, referer, 0);
 }
 static int kernel_page(const char *s) {
@@ -94,7 +95,7 @@ static int kernel_page(const char *s) {
 static void kernel_popular(const char *page) {
   guest_reset(); guest_limit = BILISOFA_GUEST_MAX;
   int pn = kernel_page(page); if (!pn) return;
-  char url[128]; snprintf(url, sizeof(url), "https://api.bilibili.com/x/web-interface/popular?ps=%d&pn=%d", KERNEL_PAGE_SIZE, pn);
+  char url[128]; snprintf(url, sizeof(url), SERVICE_ADDRESS_A_F1150C135680, KERNEL_PAGE_SIZE, pn);
   kernel_capture(url, NULL, 0);
 }
 /* search.c's search_typed with 20 rows per page and pages 1-5; its checks are reused unchanged. */
@@ -116,10 +117,10 @@ static void kernel_search(int mode, const char *page, const char *img, const cha
   unsigned char digest[EVP_MAX_MD_SIZE]; unsigned int length = 0;
   if (EVP_Digest(signed_query, (size_t)size, digest, &length, EVP_md5(), NULL) != 1 || length != 16) return;
   for (int i = 0; i < 16; i++) snprintf(hex + i * 2, 3, "%02x", digest[i]);
-  size = snprintf(url, sizeof(url), "https://api.bilibili.com/x/web-interface/wbi/search/type?%s&w_rid=%s", query, hex);
+  size = snprintf(url, sizeof(url), SERVICE_ADDRESS_A_8102263D41AA, query, hex);
   OPENSSL_cleanse(joined, sizeof(joined)); OPENSSL_cleanse(mix, sizeof(mix)); OPENSSL_cleanse(signed_query, sizeof(signed_query));
   if (size < 1 || (size_t)size >= sizeof(url)) return;
-  kernel_capture(url, "https://search.bilibili.com/", 0);
+  kernel_capture(url, SERVICE_ADDRESS_A_51DF6D39D2D6, 0);
 }
 /* Splits the input on '|' into exactly `count` fields; the last field may itself contain '|'. */
 static int kernel_fields(char *value, char **parts, int count) {
@@ -231,7 +232,7 @@ KERNEL_EXPORT int kernel_begin(int operation) {
   int built = kernel_build(operation, copy); OPENSSL_cleanse(copy, sizeof(copy));
   if (!built) { guest_reset(); return 0; }
   int catalog = operation >= KERNEL_RANKING && operation <= KERNEL_VISITOR, visitor = (operation == KERNEL_CATEGORY || operation == KERNEL_UP) && catalog_visitor[0];
-  CURL *easy = strncmp(kernel_url, "https://s.search.bilibili.com/", 30) ? kernel_api : kernel_search_host;
+  CURL *easy = strncmp(kernel_url, SERVICE_ADDRESS_A_35A5A681AC70, 30) ? kernel_api : kernel_search_host;
   int view = operation == KERNEL_VIEW; kernel_view_last = view; if (!view) kernel_view_size = 0;
   if (curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, view ? kernel_view_body : guest_body) != CURLE_OK || curl_easy_setopt(easy, CURLOPT_URL, kernel_url) != CURLE_OK || curl_easy_setopt(easy, CURLOPT_REFERER, kernel_referer[0] ? kernel_referer : NULL) != CURLE_OK ||
       curl_easy_setopt(easy, CURLOPT_USERAGENT, catalog && kernel_agent[0] ? kernel_agent : KERNEL_PROBE_AGENT) != CURLE_OK ||

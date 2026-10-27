@@ -1,3 +1,4 @@
+import { serviceString } from '../../contracts/src/service-configuration.ts';
 import { DomainError, record, text } from '../../contracts/src/index.ts';
 import { vodInteger } from '../../contracts/src/vod-catalog.ts';
 import { parseSubtitleCues, type SubtitleCue } from '../../contracts/src/media-overlays.ts';
@@ -6,7 +7,7 @@ export interface PrivateSubtitleTrack { summary: SubtitleTrack; url: string; }
 export function subtitleSource(value: unknown): string {
   let raw = text(value, 2048); if (raw.startsWith('//')) raw = 'https:' + raw;
   let url: URL; try { url = new URL(raw); } catch { throw new DomainError('invalid'); }
-  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.hash || !raw.startsWith(`https://${url.hostname}/`) || !['aisubtitle.hdslb.com', 'i0.hdslb.com', 'i1.hdslb.com', 'i2.hdslb.com'].includes(url.hostname) || !/^\/bfs\/(?:subtitle\/[A-Za-z0-9_./-]+\.json|ai_subtitle\/[A-Za-z0-9_./-]*[A-Za-z0-9_.-])$/.test(url.pathname) || /(?:^|\/)\.\.?\/|%/.test(raw.split('?')[0]!) || /[\\\s\u0000-\u001f]/.test(raw)) throw new DomainError('permission');
+  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.hash || !raw.startsWith(`https://${url.hostname}/`) || ![serviceString('a_91cdbd225e0b'), serviceString('a_d1d8109613cd'), serviceString('a_d1460da3012e'), serviceString('a_b97db64c383a')].includes(url.hostname) || !/^\/bfs\/(?:subtitle\/[A-Za-z0-9_./-]+\.json|ai_subtitle\/[A-Za-z0-9_./-]*[A-Za-z0-9_.-])$/.test(url.pathname) || /(?:^|\/)\.\.?\/|%/.test(raw.split('?')[0]!) || /[\\\s\u0000-\u001f]/.test(raw)) throw new DomainError('permission');
   return raw;
 }
 export function parsePlayerMetadata(raw: string, binding: { bvid: string; cid: string; aid: string }): { tracks: PrivateSubtitleTrack[]; loginRequired: boolean } {

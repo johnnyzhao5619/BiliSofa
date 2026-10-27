@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import {navAccountProfile} from '../../../packages/bili-client/src/account-profile.ts';
 import { DomainError, record, type ErrorCode } from '../../../packages/contracts/src/index.ts';
 import { loginQr, parseIdentityEvent, parseIdentityRequest, type IdentityEvent, type IdentityRequest } from '../../../packages/contracts/src/identity.ts';
@@ -135,7 +136,7 @@ port.onmessage = async event => {
       else failUnknown();
     }, printErr() {}, onAbort: failUnknown, locateFile: (name: string) => 'identity/' + name,
   } as unknown as Native & { print(line: unknown): void };
-  port.Module = module; phase = 'loading'; port.importScripts('identity/probe.js');
+  port.Module = configureServiceNative(module); phase = 'loading'; port.importScripts('identity/probe.js');
 };
 // Retain protocol type checking without accepting any URL or native operation from UI.
 export type IdentityWorkerEvent = IdentityEvent;

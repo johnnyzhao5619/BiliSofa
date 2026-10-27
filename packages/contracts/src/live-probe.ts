@@ -1,3 +1,4 @@
+import { serviceString } from './service-configuration.ts';
 import { boundedMessage, DomainError, parseScope, record, type Scope } from './index.ts';
 export interface LiveProbeRequest { version: 1; operation: 'live-probe'; scope: Scope; }
 export interface LiveProbeResult extends LiveProbeRequest { closed: boolean; code: string; url?: string; }
@@ -9,7 +10,7 @@ export function liveRelayUrl(value: unknown): string {
 export function liveCdnUrl(value: unknown, extension: 'm3u8' | 'ts'): string {
   if (typeof value !== 'string' || value.length > 2048 || !/^[\x21-\x7e]+$/.test(value) || value.includes('\\')) throw new DomainError('invalid');
   const u = new URL(value);
-  if (u.protocol !== 'https:' || u.username || u.password || u.port || u.hash || !/^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.bilivideo\.(com|cn)$/.test(u.hostname) || !u.pathname.endsWith('.' + extension)) throw new DomainError('invalid');
+  if (u.protocol !== 'https:' || u.username || u.password || u.port || u.hash || !new RegExp(serviceString('a_909e5accc197')).test(u.hostname) || !u.pathname.endsWith('.' + extension)) throw new DomainError('invalid');
   return u.href;
 }
 /** Keep signed parameter order/bytes; a trailing '?' or '&' already supplies

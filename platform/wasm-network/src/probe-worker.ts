@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { parseProbeRequest, parseProbeStop, type ProbeRequest, type ProbeResult } from '../../../packages/contracts/src/index.ts';
 // Independent Worker: never installed into the UI global scope.
 const worker = globalThis as unknown as {
@@ -27,7 +28,7 @@ worker.onmessage = async event => {
     const mediaAssets = new Set<string>();
     const cases = new Map<string, number>();
     const ids: Record<string, string> = { tcp_loopback: 'tcp', udp_loopback: 'udp', multicast_self: 'multicast', https_guest: 'tls', cookie_synthetic: 'cookies' };
-    worker.Module = {
+    worker.Module = configureServiceNative({
       arguments: request.operation === 'http' ? ['http', request.report!] : request.operation === 'mpd' ? ['mpd'] : [],
       noInitialRun: true,
       onRuntimeInitialized: () => {
@@ -67,7 +68,7 @@ worker.onmessage = async event => {
       printErr: () => {},
       onAbort: () => reply('FAIL', request.operation === 'http' ? 'http.runtime_aborted' : request.operation === 'mpd' ? 'mpd.runtime_aborted' : 'native.aborted'),
       locateFile: (name: string) => `native/${name}`,
-    };
+    });
     try { worker.importScripts('native/probe.js'); } catch { reply('BLOCKED', 'native.sdk_build_missing_or_csp'); }
     return;
   }

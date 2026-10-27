@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { DomainError, record } from '../../../packages/contracts/src/index.ts';
 import { parsePublicReadRequest, parsePublicReadResult, type PublicReadRequest } from '../../../packages/contracts/src/public-read.ts';
 import { PublicNativeApi } from './public-native-api.ts';
@@ -38,6 +39,6 @@ port.onmessage = event => {
     },
     print(line: unknown) { api?.receive(line); }, printErr() {}, onAbort: fault, locateFile: (name: string) => 'public-read/' + name,
   } as unknown as Native;
-  port.Module = native;
+  port.Module = configureServiceNative(native);
   try { port.importScripts('public-read/probe.js'); } catch { void finish(undefined, new DomainError('unsupported')); }
 };

@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { parseLiveProbeRequest, parseLiveProbeResult, type LiveProbeRequest } from '../../../packages/contracts/src/live-probe.ts';
 import { plainLivePlaylist, publicLiveSource, rewritePlainLivePlaylist } from '../../../packages/media/src/live-hls.ts';
 interface Native {
@@ -84,6 +85,6 @@ worker.onmessage = async event => {
   try { request = parseLiveProbeRequest(event.data); } catch { return; }
   try { const r = await fetch('live/manifest.json'); await r.body?.cancel(); if (!r.ok) { emit(issue, true); return; } } catch { emit(issue, true); return; }
   if (stopping) { emit('live.cancelled_closed', true); return; }
-  worker.Module = { noInitialRun: true, onRuntimeInitialized() { if (stopping) { emit('live.cancelled_closed', true); return; } started = true; worker.Module!.callMain!([]); }, print(value: unknown) { setTimeout(() => line(value), 0); }, printErr() {}, onAbort() { throw new Error('live_native_cleanup_unconfirmed'); }, locateFile: (name: string) => 'live/' + name } as unknown as Native;
+  worker.Module = configureServiceNative({ noInitialRun: true, onRuntimeInitialized() { if (stopping) { emit('live.cancelled_closed', true); return; } started = true; worker.Module!.callMain!([]); }, print(value: unknown) { setTimeout(() => line(value), 0); }, printErr() {}, onAbort() { throw new Error('live_native_cleanup_unconfirmed'); }, locateFile: (name: string) => 'live/' + name } as unknown as Native);
   try { worker.importScripts('live/probe.js'); } catch { throw new Error('live_native_cleanup_unconfirmed'); }
 };

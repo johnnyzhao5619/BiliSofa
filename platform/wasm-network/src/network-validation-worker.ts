@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import { parseNetworkValidationRequest, parseNetworkValidationResult, type NetworkValidationRequest } from '../../../packages/contracts/src/network-validation.ts';
 interface Module { noInitialRun: boolean; onRuntimeInitialized(): void; print(value: unknown): void; printErr(): void; onAbort(): void; locateFile(name: string): string; callMain?(args: string[]): void; _network_validation_stop?(): void; _https_session_stop?(): void; }
 const worker = globalThis as unknown as { onmessage: ((event: MessageEvent) => void) | null; postMessage(value: unknown): void; importScripts(name: string): void; Module?: Module };
@@ -22,7 +23,7 @@ worker.onmessage = async event => {
   try { const response = await fetch(prefix + 'manifest.json'); if (response.body) await response.body.cancel(); if (!response.ok) { reply(unavailable, true); return; } }
   catch { reply(unavailable, true); return; }
   if (stopping) { reply(cancelled, true); return; }
-  worker.Module = { noInitialRun: true, onRuntimeInitialized() {
+  worker.Module = configureServiceNative({ noInitialRun: true, onRuntimeInitialized() {
     if (stopping) { reply(cancelled, true); return; }
     started = true; worker.Module!.callMain!([]);
   }, print(line) {
@@ -49,6 +50,6 @@ worker.onmessage = async event => {
       const match = /^NET:tls:(positive|expired|hostname|selfsigned):([01]):([0-9]{1,3}):([0-9]{1,3})$/.exec(line);
       if (match) reply(`network.tls_${match[1]}_${match[2] === '0' ? 'pass' : 'fail_c' + match[3] + '_v' + match[4]}`, false);
     }
-  }, printErr() {}, onAbort: unknown, locateFile: name => prefix + name };
+  }, printErr() {}, onAbort: unknown, locateFile: name => prefix + name });
   worker.importScripts(prefix + 'probe.js');
 };

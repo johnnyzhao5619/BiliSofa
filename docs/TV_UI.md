@@ -50,3 +50,9 @@
 - 每个完整模块交付方向/Back、加载/空/失败/权限/恢复规格、保留F映射与实际证据；集中验收按T1–T8，不逐按钮新增电视测试。
 
 [Samsung/YouTube/Netflix等当前来源](research/tv-product-patterns-2026-10-21.md) · [既有平台来源](research/tizen-best-practices-2026-10-14.md) · [ADR-070](adr/070-product-closure-and-tv-experience.md)
+
+## 网站配置入口（ADR-119，0.66.0候选）
+
+首次打开先填写网站地址并确认；未启用前只读取包内配置，不打开内容页或自动扫码。网址输入由原 FocusRouter / InputRouter 与系统 IME 管理，完成 / 返回离开编辑后落到启用按钮；错误输入保留可编辑值和原因，提供重新载入本地配置与退出。配置成功并确认旧 shell 关闭后才建立业务 shell，避免两个输入 owner。
+
+保存成功后下次启动校验本地 profile 并直接进入原账号 / 游客流程。设置 → 本机数据 → 重新填写网站地址，经确认清除选择并关闭资源 / 退出；保留账号、本机记录与未知写意图。遥控、IME 与真实网络行为仍未在本候选上验收。

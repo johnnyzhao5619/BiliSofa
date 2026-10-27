@@ -1,3 +1,4 @@
+import { createServiceWorker } from './service-worker.ts';
 import { DomainError, type Scope } from '../../../../packages/contracts/src/index.ts';
 export class ScopedGuestWorker<Q extends { scope: Scope; operation: string }, R extends { scope: Scope; closed?: boolean }> {
   constructor(private readonly file: string, private readonly operation: string, private readonly parseRequest: (value: unknown) => Q, private readonly parseResult: (value: unknown) => R, private readonly timeoutMs = 20000, private readonly closeMs = 12000, private readonly matches: (request: Q, result: R) => boolean = () => true, private readonly multipleProgress = false, private readonly progressLimit = 8, private readonly closingProgress = false, private readonly fatalProgress: (result: R) => boolean = () => false, private readonly transfer?: (request: Q) => Transferable[]) {}
@@ -15,7 +16,7 @@ export class ScopedGuestWorker<Q extends { scope: Scope; operation: string }, R 
     if (signal.aborted || generation !== this.generation) throw new DomainError('cancelled');
     if (this.poisoned) throw new DomainError('unknown');
     return new Promise((resolve, reject) => {
-      const worker = new Worker(this.file); this.worker = worker; this.scope = request.scope;
+      const worker = createServiceWorker(this.file); this.worker = worker; this.scope = request.scope;
       const abort = () => { void this.dispose().catch(() => {}); };
       const timer = this.timeoutMs===0?undefined:setTimeout(() => this.failUnknown('timeout'), this.timeoutMs);
       this.pending = { resolve, reject, signal, abort, timer }; signal.addEventListener('abort', abort, { once: true });

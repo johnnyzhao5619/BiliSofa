@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Dedicated authenticated follow lane. No caller URL, playback, CDN or other
  * account write route. One explicit action per Worker; the caller journals it. */
 #include <stdio.h>
@@ -21,7 +22,7 @@ static int follow_list(char *input,char *url,size_t capacity){
   n=snprintf(signed_query,sizeof(signed_query),"%s%s",query,mix);unsigned char digest[EVP_MAX_MD_SIZE];unsigned length=0;
   if(n<1||(size_t)n>=sizeof(signed_query)||EVP_Digest(signed_query,(size_t)n,digest,&length,EVP_md5(),NULL)!=1||length!=16)return 0;
   for(int i=0;i<16;i++)snprintf(hex+i*2,3,"%02x",digest[i]);
-  n=snprintf(url,capacity,"https://api.bilibili.com/x/space/bangumi/follow/list?%s&w_rid=%s",query,hex);
+  n=snprintf(url,capacity,SERVICE_ADDRESS_A_72A5B654A544,query,hex);
   OPENSSL_cleanse(joined,sizeof(joined));OPENSSL_cleanse(mix,sizeof(mix));OPENSSL_cleanse(signed_query,sizeof(signed_query));return n>0&&(size_t)n<capacity;
 }
 static void follow_cleanup(void) {
@@ -33,7 +34,7 @@ static int follow_route(int operation, char *input, char *url, size_t capacity) 
   if (operation == 4) {
     if (!guest_cid_valid(input)) return 0;
     /* 0.49.1 (ADR-096): the dedicated per-user status, not the cached season view. */
-    n = snprintf(url, capacity, "https://api.bilibili.com/pgc/view/web/season/user/status?season_id=%s", input);
+    n = snprintf(url, capacity, SERVICE_ADDRESS_A_B06B010E68DF, input);
   } else if (operation == 6) {
     return follow_list(input,url,capacity);
   } else if (operation == 7 || operation == 8) {
@@ -42,7 +43,7 @@ static int follow_route(int operation, char *input, char *url, size_t capacity) 
     if (!guest_cid_valid(input) || strlen(csrf)!=32 || strspn(csrf,"0123456789abcdef")!=32) return 0;
     int length=snprintf(follow_form,sizeof(follow_form),"season_id=%s&csrf=%s",input,csrf);
     if(length<1 || (size_t)length>=sizeof(follow_form)) return 0;
-    n=snprintf(url,capacity,"https://api.bilibili.com/pgc/web/follow/%s",operation==7?"add":"del");
+    n=snprintf(url,capacity,SERVICE_ADDRESS_A_ED132AC298F0,operation==7?"add":"del");
   } else return 0;
   return n>0 && (size_t)n<capacity;
 }

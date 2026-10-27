@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Read-only legacy/current player API comparison. No heartbeat/POST program. */
 static void readback_wipe(void);
 #define AUTH_EXTRA_CLEANUP readback_wipe
@@ -21,7 +22,7 @@ AUTH_EXPORT int auth_readback_prepare(int length){
  int n=snprintf(query,sizeof(query),"aid=117400733288351&cid=42548528128&wts=%s",parts[2]);if(n<0||(size_t)n>=sizeof(query))goto done;
  n=snprintf(signed_query,sizeof(signed_query),"%s%s",query,mix);if(n<0||(size_t)n>=sizeof(signed_query)||EVP_Digest(signed_query,(size_t)n,sum,&size,EVP_md5(),NULL)!=1||size!=16)goto done;
  for(int i=0;i<16;i++)snprintf(hex+i*2,3,"%02x",sum[i]);
- n=snprintf(readback_url,sizeof(readback_url),"https://api.bilibili.com/x/player/wbi/v2?%s&w_rid=%s",query,hex);if(n<0||(size_t)n>=sizeof(readback_url))goto done;
+ n=snprintf(readback_url,sizeof(readback_url),SERVICE_ADDRESS_A_6A99F35E78FF,query,hex);if(n<0||(size_t)n>=sizeof(readback_url))goto done;
  readback_prepared=ok=1;
 done:
  OPENSSL_cleanse(copy,sizeof(copy));OPENSSL_cleanse(joined,sizeof(joined));OPENSSL_cleanse(mix,sizeof(mix));OPENSSL_cleanse(query,sizeof(query));OPENSSL_cleanse(signed_query,sizeof(signed_query));OPENSSL_cleanse(hex,sizeof(hex));OPENSSL_cleanse(sum,sizeof(sum));if(!ok)readback_wipe();return ok;

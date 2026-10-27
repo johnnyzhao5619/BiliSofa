@@ -1,3 +1,4 @@
+import { serviceString } from '../../contracts/src/service-configuration.ts';
 import { DomainError, finite, record, text } from '../../contracts/src/index.ts';
 import type { GuestVideoDetail, GuestVideoPlan, GuestTrack } from '../../contracts/src/guest-video.ts';
 import { MAX_MEDIA_MS, MAX_MEDIA_SECONDS } from '../../contracts/src/media-limits.ts';
@@ -27,7 +28,7 @@ export function guestCdnUrl(value: unknown, now: number): { url: string; expires
   const raw = text(value, 2048);
   if (!/^[\x21-\x7e]+$/.test(raw) || /[\\#]/.test(raw)) throw new DomainError('invalid');
   let u: URL; try { u = new URL(raw); } catch { throw new DomainError('invalid'); }
-  if (u.protocol !== 'https:' || u.username || u.password || u.port || !/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+bilivideo\.com$/.test(u.hostname) || !u.pathname.endsWith('.m4s')) throw new DomainError('invalid');
+  if (u.protocol !== 'https:' || u.username || u.password || u.port || !new RegExp(serviceString('a_199f07083b7f'), "").test(u.hostname) || !u.pathname.endsWith('.m4s')) throw new DomainError('invalid');
   const deadlines = u.searchParams.getAll('deadline');
   if (deadlines.length !== 1 || !/^[0-9]{10}$/.test(deadlines[0]!)) throw new DomainError('invalid');
   const expiresAt = Number(deadlines[0]) * 1000;

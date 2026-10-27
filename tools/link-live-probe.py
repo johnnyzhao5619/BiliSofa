@@ -2,7 +2,7 @@
 from pathlib import Path
 import hashlib,json,os,re,subprocess
 ROOT=Path(__file__).resolve().parents[1]
-BASE=ROOT/'.local/network-upgrade'; SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk'; PREFIX=BASE/'stage/bilisofa/network'; OUT=ROOT/'build/live-relay-candidate'
+BASE=ROOT/'.local/network-upgrade'; SDK=ROOT/'.local/sdk/emscripten-release-bundle/emsdk'; PREFIX=BASE/'stage/bilisofa/network'; OUT=ROOT/'build/service-config/live-relay-candidate'
 subprocess.run(['python3',str(ROOT/'tools/build-network-candidate.py'),'check'],check=True)
 OUT.mkdir(parents=True,exist_ok=True)
 ca=ROOT/'.local/cacert.pem'; digest=lambda data:hashlib.sha256(data).hexdigest()
@@ -20,5 +20,5 @@ for n in files:
  if b'/Users/' in data or b'-----BEGIN PRIVATE KEY-----' in data:raise SystemExit('BLOCKED live.private_pattern')
 assert (OUT/'probe.wasm').read_bytes()[:8]==b'\0asm\1\0\0\0'
 inputs=['tools/link-live-probe.py','platform/wasm-network/src/live-probe.c','platform/wasm-network/src/live-relay.c']
-(OUT/'manifest.json').write_text(json.dumps({'schema':1,'files':files,'sourceInputs':{p:digest((ROOT/p).read_bytes()) for p in inputs},'libraryBuild':json.loads((BASE/'candidate-libraries.json').read_text()),'device':'UNVERIFIED'},indent=2)+'\n')
+(OUT/'manifest.json').write_text(json.dumps({'schema':1,'files':files,'serviceSchemaSha256':digest(ROOT/'platform/wasm-network/src/service-config.h'),'sourceInputs':{p:digest((ROOT/p).read_bytes()) for p in inputs},'libraryBuild':json.loads((BASE/'candidate-libraries.json').read_text()),'device':'UNVERIFIED'},indent=2)+'\n')
 print('Isolated live WASM link/scans PASS; no TV playback evidence')

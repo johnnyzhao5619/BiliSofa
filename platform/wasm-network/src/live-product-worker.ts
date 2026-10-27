@@ -1,3 +1,4 @@
+import { configureServiceNative } from '../../../packages/contracts/src/service-configuration.ts';
 import {DomainError,record} from '../../../packages/contracts/src/index.ts';
 import {parsePrivateAccount,type PrivateAccount} from '../../../packages/contracts/src/private-account.ts';
 import {parseVodCapabilities,vodNonce} from '../../../packages/contracts/src/vod-runtime.ts';
@@ -95,7 +96,7 @@ worker.onmessage=event=>{
       vodKeys(v,['version','owner','kind','mode',...(v.capabilities===undefined?[]:['capabilities']),...(v.account===undefined?[]:['account'])]);if(v.kind!=='init'||v.mode!=='read'&&v.mode!=='media')throw new DomainError('invalid');
       owner=vodNonce(v.owner);mode=v.mode;if(mode==='media')caps=parseVodCapabilities(v.capabilities);else if(v.capabilities!==undefined)throw new DomainError('invalid');account=v.account===undefined?undefined:parsePrivateAccount(v.account);
       loading=true;const directory=mode==='media'?'live-product':'live-read';
-      const module={arguments:[],noInitialRun:true,noExitRuntime:true,onRuntimeInitialized(){api=new LiveNativeApi(worker.Module);loading=false;if(closing){void close();return;}send(0,'ready');},print,printErr(){},onAbort:fault,locateFile:(name:string)=>`${directory}/${name}`};worker.Module=module as unknown as Native;worker.importScripts(`${directory}/probe.js`);return;
+      const module={arguments:[],noInitialRun:true,noExitRuntime:true,onRuntimeInitialized(){api=new LiveNativeApi(worker.Module);loading=false;if(closing){void close();return;}send(0,'ready');},print,printErr(){},onAbort:fault,locateFile:(name:string)=>`${directory}/${name}`};worker.Module=configureServiceNative(module as unknown as Native);worker.importScripts(`${directory}/probe.js`);return;
     }
     if(v.owner!==owner||poisoned)throw new DomainError('unknown');request=vodInteger(v.request,1,Number.MAX_SAFE_INTEGER);if(request<=lastRequest)throw new DomainError('invalid');lastRequest=request;
     if(v.kind==='close'){vodKeys(v,['version','owner','request','kind']);if(closing)throw new DomainError('invalid');closing=true;closeRequest=request;controller?.abort();if(!loading)void close();return;}

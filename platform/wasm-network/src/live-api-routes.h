@@ -1,3 +1,4 @@
+#include "service-config.h"
 /* Original fixed live reads. This lane accepts IDs, never caller API URLs or
  * POSTs. Signed area queries match the current official browser middleware. */
 #ifndef BILISOFA_LIVE_API_ROUTES_H
@@ -22,26 +23,26 @@ static int live_area_signed(char *input,char *url,size_t capacity) {
   n=snprintf(signed_query,sizeof(signed_query),"%s%s",query,mix);unsigned char digest[EVP_MAX_MD_SIZE];unsigned length=0;
   if(n<1||(size_t)n>=sizeof(signed_query)||EVP_Digest(signed_query,(size_t)n,digest,&length,EVP_md5(),NULL)!=1||length!=16)return 0;
   for(int i=0;i<16;i++)snprintf(hex+i*2,3,"%02x",digest[i]);
-  n=snprintf(url,capacity,"https://api.live.bilibili.com/xlive/web-interface/v1/second/getList?%s&w_rid=%s",query,hex);
+  n=snprintf(url,capacity,SERVICE_ADDRESS_A_0A40BBD53142,query,hex);
   OPENSSL_cleanse(joined,sizeof(joined));OPENSSL_cleanse(mix,sizeof(mix));OPENSSL_cleanse(signed_query,sizeof(signed_query));return n>0&&(size_t)n<capacity;
 }
 static int live_api_route(int operation,char *input,char *url,size_t capacity) {
   int n;
   if(operation==9||operation==10||operation==15){
     if(*input)return 0;const char *route=operation==9?"/xlive/web-interface/v1/index/getList?platform=web":operation==10?"/room/v1/area/getList":"/xlive/web-ucenter/user/get_user_info";
-    n=snprintf(url,capacity,"https://api.live.bilibili.com%s",route);
+    n=snprintf(url,capacity,SERVICE_ADDRESS_A_6E614EA5EDD1,route);
   } else if(operation==11)return live_area_signed(input,url,capacity);
-  else if(operation==12){if(!live_api_page(input))return 0;n=snprintf(url,capacity,"https://api.live.bilibili.com/xlive/web-ucenter/user/following?page=%s&page_size=9&ignoreRecord=1&hit_ab=false",input);}
-  else if(operation==13){if(!guest_cid_valid(input))return 0;n=snprintf(url,capacity,"https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory?roomid=%s&room_type=0",input);}
+  else if(operation==12){if(!live_api_page(input))return 0;n=snprintf(url,capacity,SERVICE_ADDRESS_A_A86E487A28DF,input);}
+  else if(operation==13){if(!guest_cid_valid(input))return 0;n=snprintf(url,capacity,SERVICE_ADDRESS_A_82FBB9942B62,input);}
   else if(operation==14){
     char *qn=strchr(input,'|');if(!qn||strchr(qn+1,'|'))return 0;*qn++=0;
     if(!guest_cid_valid(input)||!live_api_zero_id(qn)||strlen(qn)>6||strtol(qn,NULL,10)>100000)return 0;
-    n=snprintf(url,capacity,"https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo?room_id=%s&protocol=1&format=1&codec=0&qn=%s&platform=web&ptype=8",input,!strcmp(qn,"0")?"80":qn);
+    n=snprintf(url,capacity,SERVICE_ADDRESS_A_6E3E23F54C2E,input,!strcmp(qn,"0")?"80":qn);
   } else return 0;
   return n>0&&(size_t)n<capacity;
 }
 #define BILISOFA_MAX_READ_OPERATION 15
 #define BILISOFA_OPERATION_ALLOWED(operation) ((operation)==0||((operation)>=9&&(operation)<=15))
 #define BILISOFA_EXTRA_READ live_api_route
-#define BILISOFA_EXTRA_COOKIE_DOMAIN(s) (!strcasecmp((s),"api.live.bilibili.com"))
+#define BILISOFA_EXTRA_COOKIE_DOMAIN(s) (!strcasecmp((s),SERVICE_ADDRESS_A_CAA0A0BADD0B))
 #endif
