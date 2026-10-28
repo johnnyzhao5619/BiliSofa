@@ -13,7 +13,8 @@
 
 - [工程规范](ENGINEERING.md)：功能范围、开发约束和验证方式。
 - [当前状态](IMPLEMENTATION_STATUS.md)：实现进度与已知限制。
-- [验收与剩余工作](PRODUCT_CLOSURE.md)：验收结果、证据和未完成事项。
+- [验收与剩余工作](PRODUCT_CLOSURE.md)：未完成事项与关闭条件。
+- [路线图](ROADMAP.md) · [实施计划](plans/2026-10-27-next-phase-plan.md)：后续阶段与每项的做法。
 
 ## 历史资料
 

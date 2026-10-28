@@ -46,7 +46,7 @@
 
 生成物只在ignored `build/`、`dist/`、`.local/`；私密签名、目标和会话在仓库外。依赖版本/来源/许可见[第三方声明](../THIRD_PARTY_NOTICES.md)，命令见[开发说明](DEVELOPMENT.md)。[原结构过程](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/archive/2026-10-19-process-records/PROJECT_STRUCTURE.md)保留追溯。
 
-R07小数倍速按[ADR-097](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/097-fractional-rates-device-limited.md)不接入生产；`apps/tv/src/platform/element-video.ts`、`packages/contracts/src/playback-rate.ts`与`tests/media-element/`保留为诊断探查代码（[ADR-086](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/086-fractional-rate-element-candidate.md)）。
+小数倍速按[ADR-120](adr/120-next-phase-scope.md)重新评估（R17）；生产目前只接入1×/2×。`apps/tv/src/platform/element-video.ts`、`apps/tv/src/app/rate-probe.ts`、`packages/contracts/src/playback-rate.ts`与`tests/media-element/`是诊断探查代码（[ADR-086](https://github.com/johnnyzhao5619/BiliSofa/blob/a709767e0fd4b6eef741bd3193bafa6348ca0ff8/docs/adr/086-fractional-rate-element-candidate.md)），实施计划第2项会复用或替换它们。
 
 ## 0.66.0候选的配置层
 
